@@ -21,10 +21,17 @@ A database + analysis layer for **wealth management firms** that helps people **
 (Next to add: SmartAsset, Zoe Financial, Harness Wealth, etc.)
 
 ### 2) RIA / firm data platforms (industry)
+- **ISS Market Intelligence — MarketPro (powered by Discovery Data)** — distribution/recruiting intelligence + advisor/firm data; segmentation/filters; mentions tracking advisor movement weekly; enrichment + integrations.
+  - Source: https://www.issmarketintelligence.com/solutions/marketpro/
+  - Source: https://www.issmarketintelligence.com/solutions/marketpro/marketpro-powered-by-discovery-data/
+
 - **AdvizorPro** — RIA database built from Form ADV + firm intelligence; publishes “Top 100 Independent RIAs 2026” interactive ranking.
   - Source: https://advizorpro.com/post/top-independent-rias
 
-(Next to add: Discovery Data, RIA Database vendors, etc.)
+- **FINTRX** — (to research) industry-side data platform you flagged.
+- **Dakota** — (to research) industry-side database/marketplace you flagged.
+
+(Next to add: other RIA database vendors, Form ADV tooling, etc.)
 
 ### 3) Rankings & lists
 - **Financial Planning — RIA Leaders** (rankings by AUM) (editorial list; sometimes paywalled).
