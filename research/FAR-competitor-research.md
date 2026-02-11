@@ -33,7 +33,8 @@ A database + analysis layer for **wealth management firms** that helps people **
 - **AdvizorPro** — RIA database built from Form ADV + firm intelligence; publishes “Top 100 Independent RIAs 2026” interactive ranking.
   - Source: https://advizorpro.com/post/top-independent-rias
 
-- **FINTRX** — (to research) industry-side data platform you flagged.
+- **FINTRX** — private wealth intelligence platform: RIA/Broker-Dealer/Family Office/Endowment/Foundation datasets; emphasizes “AI-powered intelligence” and large coverage + monthly updates; free trial.
+  - Source: https://www.fintrx.com/
 - **Dakota** — (to research) industry-side database/marketplace you flagged.
 
 (Next to add: other RIA database vendors, Form ADV tooling, etc.)
