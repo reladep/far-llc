@@ -12,7 +12,7 @@ _Last updated: 2026-02-11_
 ## Board
 
 ### Backlog
-- [PROJECT][P1] Company launch — (see: `kanban/company-launch.md`)
+- [PROJECT][P1] FAR, LLC (directory/marketplace) — (see: `kanban/company-launch.md`)
 - [PROJECT][P1] Job search — (see: `kanban/job-search.md`)
 - [PROJECT][P2] Personal website — (see: `kanban/personal-website.md`)
 - [TODO][P2] Configure cheaper/default models + deep-work model
