@@ -3,7 +3,7 @@
 _Last updated: 2026-02-11_
 
 ## Project overview
-- **Goal:** Launch a beta directory/marketplace website (front-end + Supabase-backed) and prepare initial go-to-market.
+- **Goal:** Build the best online resource to find, vet, and compare **wealth management firms** (fees, growth metrics, relevant updates, etc.). Launch a beta.
 - **Current status:** Initial database set up in Supabase; front-end not built yet.
 - **Next milestone:** Competitor/pricing research + design inspiration → decide MVP scope → start building front-end with AI coding tools.
 - **Target deadline:** Beta by end of **Q1 2026**.
