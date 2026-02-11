@@ -15,6 +15,7 @@ _Last updated: 2026-02-11_
 - [PROJECT][P1] FAR, LLC (directory/marketplace) — (see: `kanban/company-launch.md`)
 - [PROJECT][P1] Job search — (see: `kanban/job-search.md`)
 - [PROJECT][P2] Personal website — (see: `kanban/personal-website.md`)
+- [TODO][P2] Read Mauboussin paper on Bayes & Base Rates (add link/citation)
 - [TODO][P2] Configure cheaper/default models + deep-work model
 - [TRACKER][P2] Low-cost heartbeat/check-in plan (quiet hours 10PM–7AM ET)
 
