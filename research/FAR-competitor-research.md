@@ -18,7 +18,12 @@ A database + analysis layer for **wealth management firms** that helps people **
 - **AdvisorFinder** — assessment-based advisor discovery; filters by needs, specialties, and pricing/fee structure.
   - Source: https://advisorfinder.com/
 
-(Next to add: SmartAsset, Zoe Financial, Harness Wealth, etc.)
+- **SmartAsset — SmartAdvisor Match (consumer)** — questionnaire → matched with up to three advisors.
+  - Source: https://smartadvisormatch.com/
+- **SmartAsset — Advisor Marketing Platform / AMP (industry side of same funnel)** — advisor lead-gen subscriptions + outreach tooling; emphasizes ~50k monthly matches.
+  - Source: https://getamp.smartasset.com/
+
+(Next to add: Zoe Financial, Harness Wealth, Paladin Registry, etc.)
 
 ### 2) RIA / firm data platforms (industry)
 - **ISS Market Intelligence — MarketPro (powered by Discovery Data)** — distribution/recruiting intelligence + advisor/firm data; segmentation/filters; mentions tracking advisor movement weekly; enrichment + integrations.
