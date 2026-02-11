@@ -17,6 +17,7 @@ _Last updated: 2026-02-11_
 - [TODO][P1] Research pricing models for directories/marketplaces (subscriptions vs listing fees vs lead-gen vs freemium)
 - [TODO][P1] Competitor research: identify 10–20 comparable platforms + key differentiators
 - [TODO][P2] Design inspiration: collect UI patterns + IA for directory/search/listing pages
+- [TODO][P2] Differentiation research: identify feature gaps in competitor set + potential moats (data freshness, monitoring, trust, explainability)
 - [TODO][P2] Front-end stack decision (e.g., Next.js + Tailwind + shadcn/ui) + hosting
 - [TODO][P2] Build beta front-end skeleton wired to Supabase (read-only first)
 - [TODO][P2] Build submission workflow (create/edit listing) + basic moderation
