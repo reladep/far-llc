@@ -322,7 +322,7 @@ export default function SearchPage() {
         investment_philosophy: profileMap.get(firm.crd)?.investment_philosophy || null,
         firm_character: profileMap.get(firm.crd)?.firm_character || null,
         specialty_strategies: profileMap.get(firm.crd)?.specialty_strategies || null,
-        min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd).min_aum) : null,
+        min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd)!.min_aum) : null,
       }));
 
       // Apply additional client-side filters

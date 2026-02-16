@@ -54,6 +54,13 @@ interface Website {
   website: string | null;
 }
 
+interface GrowthRecord {
+  aum: string | null;
+  employee_total_calc: string | null;
+  client_total_or_calc: string | null;
+  date_submitted: string | null;
+}
+
 async function getFirmData(crd: string) {
   const { data: firmData, error: firmError } = await supabase
     .from('firmdata_current')
@@ -78,11 +85,18 @@ async function getFirmData(crd: string) {
     .eq('crd', crd)
     .single();
 
+  const { data: growth } = await supabase
+    .from('firmdata_growth')
+    .select('aum, employee_total_calc, client_total_or_calc, date_submitted')
+    .eq('crd', crd)
+    .order('date_submitted', { ascending: true });
+
   return {
     firmData: firmData as FirmData | null,
     feeTiers: feeTiers as FeeTier[] | null,
     profileText: profileText as ProfileText | null,
     website: website as Website | null,
+    growth: growth as GrowthRecord[] | null,
     error: firmError
   };
 }
@@ -99,6 +113,20 @@ export async function generateMetadata({
     title: `${name} - FAR`,
     description: `View detailed profile, fees, services, and reviews for ${name}. SEC-registered investment advisor.`,
   };
+}
+
+function parseAUM(value: string | null): number | null {
+  if (!value) return null;
+  const num = parseFloat(value);
+  return isNaN(num) ? null : num;
+}
+
+function formatCurrency(value: number | null): string {
+  if (value == null) return 'N/A';
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+  if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+  return `$${value.toLocaleString()}`;
 }
 
 function formatAUM(value: number | null): string {
@@ -132,7 +160,7 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, feeTiers, profileText, website, error } = await getFirmData(params.crd);
+  const { firmData, feeTiers, profileText, website, growth, error } = await getFirmData(params.crd);
 
   if (error || !firmData) {
     return (
@@ -268,34 +296,48 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             </CardContent>
           </Card>
 
-          {/* Fee Schedule */}
-          {feeTiers && feeTiers.length > 0 && (
-            <Card>
-              <CardContent>
-                <h3 className="font-semibold text-slate-900 mb-4">Fee Schedule</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-2 text-slate-500 font-medium">AUM Range</th>
-                      <th className="text-right py-2 text-slate-500 font-medium">Fee</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {feeTiers.map((tier, i) => (
-                      <tr key={i} className="border-b border-slate-100">
-                        <td className="py-2 text-slate-600">
-                          {formatAUM(parseInt(tier.min_aum || '0'))} - {tier.max_aum ? formatAUM(tier.max_aum) : '+'}
-                        </td>
-                        <td className="py-2 text-right text-slate-900 font-medium">
-                          {tier.fee_pct ? `${tier.fee_pct}%` : 'N/A'}
-                        </td>
+          {/* Fee Schedule with Visualization */}
+          {feeTiers && feeTiers.length > 0 && (() => {
+            const sorted = [...feeTiers].sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
+            const maxFee = Math.max(...sorted.filter(t => t.fee_pct != null).map(t => t.fee_pct!), 0);
+            return (
+              <Card>
+                <CardContent>
+                  <h3 className="font-semibold text-slate-900 mb-4">Fee Schedule</h3>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-2 text-slate-500 font-medium">AUM Range</th>
+                        <th className="text-right py-2 text-slate-500 font-medium">Fee %</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          )}
+                    </thead>
+                    <tbody>
+                      {sorted.map((tier, i) => (
+                        <tr key={i} className="border-b border-slate-100">
+                          <td className="py-2 text-slate-600">
+                            {formatCurrency(parseInt(tier.min_aum || '0'))} – {tier.max_aum ? formatCurrency(tier.max_aum) : '∞'}
+                          </td>
+                          <td className="py-2 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="w-20 h-3 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500 rounded-full"
+                                  style={{ width: maxFee > 0 && tier.fee_pct ? `${(tier.fee_pct / maxFee) * 100}%` : '0%' }}
+                                />
+                              </div>
+                              <span className="text-slate-900 font-medium w-12 text-right">
+                                {tier.fee_pct != null ? `${tier.fee_pct}%` : 'N/A'}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Contact */}
           <Card>
@@ -327,6 +369,42 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           </Card>
         </div>
       </div>
+
+      {/* Firm Growth History */}
+      {growth && growth.length > 0 && (() => {
+        const parsed = growth
+          .map(g => ({ date: g.date_submitted || '', aum: parseAUM(g.aum), employees: g.employee_total_calc, clients: g.client_total_or_calc }))
+          .filter(g => g.aum != null);
+        const maxAum = Math.max(...parsed.map(g => g.aum!), 1);
+        if (parsed.length === 0) return null;
+        return (
+          <Card className="mt-8">
+            <CardContent>
+              <h2 className="text-lg font-semibold text-slate-900 mb-6">Firm Growth History</h2>
+              <div className="space-y-3">
+                {parsed.map((g, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <span className="w-24 shrink-0 text-slate-500">{g.date}</span>
+                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
+                      <div
+                        className="h-full bg-green-500 rounded flex items-center px-2"
+                        style={{ width: `${Math.max((g.aum! / maxAum) * 100, 2)}%` }}
+                      >
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {formatCurrency(g.aum)}
+                        </span>
+                      </div>
+                    </div>
+                    {g.employees && (
+                      <span className="text-xs text-slate-400 shrink-0">{g.employees} emp</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }

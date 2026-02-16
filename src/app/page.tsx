@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button, Badge } from '@/components/ui';
 import { createClient } from '@supabase/supabase-js';
 
@@ -85,6 +86,16 @@ function LogoTicker() {
 }
 
 export default function HomePage() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
     <>
       {/* Hero */}
@@ -127,16 +138,18 @@ export default function HomePage() {
           </p>
 
           {/* Search Bar */}
-          <div className="mx-auto mt-10 flex max-w-xl flex-col gap-3 sm:flex-row">
+          <form onSubmit={handleSearch} className="mx-auto mt-10 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Try: 'fee-only advisor in Boston' or 'Morgan Stanley'..."
               className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
             />
-            <Button size="lg" className="whitespace-nowrap">
+            <Button type="submit" size="lg" className="whitespace-nowrap">
               Search Advisors
             </Button>
-          </div>
+          </form>
 
           {/* Trust Signal */}
           <p className="mt-6 text-center text-xs text-slate-400">
