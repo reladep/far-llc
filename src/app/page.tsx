@@ -29,7 +29,6 @@ function LogoTicker() {
 
   useEffect(() => {
     async function fetchLogos() {
-      // Get logos directly from firm_logos table
       const { data } = await supabase
         .from('firm_logos')
         .select('crd, logo_key')
@@ -37,7 +36,6 @@ function LogoTicker() {
         .limit(50);
 
       if (data && data.length > 0) {
-        // Shuffle for randomness and duplicate for seamless loop
         const shuffled = data.sort(() => Math.random() - 0.5);
         setLogos([...shuffled, ...shuffled]);
       }
@@ -104,6 +102,11 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto max-w-5xl px-4 relative">
+          {/* Tagline */}
+          <p className="text-center text-sm font-medium text-green-600 tracking-wider uppercase mb-4">
+            Bringing the Footnotes to the Frontpage
+          </p>
+
           {/* Stats */}
           <div className="mb-8 flex flex-wrap justify-center gap-6 md:gap-10">
             {stats.map((stat) => (
@@ -155,11 +158,54 @@ export default function HomePage() {
       {/* Logo Ticker */}
       <LogoTicker />
 
-      {/* Value Proposition */}
+      {/* DNA Framework - How It Works */}
       <section className="bg-slate-50 py-16 md:py-24 lg:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold text-slate-900">
-            Advisor Search, Decoded
+            Your Advisor Journey
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-slate-600">
+            From research to relationship — we help you every step of the way.
+          </p>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                title: 'Diligence',
+                desc: 'Search and compare advisors by fee structure, AUM, location, and specialty. Our database is built on SEC filings — verified, not self-reported.',
+                icon: '🔍',
+              },
+              {
+                title: 'Negotiate',
+                desc: 'Fees are negotiable. We give you the data and context to negotiate confidently with any advisor.',
+                icon: '💬',
+              },
+              {
+                title: 'Analyze',
+                desc: 'Track your advisor over time. Monitor fees, services, and performance. Make informed decisions at every stage.',
+                icon: '📊',
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+              >
+                <span className="text-3xl">{item.icon}</span>
+                <h3 className="mt-3 text-lg font-semibold text-slate-900">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition */}
+      <section className="bg-white py-16 md:py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-center text-3xl font-bold text-slate-900">
+            Why FAR?
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[
@@ -172,42 +218,30 @@ export default function HomePage() {
                 desc: 'Every data point comes directly from Form ADV. What you see is what the advisors reported.',
               },
               {
-                title: 'Find Your Fit',
-                desc: 'Filter by specialty, location, AUM minimum, and fee structure. Your money deserves the right advisor.',
+                title: 'Negotiation Support',
+                desc: 'Arm yourself with data before negotiating. Know the market rate before you sign.',
+              },
+              {
+                title: 'No Sponsored Placements',
+                desc: 'We don\'t accept payment for better rankings. What you see is based purely on the data.',
+              },
+              {
+                title: 'Your Money, Your Choice',
+                desc: 'Request info directly from firms. Read profiles. Make decisions on your terms.',
+              },
+              {
+                title: 'Track Over Time',
+                desc: 'Coming soon: monitor your advisor\'s fee evolution and performance over time.',
               },
             ].map((item) => (
               <div
                 key={item.title}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="rounded-xl border border-slate-200 p-6 shadow-sm"
               >
                 <h3 className="text-lg font-semibold text-slate-900">
                   {item.title}
                 </h3>
                 <p className="mt-3 text-sm text-slate-600">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-white py-16 md:py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <h2 className="text-3xl font-bold text-slate-900">How It Works</h2>
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {[
-              { step: '1', title: 'Search', desc: 'Enter your criteria — location, fee type, specialty.' },
-              { step: '2', title: 'Compare', desc: 'Review advisor profiles and compare side-by-side.' },
-              { step: '3', title: 'Connect', desc: 'Request info or schedule a consultation directly.' },
-            ].map((item) => (
-              <div key={item.step} className="flex flex-col items-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-lg font-bold text-white">
-                  {item.step}
-                </span>
-                <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-slate-600">{item.desc}</p>
               </div>
             ))}
           </div>
