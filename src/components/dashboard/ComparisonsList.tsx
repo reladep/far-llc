@@ -50,9 +50,9 @@ export function ComparisonsList({ comparisons, loading, onDelete }: ComparisonsL
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/compare?ids=${comp.firm_crds.join(',')}`}>View</Link>
-              </Button>
+              <Link href={`/compare?ids=${comp.firm_crds.join(',')}`}>
+                <Button variant="outline" size="sm">View</Button>
+              </Link>
               <Button variant="ghost" size="sm" onClick={() => onDelete(comp.id)}>
                 Delete
               </Button>
