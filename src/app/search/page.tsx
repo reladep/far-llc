@@ -17,6 +17,14 @@ interface Firm {
   services_financial_planning: string | null;
   services_mgr_selection: string | null;
   services_pension_consulting: string | null;
+  // Profile text fields
+  client_base: string | null;
+  wealth_tier: string | null;
+  investment_philosophy: string | null;
+  firm_character: string | null;
+  specialty_strategies: string | null;
+  // Fee tiers
+  min_fee: number | null;
 }
 
 function formatAUM(value: number | null): string {
@@ -37,18 +45,37 @@ function FilterSidebar({
   filters: Record<string, unknown>;
   setFilters: (f: Record<string, unknown>) => void;
 }) {
-  const [selectedFees, setSelectedFees] = useState<string[]>([]);
   const [location, setLocation] = useState('');
   const [minAUM, setMinAUM] = useState('');
+  const [minAccountSize, setMinAccountSize] = useState('');
+  const [clientBase, setClientBase] = useState('');
+  const [wealthTier, setWealthTier] = useState('');
 
   const applyFilters = () => {
     setFilters({
-      fees: selectedFees,
       location,
       minAUM,
+      minAccountSize,
+      clientBase,
+      wealthTier,
     });
     onClose();
   };
+
+  const wealthTiers = [
+    'Mass Affluent',
+    'High Net Worth',
+    'Ultra High Net Worth',
+    'Billionaire',
+  ];
+
+  const clientBases = [
+    'Individuals',
+    'Families',
+    'Business Owners',
+    'Institutions',
+    'Nonprofits',
+  ];
 
   return (
     <>
@@ -106,6 +133,54 @@ function FilterSidebar({
             </select>
           </div>
 
+          {/* Minimum Account Size */}
+          <div className="mb-6">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">Account Minimum</label>
+            <select 
+              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              value={minAccountSize}
+              onChange={(e) => setMinAccountSize(e.target.value)}
+            >
+              <option value="">Any</option>
+              <option value="0">No minimum</option>
+              <option value="100000">$100K+</option>
+              <option value="500000">$500K+</option>
+              <option value="1000000">$1M+</option>
+              <option value="5000000">$5M+</option>
+              <option value="10000000">$10M+</option>
+            </select>
+          </div>
+
+          {/* Wealth Tier */}
+          <div className="mb-6">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">Client Wealth Level</label>
+            <select 
+              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              value={wealthTier}
+              onChange={(e) => setWealthTier(e.target.value)}
+            >
+              <option value="">Any</option>
+              {wealthTiers.map((tier) => (
+                <option key={tier} value={tier}>{tier}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Client Base */}
+          <div className="mb-6">
+            <label className="mb-1.5 block text-xs font-medium text-slate-600">Client Base</label>
+            <select 
+              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              value={clientBase}
+              onChange={(e) => setClientBase(e.target.value)}
+            >
+              <option value="">Any</option>
+              {clientBases.map((base) => (
+                <option key={base} value={base}>{base}</option>
+              ))}
+            </select>
+          </div>
+
           <Button variant="primary" size="sm" className="w-full" onClick={applyFilters}>
             Apply Filters
           </Button>
@@ -128,16 +203,26 @@ function FirmCard({ firm }: { firm: Firm }) {
               {firm.primary_business_name}
             </h3>
             <p className="text-xs md:text-sm text-slate-500">{firm.main_office_city}, {firm.main_office_state}</p>
+            
+            {/* Client info tags */}
             <div className="mt-2 flex flex-wrap gap-1.5">
               {firm.services_financial_planning === 'Y' && <Badge variant="primary">Financial Planning</Badge>}
               {firm.services_mgr_selection === 'Y' && <Badge>Manager Selection</Badge>}
               {firm.services_pension_consulting === 'Y' && <Badge>Pension Consulting</Badge>}
+              {firm.wealth_tier && <Badge>{firm.wealth_tier}</Badge>}
             </div>
+            
             <CardContent className="mt-3">
               <div className="flex items-center gap-2 md:gap-4 text-xs text-slate-500">
                 <span>AUM: {formatAUM(firm.aum)}</span>
                 <span>·</span>
                 <span>Offices: {firm.number_of_offices || 'N/A'}</span>
+                {firm.min_fee && (
+                  <>
+                    <span>·</span>
+                    <span>Min: {formatAUM(firm.min_fee * 1000000)}</span>
+                  </>
+                )}
               </div>
             </CardContent>
           </div>
@@ -155,15 +240,27 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch firms from Supabase - searches full database
+  // Fetch firms from Supabase with filters
   const fetchFirms = useCallback(async (query: string, filterOptions: Record<string, unknown>) => {
     setLoading(true);
     setError(null);
 
     try {
+      // First get base firms from firmdata_current
       let queryBuilder = supabase
         .from('firmdata_current')
-        .select('crd, primary_business_name, main_office_city, main_office_state, aum, employee_total, number_of_offices, services_financial_planning, services_mgr_selection, services_pension_consulting');
+        .select(`
+          crd, 
+          primary_business_name, 
+          main_office_city, 
+          main_office_state, 
+          aum, 
+          employee_total, 
+          number_of_offices, 
+          services_financial_planning, 
+          services_mgr_selection, 
+          services_pension_consulting
+        `);
 
       // Search by firm name
       if (query && query.length > 0) {
@@ -182,17 +279,73 @@ export default function SearchPage() {
         queryBuilder = queryBuilder.gte('aum', minAUM);
       }
 
-      // Limit results for performance
-      queryBuilder = queryBuilder.limit(50);
+      // Get base firms
+      const { data: baseFirms, error: baseError } = await queryBuilder.limit(100);
 
-      const { data, error: fetchError } = await queryBuilder;
-      
-      if (fetchError) {
-        console.error('Error fetching firms:', fetchError);
-        setError(fetchError.message);
-      } else {
-        setFirms(data || []);
+      if (baseError) {
+        console.error('Error fetching firms:', baseError);
+        setError(baseError.message);
+        setFirms([]);
+        setLoading(false);
+        return;
       }
+
+      if (!baseFirms || baseFirms.length === 0) {
+        setFirms([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get CRDs to fetch profile text
+      const crds = baseFirms.map(f => f.crd);
+
+      // Fetch profile text for these firms
+      const { data: profileData } = await supabase
+        .from('firmdata_profile_text')
+        .select('crd, client_base, wealth_tier, investment_philosophy, firm_character, specialty_strategies')
+        .in('crd', crds);
+
+      // Fetch fee tiers
+      const { data: feeData } = await supabase
+        .from('firmdata_feetiers')
+        .select('crd, min_aum')
+        .in('crd', crds);
+
+      // Merge data
+      const profileMap = new Map((profileData || []).map(p => [p.crd, p]));
+      const feeMap = new Map((feeData || []).map(f => [f.crd, f]));
+
+      let mergedFirms = baseFirms.map(firm => ({
+        ...firm,
+        client_base: profileMap.get(firm.crd)?.client_base || null,
+        wealth_tier: profileMap.get(firm.crd)?.wealth_tier || null,
+        investment_philosophy: profileMap.get(firm.crd)?.investment_philosophy || null,
+        firm_character: profileMap.get(firm.crd)?.firm_character || null,
+        specialty_strategies: profileMap.get(firm.crd)?.specialty_strategies || null,
+        min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd).min_aum) : null,
+      }));
+
+      // Apply additional client-side filters
+      if (filterOptions.wealthTier && (filterOptions.wealthTier as string).length > 0) {
+        mergedFirms = mergedFirms.filter(f => 
+          f.wealth_tier && f.wealth_tier.toLowerCase().includes((filterOptions.wealthTier as string).toLowerCase())
+        );
+      }
+
+      if (filterOptions.clientBase && (filterOptions.clientBase as string).length > 0) {
+        mergedFirms = mergedFirms.filter(f => 
+          f.client_base && f.client_base.toLowerCase().includes((filterOptions.clientBase as string).toLowerCase())
+        );
+      }
+
+      if (filterOptions.minAccountSize && (filterOptions.minAccountSize as string).length > 0) {
+        const minSize = parseInt(filterOptions.minAccountSize as string);
+        mergedFirms = mergedFirms.filter(f => 
+          f.min_fee !== null && (f.min_fee * 1000000) >= minSize
+        );
+      }
+
+      setFirms(mergedFirms.slice(0, 50));
     } catch (err) {
       console.error('Fetch error:', err);
       setError('Failed to fetch firms');
@@ -201,7 +354,7 @@ export default function SearchPage() {
     setLoading(false);
   }, []);
 
-  // Initial load - show first 50 firms
+  // Initial load
   useEffect(() => {
     fetchFirms('', {});
   }, [fetchFirms]);
@@ -230,14 +383,14 @@ export default function SearchPage() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-bold text-slate-900">Browse Financial Advisors</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Search {2000}+ SEC-registered investment advisors by name, location, or specialty.
+        Search {2000}+ SEC-registered investment advisors by name, location, account minimum, client base, and more.
       </p>
 
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="mt-4 flex gap-2">
         <input
           type="text"
-          placeholder="Search firms by name (e.g., Avestar, Morgan Stanley)..."
+          placeholder="Search firms by name (e.g., Morgan Stanley, Avestar)..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
@@ -310,7 +463,6 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Show message if more results available */}
               {firms.length === 50 && (
                 <p className="mt-4 text-center text-sm text-slate-500">
                   Showing first 50 results. Try refining your search for more specific results.
