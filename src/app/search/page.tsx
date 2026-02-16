@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Badge, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -38,14 +38,12 @@ function FilterSidebar({
   setFilters: (f: Record<string, unknown>) => void;
 }) {
   const [selectedFees, setSelectedFees] = useState<string[]>([]);
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
   const [location, setLocation] = useState('');
   const [minAUM, setMinAUM] = useState('');
 
   const applyFilters = () => {
     setFilters({
       fees: selectedFees,
-      specialties: selectedSpecialties,
       location,
       minAUM,
     });
@@ -80,50 +78,16 @@ function FilterSidebar({
         <div className="overflow-y-auto p-4">
           <h3 className="mb-4 text-sm font-semibold text-slate-900 hidden lg:block">Filters</h3>
 
-          {/* Search */}
-          <div className="mb-6">
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">Search</label>
-            <input
-              type="text"
-              placeholder="Firm name..."
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
-            />
-          </div>
-
-          {/* Location */}
+          {/* Location Filter */}
           <div className="mb-6">
             <label className="mb-1.5 block text-xs font-medium text-slate-600">Location</label>
             <input
               type="text"
               placeholder="City or state..."
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
               className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
             />
-          </div>
-
-          {/* Fee Structure */}
-          <div className="mb-6">
-            <label className="mb-1.5 block text-xs font-medium text-slate-600">Fee Structure</label>
-            <div className="flex flex-col gap-2">
-              {['Fee-Only', 'Fee-Based', 'Commission'].map((fee) => (
-                <label key={fee} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-slate-300"
-                    checked={selectedFees.includes(fee)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedFees([...selectedFees, fee]);
-                      } else {
-                        setSelectedFees(selectedFees.filter(f => f !== fee));
-                      }
-                    }}
-                  />
-                  {fee}
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Minimum AUM */}
@@ -191,83 +155,95 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchFirms() {
-      const { data, error } = await supabase
+  // Fetch firms from Supabase - searches full database
+  const fetchFirms = useCallback(async (query: string, filterOptions: Record<string, unknown>) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let queryBuilder = supabase
         .from('firmdata_current')
-        .select('crd, primary_business_name, main_office_city, main_office_state, aum, employee_total, number_of_offices, services_financial_planning, services_mgr_selection, services_pension_consulting')
-        .limit(50);
+        .select('crd, primary_business_name, main_office_city, main_office_state, aum, employee_total, number_of_offices, services_financial_planning, services_mgr_selection, services_pension_consulting');
+
+      // Search by firm name
+      if (query && query.length > 0) {
+        queryBuilder = queryBuilder.ilike('primary_business_name', `%${query}%`);
+      }
+
+      // Filter by location (city or state)
+      if (filterOptions.location && (filterOptions.location as string).length > 0) {
+        const loc = (filterOptions.location as string).toLowerCase();
+        queryBuilder = queryBuilder.or(`main_office_city.ilike.%${loc}%,main_office_state.ilike.%${loc}%`);
+      }
+
+      // Filter by minimum AUM
+      if (filterOptions.minAUM && (filterOptions.minAUM as string).length > 0) {
+        const minAUM = parseInt(filterOptions.minAUM as string);
+        queryBuilder = queryBuilder.gte('aum', minAUM);
+      }
+
+      // Limit results for performance
+      queryBuilder = queryBuilder.limit(50);
+
+      const { data, error: fetchError } = await queryBuilder;
       
-      if (error) {
-        console.error('Error fetching firms:', error);
-        setError(error.message);
+      if (fetchError) {
+        console.error('Error fetching firms:', fetchError);
+        setError(fetchError.message);
       } else {
         setFirms(data || []);
       }
-      setLoading(false);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError('Failed to fetch firms');
     }
-    fetchFirms();
+
+    setLoading(false);
   }, []);
 
-  // Filter firms based on search + filters
-  const filteredFirms = firms.filter(firm => {
-    // Search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesName = firm.primary_business_name?.toLowerCase().includes(query);
-      const matchesCity = firm.main_office_city?.toLowerCase().includes(query);
-      if (!matchesName && !matchesCity) return false;
-    }
-    // Fee filter
-    if (filters.fees && (filters.fees as string[]).length > 0) {
-      // No fee type in current schema - skip for now
-    }
-    // AUM filter
-    if (filters.minAUM && firm.aum) {
-      if (firm.aum < parseInt(filters.minAUM as string)) return false;
-    }
-    return true;
-  });
+  // Initial load - show first 50 firms
+  useEffect(() => {
+    fetchFirms('', {});
+  }, [fetchFirms]);
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div>
-          <p className="mt-4 text-slate-500">Loading firms...</p>
-        </div>
-      </div>
-    );
-  }
+  // Handle search submit
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchFirms(searchQuery, filters);
+  };
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-500">Error: {error}</p>
-        </div>
-      </div>
-    );
-  }
+  // Handle filter apply
+  const handleApplyFilters = (newFilters: Record<string, unknown>) => {
+    setFilters(newFilters);
+    fetchFirms(searchQuery, newFilters);
+    setFiltersOpen(false);
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFilters({});
+    setSearchQuery('');
+    fetchFirms('', {});
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-bold text-slate-900">Browse Financial Advisors</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Search and filter by name, location, fee structure, AUM, and specialty.
+        Search {2000}+ SEC-registered investment advisors by name, location, or specialty.
       </p>
 
       {/* Search Bar */}
-      <div className="mt-4 flex gap-2">
+      <form onSubmit={handleSearch} className="mt-4 flex gap-2">
         <input
           type="text"
-          placeholder="Search firms by name or city..."
+          placeholder="Search firms by name (e.g., Avestar, Morgan Stanley)..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
         />
-        <Button className="hidden sm:inline-flex">Search</Button>
-      </div>
+        <Button type="submit" className="hidden sm:inline-flex">Search</Button>
+      </form>
 
       {/* Mobile filter toggle */}
       <Button
@@ -287,52 +263,61 @@ export default function SearchPage() {
           open={filtersOpen} 
           onClose={() => setFiltersOpen(false)} 
           filters={filters}
-          setFilters={setFilters}
+          setFilters={handleApplyFilters}
         />
 
         <div className="flex-1">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm text-slate-500">{filteredFirms.length} firms found</span>
-            <select className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm">
-              <option>Sort: Relevance</option>
-              <option>Sort: AUM (High to Low)</option>
-              <option>Sort: Name A-Z</option>
-            </select>
-          </div>
-
-          <div className="grid gap-3 md:gap-4">
-            {filteredFirms.map((firm) => (
-              <FirmCard key={firm.crd} firm={firm} />
-            ))}
-          </div>
-
-          {filteredFirms.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-slate-500">No firms match your search criteria.</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-4"
-                onClick={() => {
-                  setSearchQuery('');
-                  setFilters({});
-                }}
+            <span className="text-sm text-slate-500">{loading ? 'Searching...' : `${firms.length} firms found`}</span>
+            {(Object.keys(filters).length > 0 || searchQuery.length > 0) && (
+              <button 
+                onClick={handleClearFilters}
+                className="text-sm text-green-600 hover:text-green-700"
               >
-                Clear Filters
-              </Button>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <div className="mt-8 flex items-center justify-center gap-2">
-            <Button variant="outline" size="sm" disabled className="hidden md:inline-flex">
-              Previous
-            </Button>
-            <span className="hidden md:inline px-3 text-sm text-slate-500">Page 1 of 1</span>
-            <Button variant="outline" size="sm" disabled className="hidden md:inline-flex">
-              Next
-            </Button>
+                Clear all
+              </button>
+            )}
           </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-green-500 border-r-transparent"></div>
+              <p className="mt-4 text-slate-500">Searching...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">Error: {error}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3 md:gap-4">
+                {firms.map((firm) => (
+                  <FirmCard key={firm.crd} firm={firm} />
+                ))}
+              </div>
+
+              {firms.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-slate-500">No firms found matching your search.</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-4"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Search
+                  </Button>
+                </div>
+              )}
+
+              {/* Show message if more results available */}
+              {firms.length === 50 && (
+                <p className="mt-4 text-center text-sm text-slate-500">
+                  Showing first 50 results. Try refining your search for more specific results.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
