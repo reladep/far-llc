@@ -1,0 +1,163 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    line-height: var(--leading-normal);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive typography helpers */
+  .text-responsive-h1 {
+    @apply text-display md:text-display-md lg:text-display-lg xl:text-display-xl;
+  }
+  .text-responsive-h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl;
+  }
+  .text-responsive-h3 {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+  .text-responsive-body {
+    @apply text-sm md:text-base;
+  }
+
+  /* Responsive section padding */
+  .section-padding {
+    @apply py-section md:py-section-md lg:py-section-lg;
+  }
+
+  /* Touch-friendly targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ─── Animation Keyframes ─── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Animation Utility Classes ─── */
+
+.animate-fade-in {
+  animation: fadeIn 250ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+.animate-fade-up {
+  animation: fadeUp 450ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 250ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+/* ─── Stagger Children ─── */
+
+.stagger-children > * {
+  animation: fadeUp 400ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ─── Hover Effects ─── */
+
+.hover-lift {
+  transition: transform 150ms cubic-bezier(0, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+.hover-lift:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.hover-grow {
+  transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.hover-grow:hover {
+  transform: scale(1.05);
+}
+.hover-grow:active {
+  transform: scale(0.98);
+}
+
+/* ─── Reduced Motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .stagger-children > *,
+  .hover-lift,
+  .hover-grow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
