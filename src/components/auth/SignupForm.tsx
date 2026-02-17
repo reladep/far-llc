@@ -78,23 +78,6 @@ export function SignupForm() {
         </Button>
       </form>
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-bg-primary px-2 text-text-muted">or</span>
-        </div>
-      </div>
-
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={auth.loginWithGoogle}
-      >
-        Continue with Google
-      </Button>
-
       <p className="mt-6 text-center text-sm text-text-secondary">
         Already have an account?{' '}
         <Link href="/auth/login" className="text-primary hover:underline font-medium">

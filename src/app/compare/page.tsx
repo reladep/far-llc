@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+const supabase = createSupabaseBrowserClient();
 
 interface FirmBasic {
   crd: number;

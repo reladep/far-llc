@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Button, Badge, Card, CardContent } from '@/components/ui';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-// Create server-side Supabase client
+// Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -225,6 +226,38 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   }
 
   const firm = firmData;
+
+  // Auth gating: show teaser if not authenticated
+  const authSupabase = createSupabaseServerClient();
+  const { data: { user } } = await authSupabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="text-center py-20">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+            {firm.primary_business_name}
+          </h1>
+          <p className="mt-2 text-slate-500">
+            {firm.main_office_city}, {firm.main_office_state}
+          </p>
+          <div className="mt-8 p-6 bg-slate-50 rounded-xl max-w-md mx-auto">
+            <p className="text-slate-700 font-medium">
+              Create a free account to view the full firm profile, fee schedules, and detailed analytics.
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <Link href="/auth/signup">
+                <Button>Get Started Free</Button>
+              </Link>
+              <Link href="/auth/login">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">

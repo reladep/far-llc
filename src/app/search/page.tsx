@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Badge, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+const supabase = createSupabaseBrowserClient();
 
 interface Firm {
   crd: number;
