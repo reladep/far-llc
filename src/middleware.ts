@@ -37,6 +37,11 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
 
+  // API routes: just refresh session cookies and pass through
+  if (pathname.startsWith('/api/')) {
+    return response;
+  }
+
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
   const isAuthPage = AUTH_PATHS.some((p) => pathname.startsWith(p));
   const isGated = GATED_PATHS.some((p) => pathname.startsWith(p));
@@ -76,5 +81,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/firm/:path*'],
+  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/firm/:path*', '/api/user/:path*'],
 };

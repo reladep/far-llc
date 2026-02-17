@@ -16,13 +16,14 @@ export default function SaveFirmButton({ crd, initialSaved }: SaveFirmButtonProp
     setLoading(true);
     try {
       if (saved) {
-        const res = await fetch(`/api/user/saved-firms/${crd}`, { method: 'DELETE' });
+        const res = await fetch(`/api/user/saved-firms/${crd}`, { method: 'DELETE', credentials: 'include' });
         if (res.ok) setSaved(false);
       } else {
         const res = await fetch('/api/user/saved-firms', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ crd }),
+          credentials: 'include',
         });
         if (res.ok) setSaved(true);
       }
