@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useSearchParams } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 const supabase = createSupabaseBrowserClient();
