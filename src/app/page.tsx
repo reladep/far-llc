@@ -85,10 +85,71 @@ function LogoTicker() {
   );
 }
 
+interface Suggestion {
+  crd: number;
+  primary_business_name: string;
+  main_office_city: string | null;
+  main_office_state: string | null;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  // Fetch suggestions as user types
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('firmdata_current')
+        .select('crd, primary_business_name, main_office_city, main_office_state')
+        .ilike('primary_business_name', `%${searchQuery.trim()}%`)
+        .limit(8);
+      
+      setSuggestions(data || []);
+      setShowDropdown(true);
+      setSelectedIndex(-1);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || suggestions.length === 0) {
+      if (e.key === 'Enter') {
+        handleSearch(e as unknown as FormEvent);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(Math.min(selectedIndex + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(Math.max(selectedIndex - 1, -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0) {
+        // Select firm from dropdown
+        router.push(`/firm/${suggestions[selectedIndex].crd}`);
+      } else {
+        handleSearch(e as unknown as FormEvent);
+      }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
+  };
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -111,6 +172,10 @@ export default function HomePage() {
       router.push(`/search?q=${encodeURIComponent(query)}`);
     }
     setSearching(false);
+  };
+
+  const selectSuggestion = (crd: number) => {
+    router.push(`/firm/${crd}`);
   };
 
   return (
@@ -155,18 +220,53 @@ export default function HomePage() {
           </p>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mx-auto mt-10 flex max-w-xl flex-col gap-3 sm:flex-row">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Try: 'fee-only advisor in Boston' or 'Morgan Stanley'..."
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
-            />
-            <Button type="submit" size="lg" className="whitespace-nowrap" disabled={searching}>
-              {searching ? 'Searching...' : 'Search Advisors'}
-            </Button>
-          </form>
+          <div className="mx-auto mt-10 relative max-w-xl">
+            <form onSubmit={handleSearch} className="flex gap-3">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+                  placeholder="Try: 'fee-only advisor in Boston' or 'Morgan Stanley'..."
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                  autoComplete="off"
+                />
+                {/* Dropdown */}
+                {showDropdown && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                    {suggestions.map((firm, idx) => (
+                      <button
+                        key={firm.crd}
+                        type="button"
+                        onClick={() => selectSuggestion(firm.crd)}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center justify-between ${
+                          idx === selectedIndex ? 'bg-green-50' : ''
+                        }`}
+                      >
+                        <div>
+                          <span className="text-sm font-medium text-slate-900">{firm.primary_business_name}</span>
+                          {firm.main_office_city && firm.main_office_state && (
+                            <span className="ml-2 text-xs text-slate-500">
+                              {firm.main_office_city}, {firm.main_office_state}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-400">CRD #{firm.crd}</span>
+                      </button>
+                    ))}
+                    <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">
+                      ↑↓ Navigate • Enter to select • Enter again to search
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Button type="submit" size="lg" className="whitespace-nowrap" disabled={searching}>
+                {searching ? 'Searching...' : 'Search Advisors'}
+              </Button>
+            </form>
+          </div>
 
           {/* Trust Signal */}
           <p className="mt-6 text-center text-xs text-slate-400">
