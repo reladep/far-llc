@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 const supabase = createSupabaseBrowserClient();
@@ -32,20 +32,23 @@ function formatAUM(value: number | null): string {
 
 export default function ComparePage() {
   const [query, setQuery] = useState('');
-  const [searchParams] = useSearchParams();
   const router = useRouter();
   const [results, setResults] = useState<FirmBasic[]>([]);
   const [selected, setSelected] = useState<FirmBasic[]>([]);
   const [comparisonData, setComparisonData] = useState<FirmComparison[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   // Handle ?add=CRD parameter from firm profile Compare button
   useEffect(() => {
-    const addCrds = searchParams.get('add');
+    if (!initialLoad) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const addCrds = params.get('add');
     if (addCrds) {
       const crds = addCrds.split(',').map(c => parseInt(c)).filter(c => !isNaN(c));
-      if (crds.length > 0 && selected.length === 0) {
+      if (crds.length > 0) {
         // Fetch firm names and add to selection
         supabase.from('firmdata_current')
           .select('crd, primary_business_name')
@@ -60,7 +63,8 @@ export default function ComparePage() {
         router.replace('/compare');
       }
     }
-  }, [searchParams, selected.length, router]);
+    setInitialLoad(false);
+  }, [initialLoad, router]);
 
   // Search firms
   useEffect(() => {
