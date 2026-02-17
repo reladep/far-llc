@@ -25,13 +25,38 @@ export default async function SavedFirmsPage() {
     redirect('/auth/login');
   }
 
-  const { data: favorites } = await supabaseAdmin
+  // First get the favorites
+  const { data: favorites, error: favError } = await supabaseAdmin
     .from('user_favorites')
-    .select('id, crd, created_at, firmdata_current(primary_business_name, main_office_city, main_office_state, aum)')
+    .select('id, crd, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  const firms = favorites || [];
+  if (favError) {
+    console.error('Favorites error:', favError);
+  }
+
+  // Then fetch the firm data separately
+  const crds = (favorites || []).map(f => f.crd);
+  let firms: Record<string, any> = {};
+  
+  if (crds.length > 0) {
+    const { data: firmData } = await supabaseAdmin
+      .from('firmdata_current')
+      .select('crd, primary_business_name, main_office_city, main_office_state, aum')
+      .in('crd', crds);
+    
+    if (firmData) {
+      firms = firmData.reduce((acc, f) => { acc[f.crd] = f; return acc; }, {} as Record<string, any>);
+    }
+  }
+
+  const firmsList = (favorites || []).map(fav => ({
+    ...fav,
+    firmdata_current: firms[fav.crd] || null
+  }));
+
+  const firms = firmsList || [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
