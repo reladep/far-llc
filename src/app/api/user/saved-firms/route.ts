@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
   const supabase = createSupabaseServerClient();
@@ -37,7 +38,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'CRD is required' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS
+  const { data, error } = await supabaseAdmin
     .from('user_favorites')
     .insert({ user_id: user.id, crd: Number(crd) })
     .select()
