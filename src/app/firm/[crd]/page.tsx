@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Button, Badge, Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import SaveFirmButton from '@/components/firms/SaveFirmButton';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -231,6 +232,18 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   const authSupabase = createSupabaseServerClient();
   const { data: { user } } = await authSupabase.auth.getUser();
 
+  // Check if firm is saved by this user
+  let isSaved = false;
+  if (user) {
+    const { data: fav } = await authSupabase
+      .from('user_favorites')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('crd', params.crd)
+      .maybeSingle();
+    isSaved = !!fav;
+  }
+
   if (!user) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
@@ -279,7 +292,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Save Firm</Button>
+          <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
           <Button variant="primary">Compare</Button>
         </div>
       </div>
