@@ -293,7 +293,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         </div>
         <div className="flex gap-2">
           <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
-          <Button variant="primary">Compare</Button>
+          <Button variant="primary" asChild>
+            <Link href={`/compare?add=${firm.crd}`}>Compare</Link>
+          </Button>
         </div>
       </div>
 
