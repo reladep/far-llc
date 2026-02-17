@@ -88,12 +88,29 @@ function LogoTicker() {
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
 
-  const handleSearch = (e: FormEvent) => {
+  const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    if (!searchQuery.trim() || searching) return;
+    
+    setSearching(true);
+    const query = searchQuery.trim();
+    
+    // Check for exact match first
+    const { data: exactMatch } = await supabase
+      .from('firmdata_current')
+      .select('crd, primary_business_name')
+      .ilike('primary_business_name', query)
+      .limit(1)
+      .single();
+    
+    if (exactMatch) {
+      router.push(`/firm/${exactMatch.crd}`);
+    } else {
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     }
+    setSearching(false);
   };
 
   return (
@@ -146,8 +163,8 @@ export default function HomePage() {
               placeholder="Try: 'fee-only advisor in Boston' or 'Morgan Stanley'..."
               className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
             />
-            <Button type="submit" size="lg" className="whitespace-nowrap">
-              Search Advisors
+            <Button type="submit" size="lg" className="whitespace-nowrap" disabled={searching}>
+              {searching ? 'Searching...' : 'Search Advisors'}
             </Button>
           </form>
 
