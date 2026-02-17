@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import RemoveFirmButton from '@/components/firms/RemoveFirmButton';
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export default async function SavedFirmsPage() {
     redirect('/auth/login');
   }
 
-  const { data: favorites } = await supabase
+  const { data: favorites } = await supabaseAdmin
     .from('user_favorites')
     .select('id, crd, created_at, firmdata_current(primary_business_name, main_office_city, main_office_state, aum)')
     .eq('user_id', user.id)
