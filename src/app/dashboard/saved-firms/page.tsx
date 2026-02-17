@@ -56,14 +56,14 @@ export default async function SavedFirmsPage() {
     firmdata_current: firms[fav.crd] || null
   }));
 
-  const firms = firmsList || [];
+  const firmsToDisplay = firmsList || [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <h1 className="text-2xl font-bold text-slate-900">Saved Firms</h1>
       <p className="mt-1 text-slate-500">Firms you&apos;ve bookmarked for later.</p>
 
-      {firms.length === 0 ? (
+      {firmsToDisplay.length === 0 ? (
         <div className="mt-12 text-center">
           <p className="text-slate-500">No saved firms yet. Browse advisors to save firms you&apos;re interested in.</p>
           <Link href="/search" className="mt-4 inline-block text-green-600 hover:underline font-medium">
@@ -72,7 +72,7 @@ export default async function SavedFirmsPage() {
         </div>
       ) : (
         <div className="mt-6 grid gap-4">
-          {firms.map((fav: any) => {
+          {firmsToDisplay.map((fav: any) => {
             const firm = fav.firmdata_current;
             const name = firm?.primary_business_name || `CRD #${fav.crd}`;
             const location = [firm?.main_office_city, firm?.main_office_state].filter(Boolean).join(', ');
