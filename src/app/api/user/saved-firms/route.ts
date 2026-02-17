@@ -24,6 +24,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  console.log('[SAVE FIRM] ENV CHECK:', {
+    URL: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0,20),
+    KEY_EXISTS: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    KEY_VALUE: process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0,30)
+  });
+  
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,6 +45,8 @@ export async function POST(request: Request) {
   }
 
   // Use admin client to bypass RLS
+  console.log('[SAVE FIRM] Inserting:', { user_id: user.id, crd: Number(crd) });
+  
   const { data, error } = await supabaseAdmin
     .from('user_favorites')
     .insert({ user_id: user.id, crd: Number(crd) })
@@ -46,8 +54,11 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[SAVE FIRM] Error:', JSON.stringify(error));
+    return NextResponse.json({ error: error.message, details: error.details, hint: error.hint }, { status: 500 });
   }
+  
+  console.log('[SAVE FIRM] Success:', data);
 
   return NextResponse.json(data);
 }
