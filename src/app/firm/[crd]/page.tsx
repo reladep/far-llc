@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Button, Badge, Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
+import FeeCalculator from '@/components/firms/FeeCalculator';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -391,6 +392,11 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </CardContent>
           </Card>
+
+          {/* Fee Calculator */}
+          {feeTiers && feeTiers.length > 0 && (
+            <FeeCalculator feeTiers={feeTiers} crd={String(firm.crd)} />
+          )}
 
           {/* Fee Schedule with Visualization */}
           {feeTiers && feeTiers.length > 0 && (() => {
