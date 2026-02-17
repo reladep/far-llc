@@ -190,10 +190,10 @@ function FilterSidebar({
   );
 }
 
-function FirmCard({ firm }: { firm: Firm }) {
+function FirmCard({ firm, isSelected }: { firm: Firm; isSelected?: boolean }) {
   return (
     <Link href={`/firm/${firm.crd}`}>
-      <Card variant="default" padding="md" className="hover:shadow-md transition-shadow cursor-pointer">
+      <Card variant="default" padding="md" className={`hover:shadow-md transition-shadow cursor-pointer ${isSelected ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
         <div className="flex items-start gap-3 md:gap-4">
           <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-lg bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs md:text-sm">
             {firm.primary_business_name.split(' ').map(w => w[0]).join('').slice(0,2)}
@@ -239,6 +239,7 @@ export default function SearchPage() {
   const [firms, setFirms] = useState<Firm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Fetch firms from Supabase with filters
   const fetchFirms = useCallback(async (query: string, filterOptions: Record<string, unknown>) => {
@@ -392,11 +393,36 @@ export default function SearchPage() {
           type="text"
           placeholder="Search firms by name (e.g., Morgan Stanley, Avestar)..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setSelectedIndex(-1);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setSelectedIndex(prev => Math.min(prev + 1, firms.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setSelectedIndex(prev => Math.max(prev - 1, -1));
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+              e.preventDefault();
+              const selected = firms[selectedIndex];
+              if (selected) {
+                window.location.href = `/firm/${selected.crd}`;
+              }
+            }
+          }}
           className="flex-1 h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
         />
         <Button type="submit" className="hidden sm:inline-flex">Search</Button>
       </form>
+      
+      {/* Keyboard hints */}
+      {firms.length > 0 && (
+        <p className="mt-2 text-xs text-slate-400">
+          Use ↑↓ to navigate, Enter to select
+        </p>
+      )}
 
       {/* Mobile filter toggle */}
       <Button
@@ -444,8 +470,8 @@ export default function SearchPage() {
           ) : (
             <>
               <div className="grid gap-3 md:gap-4">
-                {firms.map((firm) => (
-                  <FirmCard key={firm.crd} firm={firm} />
+                {firms.map((firm, idx) => (
+                  <FirmCard key={firm.crd} firm={firm} isSelected={idx === selectedIndex} />
                 ))}
               </div>
 

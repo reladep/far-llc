@@ -34,6 +34,7 @@ export default function ComparePage() {
   const [selected, setSelected] = useState<FirmBasic[]>([]);
   const [comparisonData, setComparisonData] = useState<FirmComparison[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Search firms
   useEffect(() => {
@@ -119,17 +120,39 @@ export default function ComparePage() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIndex(-1);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setSelectedIndex(prev => Math.max(prev - 1, -1));
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+              e.preventDefault();
+              if (results[selectedIndex] && selected.length < 4) {
+                addFirm(results[selectedIndex]);
+                setQuery('');
+                setResults([]);
+                setSelectedIndex(-1);
+              }
+            }
+          }}
           placeholder="Search firms by name..."
           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
         />
         {results.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-60 overflow-y-auto">
-            {results.map(r => (
+            {results.map((r, idx) => (
               <button
                 key={r.crd}
                 onClick={() => addFirm(r)}
-                className="block w-full text-left px-4 py-2 text-sm hover:bg-green-50 text-slate-700"
+                className={`block w-full text-left px-4 py-2 text-sm ${
+                  idx === selectedIndex ? 'bg-green-100 text-green-800' : 'hover:bg-green-50 text-slate-700'
+                }`}
               >
                 {r.primary_business_name} <span className="text-slate-400">#{r.crd}</span>
               </button>

@@ -61,6 +61,28 @@ interface GrowthRecord {
   date_submitted: string | null;
 }
 
+interface AssetAllocation {
+  cash: number | null;
+  derivatives: number | null;
+  ig_corp_bonds: number | null;
+  non_ig_corp_bonds: number | null;
+  public_equity: number | null;
+  private_equity: number | null;
+  us_govt_bonds: number | null;
+  us_muni_bonds: number | null;
+  other: number | null;
+}
+
+interface ClientBreakdown {
+  hnw: number | null;
+  non_hnw: number | null;
+  pension: number | null;
+  charitable: number | null;
+  corporations: number | null;
+  pooled_vehicles: number | null;
+  other: number | null;
+}
+
 async function getFirmData(crd: string) {
   const { data: firmData, error: firmError } = await supabase
     .from('firmdata_current')
@@ -91,12 +113,38 @@ async function getFirmData(crd: string) {
     .eq('crd', crd)
     .order('date_submitted', { ascending: true });
 
+  // Parse asset allocation from firm data
+  const assetAllocation: AssetAllocation | null = firmData ? {
+    cash: firmData.asset_allocation_cash ? parseFloat(firmData.asset_allocation_cash) : null,
+    derivatives: firmData.asset_allocation_derivatives ? parseFloat(firmData.asset_allocation_derivatives) : null,
+    ig_corp_bonds: firmData.asset_allocation_ig_corp_bonds ? parseFloat(firmData.asset_allocation_ig_corp_bonds) : null,
+    non_ig_corp_bonds: firmData.asset_allocation_non_ig_corp_bonds ? parseFloat(firmData.asset_allocation_non_ig_corp_bonds) : null,
+    public_equity: firmData.asset_allocation_public_equity_direct ? parseFloat(firmData.asset_allocation_public_equity_direct) : null,
+    private_equity: firmData.asset_allocation_private_equity_direct ? parseFloat(firmData.asset_allocation_private_equity_direct) : null,
+    us_govt_bonds: firmData.asset_allocation_us_govt_bonds ? parseFloat(firmData.asset_allocation_us_govt_bonds) : null,
+    us_muni_bonds: firmData.asset_allocation_us_muni_bonds ? parseFloat(firmData.asset_allocation_us_muni_bonds) : null,
+    other: firmData.asset_allocation_other ? parseFloat(firmData.asset_allocation_other) : null,
+  } : null;
+
+  // Parse client breakdown
+  const clientBreakdown: ClientBreakdown | null = firmData ? {
+    hnw: firmData.client_hnw_number,
+    non_hnw: firmData.client_non_hnw_number,
+    pension: firmData.client_pension_number,
+    charitable: firmData.client_charitable_number,
+    corporations: firmData.client_corporations_number,
+    pooled_vehicles: firmData.client_pooled_vehicles_number,
+    other: null, // Could calculate from other fields if needed
+  } : null;
+
   return {
     firmData: firmData as FirmData | null,
     feeTiers: feeTiers as FeeTier[] | null,
     profileText: profileText as ProfileText | null,
     website: website as Website | null,
     growth: growth as GrowthRecord[] | null,
+    assetAllocation,
+    clientBreakdown,
     error: firmError
   };
 }
@@ -160,7 +208,7 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, feeTiers, profileText, website, growth, error } = await getFirmData(params.crd);
+  const { firmData, feeTiers, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
 
   if (error || !firmData) {
     return (
@@ -359,8 +407,13 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 )}
                 {website?.website && (
                   <p>
-                    <a href={`https://${website.website}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
-                      {website.website}
+                    <a 
+                      href={website.website.startsWith('http') ? website.website : `https://${website.website}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-green-600 hover:underline"
+                    >
+                      {website.website.replace(/^https?:\/\//, '')}
                     </a>
                   </p>
                 )}
@@ -370,34 +423,284 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         </div>
       </div>
 
-      {/* Firm Growth History */}
+      {/* Firm Growth History - Annual, last 10 years */}
       {growth && growth.length > 0 && (() => {
-        const parsed = growth
-          .map(g => ({ date: g.date_submitted || '', aum: parseAUM(g.aum), employees: g.employee_total_calc, clients: g.client_total_or_calc }))
-          .filter(g => g.aum != null);
-        const maxAum = Math.max(...parsed.map(g => g.aum!), 1);
-        if (parsed.length === 0) return null;
+        // Parse all records and group by year, keeping the latest record for each year
+        const byYear = new Map<number, { date: string; dateObj: Date; aum: number; clients: number | null; employees: string; year: number }>();
+        
+        growth.forEach(g => {
+          const aum = parseAUM(g.aum);
+          const clients = g.client_total_or_calc ? parseInt(g.client_total_or_calc.replace(/,/g, '')) : null;
+          const parts = (g.date_submitted || '').split('/');
+          if (parts.length !== 3 || aum == null) return;
+          
+          const dateObj = new Date(+parts[2], +parts[0] - 1, +parts[1]);
+          const year = dateObj.getFullYear();
+          
+          // Keep the latest record for each year
+          if (!byYear.has(year) || dateObj.getTime() > byYear.get(year)!.dateObj.getTime()) {
+            byYear.set(year, {
+              date: g.date_submitted || '',
+              dateObj,
+              aum,
+              clients,
+              employees: g.employee_total_calc || '',
+              year
+            });
+          }
+        });
+        
+        // Convert to array, sort by year, limit to last 10 years
+        const years = Array.from(byYear.values())
+          .sort((a, b) => a.year - b.year)
+          .slice(-10);
+        
+        // Only show if we have at least 3 years of data
+        if (years.length < 3) return null;
+        
+        // Calculate derived metrics for each year
+        const dataWithMetrics = years.map(y => ({
+          year: y.year,
+          aum: y.aum,
+          clients: y.clients,
+          avgClientSize: y.clients && y.clients > 0 ? y.aum / y.clients : null
+        }));
+        
+        const maxAum = Math.max(...dataWithMetrics.map(d => d.aum), 1);
+        const maxClients = Math.max(...dataWithMetrics.filter(d => d.clients).map(d => d.clients!), 1);
+        const maxAvgSize = Math.max(...dataWithMetrics.filter(d => d.avgClientSize).map(d => d.avgClientSize!), 1);
+        
+        // Helper to format average client size
+        const formatAvgSize = (val: number | null) => {
+          if (val == null) return 'N/A';
+          if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
+          if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+          if (val >= 1e3) return `$${(val / 1e3).toFixed(0)}K`;
+          return `$${val.toFixed(0)}`;
+        };
+        
+        const numYears = dataWithMetrics.length;
+        const chartHeight = 160;
+        
         return (
           <Card className="mt-8">
             <CardContent>
-              <h2 className="text-lg font-semibold text-slate-900 mb-6">Firm Growth History</h2>
+              {/* AUM Growth Chart */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">AUM Growth</h2>
+                <span className="text-xs text-slate-400">Annual (last {numYears} years)</span>
+              </div>
+              
+              <div className="mb-6 border-b border-slate-200 pb-6">
+                <div className="flex justify-between items-end">
+                  {dataWithMetrics.map((d, i) => {
+                    const barHeight = Math.max((d.aum / maxAum) * chartHeight, 8);
+                    const prevAum = dataWithMetrics[i-1]?.aum;
+                    const pctChange = i > 0 && prevAum ? ((d.aum - prevAum) / prevAum * 100) : null;
+                    
+                    return (
+                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
+                        <span className="text-[10px] font-medium text-green-700 mb-1 whitespace-nowrap truncate max-w-full">
+                          {formatCurrency(d.aum)}
+                        </span>
+                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
+                          <div className="flex-1" />
+                          <div
+                            className="w-6 sm:w-8 md:w-10 bg-green-500 rounded-t shadow-sm hover:bg-green-600 transition-colors cursor-default"
+                            style={{ height: barHeight }}
+                            title={`${d.year}: ${formatCurrency(d.aum)}`}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
+                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
+                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Client Growth Chart */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Client Growth</h2>
+              </div>
+              
+              <div className="mb-6 border-b border-slate-200 pb-6">
+                <div className="flex justify-between items-end">
+                  {dataWithMetrics.map((d, i) => {
+                    const barHeight = d.clients ? Math.max((d.clients / maxClients) * chartHeight, 8) : 0;
+                    const prevClients = dataWithMetrics[i-1]?.clients;
+                    const pctChange = i > 0 && d.clients && prevClients 
+                      ? ((d.clients - prevClients) / prevClients * 100) 
+                      : null;
+                    
+                    return (
+                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
+                        <span className="text-[10px] font-medium text-blue-700 mb-1 whitespace-nowrap truncate max-w-full">
+                          {d.clients ? d.clients.toLocaleString() : '—'}
+                        </span>
+                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
+                          <div className="flex-1" />
+                          {d.clients && (
+                            <div
+                              className="w-6 sm:w-8 md:w-10 bg-blue-500 rounded-t shadow-sm hover:bg-blue-600 transition-colors cursor-default"
+                              style={{ height: barHeight }}
+                              title={`${d.year}: ${d.clients?.toLocaleString()} clients`}
+                            />
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
+                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
+                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Average Client Size Chart */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Avg Client Size</h2>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-end">
+                  {dataWithMetrics.map((d, i) => {
+                    const barHeight = d.avgClientSize ? Math.max((d.avgClientSize / maxAvgSize) * chartHeight, 8) : 0;
+                    const prevAvg = dataWithMetrics[i-1]?.avgClientSize;
+                    const pctChange = i > 0 && d.avgClientSize && prevAvg
+                      ? ((d.avgClientSize - prevAvg) / prevAvg * 100)
+                      : null;
+                    
+                    return (
+                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
+                        <span className="text-[10px] font-medium text-purple-700 mb-1 whitespace-nowrap truncate max-w-full">
+                          {d.avgClientSize ? formatAvgSize(d.avgClientSize) : '—'}
+                        </span>
+                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
+                          <div className="flex-1" />
+                          {d.avgClientSize && (
+                            <div
+                              className="w-6 sm:w-8 md:w-10 bg-purple-500 rounded-t shadow-sm hover:bg-purple-600 transition-colors cursor-default"
+                              style={{ height: barHeight }}
+                              title={`${d.year}: ${formatAvgSize(d.avgClientSize)} avg per client`}
+                            />
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
+                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
+                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Asset Allocation */}
+      {assetAllocation && (() => {
+        const categories = [
+          { key: 'public_equity', label: 'Public Equity', value: assetAllocation.public_equity, color: 'bg-blue-500' },
+          { key: 'private_equity', label: 'Private Equity', value: assetAllocation.private_equity, color: 'bg-indigo-500' },
+          { key: 'ig_corp_bonds', label: 'Inv. Grade Bonds', value: assetAllocation.ig_corp_bonds, color: 'bg-green-500' },
+          { key: 'non_ig_corp_bonds', label: 'High Yield Bonds', value: assetAllocation.non_ig_corp_bonds, color: 'bg-yellow-500' },
+          { key: 'us_govt_bonds', label: 'US Gov\'t Bonds', value: assetAllocation.us_govt_bonds, color: 'bg-emerald-500' },
+          { key: 'us_muni_bonds', label: 'Municipal Bonds', value: assetAllocation.us_muni_bonds, color: 'bg-teal-500' },
+          { key: 'cash', label: 'Cash', value: assetAllocation.cash, color: 'bg-slate-400' },
+          { key: 'derivatives', label: 'Derivatives', value: assetAllocation.derivatives, color: 'bg-purple-500' },
+          { key: 'other', label: 'Other', value: assetAllocation.other, color: 'bg-gray-500' },
+        ].filter(c => c.value !== null && c.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0));
+        
+        if (categories.length === 0) return null;
+        
+        const total = categories.reduce((sum, c) => sum + (c.value || 0), 0);
+        const maxValue = Math.max(...categories.map(c => c.value || 0));
+        
+        return (
+          <Card className="mt-8">
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Asset Allocation</h2>
+                <span className="text-xs text-slate-400">{categories.length} categories</span>
+              </div>
+              
               <div className="space-y-3">
-                {parsed.map((g, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm">
-                    <span className="w-24 shrink-0 text-slate-500">{g.date}</span>
+                {categories.map((cat) => (
+                  <div key={cat.key} className="flex items-center gap-3">
+                    <span className="w-28 text-xs font-medium text-slate-600 shrink-0">{cat.label}</span>
                     <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
                       <div
-                        className="h-full bg-green-500 rounded flex items-center px-2"
-                        style={{ width: `${Math.max((g.aum! / maxAum) * 100, 2)}%` }}
+                        className={`h-full ${cat.color} rounded flex items-center px-2`}
+                        style={{ width: `${((cat.value || 0) / maxValue) * 100}%` }}
                       >
                         <span className="text-xs text-white font-medium whitespace-nowrap">
-                          {formatCurrency(g.aum)}
+                          {cat.value}%
                         </span>
                       </div>
                     </div>
-                    {g.employees && (
-                      <span className="text-xs text-slate-400 shrink-0">{g.employees} emp</span>
-                    )}
+                    <span className="w-12 text-xs text-slate-500 text-right shrink-0">
+                      {((cat.value || 0) / total * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Client Breakdown */}
+      {clientBreakdown && (() => {
+        const totalClients = (clientBreakdown.hnw || 0) + (clientBreakdown.non_hnw || 0) + 
+          (clientBreakdown.pension || 0) + (clientBreakdown.charitable || 0) + 
+          (clientBreakdown.corporations || 0) + (clientBreakdown.pooled_vehicles || 0);
+        
+        if (totalClients === 0) return null;
+        
+        const categories = [
+          { key: 'hnw', label: 'High Net Worth', value: clientBreakdown.hnw, color: 'bg-blue-500' },
+          { key: 'non_hnw', label: 'Non-HNW Individuals', value: clientBreakdown.non_hnw, color: 'bg-sky-400' },
+          { key: 'pension', label: 'Pension Plans', value: clientBreakdown.pension, color: 'bg-green-500' },
+          { key: 'corporations', label: 'Corporations', value: clientBreakdown.corporations, color: 'bg-purple-500' },
+          { key: 'charitable', label: 'Charitable Orgs', value: clientBreakdown.charitable, color: 'bg-pink-500' },
+          { key: 'pooled_vehicles', label: 'Pooled Vehicles', value: clientBreakdown.pooled_vehicles, color: 'bg-orange-500' },
+        ].filter(c => c.value !== null && c.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0));
+        
+        if (categories.length === 0) return null;
+        
+        const maxValue = Math.max(...categories.map(c => c.value || 0));
+        
+        return (
+          <Card className="mt-8">
+            <CardContent>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Client Breakdown</h2>
+                <span className="text-xs text-slate-400">{totalClients.toLocaleString()} total clients</span>
+              </div>
+              
+              <div className="space-y-3">
+                {categories.map((cat) => (
+                  <div key={cat.key} className="flex items-center gap-3">
+                    <span className="w-28 text-xs font-medium text-slate-600 shrink-0">{cat.label}</span>
+                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
+                      <div
+                        className={`h-full ${cat.color} rounded flex items-center px-2`}
+                        style={{ width: `${((cat.value || 0) / maxValue) * 100}%` }}
+                      >
+                        <span className="text-xs text-white font-medium whitespace-nowrap">
+                          {cat.value?.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="w-12 text-xs text-slate-500 text-right shrink-0">
+                      {((cat.value || 0) / totalClients * 100).toFixed(1)}%
+                    </span>
                   </div>
                 ))}
               </div>

@@ -261,6 +261,78 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section className="bg-slate-50 py-16 md:py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-center text-3xl font-bold text-slate-900">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-slate-600">
+            From self-serve research to hands-on advisory — pick what fits.
+          </p>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                name: 'Data Access',
+                price: '$20/mo',
+                note: 'Paid annually ($240/yr)',
+                features: ['Full platform access', 'Search & compare advisors', 'SEC-verified fee data', 'Advisor alerts & tracking', 'Fee negotiation tools'],
+                cta: 'Get Started',
+                featured: false,
+              },
+              {
+                name: 'Personalized Intro',
+                price: '$50/mo',
+                note: 'Paid annually ($600/yr)',
+                features: ['Everything in Data Access', '1-on-1 intro call', 'Curated list of 3 firm recommendations', 'Annual check-in call'],
+                cta: 'Get Started',
+                featured: true,
+              },
+              {
+                name: 'Full Advisory',
+                price: 'Custom',
+                note: 'Scope-based pricing',
+                features: ['Everything in Advisory Intro', 'Portfolio reviews', 'Asset allocation guidance', 'Join meetings with advisors'],
+                cta: 'Contact Us',
+                featured: false,
+              },
+            ].map((plan) => (
+              <div
+                key={plan.name}
+                className={`rounded-xl border bg-white p-6 shadow-sm flex flex-col ${
+                  plan.featured ? 'border-green-500 ring-2 ring-green-500/20' : 'border-slate-200'
+                }`}
+              >
+                {plan.featured && (
+                  <span className="mb-3 inline-block self-start rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
+                    Most Popular
+                  </span>
+                )}
+                <h3 className="text-lg font-semibold text-slate-900">{plan.name}</h3>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold text-slate-900">{plan.price}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">{plan.note}</p>
+                <ul className="mt-4 flex-1 space-y-2">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                      <span className="text-green-600">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant={plan.featured ? 'primary' : 'outline'}
+                  className="mt-6 w-full"
+                >
+                  {plan.cta}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-green-600 py-16 md:py-20">
         <div className="mx-auto max-w-4xl px-4 text-center">
