@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Badge, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -191,8 +191,9 @@ function FilterSidebar({
   );
 }
 
-function FirmCard({ firm, isSelected }: { firm: Firm; isSelected?: boolean }) {
+function FirmCard({ firm, isSelected, cardRef }: { firm: Firm; isSelected?: boolean; cardRef?: React.RefObject<HTMLDivElement | null> }) {
   return (
+    <div ref={cardRef}>
     <Link href={`/firm/${firm.crd}`}>
       <Card variant="default" padding="md" className={`hover:shadow-md transition-shadow cursor-pointer ${isSelected ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
         <div className="flex items-start gap-3 md:gap-4">
@@ -230,6 +231,7 @@ function FirmCard({ firm, isSelected }: { firm: Firm; isSelected?: boolean }) {
         </div>
       </Card>
     </Link>
+    </div>
   );
 }
 
@@ -241,6 +243,14 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const selectedRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll selected card into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && selectedRef.current) {
+      selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   // Fetch firms from Supabase with filters
   const fetchFirms = useCallback(async (query: string, filterOptions: Record<string, unknown>) => {
@@ -472,7 +482,7 @@ export default function SearchPage() {
             <>
               <div className="grid gap-3 md:gap-4">
                 {firms.map((firm, idx) => (
-                  <FirmCard key={firm.crd} firm={firm} isSelected={idx === selectedIndex} />
+                  <FirmCard key={firm.crd} firm={firm} isSelected={idx === selectedIndex} cardRef={idx === selectedIndex ? selectedRef : undefined} />
                 ))}
               </div>
 

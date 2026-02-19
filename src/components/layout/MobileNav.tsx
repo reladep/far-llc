@@ -8,6 +8,7 @@ const navLinks = [
   { label: 'Search', href: '/search' },
   { label: 'Compare', href: '/compare' },
   { label: 'Negotiate', href: '/negotiate' },
+  { label: 'Directory', href: '/directory' },
   { label: 'Pricing', href: '/pricing' },
 ];
 

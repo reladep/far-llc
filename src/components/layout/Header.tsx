@@ -78,6 +78,12 @@ export function Header() {
             Negotiate
           </Link>
           <Link
+            href="/directory"
+            className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Directory
+          </Link>
+          <Link
             href="/pricing"
             className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
           >
