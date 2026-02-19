@@ -72,10 +72,10 @@ export function Header() {
             Compare
           </Link>
           <Link
-            href="/directory"
+            href="/negotiate"
             className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
           >
-            Directory
+            Negotiate
           </Link>
           <Link
             href="/pricing"

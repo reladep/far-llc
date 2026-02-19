@@ -195,28 +195,14 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto max-w-5xl px-4 relative">
-          {/* Tagline */}
-          <p className="text-center text-sm font-medium text-green-600 tracking-wider uppercase mb-4">
-            Bringing the Footnotes to the Frontpage
-          </p>
-
-          {/* Stats */}
-          <div className="mb-8 flex flex-wrap justify-center gap-6 md:gap-10">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-2xl md:text-3xl font-bold text-slate-900">{stat.value}</p>
-                <p className="text-xs md:text-sm text-slate-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-
           <h1 className="text-center text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
-            See Exactly What You&apos;re{' '}
-            <span className="text-green-600">Paying</span>
+            The Wealth Platform That Helps You{' '}
+            <span className="text-green-600">Find Value</span> and{' '}
+            <span className="text-green-600">Save Money</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-slate-600">
-            Compare fee structures, services, and specialties across thousands of SEC-registered advisors. 
-            No sponsored placements. Just data.
+            Compare fee structures, services, and specialties across thousands of wealth firms. 
+            No sponsored placements. Just insights and data.
           </p>
 
           {/* Search Bar */}
@@ -268,11 +254,6 @@ export default function HomePage() {
             </form>
           </div>
 
-          {/* Trust Signal */}
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Data sourced directly from SEC Form ADV • Updated quarterly • No sponsored placements
-          </p>
-
           {/* Popular Tags */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
             <span className="text-sm text-slate-500">Popular:</span>
@@ -280,6 +261,21 @@ export default function HomePage() {
               <Badge key={tag} variant="outline" className="text-xs cursor-pointer hover:border-green-500 hover:text-green-600">
                 {tag}
               </Badge>
+            ))}
+          </div>
+
+          {/* Tagline */}
+          <p className="text-center text-sm font-medium text-green-600 tracking-wider uppercase mt-12 mb-4">
+            Bringing the Footnotes to the Frontpage
+          </p>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-6 md:gap-10">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-2xl md:text-3xl font-bold text-slate-900">{stat.value}</p>
+                <p className="text-xs md:text-sm text-slate-500">{stat.label}</p>
+              </div>
             ))}
           </div>
         </div>

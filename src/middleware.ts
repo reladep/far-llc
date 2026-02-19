@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PROTECTED_PATHS = ['/dashboard', '/onboarding'];
-const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password'];
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password', '/auth/update-password'];
 const GATED_PATHS = ['/firm/'];
 
 export async function middleware(request: NextRequest) {

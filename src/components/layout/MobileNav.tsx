@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 const navLinks = [
   { label: 'Search', href: '/search' },
   { label: 'Compare', href: '/compare' },
-  { label: 'Directory', href: '/directory' },
+  { label: 'Negotiate', href: '/negotiate' },
   { label: 'Pricing', href: '/pricing' },
 ];
 
@@ -104,14 +104,14 @@ export function MobileNav() {
 
         <div className="border-t border-border p-4 mt-auto">
           <Link
-            href="/signin"
+            href="/auth/login"
             onClick={() => setOpen(false)}
             className="block w-full rounded-lg border border-border px-4 py-3 text-center text-sm font-medium text-text-primary hover:bg-bg-secondary transition-colors"
           >
             Sign In
           </Link>
           <Link
-            href="/signup"
+            href="/auth/signup"
             onClick={() => setOpen(false)}
             className="mt-2 block w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
           >

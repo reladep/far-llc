@@ -5,6 +5,7 @@ import { Button, Badge, Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
+import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -27,6 +28,18 @@ interface FirmData {
   employee_investment: number | null;
   client_hnw_number: number | null;
   client_non_hnw_number: number | null;
+  client_pension_number: number | null;
+  client_charitable_number: number | null;
+  client_corporations_number: number | null;
+  client_pooled_vehicles_number: number | null;
+  client_other_number: number | null;
+  client_banks_number: number | null;
+  client_bdc_number: number | null;
+  client_govt_number: number | null;
+  client_insurance_number: number | null;
+  client_investment_cos_number: number | null;
+  client_other_advisors_number: number | null;
+  client_swf_number: number | null;
   legal_structure: string | null;
   services_financial_planning: string | null;
   services_mgr_selection: string | null;
@@ -55,6 +68,16 @@ interface ProfileText {
 
 interface Website {
   website: string | null;
+}
+
+interface FeesAndMins {
+  fee_structure_type: string | null;
+  fee_range_min: string | null;
+  fee_range_max: string | null;
+  minimum_fee: string | null;
+  minimum_account_size: string | null;
+  maximum_fee_dollar: string | null;
+  notes: string | null;
 }
 
 interface GrowthRecord {
@@ -97,6 +120,12 @@ async function getFirmData(crd: string) {
     .from('firmdata_feetiers')
     .select('min_aum, max_aum, fee_pct')
     .eq('crd', crd);
+
+  const { data: feesAndMins } = await supabase
+    .from('firmdata_feesandmins')
+    .select('fee_structure_type, fee_range_min, fee_range_max, minimum_fee, minimum_account_size, maximum_fee_dollar, notes')
+    .eq('crd', crd)
+    .single();
 
   const { data: profileText } = await supabase
     .from('firmdata_profile_text')
@@ -143,6 +172,7 @@ async function getFirmData(crd: string) {
   return {
     firmData: firmData as FirmData | null,
     feeTiers: feeTiers as FeeTier[] | null,
+    feesAndMins: feesAndMins as FeesAndMins | null,
     profileText: profileText as ProfileText | null,
     website: website as Website | null,
     growth: growth as GrowthRecord[] | null,
@@ -211,7 +241,7 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, feeTiers, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
+  const { firmData, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
 
   if (error || !firmData) {
     return (
@@ -301,12 +331,31 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-        <StatBox label="AUM" value={formatAUM(firm.aum)} />
-        <StatBox label="Discretionary AUM" value={formatAUM(firm.aum_discretionary)} />
-        <StatBox label="Employees" value={firm.employee_total?.toLocaleString() || 'N/A'} />
-        <StatBox label="Investment Pros" value={firm.employee_investment?.toLocaleString() || 'N/A'} />
-      </div>
+      {(() => {
+        const totalClients = [
+          firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
+          firm.client_charitable_number, firm.client_corporations_number, firm.client_pooled_vehicles_number,
+          firm.client_other_number, firm.client_banks_number, firm.client_bdc_number,
+          firm.client_govt_number, firm.client_insurance_number, firm.client_investment_cos_number,
+          firm.client_other_advisors_number, firm.client_swf_number,
+        ].reduce((sum, v) => sum + (v || 0), 0);
+
+        const avgClientSize = totalClients > 0 && firm.aum ? firm.aum / totalClients : null;
+        const aumPerInvPro = firm.employee_investment && firm.employee_investment > 0 && firm.aum
+          ? firm.aum / firm.employee_investment : null;
+        const minAccount = feesAndMins?.minimum_account_size
+          ? parseFloat(feesAndMins.minimum_account_size) : null;
+
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
+            <StatBox label="AUM" value={formatAUM(firm.aum)} />
+            <StatBox label="Discretionary AUM" value={formatAUM(firm.aum_discretionary)} />
+            <StatBox label="Avg. Client Size" value={avgClientSize ? formatCurrency(avgClientSize) : 'N/A'} />
+            <StatBox label="Min. Account Size" value={minAccount ? formatCurrency(minAccount) : 'N/A'} />
+            <StatBox label="AUM per Inv. Pro" value={aumPerInvPro ? formatCurrency(aumPerInvPro) : 'N/A'} />
+          </div>
+        );
+      })()}
 
       {/* Tabs */}
       <div className="border-b border-slate-200 mb-6 overflow-x-auto">
@@ -322,6 +371,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Fee Calculator — primary feature (always shown; industry-only mode when no tiers) */}
+          <FeeCalculator
+            feeTiers={feeTiers}
+            crd={String(firm.crd)}
+            firmAum={firm.aum}
+            industryOnly={!feeTiers || feeTiers.length === 0}
+          />
+
           {/* Firm Profile */}
           <Card>
             <CardContent>
@@ -363,6 +420,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               <h3 className="font-semibold text-slate-900 mb-4">Quick Facts</h3>
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
+                  <dt className="text-slate-500">Employees</dt>
+                  <dd className="text-slate-900 font-medium">{firm.employee_total?.toLocaleString() || 'N/A'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-500">Investment Professionals</dt>
+                  <dd className="text-slate-900 font-medium">{firm.employee_investment?.toLocaleString() || 'N/A'}</dd>
+                </div>
+                <div className="flex justify-between">
                   <dt className="text-slate-500">Legal Structure</dt>
                   <dd className="text-slate-900 font-medium">{firm.legal_structure || 'N/A'}</dd>
                 </div>
@@ -392,11 +457,6 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </CardContent>
           </Card>
-
-          {/* Fee Calculator */}
-          {feeTiers && feeTiers.length > 0 && (
-            <FeeCalculator feeTiers={feeTiers} crd={String(firm.crd)} />
-          )}
 
           {/* Fee Schedule with Visualization */}
           {feeTiers && feeTiers.length > 0 && (() => {
@@ -436,6 +496,132 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                       ))}
                     </tbody>
                   </table>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Non-tiered Fee Info (range, flat, max-only, etc.) */}
+          {(!feeTiers || feeTiers.length === 0) && feesAndMins && feesAndMins.fee_structure_type && (() => {
+            const fType = feesAndMins.fee_structure_type;
+            const rangeMin = feesAndMins.fee_range_min ? parseFloat(feesAndMins.fee_range_min) : null;
+            const rangeMax = feesAndMins.fee_range_max ? parseFloat(feesAndMins.fee_range_max) : null;
+            const minFee = feesAndMins.minimum_fee ? parseFloat(feesAndMins.minimum_fee) : null;
+            const maxFeeDollar = feesAndMins.maximum_fee_dollar ? parseFloat(feesAndMins.maximum_fee_dollar) : null;
+
+            const typeLabel: Record<string, string> = {
+              range: 'Fee Range',
+              flat_percentage: 'Flat Fee',
+              maximum_only: 'Maximum Fee',
+              minimum_only: 'Minimum Fee',
+              capped: 'Capped Fee',
+              not_disclosed: 'Custom / Negotiated',
+            };
+
+            return (
+              <Card>
+                <CardContent>
+                  <h3 className="font-semibold text-slate-900 mb-4">Fee Schedule</h3>
+                  
+                  <div className="space-y-4">
+                    {/* Fee Type Badge */}
+                    <div className="flex items-center gap-2">
+                      <Badge>{typeLabel[fType] || fType}</Badge>
+                    </div>
+
+                    {/* Range display */}
+                    {(fType === 'range') && (rangeMin != null || rangeMax != null) && (
+                      <div>
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-2xl font-bold text-slate-900">
+                            {rangeMin != null && rangeMax != null
+                              ? `${rangeMin}% – ${rangeMax}%`
+                              : rangeMax != null
+                              ? `Up to ${rangeMax}%`
+                              : `From ${rangeMin}%`}
+                          </span>
+                          <span className="text-sm text-slate-500">of AUM</span>
+                        </div>
+                        {/* Visual range bar */}
+                        {rangeMin != null && rangeMax != null && (
+                          <div className="relative h-6 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className="absolute top-0 h-full bg-gradient-to-r from-green-400 to-amber-400 rounded-full"
+                              style={{
+                                left: `${(rangeMin / 2) * 100}%`,
+                                width: `${((rangeMax - rangeMin) / 2) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Flat percentage */}
+                    {fType === 'flat_percentage' && (rangeMin != null || rangeMax != null) && (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-slate-900">
+                          {rangeMin ?? rangeMax}%
+                        </span>
+                        <span className="text-sm text-slate-500">of AUM</span>
+                      </div>
+                    )}
+
+                    {/* Maximum only */}
+                    {fType === 'maximum_only' && rangeMax != null && (
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-slate-900">Up to {rangeMax}%</span>
+                          <span className="text-sm text-slate-500">of AUM</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Maximum disclosed fee. Actual fees are typically negotiated below this rate.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Maximum dollar */}
+                    {maxFeeDollar != null && (
+                      <p className="text-sm text-slate-600">
+                        Maximum annual fee: <span className="font-medium">{formatCurrency(maxFeeDollar)}</span>
+                      </p>
+                    )}
+
+                    {/* Minimum fee */}
+                    {minFee != null && (
+                      <p className="text-sm text-slate-600">
+                        Minimum annual fee: <span className="font-medium">{formatCurrency(minFee)}</span>
+                      </p>
+                    )}
+
+                    {/* Minimum only type */}
+                    {fType === 'minimum_only' && rangeMin != null && (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-slate-900">From {rangeMin}%</span>
+                        <span className="text-sm text-slate-500">of AUM</span>
+                      </div>
+                    )}
+
+                    {/* Not disclosed */}
+                    {fType === 'not_disclosed' && (
+                      <p className="text-sm text-slate-600">
+                        This firm does not publicly disclose a standard fee schedule. Fees are individually negotiated. The fee calculator shows industry averages for comparable firms.
+                      </p>
+                    )}
+
+                    {/* Notes from ADV */}
+                    {feesAndMins.notes && (
+                      <div className="bg-slate-50 rounded-lg p-3 mt-2">
+                        <p className="text-xs text-slate-500 font-medium mb-1">From ADV Part 2A</p>
+                        <p className="text-sm text-slate-600 leading-relaxed">{feesAndMins.notes}</p>
+                      </div>
+                    )}
+
+                    {/* Disclaimer */}
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      ⚠️ Estimated based on SEC disclosures and firm filings. Actual fees may vary and are often negotiable.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -704,6 +890,32 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* State Registration Map */}
+      {(() => {
+        const stateKeys = [
+          'al','ak','az','ar','ca','co','ct','de','fl','ga','hi','id','il','in','ia',
+          'ks','ky','la','me','md','ma','mi','mn','ms','mo','mt','ne','nv','nh','nj',
+          'nm','ny','nc','nd','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','vt',
+          'va','wa','wv','wi','wy','dc'
+        ];
+        const regs: Record<string, string> = {};
+        for (const key of stateKeys) {
+          const col = `state_${key}`;
+          const val = (firm as Record<string, unknown>)[col];
+          regs[key] = val === 'Y' ? 'Y' : 'N';
+        }
+        const hasAny = Object.values(regs).some(v => v === 'Y');
+        if (!hasAny) return null;
+        return (
+          <Card className="mt-8">
+            <CardContent>
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">State Registrations</h2>
+              <StateRegistrationMap stateRegistrations={regs} />
             </CardContent>
           </Card>
         );
