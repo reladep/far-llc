@@ -5,6 +5,7 @@ import { Button, Badge, Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
+import FirmAlerts from '@/components/firms/FirmAlerts';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 
 // Create server-side Supabase client for data queries
@@ -64,6 +65,8 @@ interface ProfileText {
   wealth_tier: string | null;
   investment_philosophy: string | null;
   specialty_strategies: string | null;
+  firm_character: string | null;
+  service_model: string | null;
 }
 
 interface Website {
@@ -357,6 +360,19 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         );
       })()}
 
+      {/* Firm Tags */}
+      {profileText && (profileText.firm_character || profileText.service_model || profileText.investment_philosophy) && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[profileText.firm_character, profileText.service_model, profileText.investment_philosophy]
+            .filter(Boolean)
+            .flatMap(s => s!.split(',').map(t => t.trim()))
+            .filter(t => t.length > 0)
+            .map((tag, i) => (
+              <Badge key={i}>{tag}</Badge>
+            ))}
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="border-b border-slate-200 mb-6 overflow-x-auto">
         <div className="flex gap-0 -mb-px">
@@ -378,6 +394,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             firmAum={firm.aum}
             industryOnly={!feeTiers || feeTiers.length === 0}
           />
+
+          {/* Alerts & News */}
+          <FirmAlerts crd={firm.crd} />
 
           {/* Firm Profile */}
           <Card>
