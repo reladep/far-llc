@@ -1,0 +1,1 @@
+export { FirmCard } from './FirmCard';

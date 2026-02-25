@@ -1,0 +1,111 @@
+[
+  {
+    "crd": 104942,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 324280,
+    "success": true,
+    "filename": "324280.png",
+    "logoUrl": "https://ablwealth.com/wp-content/uploads/2023/10/ABL-Wealth-Logo.png"
+  },
+  {
+    "crd": 110601,
+    "success": true,
+    "filename": "110601.png",
+    "logoUrl": "https://meketa.com/wp-content/themes/mig/prod/img/favicons/favicon-32x32.png"
+  },
+  {
+    "crd": 314867,
+    "success": true,
+    "filename": "314867.png",
+    "logoUrl": "https://oliverwealth.com/wp-content/themes/oliverwealth-wp-theme/assets/images/logo.png"
+  },
+  {
+    "crd": 133442,
+    "success": true,
+    "filename": "133442.png",
+    "logoUrl": "https://www.betterment.com/hubfs/meta%20image-4-1.png"
+  },
+  {
+    "crd": 21572,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 288098,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 300856,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 160696,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 319208,
+    "success": true,
+    "filename": "319208.jpg",
+    "logoUrl": "https://moranwm.com/wp-content/uploads/2026/01/MWM_logo_facebook-share.jpg"
+  },
+  {
+    "crd": 137068,
+    "success": true,
+    "filename": "137068.jpg",
+    "logoUrl": "https://elevationpoint.com/wp-content/uploads/2024/04/knock.jpg"
+  },
+  {
+    "crd": 120358,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 296847,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 289977,
+    "success": true,
+    "filename": "289977.png",
+    "logoUrl": "https://rscapital.com/wp-content/uploads/2025/04/RS-Logos-2.png"
+  },
+  {
+    "crd": 289276,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 313283,
+    "success": false,
+    "reason": "read ECONNRESET"
+  },
+  {
+    "crd": 109644,
+    "success": true,
+    "filename": "109644.png",
+    "logoUrl": "https://private-wealth.us.cibc.com/image/layout_set_logo?img_id=852619&t=1760963355925"
+  },
+  {
+    "crd": 128199,
+    "success": false,
+    "reason": "no_logo_found"
+  },
+  {
+    "crd": 317181,
+    "success": true,
+    "filename": "317181.webp",
+    "logoUrl": "https://winnowwealth.com/wp-content/uploads/2024/11/7d8c204020e667861bb95dfad7dbfdc3_1200_80.webp"
+  },
+  {
+    "crd": 132058,
+    "success": false,
+    "reason": "no_logo_found"
+  }
+]
