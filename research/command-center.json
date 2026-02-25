@@ -1,0 +1,54 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Build Personal Website",
+      "category": "Personal & Family",
+      "priority": "Medium",
+      "deadline": "2026-03-31",
+      "status": "pending",
+      "notes": "Put yourself out there. Blog, about, contact. Domain: ?",
+      "instructions": "Start with WordPress or Framer. Simple landing page with blog."
+    },
+    {
+      "id": 2,
+      "title": "Build Job Board",
+      "category": "Personal & Family",
+      "priority": "Medium",
+      "deadline": "2026-03-31",
+      "status": "pending",
+      "notes": "Build in public. Document the journey. Connect with others building.",
+      "instructions": "FAR adjacent or separate? Consider: job board for finance professionals."
+    },
+    {
+      "id": 3,
+      "title": "Combine Accounts",
+      "category": "Finance & Admin",
+      "priority": "Medium",
+      "deadline": "2026-03-31",
+      "status": "pending",
+      "notes": "Roll over old 401ks, IRAs. Consolidate for simplicity.",
+      "instructions": "List all accounts. Contact previous employers for rollover options."
+    },
+    {
+      "id": 4,
+      "title": "Create Credit Card Promotion Reminders",
+      "category": "Finance & Admin",
+      "priority": "Medium",
+      "deadline": "2026-03-31",
+      "status": "pending",
+      "notes": "Track signup bonuses. Set calendar reminders for annual fees.",
+      "instructions": "Create spreadsheet of current cards, renewal dates, signup bonuses."
+    },
+    {
+      "id": 5,
+      "title": "Assemble All Documents for Taxes + Contact Accountant",
+      "category": "Finance & Admin",
+      "priority": "Medium",
+      "deadline": "2026-03-31",
+      "status": "pending",
+      "notes": "Gather W-2s, 1099s, deduction docs. Schedule call with accountant.",
+      "instructions": "Create folder in Dropbox/Google Drive. Start collecting docs now."
+    }
+  ]
+}

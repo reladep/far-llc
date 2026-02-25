@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAR — Wireframe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-purple: #a371f7;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .nav-links a:hover { color: var(--text-primary); }
+        
+        /* Hero Section */
+        .hero {
+            background: var(--bg-secondary);
+            padding: 60px 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+        }
+        
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 16px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+        
+        .search-btn {
+            padding: 16px 32px;
+            background: var(--accent-blue);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .tags {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Page Sections */
+        .page-section {
+            background: var(--bg-secondary);
+            margin: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-header h2 {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .section-content {
+            padding: 24px;
+        }
+        
+        /* Listings Grid */
+        .listings {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 900px) {
+            .listings { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 600px) {
+            .listings { grid-template-columns: 1fr; }
+        }
+        
+        .firm-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .firm-card:hover {
+            border-color: var(--accent-blue);
+        }
+        
+        .firm-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .firm-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .firm-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .firm-tag {
+            padding: 4px 8px;
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+        
+        /* Filter Sidebar */
+        .with-filters {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 0;
+        }
+        
+        .filters {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+        }
+        
+        .filter-group {
+            margin-bottom: 24px;
+        }
+        
+        .filter-group h3 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .filter-checkbox {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Firm Profile */
+        .profile-header {
+            display: flex;
+            gap: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        
+        .profile-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--accent-purple);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .profile-info h1 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+        
+        .profile-info .location {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        
+        .stat-box {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        /* Comparison */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .comparison-table th {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .comparison-table td {
+            font-size: 0.9rem;
+        }
+        
+        .comparison-firm {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .comparison-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-purple);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        /* Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            min-height: 400px;
+        }
+        
+        .dashboard-nav {
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-right: 1px solid var(--border);
+        }
+        
+        .dashboard-nav a {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .dashboard-nav a:hover,
+        .dashboard-nav a.active {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .dashboard-content {
+            padding: 24px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-secondary);
+            padding: 40px 24px;
+            margin: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        
+        .footer-col h4 {
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .footer-col a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 6px 0;
+        }
+        
+        .footer-col a:hover { color: var(--text-primary); }
+        
+        /* Page Tabs */
+        .page-tabs {
+            display: flex;
+            gap: 4px;
+            margin: 20px 20px 0;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+        
+        .page-tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .page-tab.active {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <!-- Page Navigation -->
+    <div class="page-tabs">
+        <button class="page-tab active" onclick="showPage('homepage')">Homepage</button>
+        <button class="page-tab" onclick="showPage('search')">Search Results</button>
+        <button class="page-tab" onclick="showPage('profile')">Firm Profile</button>
+        <button class="page-tab" onclick="showPage('comparison')">Comparison</button>
+        <button class="page-tab" onclick="showPage('dashboard')">Dashboard</button>
+    </div>
+    
+    <!-- HOMEPAGE -->
+    <div class="page-content active" id="homepage">
+        <div class="nav">
+            <div class="logo">FAR</div>
+            <div class="nav-links">
+                <a href="#">Browse</a>
+                <a href="#">Compare</a>
+                <a href="#">Blog</a>
+                <a href="#">About</a>
+                <a href="#">Sign In</a>
+            </div>
+        </div>
+        
+        <div class="hero">
+            <h1>Find the Right Wealth Advisor</h1>
+            <p>Compare fees, services, and specialties. Make informed decisions.</p>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search by firm name, location, or specialty...">
+                <button class="search-btn">Search</button>
+            </div>
+            <div class="tags">
+                <span class="tag">Fee-only advisors</span>
+                <span class="tag">CFP® professionals</span>
+                <span class="tag">Near me</span>
+                <span class="tag">Estate planning</span>
+                <span class="tag">Tax specialists</span>
+            </div>
+        </div>
+        
+        <div class="page-section">
+            <div class="section-header">
+                <h2>Featured Advisors</h2>
+                <a href="#" style="color: var(--accent-blue); text-decoration: none; font-size: 0.9rem;">View all →</a>
+            </div>
+            <div class="section-content">
+                <div class="listings">
+                    <div class="firm-card">
+                        <div class="firm-name">Meridian Wealth Management</div>
+                        <div class="firm-meta">
+                            <span>$500M AUM</span>
+                            <span>1% fee</span>
+                            <span>NYC</span>
+                        </div>
+                        <div class="firm-tags">
+                            <span class="firm-tag">Estate Planning</span>
+                            <span class="firm-tag">CFP®</span>
+                        </div>
+                    </div>
+                    <div class="firm-card">
+                        <div class="firm-name">Harborview Financial</div>
+                        <div class="firm-meta">
+                            <span>$250M AUM</span>
+                            <span>Flat fee</span>
+                            <span>Chicago</span>
+                        </div>
+                        <div class="firm-tags">
+                            <span class="firm-tag">Business Owners</span>
+                            <span class="firm-tag">Tax</span>
+                        </div>
+                    </div>
+                    <div class="firm-card">
+                        <div class="firm-name">Summit Capital</div>
+                        <div class="firm-meta">
+                            <span>$1.2B AUM</span>
+                            <span>0.85% fee</span>
+                            <span>Denver</span>
+                        </div>
+                        <div class="firm-tags">
+                            <span class="firm-tag">FIRE</span>
+                            <span class="firm-tag">CFP®</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-col">
+                <h4>FAR</h4>
+                <a href="#">About us</a>
+                <a href="#">How it works</a>
+                <a href="#">Press</a>
+            </div>
+            <div class="footer-col">
+                <h4>For Users</h4>
+                <a href="#">Browse advisors</a>
+                <a href="#">Compare</a>
+                <a href="#">Reviews</a>
+            </div>
+            <div class="footer-col">
+                <h4>For Advisors</h4>
+                <a href="#">Claim profile</a>
+                <a href="#">Advertising</a>
+                <a href="#">Pricing</a>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Disclosures</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SEARCH RESULTS -->
+    <div class="page-content" id="search">
+        <div class="nav">
+            <div class="logo">FAR</div>
+            <div class="nav-links">
+                <a href="#">Browse</a>
+                <a href="#">Compare</a>
+                <a href="#">Blog</a>
+                <a href="#">About</a>
+                <a href="#">Sign In</a>
+            </div>
+        </div>
+        
+        <div class="page-section" style="margin-top: 20px;">
+            <div class="with-filters">
+                <div class="filters">
+                    <div class="filter-group">
+                        <h3>Fee Structure</h3>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Fee-only
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Flat fee
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Hourly
+                        </label>
+                    </div>
+                    <div class="filter-group">
+                        <h3>AUM</h3>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Under $100M
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> $100M - $500M
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> $500M+
+                        </label>
+                    </div>
+                    <div class="filter-group">
+                        <h3>Specialties</h3>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Estate planning
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Tax planning
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> Business owners
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> FIRE
+                        </label>
+                    </div>
+                    <div class="filter-group">
+                        <h3>Credentials</h3>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> CFP®
+                        </label>
+                        <label class="filter-option">
+                            <input type="checkbox" class="filter-checkbox"> CPA
+                        </label>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <span style="color: var(--text-secondary);">142 advisors found</span>
+                        <select style="padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+                            <option>Sort by: Relevance</option>
+                            <option>Sort by: AUM</option>
+                            <option>Sort by: Fee (low to high)</option>
+                        </select>
+                    </div>
+                    <div class="listings">
+                        <div class="firm-card">
+                            <div class="firm-name">Meridian Wealth Management</div>
+                            <div class="firm-meta">
+                                <span>$500M AUM</span>
+                                <span>1% fee</span>
+                                <span>NYC</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">Estate Planning</span>
+                                <span class="firm-tag">CFP®</span>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Harborview Financial</div>
+                            <div class="firm-meta">
+                                <span>$250M AUM</span>
+                                <span>Flat fee</span>
+                                <span>Chicago</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">Business Owners</span>
+                                <span class="firm-tag">Tax</span>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Summit Capital</div>
+                            <div class="firm-meta">
+                                <span>$1.2B AUM</span>
+                                <span>0.85% fee</span>
+                                <span>Denver</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">FIRE</span>
+                                <span class="firm-tag">CFP®</span>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Pinnacle Advisory</div>
+                            <div class="firm-meta">
+                                <span>$800M AUM</span>
+                                <span>0.95% fee</span>
+                                <span>Boston</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">High Net Worth</span>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Coastal Wealth Partners</div>
+                            <div class="firm-meta">
+                                <span>$180M AUM</span>
+                                <span>Hourly</span>
+                                <span>Miami</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">Retirement</span>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Ironwood Financial</div>
+                            <div class="firm-meta">
+                                <span>$420M AUM</span>
+                                <span>1% fee</span>
+                                <span>Austin</span>
+                            </div>
+                            <div class="firm-tags">
+                                <span class="firm-tag">Entrepreneurs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FIRM PROFILE -->
+    <div class="page-content" id="profile">
+        <div class="nav">
+            <div class="logo">FAR</div>
+            <div class="nav-links">
+                <a href="#">Browse</a>
+                <a href="#">Compare</a>
+                <a href="#">Blog</a>
+                <a href="#">About</a>
+                <a href="#">Sign In</a>
+            </div>
+        </div>
+        
+        <div class="page-section" style="margin-top: 20px;">
+            <div class="section-content">
+                <div class="profile-header">
+                    <div class="profile-logo">M</div>
+                    <div class="profile-info">
+                        <h1>Meridian Wealth Management</h1>
+                        <div class="location">📍 New York, NY</div>
+                        <div class="profile-actions">
+                            <button class="btn btn-primary">Request Info</button>
+                            <button class="btn btn-secondary">Save</button>
+                            <button class="btn btn-secondary">Compare</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-grid">
+                    <div>
+                        <h3 style="margin-bottom: 16px;">About</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px;">
+                            Meridian Wealth Management provides comprehensive financial planning and investment management services to high-net-worth individuals and families. Our fiduciary commitment ensures we always act in our clients' best interests.
+                        </p>
+                        
+                        <h3 style="margin-bottom: 16px;">Services</h3>
+                        <div class="firm-tags" style="margin-bottom: 24px;">
+                            <span class="firm-tag">Financial Planning</span>
+                            <span class="firm-tag">Investment Management</span>
+                            <span class="firm-tag">Estate Planning</span>
+                            <span class="firm-tag">Tax Planning</span>
+                        </div>
+                        
+                        <h3 style="margin-bottom: 16px;">Client Types</h3>
+                        <div class="firm-tags">
+                            <span class="firm-tag">Individuals</span>
+                            <span class="firm-tag">Families</span>
+                            <span class="firm-tag">Business Owners</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="stat-box">
+                            <div class="stat-label">AUM</div>
+                            <div class="stat-value">$500M</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Fee Structure</div>
+                            <div class="stat-value">1% AUM</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Min Investment</div>
+                            <div class="stat-value">$1M</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Founded</div>
+                            <div class="stat-value">2008</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Team Size</div>
+                            <div class="stat-value">12 advisors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- COMPARISON -->
+    <div class="page-content" id="comparison">
+        <div class="nav">
+            <div class="logo">FAR</div>
+            <div class="nav-links">
+                <a href="#">Browse</a>
+                <a href="#">Compare</a>
+                <a href="#">Blog</a>
+                <a href="#">About</a>
+                <a href="#">Sign In</a>
+            </div>
+        </div>
+        
+        <div class="page-section" style="margin-top: 20px;">
+            <div class="section-content">
+                <h2 style="margin-bottom: 24px;">Compare Advisors</h2>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;"></th>
+                            <th>
+                                <div class="comparison-firm">
+                                    <div class="comparison-logo">M</div>
+                                    <span>Meridian Wealth</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="comparison-firm">
+                                    <div class="comparison-logo">H</div>
+                                    <span>Harborview</span>
+                                </div>
+                            </th>
+                            <th>
+                                <div class="comparison-firm">
+                                    <div class="comparison-logo">S</div>
+                                    <span>Summit Capital</span>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Location</td>
+                            <td>New York, NY</td>
+                            <td>Chicago, IL</td>
+                            <td>Denver, CO</td>
+                        </tr>
+                        <tr>
+                            <td>AUM</td>
+                            <td>$500M</td>
+                            <td>$250M</td>
+                            <td>$1.2B</td>
+                        </tr>
+                        <tr>
+                            <td>Fee</td>
+                            <td>1% AUM</td>
+                            <td>Flat fee</td>
+                            <td>0.85% AUM</td>
+                        </tr>
+                        <tr>
+                            <td>Min Investment</td>
+                            <td>$1M</td>
+                            <td>$500K</td>
+                            <td>$2M</td>
+                        </tr>
+                        <tr>
+                            <td>Specialties</td>
+                            <td>Estate, Tax</td>
+                            <td>Business, Tax</td>
+                            <td>FIRE</td>
+                        </tr>
+                        <tr>
+                            <td>Credentials</td>
+                            <td>CFP®, CPA</td>
+                            <td>CFP®</td>
+                            <td>CFP®, CFA</td>
+                        </tr>
+                        <tr>
+                            <td>Founded</td>
+                            <td>2008</td>
+                            <td>2015</td>
+                            <td>2010</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- DASHBOARD -->
+    <div class="page-content" id="dashboard">
+        <div class="page-section" style="margin-top: 20px;">
+            <div class="dashboard-grid">
+                <div class="dashboard-nav">
+                    <a href="#" class="active">Saved Firms</a>
+                    <a href="#">Comparisons</a>
+                    <a href="#">Alerts</a>
+                    <a href="#">Account</a>
+                </div>
+                <div class="dashboard-content">
+                    <h2 style="margin-bottom: 20px;">Saved Firms</h2>
+                    <div class="listings">
+                        <div class="firm-card">
+                            <div class="firm-name">Meridian Wealth Management</div>
+                            <div class="firm-meta">
+                                <span>$500M AUM</span>
+                                <span>1% fee</span>
+                            </div>
+                            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">View</button>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Compare</button>
+                            </div>
+                        </div>
+                        <div class="firm-card">
+                            <div class="firm-name">Harborview Financial</div>
+                            <div class="firm-meta">
+                                <span>$250M AUM</span>
+                                <span>Flat fee</span>
+                            </div>
+                            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">View</button>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Compare</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

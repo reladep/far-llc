@@ -1,0 +1,10 @@
+status,count,pct_of_total
+success,1010,51.93
+svg_rasterized_success,219,11.26
+bad_logo_blacklisted,4,0.21
+skipped_exists,15,0.77
+no_logo_found,612,31.47
+non_image_response,12,0.62
+download_failed,71,3.65
+svg_rasterized_failed,1,0.05
+error,1,0.05

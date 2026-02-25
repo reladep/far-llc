@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAR, LLC — Project Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-orange: #d29922;
+            --accent-purple: #a371f7;
+            --accent-red: #f85149;
+            --accent-cyan: #39c5cf;
+            --accent-pink: #db61a2;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(88, 166, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(163, 113, 247, 0.08) 0%, transparent 50%);
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+        
+        .header-stats {
+            display: flex;
+            gap: 32px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        
+        @media (max-width: 1200px) {
+            .board { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 640px) {
+            .board { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .header-stats { width: 100%; justify-content: space-between; }
+        }
+        
+        .column {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+        
+        .column-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .column-header h2 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .column-header h2::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+        
+        .todo .column-header h2::before { background: var(--text-muted); }
+        .in-progress .column-header h2::before { background: var(--accent-blue); }
+        .manual-review .column-header h2::before { background: var(--accent-orange); }
+        .done .column-header h2::before { background: var(--accent-green); }
+        
+        .count {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .cards-container {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+        }
+        
+        .card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            cursor: grab;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+        
+        .card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        
+        .card.drag-over {
+            border-color: var(--accent-green);
+            border-style: dashed;
+            background: rgba(63, 185, 80, 0.1);
+        }
+        
+        .card-title {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        
+        .card-notes {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-style: italic;
+            line-height: 1.4;
+        }
+        
+        .card-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tag.design { background: rgba(57, 197, 207, 0.15); color: var(--accent-cyan); }
+        .tag.data { background: rgba(163, 113, 247, 0.15); color: var(--accent-purple); }
+        .tag.business { background: rgba(210, 153, 34, 0.15); color: var(--accent-orange); }
+        .tag.growth { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+        
+        .add-card-btn {
+            width: calc(100% - 24px);
+            margin: 12px;
+            padding: 14px;
+            background: transparent;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex: center;
+           ;
+            align-items justify-content: center;
+            gap: 6px;
+        }
+        
+        .add-card-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--text-muted);
+            color: var(--text-secondary);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 28px;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal h3 {
+            font-size: 1.25rem;
+            margin-bottom: 20px;
+        }
+        
+        .modal input, .modal select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 14px;
+            font-family: inherit;
+        }
+        
+        .modal input:focus, .modal select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .modal-btn.cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .modal-btn.save {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+        
+        .modal-btn.delete {
+            background: var(--accent-red);
+            color: #fff;
+        }
+        
+        .modal-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .card-menu {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .card:hover .card-menu {
+            opacity: 1;
+        }
+        
+        .card-menu-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        
+        .card-menu-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Empty state */
+        .cards-container:empty::after {
+            content: 'Drop tasks here';
+            display: block;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 20px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">F</div>
+            <div>
+                <h1>FAR, LLC</h1>
+                <p>Wealth Management Comparison Platform</p>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-value" id="totalCards">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="doneCount">0</div>
+                <div class="stat-label">Done</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="progressPct">0%</div>
+                <div class="stat-label">Progress</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background: var(--accent-cyan);"></div> Front-End Design</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--accent-purple);"></div> Data</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--accent-orange);"></div> Business</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--accent-green);"></div> Growth</div>
+    </div>
+    
+    <div class="board">
+        <!-- To Do -->
+        <div class="column todo" data-column="todo">
+            <div class="column-header">
+                <h2>📋 To Do</h2>
+                <span class="count">0</span>
+            </div>
+            <div class="cards-container">
+            </div>
+            <button class="add-card-btn" onclick="openModal('todo')">+ Add Task</button>
+        </div>
+        
+        <!-- In Progress -->
+        <div class="column in-progress" data-column="in-progress">
+            <div class="column-header">
+                <h2>⚡ In Progress</h2>
+                <span class="count">0</span>
+            </div>
+            <div class="cards-container">
+            </div>
+            <button class="add-card-btn" onclick="openModal('in-progress')">+ Add Task</button>
+        </div>
+        
+        <!-- Manual Review -->
+        <div class="column manual-review" data-column="manual-review">
+            <div class="column-header">
+                <h2>👀 Manual Review</h2>
+                <span class="count">0</span>
+            </div>
+            <div class="cards-container">
+            </div>
+            <button class="add-card-btn" onclick="openModal('manual-review')">+ Add Task</button>
+        </div>
+        
+        <!-- Done -->
+        <div class="column done" data-column="done">
+            <div class="column-header">
+                <h2>✅ Done</h2>
+                <span class="count">0</span>
+            </div>
+            <div class="cards-container">
+            </div>
+            <button class="add-card-btn" onclick="openModal('done')">+ Add Task</button>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Last updated: Feb 17, 2026 • FAR, LLC • <a href="#" onclick="saveToStorage(); return false;">Save</a> • <a href="#" onclick="location.reload(); return false;">Reload</a></p>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h3 id="modalTitle">Add New Task</h3>
+            <input type="text" id="taskTitle" placeholder="Task title...">
+            <select id="taskTag">
+                <option value="">Select category...</option>
+                <option value="design">Front-End Design</option>
+                <option value="data">Data</option>
+                <option value="business">Business</option>
+                <option value="growth">Growth</option>
+            </select>
+            <textarea id="taskNotes" placeholder="Notes..." rows="3" style="width:100%;padding:12px 14px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:0.9rem;margin-bottom:14px;font-family:inherit;resize:vertical;"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn delete" id="deleteBtn" onclick="deleteCard()" style="display:none;">Delete</button>
+                <button class="modal-btn save" onclick="saveCard()">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let currentEditId = null;
+        let currentColumn = 'todo';
+        let nextId = 1;
+        let draggedElement = null;
+        
+        // Tag labels
+        const tagLabels = {
+            'design': 'Front-End Design',
+            'data': 'Data',
+            'business': 'Business',
+            'growth': 'Growth'
+        };
+        
+        const columnLabels = {
+            'todo': 'To Do',
+            'in-progress': 'In Progress',
+            'manual-review': 'Manual Review',
+            'done': 'Done'
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Always load initial tasks (ignore saved data)
+            loadInitialTasks();
+        });
+        
+        function loadInitialTasks() {
+            const tasks = [
+                // Front-End Design
+                { title: "Research similar design directories / search-based websites. Wealth-related or not.", column: 'in-progress', tag: 'design', notes: "Summary: Design dirs (Awwwards, UI Goodies, Dribbble). Finance (SiteBuilderReport 25 examples). Search patterns (Product Hunt, AlternativeTo, Futurepedia). Key: Trust signals, search-first, comparison tables, mobile-first. LIKE: Futurepedia hero section." },
+                { title: "Create hosting plan", column: 'todo', tag: 'design' },
+                { title: "Wireframe the website beta and complete feature list", column: 'in-progress', tag: 'design', notes: "Created FAR-wireframe.html with 5 pages: Homepage (Futurepedia hero), Search Results (filters + grid), Firm Profile (stats + details), Comparison (side-by-side table), Dashboard (saved firms). Feature list in FAR-features.md." },
+                { title: "Add appropriate legal disclosures", column: 'todo', tag: 'design' },
+                { title: "Design homepage", column: 'todo', tag: 'design' },
+                { title: "Design search tool", column: 'todo', tag: 'design' },
+                { title: "Design comparison tool", column: 'todo', tag: 'design' },
+                { title: "Set up user profiles", column: 'todo', tag: 'design' },
+                { title: "Set up payment methods", column: 'todo', tag: 'design' },
+                { title: "Security Review", column: 'todo', tag: 'design' },
+                // Data
+                { title: "Update database with refreshed ADV data on 3/31/2026", column: 'todo', tag: 'data' },
+                { title: "Research alternative data sources beyond the ADV", column: 'todo', tag: 'data' },
+                { title: "Build out firm logo database", column: 'todo', tag: 'data', notes: "Add logos for more firms. Use web scraping, SEC website, firm websites, or API services. Run overnight task to process in bulk." },
+                // AI Search
+                { title: "Implement AI-based semantic search", column: 'todo', tag: 'data', notes: "Natural language search: 'I have $2mm and want an advisor in Boston focused on impact investing'. Use embeddings + vector DB (Supabase pgvector). Providers: OpenAI/Voyage embeddings, LLM for query parsing. See research/FAR-ai-search-plan.md" },
+                // Backend / Supabase Integration
+                { title: "Connect Supabase database to frontend", column: 'done', tag: 'data', notes: "Planning: Public read for firm data, RLS for user data, service role for admin. API: PostgREST for public, Next.js API routes for leads/auth. Security: RLS policies, rate limiting, webhook verification. COMPLETED: Added Supabase client, RLS policies for public read, search and firm pages now fetch real data." },
+                { title: "Implement search with filters (name, tags, location, AUM)", column: 'done', tag: 'design', notes: "Search page now has: search bar, location filter, fee structure checkboxes, minimum AUM dropdown, specialty checkboxes. Filters apply to sample data. Connected to Supabase." },
+                { title: "Create firm profile page with Supabase data", column: 'done', tag: 'design', notes: "Created /firm/[crd] page fetching from Supabase. Shows: firm info, AUM, fee tiers, profile text, services, contact, quick facts." },
+                // Business
+                { title: "LLC Registration", column: 'todo', tag: 'business' },
+                { title: "Expense Tracking Report / Tool", column: 'todo', tag: 'business' },
+                // Growth
+                { title: "Start email list", column: 'todo', tag: 'growth' },
+                { title: "Aggregate email addresses for initial launch", column: 'todo', tag: 'growth' },
+                { title: "Research the best SEO / social / paid methods", column: 'todo', tag: 'growth' },
+                { title: "Research best methods to get this off the ground", column: 'todo', tag: 'growth' },
+                { title: "Establish a pricing strategy", column: 'todo', tag: 'growth' },
+                { title: "Create content plan", column: 'todo', tag: 'growth' },
+                { title: "Google Search Console Index", column: 'todo', tag: 'growth' },
+                // Advisor Tracking (Phase 1 Priority)
+                { title: "Create firm_changes + tracked_advisors tables in Supabase", column: 'todo', tag: 'data', notes: "firm_changes: id, crd, field_name, old_value, new_value, detected_at. tracked_advisors: id, user_id, crd, notify_email, created_at. Add RLS policies for user-scoped reads/writes." },
+                { title: "Build SEC data change detection (diff on ingestion)", column: 'todo', tag: 'data', notes: "On each SEC data refresh, compare new rows against firmdata_current. Log diffs (AUM, fees, client count, disclosures) to firm_changes table. Start with snapshot-diff approach (Option A)." },
+                { title: "Add 'Track This Advisor' button to firm profile page", column: 'todo', tag: 'design', notes: "Toggle button on /firm/[crd]. Inserts/deletes from tracked_advisors. Requires auth — prompt sign-up if not logged in. Show filled/unfilled bell icon." },
+                { title: "Build /dashboard/alerts page — tracked firms + changes feed", column: 'todo', tag: 'design', notes: "Replace placeholder. Show list of tracked firms with recent changes. Change cards: 'AUM decreased 15% ($2.1B → $1.8B)' with date. Sort by most recent activity." },
+                { title: "Add API routes for advisor tracking (CRUD + changes feed)", column: 'todo', tag: 'data', notes: "GET/POST/DELETE /api/user/tracked-advisors. GET /api/firm-changes?crd=X for change history. Auth required. Rate limited." },
+                { title: "Email notifications for tracked advisor changes (Phase 2)", column: 'todo', tag: 'growth', notes: "Requires email provider (Resend or SendGrid). Send digest when tracked firms have new changes. Not blocking for initial launch — in-app first." }
+            ];
+            
+            tasks.forEach(task => {
+                addCardToColumn(task.column, task.title, task.tag);
+            });
+            
+            updateStats();
+            saveToStorage();
+        }
+        
+        function addCardToColumn(column, title, tag, notes = '') {
+            const col = document.querySelector(`[data-column="${column}"]`);
+            const container = col.querySelector('.cards-container');
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.draggable = true;
+            card.dataset.id = nextId++;
+            card.dataset.column = column;
+            
+            const tagLabel = tagLabels[tag] || tag;
+            const notesHtml = notes ? `<div class="card-notes">${notes}</div>` : '';
+            
+            card.innerHTML = `
+                <div class="card-menu">
+                    <button class="card-menu-btn" onclick="editCard(${card.dataset.id})">✎</button>
+                </div>
+                <div class="card-title">${title}</div>
+                ${notesHtml}
+                <div class="card-tags">
+                    <span class="tag ${tag}">${tagLabel}</span>
+                </div>
+            `;
+            
+            // Add drag events
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleCardDragOver);
+            card.addEventListener('dragleave', handleCardDragLeave);
+            card.addEventListener('drop', handleCardDrop);
+            
+            container.appendChild(card);
+        }
+        
+        // Drag and Drop
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+            
+            const img = new Image();
+            img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+            e.dataTransfer.setDragImage(img, 0, 0);
+        }
+        
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('drag-over');
+            });
+            draggedElement = null;
+        }
+        
+        function handleCardDragOver(e) {
+            e.preventDefault();
+            if (draggedElement && draggedElement !== this) {
+                this.classList.add('drag-over');
+            }
+        }
+        
+        function handleCardDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+        
+        function handleCardDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            this.classList.remove('drag-over');
+            
+            if (draggedElement && draggedElement !== this) {
+                const container = this.parentNode;
+                const cards = Array.from(container.querySelectorAll('.card:not(.dragging)'));
+                const thisIndex = cards.indexOf(this);
+                const dragIndex = cards.indexOf(draggedElement);
+                
+                if (thisIndex > dragIndex) {
+                    container.insertBefore(draggedElement, this.nextSibling);
+                } else {
+                    container.insertBefore(draggedElement, this);
+                }
+                
+                draggedElement.dataset.column = container.closest('.column').dataset.column;
+                
+                updateStats();
+                saveToStorage();
+            }
+        }
+        
+        // Drop on empty container
+        document.querySelectorAll('.cards-container').forEach(container => {
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedElement) {
+                    container.appendChild(draggedElement);
+                    draggedElement.dataset.column = container.closest('.column').dataset.column;
+                    updateStats();
+                    saveToStorage();
+                }
+            });
+        });
+        
+        // Modal
+        function openModal(column = 'todo', cardId = null) {
+            currentColumn = column;
+            currentEditId = cardId;
+            
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modalTitle');
+            const taskTitle = document.getElementById('taskTitle');
+            const taskTag = document.getElementById('taskTag');
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            modal.classList.add('active');
+            taskTag.value = '';
+            
+            if (cardId) {
+                title.textContent = 'Edit Task';
+                const card = document.querySelector(`[data-id="${cardId}"]`);
+                taskTitle.value = card.querySelector('.card-title').textContent;
+                const tag = card.querySelector('.tag');
+                taskTag.value = tag ? tag.classList[1] : '';
+                const cardNotes = card.querySelector('.card-notes');
+                document.getElementById('taskNotes').value = cardNotes ? cardNotes.textContent : '';
+                deleteBtn.style.display = 'block';
+            } else {
+                title.textContent = 'Add New Task';
+                taskTitle.value = '';
+                deleteBtn.style.display = 'none';
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        function saveCard() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const tag = document.getElementById('taskTag').value;
+            const notes = document.getElementById('taskNotes').value.trim();
+            
+            if (!title) return;
+            
+            if (currentEditId) {
+                const card = document.querySelector(`[data-id="${currentEditId}"]`);
+                card.querySelector('.card-title').textContent = title;
+                
+                if (tag) {
+                    let tagsContainer = card.querySelector('.card-tags');
+                    tagsContainer.innerHTML = `<span class="tag ${tag}">${tagLabels[tag]}</span>`;
+                }
+                
+                // Update notes
+                let notesContainer = card.querySelector('.card-notes');
+                if (notes) {
+                    if (notesContainer) {
+                        notesContainer.textContent = notes;
+                    } else {
+                        const titleEl = card.querySelector('.card-title');
+                        const newNotes = document.createElement('div');
+                        newNotes.className = 'card-notes';
+                        newNotes.textContent = notes;
+                        titleEl.after(newNotes);
+                    }
+                } else if (notesContainer) {
+                    notesContainer.remove();
+                }
+            } else {
+                addCardToColumn(currentColumn, title, tag, notes);
+            }
+            
+            closeModal();
+            updateStats();
+            saveToStorage();
+        }
+        
+        function editCard(id) {
+            const card = document.querySelector(`[data-id="${id}"]`);
+            const column = card.dataset.column;
+            openModal(column, id);
+        }
+        
+        function deleteCard() {
+            if (currentEditId) {
+                const card = document.querySelector(`[data-id="${currentEditId}"]`);
+                card.remove();
+                closeModal();
+                updateStats();
+                saveToStorage();
+            }
+        }
+        
+        // Stats
+        function updateStats() {
+            const total = document.querySelectorAll('.card').length;
+            const done = document.querySelectorAll('.column.done .card').length;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            
+            document.getElementById('totalCards').textContent = total;
+            document.getElementById('doneCount').textContent = done;
+            document.getElementById('progressPct').textContent = pct + '%';
+            
+            document.querySelectorAll('.column').forEach(col => {
+                const count = col.querySelectorAll('.card').length;
+                col.querySelector('.count').textContent = count;
+            });
+        }
+        
+        // Local Storage
+        function saveToStorage() {
+            const data = {
+                cards: [],
+                nextId: nextId
+            };
+            
+            document.querySelectorAll('.card').forEach(card => {
+                const title = card.querySelector('.card-title').textContent;
+                const column = card.dataset.column;
+                const tag = card.querySelector('.tag');
+                const notesEl = card.querySelector('.card-notes');
+                const notes = notesEl ? notesEl.textContent : '';
+                
+                data.cards.push({
+                    id: card.dataset.id,
+                    title: title,
+                    column: column,
+                    tag: tag ? tag.classList[1] : null,
+                    notes: notes
+                });
+            });
+            
+            localStorage.setItem('far-kanban', JSON.stringify(data));
+        }
+        
+        function loadFromStorage() {
+            const saved = localStorage.getItem('far-kanban');
+            if (!saved) return;
+            
+            try {
+                const data = JSON.parse(saved);
+                nextId = data.nextId || 1;
+                
+                document.querySelectorAll('.card').forEach(c => c.remove());
+                
+                data.cards.forEach(cardData => {
+                    addCardToColumn(cardData.column, cardData.title, cardData.tag, cardData.notes || '');
+                    const cards = document.querySelectorAll('.card');
+                    cards[cards.length - 1].dataset.id = cardData.id;
+                });
+                
+                nextId = Math.max(...data.cards.map(c => parseInt(c.id))) + 1;
+                
+                updateStats();
+            } catch (e) {
+                console.log('No valid saved data', e);
+            }
+        }
+        
+        function clearBoard() {
+            if (confirm('Clear all tasks? This cannot be undone.')) {
+                document.querySelectorAll('.card').forEach(c => c.remove());
+                nextId = 1;
+                localStorage.removeItem('far-kanban');
+                updateStats();
+            }
+        }
+        
+        // Close modal on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+        
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+    </script>
+</body>
+</html>

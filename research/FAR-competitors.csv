@@ -1,0 +1,19 @@
+Name,URL,Primary User,Core Value Prop,Data Sources,Pricing,Coverage,Freshness,Notes
+AdvisorFinder,https://advisorfinder.com,Consumers,"Find fee-based fiduciary advisors based on needs, location, specialties",Form ADV(?),Lead-gen + advisor subscription,Advisor-level,?"User controls who receives data" vs selling to highest bidder
+SmartAdvisor Match,https://smartadvisormatch.com,Consumers,"Questionnaire → 3 matched advisors",Proprietary questionnaire + advisor network,Lead-gen (advisors pay),Advisor-level,?|SmartAsset brand; strong SEO/content
+Paladin Registry,https://www.paladinregistry.com,Consumers,"Connect with fiduciary advisors; validates credentials",Proprietary vetting,Lead-gen + subscription,Fiduciary advisors,Active since 2004,Credential validation is differentiator
+Harness Wealth (Harness.co),https://www.harness.co,Consumers,"Referral matching to third-party investment managers",SEC-registered adviser,Advisory/referral fees,Third-party managers,?|Acts as middleman/introducer
+Zoe Financial,https://zoefinancial.com,Advisors + B2B,"Unified wealth management platform",Partnership with fiduciary advisors,B2B SaaS,Advisor + client,Modern platform,"Actually B2B platform, not consumer matching"
+ISS Market Intelligence - MarketPro,https://www.issmarketintel.com,Asset managers/recruiters,"Distribution/recruiting intelligence + advisor/firm data",Discovery Data,Enterprise subscription,Firm + advisor,Weekly movement tracking,Strong on recruiting/distribution
+AdvizorPro,https://advizorpro.com,Industry professionals,"RIA database + rankings",Form ADV,Subscription,Firm-level,?|Publishes "Top 100 Independent RIAs"
+FINTRX,https://www.fintrx.com,Private wealth pros,"Private wealth intelligence: RIA/BD/Family Office/Endowment datasets",AI-powered data aggregation,Free trial + subscription,Broad coverage,Monthly updates,Emphasizes AI + coverage breadth
+
+Dakota,https://www.dakota.com,Asset managers/recruiters,"RIA database + marketplace; advisor relationships","Form ADV + proprietary",Subscription,Advisor + firm,?|Combines data with recruiting/marketplace
+RIA Database,https://www.riadatabase.com,Sales/marketing/recruiters,"Detailed advisor data; quarterly security holdings","Form ADV + original research,weekly updates",Subscription,Firm + advisor,Weekly,Coverage nationwide
+Adviser Info (SEC IAPD),https://adviserinfo.sec.gov,Everyone,"SEC's official Form ADV search","SEC filings (primary source)",Free,Advisor + firm,Real-time|Free baseline; official source
+FINRA BrokerCheck,https://brokercheck.finra.gov,Everyone,"Broker/dealer background checks","FINRA licensing + filings",Free,Individual + firm,Real-time|Free; brokers not RIAs
+
+NerdWallet - Best Financial Advisors,https://www.nerdwallet.com/financial-advisors/learn/best-financial-advisors,Consumers,"Editorial 'best of' lists; fee/minimum comparisons","Editorial research",Affiliate + content,Firms reviewed,?|Strong SEO; comparison angle
+Bankrate - Best Advisors,https://www.bankrate.com/investing/financial-advisors/best-financial-advisors/,Consumers,"Editorial rankings, fee info","Editorial research",Affiliate + content,Firms ranked,?|Established finance media brand
+Unbiased,https://www.unbiased.com,Consumers,"Advisor discovery + editorial comparison","Editorial + advisor network",Lead-gen + content,Advisor-level,?|Compare features/pricing
+Wealthtender,https://wealthtender.com,Consumers,"Advisor reviews with verified client reviews","Verified client reviews",Lead-gen + subscription,750+ advisors,Active,Reviews + comparison angle

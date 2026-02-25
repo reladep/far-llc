@@ -33,3 +33,4 @@ _Last updated: 2026-02-11_
 ### Done
 - [DONE] Telegram messaging confirmed (Ping/Pong)
 - [DONE] Brave web_search working
+- [DONE] Codex installed (manually by Alex)
