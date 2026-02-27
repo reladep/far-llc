@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
 import FirmAlerts from '@/components/firms/FirmAlerts';
+import RegulatoryDisclosures from '@/components/firms/RegulatoryDisclosures';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 
 // Create server-side Supabase client for data queries
@@ -397,6 +398,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
           {/* Alerts & News */}
           <FirmAlerts crd={firm.crd} />
+
+          {/* Regulatory Disclosures */}
+          <RegulatoryDisclosures firmData={firm} />
 
           {/* Firm Profile */}
           <Card>
