@@ -45,12 +45,12 @@ _Last updated: 2026-02-16_
   - Industry averages computed from 207 firms / 5,412 fee tiers
 - **Alerts MVP complete** (built 2/20)
   - Schema: `firm_snapshots`, `news_articles`, `firm_alerts`, `alert_subscriptions`, `user_notifications`
-  - Workers: EDGAR RSS poller, ADV diff checker, news scraper, SEC enforcement, industry news
+  - Workers: EDGAR RSS poller, ADV diff checker, news scraper
   - Running stats: 1,945 firms, 2,776+ articles, 1,500+ alerts, 1,000+ snapshots
   - **Issue**: Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
   - APIs: `/api/alerts/firm/[crd]`, `/api/alerts/news/[crd]`, user alerts/subscriptions
   - Frontend: `FirmAlerts.tsx` component on firm profile pages
-  - Cron jobs: EDGAR (15min), ADV Diff (6hr), News Scraper (hourly), SEC Enforcement (hourly), Industry News (hourly)
+  - Cron jobs: EDGAR (15min), ADV Diff (6hr), News Scraper (hourly), RIA M&A (hourly, broken)
   - Free tier = last 7 days, paid = full history
 - **Directory page updated** (2/21): Now displays `display_name` from firm_names table alongside primary business name
 - **RegulatoryDisclosures.tsx deployed** (2/22): New disclosure badge + accordion component on firm profiles with severity-coded sections
@@ -60,8 +60,10 @@ _Last updated: 2026-02-16_
 - Dev server running at localhost:3001
 - **Issues:**
   - Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
-  - ADV Diff Checker generating ~1126 false positives per run (58% of firms showing "fee schedule changed" - unrealistic, needs threshold tuning)
+  - ADV Diff Checker generating ~554 false positives per run (55% of firms showing "fee schedule changed" - unrealistic, needs threshold tuning)
   - **Issue (resolved):** Industry News Poller cron job failing — `workers/industry-news.js` doesn't exist. Cron job removed (2/26).
+  - **Issue (resolved):** SEC Enforcement Poller cron job failing — `workers/sec-enforcement.js` doesn't exist. Cron job removed (2/27).
+  - **Issue:** RIA M&A Poller cron job failing — `workers/ria-ma.js` doesn't exist. Cron job still active, needs removal or worker creation.
 
 ## Daily Self Review Rules (as of 2/23/2026)
 

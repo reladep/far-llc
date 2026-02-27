@@ -45,6 +45,17 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - When you make a mistake → document it so future-you doesn't repeat it
 - **Text > Brain** 📝
 
+### 🔧 Git Hygiene - ALWAYS COMMIT YOUR WORK
+
+**CRITICAL:** Never end a session without committing your code changes!
+
+- Commit after every feature or significant change (not just end of day)
+- If it's worth writing, it's worth committing — even WIP commits can be squashed later
+- Uncommitted code = lost code (killed process = gone forever)
+- Before ending any session: `git add -A && git commit -m "description"`
+
+**Rule:** If you built something in `npm run dev` that you'd be sad to lose — commit it NOW.
+
 ## Safety
 
 - Don't exfiltrate private data. Ever.
