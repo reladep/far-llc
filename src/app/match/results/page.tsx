@@ -22,7 +22,7 @@ interface MatchedFirm {
   city: string;
   state: string;
   aum: number;
-  fee Competitiveness: number;
+  feeCompetitiveness: number;
   clientGrowth: number;
   advisorBandwidth: number;
   matchPercent: number;

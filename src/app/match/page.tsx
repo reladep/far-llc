@@ -173,8 +173,8 @@ export default function MatchPage() {
     const key = currentStep.key;
     if (key === 'priorities') {
       return (answers.priorities as unknown as string[]).includes(value);
-   [key as keyof }
-    return answers Answers] === value;
+    }
+    return answers[key as keyof Answers] === value;
   };
 
   return (
