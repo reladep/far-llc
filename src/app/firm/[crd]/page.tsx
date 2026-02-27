@@ -7,6 +7,7 @@ import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
 import FirmAlerts from '@/components/firms/FirmAlerts';
 import RegulatoryDisclosures from '@/components/firms/RegulatoryDisclosures';
+import FirmLogo from '@/components/firms/FirmLogo';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 
 // Create server-side Supabase client for data queries
@@ -155,6 +156,13 @@ async function getFirmData(crd: string) {
     .eq('crd', crd)
     .single();
 
+  const { data: firmLogo } = await supabase
+    .from('firm_logos')
+    .select('logo_key')
+    .eq('crd', crd)
+    .eq('has_logo', true)
+    .single();
+
   // Parse asset allocation from firm data
   const assetAllocation: AssetAllocation | null = firmData ? {
     cash: firmData.asset_allocation_cash ? parseFloat(firmData.asset_allocation_cash) : null,
@@ -182,6 +190,7 @@ async function getFirmData(crd: string) {
   return {
     firmData: firmData as FirmData | null,
     displayName: firmName?.display_name as string | null,
+    logoKey: firmLogo?.logo_key as string | null,
     feeTiers: feeTiers as FeeTier[] | null,
     feesAndMins: feesAndMins as FeesAndMins | null,
     profileText: profileText as ProfileText | null,
@@ -252,7 +261,7 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, displayName, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
+  const { firmData, displayName, logoKey, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
   const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
 
   if (error || !firmData) {
@@ -326,13 +335,16 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div>
+        <div className="flex items-start gap-4">
+          <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" />
+          <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
             {firmDisplayName}
           </h1>
           <p className="mt-1 text-slate-500">
             {firm.main_office_city}, {firm.main_office_state} • CRD #{firm.crd}
           </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
