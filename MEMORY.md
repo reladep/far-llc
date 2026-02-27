@@ -55,11 +55,13 @@ _Last updated: 2026-02-16_
 - **Directory page updated** (2/21): Now displays `display_name` from firm_names table alongside primary business name
 - **RegulatoryDisclosures.tsx deployed** (2/22): New disclosure badge + accordion component on firm profiles with severity-coded sections
 - **Firm scores worker created** (2/22): Calculates composite scores (fee competitiveness, AUM growth, client growth, advisor bandwidth, etc.) - pending table creation
+- **/match and /match/results pages built** (2/25): 8-step questionnaire for user-to-firm matching with ranked results, match %, reason badges, Visor Score, and estimated fees
 - Logo scraping in test phase (45% hit rate)
 - Dev server running at localhost:3001
 - **Issues:**
   - Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
   - ADV Diff Checker generating ~1126 false positives per run (58% of firms showing "fee schedule changed" - unrealistic, needs threshold tuning)
+  - **Issue (resolved):** Industry News Poller cron job failing — `workers/industry-news.js` doesn't exist. Cron job removed (2/26).
 
 ## Daily Self Review Rules (as of 2/23/2026)
 
