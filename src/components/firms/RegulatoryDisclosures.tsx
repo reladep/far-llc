@@ -1,41 +1,22 @@
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, Badge } from '@/components/ui';
 
 interface FirmDisclosureData {
-  // Criminal
-  disclosure_firm_felony_charge?: string | null;
-  disclosure_firm_felony_conviction?: string | null;
-  disclosure_firm_misdemenor_charge?: string | null;
-  disclosure_firm_misdemenor_conviction?: string | null;
-  // Federal / Regulatory
-  disclosure_firm_federal_false_statement?: string | null;
-  disclosure_firm_federal_investment_order_10_years?: string | null;
-  disclosure_firm_federal_revoke?: string | null;
-  disclosure_firm_federal_suspension_restrictions?: string | null;
-  disclosure_firm_federal_violations?: string | null;
-  disclosure_firm_current_regulatory_proceedings?: string | null;
-  disclosure_firm_suspension_revoked?: string | null;
-  // SEC / CFTC
-  disclosure_firm_sec_cftc_false_statement?: string | null;
-  disclosure_firm_sec_cftc_investment_order?: string | null;
-  disclosure_firm_sec_cftc_monetary_penalty?: string | null;
-  disclosure_firm_sec_cftc_suspension_restrictions?: string | null;
-  disclosure_firm_sec_cftc_violations?: string | null;
-  // Self-Regulatory (SRO)
-  disclosure_firm_self_regulatory_discipline?: string | null;
-  disclosure_firm_self_regulatory_false_statement?: string | null;
-  disclosure_firm_self_regulatory_suspension_restrictions?: string | null;
-  disclosure_firm_self_regulatory_violation?: string | null;
-  // Court Actions
-  disclosure_firm_court_ruling_dismissal?: string | null;
-  disclosure_firm_court_ruling_investment?: string | null;
-  disclosure_firm_court_ruling_ongoing_litigation?: string | null;
-  disclosure_firm_court_ruling_violation?: string | null;
+  [key: string]: string | number | null | undefined;
+}
+
+interface DisclosureItem {
+  key: string;
+  label: string;
+  description: string;
 }
 
 interface DisclosureCategory {
   label: string;
   severity: 'critical' | 'serious' | 'moderate' | 'minor';
-  items: { key: string; label: string; description: string }[];
+  items: DisclosureItem[];
 }
 
 const CATEGORIES: DisclosureCategory[] = [
@@ -74,7 +55,7 @@ const CATEGORIES: DisclosureCategory[] = [
     ],
   },
   {
-    label: 'Self-Regulatory Organization (SRO) Actions',
+    label: 'Self-Regulatory Organization (SRO)',
     severity: 'moderate',
     items: [
       { key: 'disclosure_firm_self_regulatory_violation', label: 'SRO Violation', description: 'A self-regulatory organization (e.g. FINRA) has found the firm in violation of its rules.' },
@@ -95,11 +76,11 @@ const CATEGORIES: DisclosureCategory[] = [
   },
 ];
 
-const SEVERITY_STYLES = {
-  critical: { bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-800', icon: '🔴' },
-  serious: { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-800', icon: '🟠' },
-  moderate: { bg: 'bg-yellow-50', border: 'border-yellow-200', badge: 'bg-yellow-100 text-yellow-800', icon: '🟡' },
-  minor: { bg: 'bg-slate-50', border: 'border-slate-200', badge: 'bg-slate-100 text-slate-700', icon: '⚪' },
+const SEVERITY_DOT = {
+  critical: 'bg-red-500',
+  serious: 'bg-orange-400',
+  moderate: 'bg-yellow-400',
+  minor: 'bg-slate-300',
 };
 
 interface RegulatoryDisclosuresProps {
@@ -107,10 +88,11 @@ interface RegulatoryDisclosuresProps {
 }
 
 export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosuresProps) {
-  // Check each category for Y values
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
   const flaggedCategories = CATEGORIES.map(category => {
     const flaggedItems = category.items.filter(item => {
-      const val = (firmData as Record<string, string | null | undefined>)[item.key];
+      const val = firmData[item.key];
       return val === 'Y' || val === 'y';
     });
     return { ...category, flaggedItems };
@@ -118,66 +100,78 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
 
   const totalFlags = flaggedCategories.reduce((sum, c) => sum + c.flaggedItems.length, 0);
   const hasCleanRecord = totalFlags === 0;
-  const hasCritical = flaggedCategories.some(c => c.severity === 'critical');
-  const hasSerious = flaggedCategories.some(c => c.severity === 'serious');
 
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-1">
           <h2 className="text-lg font-semibold text-slate-900">Regulatory Disclosures</h2>
           {hasCleanRecord ? (
-            <Badge className="bg-green-100 text-green-800">✓ Clean Record</Badge>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Clean
+            </span>
           ) : (
-            <Badge className={hasCritical ? 'bg-red-100 text-red-800' : hasSerious ? 'bg-orange-100 text-orange-800' : 'bg-yellow-100 text-yellow-800'}>
-              {totalFlags} disclosure{totalFlags !== 1 ? 's' : ''}
-            </Badge>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+              {totalFlags} flagged
+            </span>
           )}
         </div>
 
         {hasCleanRecord ? (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-            <p className="text-green-800 font-medium">No regulatory disclosures on file</p>
-            <p className="text-green-700 text-sm mt-1">
-              This firm has no criminal, regulatory, SEC/CFTC, self-regulatory, or court disclosures
-              reported in their SEC filings. This is a positive indicator of regulatory compliance.
-            </p>
-          </div>
+          <p className="text-sm text-slate-500 mt-2">
+            No regulatory disclosures on file. This firm has a clean record across all SEC disclosure categories.
+          </p>
         ) : (
-          <div className="space-y-4">
-            <p className="text-slate-600 text-sm">
-              The following disclosures were reported in this firm&apos;s SEC filings. Disclosures don&apos;t
-              necessarily mean wrongdoing — some may be routine or resolved — but they warrant review.
+          <>
+            <p className="text-sm text-slate-500 mt-1 mb-4">
+              Disclosures reported in SEC filings. Click to expand details.
             </p>
 
-            {flaggedCategories.map((category) => {
-              const styles = SEVERITY_STYLES[category.severity];
-              return (
-                <div key={category.label} className={`rounded-lg border ${styles.border} ${styles.bg} p-4`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span>{styles.icon}</span>
-                    <h3 className="font-semibold text-slate-900 text-sm">{category.label}</h3>
-                    <Badge className={`${styles.badge} text-xs`}>
-                      {category.flaggedItems.length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {category.flaggedItems.map((item) => (
-                      <div key={item.key} className="pl-6">
-                        <p className="text-sm font-medium text-slate-800">{item.label}</p>
-                        <p className="text-sm text-slate-600">{item.description}</p>
+            <div className="divide-y divide-slate-100">
+              {flaggedCategories.map((category) => {
+                const isExpanded = expandedCategory === category.label;
+                const dotColor = SEVERITY_DOT[category.severity];
+
+                return (
+                  <div key={category.label}>
+                    <button
+                      onClick={() => setExpandedCategory(isExpanded ? null : category.label)}
+                      className="w-full flex items-center justify-between py-3 text-left hover:bg-slate-50 -mx-2 px-2 rounded transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                        <span className="text-sm font-medium text-slate-800">{category.label}</span>
+                        <span className="text-xs text-slate-400">{category.flaggedItems.length}</span>
                       </div>
-                    ))}
+                      <svg
+                        className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="pb-3 pl-7 space-y-2">
+                        {category.flaggedItems.map((item) => (
+                          <div key={item.key}>
+                            <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                            <p className="text-xs text-slate-500 leading-relaxed">{item.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
-        <p className="text-xs text-slate-400 mt-4">
-          Source: SEC Form ADV filings. Last updated based on most recent filing.
-        </p>
+        <p className="text-xs text-slate-300 mt-4">Source: SEC Form ADV</p>
       </CardContent>
     </Card>
   );
