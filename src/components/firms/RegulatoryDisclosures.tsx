@@ -105,11 +105,7 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
   const hasSerious = flaggedCategories.some(c => c.severity === 'serious');
   const cardBg = hasCleanRecord
     ? 'bg-green-50/60 border-green-200'
-    : hasCritical
-      ? 'bg-red-50/40 border-red-200'
-      : hasSerious
-        ? 'bg-amber-50/40 border-amber-200'
-        : 'bg-yellow-50/40 border-yellow-200';
+    : 'bg-red-50/40 border-red-200';
 
   return (
     <Card className={cardBg}>
