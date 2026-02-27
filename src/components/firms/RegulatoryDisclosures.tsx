@@ -101,8 +101,18 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
   const totalFlags = flaggedCategories.reduce((sum, c) => sum + c.flaggedItems.length, 0);
   const hasCleanRecord = totalFlags === 0;
 
+  const hasCritical = flaggedCategories.some(c => c.severity === 'critical');
+  const hasSerious = flaggedCategories.some(c => c.severity === 'serious');
+  const cardBg = hasCleanRecord
+    ? 'bg-green-50/60 border-green-200'
+    : hasCritical
+      ? 'bg-red-50/40 border-red-200'
+      : hasSerious
+        ? 'bg-amber-50/40 border-amber-200'
+        : 'bg-yellow-50/40 border-yellow-200';
+
   return (
-    <Card>
+    <Card className={cardBg}>
       <CardContent className="px-4 py-3">
         {/* Header */}
         <div className="flex items-center justify-between">
