@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, Badge } from '@/components/ui';
 
 export const metadata: Metadata = {
-  title: 'Advisor Directory by State — FAR',
+  title: 'Advisor Directory by State — Visor Index',
   description: 'Browse SEC-registered investment advisors by state. Find and compare financial advisors near you.',
 };
 

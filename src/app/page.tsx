@@ -331,7 +331,7 @@ export default function HomePage() {
       <section className="bg-white py-16 md:py-24 lg:py-32">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold text-slate-900">
-            Why FAR?
+            Why Visor Index?
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[

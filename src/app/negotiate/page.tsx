@@ -287,7 +287,7 @@ export default function NegotiatePage() {
 
   return (
     <>
-      <title>Fee Negotiator — Are You Overpaying Your Advisor? | FAR</title>
+      <title>Fee Negotiator — Are You Overpaying Your Advisor? | Visor Index</title>
       <meta name="description" content="Find out if you're overpaying your financial advisor. Compare your fees to industry benchmarks and get a personalized negotiation playbook." />
 
       <div className="min-h-screen">

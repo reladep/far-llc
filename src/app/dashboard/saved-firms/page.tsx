@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import RemoveFirmButton from '@/components/firms/RemoveFirmButton';
 
 export const metadata: Metadata = {
-  title: 'Saved Firms - FAR',
+  title: 'Saved Firms - Visor Index',
 };
 
 function formatAUM(value: number | null): string {

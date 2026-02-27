@@ -12,8 +12,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'FAR — Find a Registered Investment Advisor',
-    template: '%s | FAR',
+    default: 'Visor Index — See Your Advisor Clearly',
+    template: '%s | Visor Index',
   },
   description:
     'Search, compare, and connect with SEC-registered investment advisors. Transparent data on fees, AUM, services, and client reviews.',

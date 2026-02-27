@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const code = params.slug.toUpperCase();
   const name = STATE_NAMES[code] || params.slug;
   return {
-    title: `Financial Advisors in ${name} — FAR`,
+    title: `Financial Advisors in ${name} — Visor Index`,
     description: `Browse and compare SEC-registered investment advisory firms in ${name}. View fees, AUM, and more.`,
   };
 }

@@ -78,7 +78,7 @@ export function MobileNav() {
         )}
       >
         <div className="flex h-14 items-center justify-between border-b border-border px-4">
-          <span className="text-lg font-bold text-primary">FAR</span>
+          <span className="text-lg font-bold text-primary">Visor Index</span>
           <button
             onClick={() => setOpen(false)}
             className="flex h-10 w-10 items-center justify-center rounded-lg text-text-primary hover:bg-bg-secondary"

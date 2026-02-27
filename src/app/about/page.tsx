@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'FAR helps consumers find the right advisor through data, not marketing.',
+  description: 'Visor Index helps consumers find the right advisor through data, not marketing.',
 };
 
 const steps = [
@@ -32,7 +32,7 @@ export default function AboutPage() {
           Making Financial Advice Transparent
         </h1>
         <p className="mt-4 text-lg text-text-secondary">
-          FAR helps consumers find the right advisor through data, not marketing.
+          Visor Index helps consumers find the right advisor through data, not marketing.
         </p>
       </div>
 

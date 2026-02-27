@@ -51,9 +51,9 @@ export function Header() {
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">FAR</span>
+          <span className="text-xl font-bold text-primary">Visor Index</span>
           <span className="hidden text-sm text-text-muted sm:inline">
-            Find an Advisor
+            See Your Advisor Clearly
           </span>
         </Link>
 

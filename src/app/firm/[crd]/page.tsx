@@ -194,7 +194,7 @@ export async function generateMetadata({
   const name = firmData?.primary_business_name || 'Firm';
   
   return {
-    title: `${name} - FAR`,
+    title: `${name} - Visor Index`,
     description: `View detailed profile, fees, services, and reviews for ${name}. SEC-registered investment advisor.`,
   };
 }

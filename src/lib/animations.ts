@@ -1,5 +1,5 @@
 /**
- * Motion design constants for FAR
+ * Motion design constants for Visor Index
  * Based on Apple-style motion design spec
  */
 
