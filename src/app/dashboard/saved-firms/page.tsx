@@ -41,13 +41,14 @@ export default async function SavedFirmsPage() {
   let firms: Record<string, any> = {};
   
   if (crds.length > 0) {
-    const { data: firmData } = await supabaseAdmin
-      .from('firmdata_current')
-      .select('crd, primary_business_name, main_office_city, main_office_state, aum')
-      .in('crd', crds);
+    const [{ data: firmData }, { data: nameData }] = await Promise.all([
+      supabaseAdmin.from('firmdata_current').select('crd, primary_business_name, main_office_city, main_office_state, aum').in('crd', crds),
+      supabaseAdmin.from('firm_names').select('crd, display_name').in('crd', crds),
+    ]);
+    const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
     
     if (firmData) {
-      firms = firmData.reduce((acc, f) => { acc[f.crd] = f; return acc; }, {} as Record<string, any>);
+      firms = firmData.reduce((acc, f) => { acc[f.crd] = { ...f, display_name: nameMap.get(f.crd) || null }; return acc; }, {} as Record<string, any>);
     }
   }
 
@@ -74,7 +75,7 @@ export default async function SavedFirmsPage() {
         <div className="mt-6 grid gap-4">
           {firmsToDisplay.map((fav: any) => {
             const firm = fav.firmdata_current;
-            const name = firm?.primary_business_name || `CRD #${fav.crd}`;
+            const name = firm?.display_name || firm?.primary_business_name || `CRD #${fav.crd}`;
             const location = [firm?.main_office_city, firm?.main_office_state].filter(Boolean).join(', ');
             const savedDate = new Date(fav.created_at).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric', year: 'numeric',

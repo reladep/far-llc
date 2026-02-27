@@ -9,6 +9,7 @@ const supabase = createSupabaseBrowserClient();
 interface FirmBasic {
   crd: number;
   primary_business_name: string;
+  display_name?: string | null;
 }
 
 interface FeeTier {
@@ -100,12 +101,13 @@ export default function ComparePage() {
       const crds = addCrds.split(',').map(c => parseInt(c)).filter(c => !isNaN(c));
       if (crds.length > 0) {
         // Fetch firm names and add to selection
-        supabase.from('firmdata_current')
-          .select('crd, primary_business_name')
-          .in('crd', crds)
-          .then(({ data }) => {
+        Promise.all([
+          supabase.from('firmdata_current').select('crd, primary_business_name').in('crd', crds),
+          supabase.from('firm_names').select('crd, display_name').in('crd', crds),
+        ]).then(([{ data }, { data: names }]) => {
             if (data && data.length > 0) {
-              const firms = data.map(d => ({ crd: d.crd, primary_business_name: d.primary_business_name! }));
+              const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+              const firms = data.map(d => ({ crd: d.crd, primary_business_name: d.primary_business_name!, display_name: nameMap.get(d.crd) || null }));
               setSelected(firms.slice(0, 4));
             }
           });
@@ -125,9 +127,14 @@ export default function ComparePage() {
         .select('crd, primary_business_name')
         .ilike('primary_business_name', `%${query}%`)
         .limit(10);
-      setResults((data || []).filter(d => d.primary_business_name).map(d => ({
+      if (!data) { setResults([]); return; }
+      const crds = data.map(d => d.crd);
+      const { data: names } = await supabase.from('firm_names').select('crd, display_name').in('crd', crds);
+      const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+      setResults(data.filter(d => d.primary_business_name).map(d => ({
         crd: d.crd,
-        primary_business_name: d.primary_business_name!
+        primary_business_name: d.primary_business_name!,
+        display_name: nameMap.get(d.crd) || null,
       })) as FirmBasic[]);
     }, 300);
     return () => clearTimeout(timer);
@@ -153,7 +160,7 @@ export default function ComparePage() {
 
       data.push({
         crd: firm.crd,
-        name: firm.primary_business_name,
+        name: firm.display_name || firm.primary_business_name,
         location: current ? `${current.main_office_city || ''}, ${current.main_office_state || ''}` : 'N/A',
         aum: formatAUM(current?.aum),
         aumRaw: current?.aum || null,
@@ -236,7 +243,7 @@ export default function ComparePage() {
                   idx === selectedIndex ? 'bg-green-100 text-green-800' : 'hover:bg-green-50 text-slate-700'
                 }`}
               >
-                {r.primary_business_name} <span className="text-slate-400">#{r.crd}</span>
+                {r.display_name || r.primary_business_name} <span className="text-slate-400">#{r.crd}</span>
               </button>
             ))}
           </div>
@@ -247,7 +254,7 @@ export default function ComparePage() {
       <div className="mt-4 flex flex-wrap gap-2">
         {selected.map(firm => (
           <div key={firm.crd} className="flex items-center gap-2 rounded-lg border border-green-600 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700">
-            {firm.primary_business_name}
+            {firm.display_name || firm.primary_business_name}
             <button onClick={() => removeFirm(firm.crd)} className="text-green-400 hover:text-green-700">×</button>
           </div>
         ))}

@@ -88,6 +88,7 @@ function LogoTicker() {
 interface Suggestion {
   crd: number;
   primary_business_name: string;
+  display_name?: string | null;
   main_office_city: string | null;
   main_office_state: string | null;
 }
@@ -115,7 +116,14 @@ export default function HomePage() {
         .ilike('primary_business_name', `%${searchQuery.trim()}%`)
         .limit(8);
       
-      setSuggestions(data || []);
+      if (data && data.length > 0) {
+        const crds = data.map(d => d.crd);
+        const { data: names } = await supabase.from('firm_names').select('crd, display_name').in('crd', crds);
+        const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+        setSuggestions(data.map(d => ({ ...d, display_name: nameMap.get(d.crd) || null })));
+      } else {
+        setSuggestions([]);
+      }
       setShowDropdown(true);
       setSelectedIndex(-1);
     }, 200);
@@ -232,7 +240,7 @@ export default function HomePage() {
                         }`}
                       >
                         <div>
-                          <span className="text-sm font-medium text-slate-900">{firm.primary_business_name}</span>
+                          <span className="text-sm font-medium text-slate-900">{firm.display_name || firm.primary_business_name}</span>
                           {firm.main_office_city && firm.main_office_state && (
                             <span className="ml-2 text-xs text-slate-500">
                               {firm.main_office_city}, {firm.main_office_state}

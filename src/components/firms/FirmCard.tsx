@@ -19,11 +19,11 @@ export function FirmCard({ firm }: FirmCardProps) {
       >
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 shrink-0 rounded-lg bg-primary-100 flex items-center justify-center text-primary font-bold text-sm">
-            {firm.primary_business_name.slice(0, 2).toUpperCase()}
+            {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-text-primary truncate">
-              {firm.primary_business_name}
+              {firm.display_name || firm.primary_business_name}
             </h3>
             <p className="text-sm text-text-muted">
               {firm.main_office_city}, {firm.main_office_state}

@@ -10,6 +10,7 @@ const supabase = createSupabaseBrowserClient();
 interface Firm {
   crd: number;
   primary_business_name: string;
+  display_name?: string | null;
   main_office_city: string;
   main_office_state: string;
   aum: number | null;
@@ -198,11 +199,11 @@ function FirmCard({ firm, isSelected, cardRef }: { firm: Firm; isSelected?: bool
       <Card variant="default" padding="md" className={`hover:shadow-md transition-shadow cursor-pointer ${isSelected ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
         <div className="flex items-start gap-3 md:gap-4">
           <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-lg bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs md:text-sm">
-            {firm.primary_business_name.split(' ').map(w => w[0]).join('').slice(0,2)}
+            {(firm.display_name || firm.primary_business_name).split(' ').map(w => w[0]).join('').slice(0,2)}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-slate-900 truncate text-sm md:text-base">
-              {firm.primary_business_name}
+              {firm.display_name || firm.primary_business_name}
             </h3>
             <p className="text-xs md:text-sm text-slate-500">{firm.main_office_city}, {firm.main_office_state}</p>
             
@@ -323,12 +324,20 @@ export default function SearchPage() {
         .select('crd, min_aum')
         .in('crd', crds);
 
+      // Fetch display names
+      const { data: nameData } = await supabase
+        .from('firm_names')
+        .select('crd, display_name')
+        .in('crd', crds);
+
       // Merge data
       const profileMap = new Map((profileData || []).map(p => [p.crd, p]));
       const feeMap = new Map((feeData || []).map(f => [f.crd, f]));
+      const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
 
       let mergedFirms = baseFirms.map(firm => ({
         ...firm,
+        display_name: nameMap.get(firm.crd) || null,
         client_base: profileMap.get(firm.crd)?.client_base || null,
         wealth_tier: profileMap.get(firm.crd)?.wealth_tier || null,
         investment_philosophy: profileMap.get(firm.crd)?.investment_philosophy || null,

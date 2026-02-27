@@ -149,6 +149,12 @@ async function getFirmData(crd: string) {
     .eq('crd', crd)
     .order('date_submitted', { ascending: true });
 
+  const { data: firmName } = await supabase
+    .from('firm_names')
+    .select('display_name')
+    .eq('crd', crd)
+    .single();
+
   // Parse asset allocation from firm data
   const assetAllocation: AssetAllocation | null = firmData ? {
     cash: firmData.asset_allocation_cash ? parseFloat(firmData.asset_allocation_cash) : null,
@@ -175,6 +181,7 @@ async function getFirmData(crd: string) {
 
   return {
     firmData: firmData as FirmData | null,
+    displayName: firmName?.display_name as string | null,
     feeTiers: feeTiers as FeeTier[] | null,
     feesAndMins: feesAndMins as FeesAndMins | null,
     profileText: profileText as ProfileText | null,
@@ -191,8 +198,8 @@ export async function generateMetadata({
 }: {
   params: { crd: string };
 }): Promise<Metadata> {
-  const { firmData } = await getFirmData(params.crd);
-  const name = firmData?.primary_business_name || 'Firm';
+  const { firmData, displayName } = await getFirmData(params.crd);
+  const name = displayName || firmData?.primary_business_name || 'Firm';
   
   return {
     title: `${name} - Visor Index`,
@@ -245,7 +252,8 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
+  const { firmData, displayName, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
+  const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
 
   if (error || !firmData) {
     return (
@@ -284,7 +292,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="text-center py-20">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-            {firm.primary_business_name}
+            {firmDisplayName}
           </h1>
           <p className="mt-2 text-slate-500">
             {firm.main_office_city}, {firm.main_office_state}
@@ -313,14 +321,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
       <nav className="text-sm text-slate-500 mb-4">
         <a href="/search" className="hover:text-green-600">Search</a>
         <span className="mx-2">/</span>
-        <span className="text-slate-900">{firm.primary_business_name}</span>
+        <span className="text-slate-900">{firmDisplayName}</span>
       </nav>
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-            {firm.primary_business_name}
+            {firmDisplayName}
           </h1>
           <p className="mt-1 text-slate-500">
             {firm.main_office_city}, {firm.main_office_state} • CRD #{firm.crd}

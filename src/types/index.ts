@@ -1,6 +1,7 @@
 export interface Firm {
   crd: number;
   primary_business_name: string;
+  display_name?: string | null;
   main_office_city: string;
   main_office_state: string;
   aum: number;
