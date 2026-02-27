@@ -31,6 +31,7 @@ function formatAUM(value: number | null): string {
 interface StateFirm {
   crd: number;
   primary_business_name: string | null;
+  display_name: string | null;
   main_office_city: string | null;
   aum: number | null;
   employee_total: number | null;
@@ -44,7 +45,20 @@ async function getStateFirms(stateCode: string) {
     .eq('main_office_state', stateCode.toUpperCase())
     .order('aum', { ascending: false, nullsFirst: false });
 
-  return (data || []) as StateFirm[];
+  if (!data || data.length === 0) return [];
+
+  const crds = data.map(f => f.crd);
+  const { data: firmNames } = await supabase
+    .from('firm_names')
+    .select('crd, display_name')
+    .in('crd', crds);
+
+  const nameMap = new Map(firmNames?.map(n => [n.crd, n.display_name]) || []);
+
+  return (data || []).map(firm => ({
+    ...firm,
+    display_name: nameMap.get(firm.crd) || null
+  })) as StateFirm[];
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -117,8 +131,11 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
                     <div className="sm:grid grid-cols-12 gap-4 items-center">
                       <div className="col-span-5">
                         <p className="font-semibold text-text-primary text-sm truncate">
-                          {firm.primary_business_name || 'Unknown Firm'}
+                          {firm.display_name || firm.primary_business_name || 'Unknown Firm'}
                         </p>
+                        {firm.display_name && firm.primary_business_name && firm.display_name !== firm.primary_business_name && (
+                          <p className="text-xs text-text-tertiary truncate">{firm.primary_business_name}</p>
+                        )}
                         <p className="text-xs text-text-tertiary sm:hidden mt-0.5">
                           {firm.main_office_city || ''} · {formatAUM(firm.aum)}
                         </p>

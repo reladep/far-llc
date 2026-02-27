@@ -89,6 +89,12 @@ export function Header() {
           >
             Pricing
           </Link>
+          <Link
+            href="/match"
+            className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors"
+          >
+            Find a Match
+          </Link>
         </nav>
 
         {/* Auth + Mobile Menu */}
