@@ -103,10 +103,10 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="px-4 py-3">
         {/* Header */}
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-semibold text-slate-900">Regulatory Disclosures</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900">Regulatory Disclosures</h2>
           {hasCleanRecord ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
               <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -121,14 +121,10 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
         </div>
 
         {hasCleanRecord ? (
-          <p className="text-sm text-slate-500 mt-2">
-            No regulatory disclosures on file. This firm has a clean record across all SEC disclosure categories.
-          </p>
+          <p className="text-xs text-slate-400 mt-0.5">No disclosures on file.</p>
         ) : (
           <>
-            <p className="text-sm text-slate-500 mt-1 mb-4">
-              Disclosures reported in SEC filings. Click to expand details.
-            </p>
+            <p className="text-xs text-slate-400 mt-0.5 mb-2">Click to expand details.</p>
 
             <div className="divide-y divide-slate-100">
               {flaggedCategories.map((category) => {
@@ -139,11 +135,11 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
                   <div key={category.label}>
                     <button
                       onClick={() => setExpandedCategory(isExpanded ? null : category.label)}
-                      className="w-full flex items-center justify-between py-3 text-left hover:bg-slate-50 -mx-2 px-2 rounded transition-colors"
+                      className="w-full flex items-center justify-between py-1.5 text-left hover:bg-slate-50 -mx-2 px-2 rounded transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dotColor}`} />
-                        <span className="text-sm font-medium text-slate-800">{category.label}</span>
+                        <span className="text-xs font-medium text-slate-800">{category.label}</span>
                         <span className="text-xs text-slate-400">{category.flaggedItems.length}</span>
                       </div>
                       <svg
@@ -155,11 +151,11 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
                     </button>
 
                     {isExpanded && (
-                      <div className="pb-3 pl-7 space-y-2">
+                      <div className="pb-2 pl-7 space-y-1">
                         {category.flaggedItems.map((item) => (
                           <div key={item.key}>
-                            <p className="text-sm font-medium text-slate-700">{item.label}</p>
-                            <p className="text-xs text-slate-500 leading-relaxed">{item.description}</p>
+                            <p className="text-xs font-medium text-slate-700">{item.label}</p>
+                            <p className="text-xs text-slate-400 leading-snug">{item.description}</p>
                           </div>
                         ))}
                       </div>
@@ -171,7 +167,7 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
           </>
         )}
 
-        <p className="text-xs text-slate-300 mt-4">Source: SEC Form ADV</p>
+        <p className="text-xs text-slate-300 mt-2">Source: SEC Form ADV</p>
       </CardContent>
     </Card>
   );
