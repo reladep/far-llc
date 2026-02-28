@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, Badge } from '@/components/ui';
 import { getFirmScores } from '@/lib/scores';
 import { getStarRating } from '@/types';
+import StarRating from '@/components/ui/StarRating';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -39,6 +40,7 @@ interface StateFirm {
   employee_total: number | null;
   employee_investment: number | null;
   final_score?: number | null;
+  stars?: number | null;
 }
 
 async function getStateFirms(stateCode: string) {
@@ -64,7 +66,8 @@ async function getStateFirms(stateCode: string) {
   return (data || []).map(firm => ({
     ...firm,
     display_name: nameMap.get(firm.crd) || null,
-    final_score: scoreMap.get(firm.crd)?.final_score ?? null
+    final_score: scoreMap.get(firm.crd)?.final_score ?? null,
+    stars: scoreMap.get(firm.crd)?.stars ?? null
   })) as StateFirm[];
 }
 
@@ -149,8 +152,8 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
                         </p>
                       </div>
                       <div className="col-span-1 text-center">
-                        {firm.final_score != null ? (
-                          <span className="text-lg">{getStarRating(firm.final_score).display}</span>
+                        {firm.stars != null ? (
+                          <StarRating stars={firm.stars} size="sm" />
                         ) : (
                           <span className="text-xs text-text-tertiary">—</span>
                         )}

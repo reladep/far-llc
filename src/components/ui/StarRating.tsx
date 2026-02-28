@@ -6,7 +6,7 @@ interface StarRatingProps {
   showValue?: boolean;
 }
 
-export default function StarRating({ stars, size = 'md', showValue = true }: StarRatingProps) {
+export default function StarRating({ stars, size = 'md', showValue = false }: StarRatingProps) {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-6 h-6',
