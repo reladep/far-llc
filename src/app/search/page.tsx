@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, Badge, Button } from '@/components/ui';
+import StarRating from '@/components/ui/StarRating';
 import { cn } from '@/lib/utils';
 import FirmLogo from '@/components/firms/FirmLogo';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -29,6 +30,9 @@ interface Firm {
   specialty_strategies: string | null;
   // Fee tiers
   min_fee: number | null;
+  // Visor Score
+  final_score?: number | null;
+  stars?: number | null;
 }
 
 function formatAUM(value: number | null): string {
@@ -202,10 +206,17 @@ function FirmCard({ firm, isSelected, cardRef }: { firm: Firm; isSelected?: bool
         <div className="flex items-start gap-3 md:gap-4">
           <FirmLogo logoKey={firm.logo_key} firmName={firm.display_name || firm.primary_business_name} size="md" />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 truncate text-sm md:text-base">
-              {firm.display_name || firm.primary_business_name}
-            </h3>
-            <p className="text-xs md:text-sm text-slate-500">{firm.main_office_city}, {firm.main_office_state}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-slate-900 truncate text-sm md:text-base">
+                  {firm.display_name || firm.primary_business_name}
+                </h3>
+                <p className="text-xs md:text-sm text-slate-500">{firm.main_office_city}, {firm.main_office_state}</p>
+              </div>
+              {firm.stars != null && (
+                <StarRating stars={firm.stars} size="sm" />
+              )}
+            </div>
             
             {/* Client info tags */}
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -324,10 +335,11 @@ export default function SearchPage() {
         .select('crd, min_aum')
         .in('crd', crds);
 
-      // Fetch display names and logos
-      const [{ data: nameData }, { data: logoData }] = await Promise.all([
+      // Fetch display names, logos, and scores
+      const [{ data: nameData }, { data: logoData }, { data: scoreData }] = await Promise.all([
         supabase.from('firm_names').select('crd, display_name').in('crd', crds),
         supabase.from('firm_logos').select('crd, logo_key').eq('has_logo', true).in('crd', crds),
+        supabase.from('firm_scores').select('crd, final_score, stars').in('crd', crds),
       ]);
 
       // Merge data
@@ -335,6 +347,7 @@ export default function SearchPage() {
       const feeMap = new Map((feeData || []).map(f => [f.crd, f]));
       const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
       const logoMap = new Map((logoData || []).map(l => [l.crd, l.logo_key]));
+      const scoreMap = new Map((scoreData || []).map(s => [s.crd, s]));
 
       let mergedFirms = baseFirms.map(firm => ({
         ...firm,
@@ -346,6 +359,8 @@ export default function SearchPage() {
         firm_character: profileMap.get(firm.crd)?.firm_character || null,
         specialty_strategies: profileMap.get(firm.crd)?.specialty_strategies || null,
         min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd)!.min_aum) : null,
+        final_score: scoreMap.get(firm.crd)?.final_score ?? null,
+        stars: scoreMap.get(firm.crd)?.stars ?? null,
       }));
 
       // Apply additional client-side filters
