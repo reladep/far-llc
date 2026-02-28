@@ -1,238 +1,352 @@
 /**
- * Firm Scores Worker
+ * Visor Value Score Calculator
  * 
- * Calculates composite scores for each firm based on:
- * - Fee competitiveness (lower fees = higher score)
- * - AUM growth (historical growth rate)
- * - Client growth (client retention and growth)
- * - Advisor bandwidth (AUM per advisor - lower = more personal attention)
- * - Disclosure score (fewer disclosures = higher score)
+ * Calculates composite scores for all firms and upserts to firm_scores table.
+ * See /visor_value_score.md for full methodology.
  * 
- * Scores are normalized 0-100.
+ * 10 components × 10 points = 100 max score.
  */
 
-import { createClient } from '@supabase/supabase-js';
-import config from './config.js';
+const { supabase } = require('./config.js');
 
-const supabaseUrl = process.env.SUPABASE_URL || config.supabase.url;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || config.supabase.serviceKey;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// All disclosure columns in firmdata_current
+const DISCLOSURE_FIELDS = [
+  'disclosure_firm_court_ruling_dismissal', 'disclosure_firm_court_ruling_investment',
+  'disclosure_firm_court_ruling_ongoing_litigation', 'disclosure_firm_court_ruling_violation',
+  'disclosure_firm_current_regulatory_proceedings', 'disclosure_firm_federal_false_statement',
+  'disclosure_firm_federal_investment_order_10_years', 'disclosure_firm_federal_revoke',
+  'disclosure_firm_federal_suspension_restrictions', 'disclosure_firm_federal_violations',
+  'disclosure_firm_felony_charge', 'disclosure_firm_felony_conviction',
+  'disclosure_firm_misdemenor_charge', 'disclosure_firm_misdemenor_conviction',
+  'disclosure_firm_sec_cftc_false_statement', 'disclosure_firm_sec_cftc_investment_order',
+  'disclosure_firm_sec_cftc_monetary_penalty', 'disclosure_firm_sec_cftc_suspension_restrictions',
+  'disclosure_firm_sec_cftc_violations', 'disclosure_firm_suspension_revoked',
+  'disclosure_firm_self_regulatory_discipline', 'disclosure_firm_self_regulatory_false_statement',
+  'disclosure_firm_self_regulatory_suspension_restrictions', 'disclosure_firm_self_regulatory_violation',
+];
 
-interface FirmScore {
-  crd: number;
-  fee_score: number;
-  aum_growth_score: number;
-  client_growth_score: number;
-  advisor_bandwidth_score: number;
-  disclosure_score: number;
-  composite_score: number;
-  calculated_at: string;
-}
+// All client count fields
+const CLIENT_FIELDS = [
+  'client_hnw_number', 'client_non_hnw_number', 'client_pension_number',
+  'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number',
+  'client_other_number', 'client_banks_number', 'client_bdc_number',
+  'client_govt_number', 'client_insurance_number', 'client_investment_cos_number',
+  'client_other_advisors_number', 'client_swf_number',
+];
 
-// Weights for each component
-const WEIGHTS = {
-  fee_competitiveness: 0.30,
-  aum_growth: 0.20,
-  client_growth: 0.20,
-  advisor_bandwidth: 0.15,
-  disclosure: 0.15,
-};
+// --- Helper: Calculate tiered fee for a given portfolio amount ---
+function calcTieredFee(amount, tiers) {
+  if (!tiers || tiers.length === 0) return null;
 
-async function calculateFirmScores() {
-  console.log('🔍 Calculating firm scores...');
-  
-  const startTime = Date.now();
-  
-  // Fetch all firms with required data
-  const { data: firms, error } = await supabase
-    .from('firmdata_current')
-    .select(`
-      crd,
-      primary_business_name,
-      aum,
-      aum_discretionary,
-      employee_total,
-      employee_investment,
-      client_hnw_number,
-      client_non_hnw_number,
-      client_pension_number,
-      client_charitable_number,
-      client_corporations_number,
-      client_pooled_vehicles_number,
-      client_other_number,
-      client_banks_number,
-      client_bdc_number,
-      client_govt_number,
-      client_insurance_number,
-      client_investment_cos_number,
-      client_other_advisors_number,
-      client_swf_number
-    `)
-    .not('aum', 'is', null);
+  const sorted = tiers
+    .filter(t => t.fee_pct != null)
+    .sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
 
-  if (error) {
-    console.error('❌ Error fetching firms:', error);
-    return;
+  if (sorted.length === 0) return null;
+
+  if (sorted.length === 1) {
+    return amount * (sorted[0].fee_pct / 100);
   }
 
-  console.log(`📊 Processing ${firms.length} firms...`);
-  
-  // Fetch growth data for AUM growth calculation
-  const crds = firms.map(f => f.crd);
+  let totalFee = 0;
+  let remaining = amount;
+
+  for (let i = 0; i < sorted.length && remaining > 0; i++) {
+    const tierMin = parseInt(sorted[i].min_aum || '0');
+    const tierMax = sorted[i].max_aum;
+    const pct = sorted[i].fee_pct / 100;
+    const bracketSize = tierMax ? tierMax - tierMin : remaining;
+    const taxable = Math.min(remaining, bracketSize);
+    totalFee += taxable * pct;
+    remaining -= taxable;
+  }
+
+  return totalFee;
+}
+
+// --- Helper: Get quartile score ---
+function quartileScore(value, sortedValues, higherIsBetter = true) {
+  if (value == null || sortedValues.length === 0) return 0;
+  const rank = sortedValues.filter(v => higherIsBetter ? v <= value : v >= value).length;
+  const pct = rank / sortedValues.length;
+  if (pct >= 0.75) return 10;
+  if (pct >= 0.50) return 7;
+  if (pct >= 0.25) return 3;
+  return 0;
+}
+
+function getPercentile(value, sortedValues, higherIsBetter = true) {
+  if (value == null || sortedValues.length === 0) return null;
+  const rank = sortedValues.filter(v => higherIsBetter ? v <= value : v >= value).length;
+  return Math.round((rank / sortedValues.length) * 100);
+}
+
+async function calculateScores() {
+  console.log('🔍 Calculating Visor Value Scores...');
+  const startTime = Date.now();
+
+  // --- Fetch all data ---
+  const selectFields = [
+    'crd', 'aum', 'employee_investment', 'employee_insurance', 'employee_broker_dealer',
+    'asset_allocation_derivatives', 'client_non_hnw_number',
+    ...CLIENT_FIELDS, ...DISCLOSURE_FIELDS,
+  ].join(',');
+
+  // Paginate to get all firms (Supabase default limit is 1000)
+  let firms = [];
+  let page = 0;
+  const PAGE_SIZE = 1000;
+  while (true) {
+    const { data, error: firmErr } = await supabase
+      .from('firmdata_current')
+      .select(selectFields)
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    if (firmErr) { console.error('❌ Error fetching firms:', firmErr); return; }
+    if (!data || data.length === 0) break;
+    firms = firms.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    page++;
+  }
+  console.log(`📊 Loaded ${firms.length} firms`);
+
+  // Fee structure types
+  const { data: feesAndMins } = await supabase
+    .from('firmdata_feesandmins')
+    .select('crd, fee_structure_type');
+  const feeTypeMap = new Map((feesAndMins || []).map(f => [f.crd, f.fee_structure_type]));
+
+  // Fee tiers (for fee competitiveness calculation)
+  const { data: allFeeTiers } = await supabase
+    .from('firmdata_feetiers')
+    .select('crd, min_aum, max_aum, fee_pct');
+  const feeTierMap = new Map();
+  (allFeeTiers || []).forEach(t => {
+    if (!feeTierMap.has(t.crd)) feeTierMap.set(t.crd, []);
+    feeTierMap.get(t.crd).push(t);
+  });
+
+  // Growth rate rankings
   const { data: growthData } = await supabase
-    .from('firmdata_growth')
-    .select('crd, aum, date_submitted')
-    .in('crd', crds)
-    .order('date_submitted', { ascending: true });
+    .from('firmdata_growth_rate_rankings')
+    .select('crd, aum_5y_growth_annualized, aum_1y_growth_annualized, clients_5y_growth_annualized, clients_1y_growth_annualized');
+  const growthMap = new Map((growthData || []).map(g => [g.crd, g]));
 
-  // Fetch disclosure counts
-  const { data: disclosureCounts } = await supabase
-    .from('firm_disclosures')
-    .select('crd')
-    .in('crd', crds);
-  
-  const disclosureMap = new Map<number, number>();
-  disclosureCounts?.forEach(d => {
-    disclosureMap.set(d.crd, (disclosureMap.get(d.crd) || 0) + 1);
-  });
+  // --- Pre-compute distributions for percentile-based scores ---
 
-  // Calculate percentile ranks for each metric
-  const feeData = firms
-    .filter(f => f.aum && f.aum > 0)
-    .map(f => ({ crd: f.crd, aum: f.aum, employees: f.employee_investment || 1 }))
-    .map(f => ({ 
-      crd: f.crd, 
-      // Fee competitiveness: smaller AUM firms typically have higher fees
-      // We'll inverse this - higher AUM per employee = more efficient = higher score
-      feeMetric: f.aum / (f.employees || 1)
-    }));
-
-  // Get percentile for fee metric (higher = better)
-  const feeValues = feeData.map(f => f.feeMetric).sort((a, b) => a - b);
-  const getPercentile = (val: number) => {
-    const idx = feeValues.findIndex(v => v >= val);
-    return idx >= 0 ? (idx + 1) / feeValues.length : 0.5;
-  };
-
-  // Build growth map
-  const growthMap = new Map<number, { aums: number[], dates: string[] }>();
-  growthData?.forEach(g => {
-    if (!growthMap.has(g.crd)) {
-      growthMap.set(g.crd, { aums: [], dates: [] });
+  // Fee competitiveness: calculate $10M fee for each firm
+  const PORTFOLIO_SIZE = 10_000_000;
+  const feeCalcs = [];
+  for (const firm of firms) {
+    const tiers = feeTierMap.get(firm.crd);
+    const fee = calcTieredFee(PORTFOLIO_SIZE, tiers);
+    if (fee != null && fee > 0) {
+      feeCalcs.push({ crd: firm.crd, fee });
     }
-    const entry = growthMap.get(g.crd)!;
-    if (g.aum) entry.aums.push(parseFloat(g.aum));
-    if (g.date_submitted) entry.dates.push(g.date_submitted);
-  });
+  }
+  const sortedFees = feeCalcs.map(f => f.fee).sort((a, b) => a - b);
+  const feeMap = new Map(feeCalcs.map(f => [f.crd, f.fee]));
 
-  // Calculate scores for each firm
-  const scores: FirmScore[] = [];
+  // AUM growth distributions
+  const aumGrowthValues = [];
+  for (const firm of firms) {
+    const g = growthMap.get(firm.crd);
+    if (!g) continue;
+    const val = parseFloat(g.aum_5y_growth_annualized) || parseFloat(g.aum_1y_growth_annualized) || null;
+    if (val != null) aumGrowthValues.push(val);
+  }
+  aumGrowthValues.sort((a, b) => a - b);
+
+  // Client growth distributions
+  const clientGrowthValues = [];
+  for (const firm of firms) {
+    const g = growthMap.get(firm.crd);
+    if (!g) continue;
+    const val = parseFloat(g.clients_5y_growth_annualized) || parseFloat(g.clients_1y_growth_annualized) || null;
+    if (val != null) clientGrowthValues.push(val);
+  }
+  clientGrowthValues.sort((a, b) => a - b);
+
+  // Advisor bandwidth distributions
+  const bandwidthValues = [];
+  for (const firm of firms) {
+    const totalClients = CLIENT_FIELDS.reduce((sum, f) => sum + (parseFloat(firm[f]) || 0), 0);
+    const invEmployees = parseFloat(firm.employee_investment) || 0;
+    if (invEmployees > 0 && totalClients > 0) {
+      bandwidthValues.push(totalClients / invEmployees);
+    }
+  }
+  bandwidthValues.sort((a, b) => a - b);
+
+  // --- Calculate scores for each firm ---
+  const scores = [];
   
   for (const firm of firms) {
-    // 1. Fee competitiveness score (based on AUM - larger firms can offer lower fees)
-    let feeScore = 50;
-    if (firm.aum) {
-      const feeMetric = firm.aum / (firm.employee_investment || 1);
-      feeScore = getPercentile(feeMetric) * 100;
+    const totalClients = CLIENT_FIELDS.reduce((sum, f) => sum + (parseFloat(firm[f]) || 0), 0);
+
+    // 1. Disclosure score (10 pts)
+    const hasDisclosure = DISCLOSURE_FIELDS.some(f => firm[f] === 'Y' || firm[f] === 'y');
+    const disclosureScore = hasDisclosure ? 0 : 10;
+
+    // 2. Fee transparency score (10 pts)
+    const feeType = feeTypeMap.get(firm.crd);
+    let feeTransparencyScore = 0;
+    if (feeType === 'tiered' || feeType === 'flat_percentage') feeTransparencyScore = 10;
+    else if (feeType === 'range') feeTransparencyScore = 6;
+
+    // 3. Fee competitiveness score (10 pts)
+    const firmFee = feeMap.get(firm.crd);
+    // Lower fees are better, so we invert: quartile based on lowest = best
+    const feeCompScore = firmFee != null
+      ? quartileScore(firmFee, sortedFees, false) // false = lower is better
+      : 0;
+    const feeCompPct = firmFee != null ? getPercentile(firmFee, sortedFees, false) : null;
+
+    // 4. Conflict free score (10 pts)
+    const empBD = parseFloat(firm.employee_broker_dealer) || 0;
+    const empIns = parseFloat(firm.employee_insurance) || 0;
+    let conflictFreeScore = 10;
+    if (empBD > 0 && empIns > 0) conflictFreeScore = 0;
+    else if (empBD > 0) conflictFreeScore = 5;
+
+    // 5. AUM growth score (10 pts)
+    const growth = growthMap.get(firm.crd);
+    const aumGrowthVal = growth
+      ? (parseFloat(growth.aum_5y_growth_annualized) || parseFloat(growth.aum_1y_growth_annualized) || null)
+      : null;
+    let aumGrowthScore = 0;
+    let aumGrowthPct = null;
+    if (aumGrowthVal != null) {
+      const pctRank = aumGrowthValues.filter(v => v <= aumGrowthVal).length / aumGrowthValues.length;
+      aumGrowthPct = Math.round(pctRank * 100);
+      if (pctRank >= 0.75) aumGrowthScore = 10;
+      else if (pctRank >= 0.50) aumGrowthScore = 5;
+      else aumGrowthScore = 0;
     }
 
-    // 2. AUM growth score
-    let aumGrowthScore = 50;
-    const growthEntry = growthMap.get(firm.crd);
-    if (growthEntry && growthEntry.aums.length >= 2) {
-      const first = growthEntry.aums[0];
-      const last = growthEntry.aums[growthEntry.aums.length - 1];
-      const years = growthEntry.aums.length; // Simplified
-      if (first > 0 && years > 0) {
-        const cagr = Math.pow(last / first, 1 / Math.max(years, 1)) - 1;
-        // Normalize: 10%+ = 100, 0% = 50, -10% = 0
-        aumGrowthScore = Math.min(100, Math.max(0, 50 + cagr * 500));
-      }
+    // 6. Client growth score (10 pts)
+    const clientGrowthVal = growth
+      ? (parseFloat(growth.clients_5y_growth_annualized) || parseFloat(growth.clients_1y_growth_annualized) || null)
+      : null;
+    let clientGrowthScore = 0;
+    let clientGrowthPct = null;
+    if (clientGrowthVal != null) {
+      const pctRank = clientGrowthValues.filter(v => v <= clientGrowthVal).length / clientGrowthValues.length;
+      clientGrowthPct = Math.round(pctRank * 100);
+      if (pctRank >= 0.75) clientGrowthScore = 10;
+      else if (pctRank >= 0.50) clientGrowthScore = 5;
+      else clientGrowthScore = 0;
     }
 
-    // 3. Client growth score
-    let clientGrowthScore = 50;
-    const totalClients = [
-      firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
-      firm.client_charitable_number, firm.client_corporations_number, firm.client_pooled_vehicles_number,
-      firm.client_other_number, firm.client_banks_number, firm.client_bdc_number,
-      firm.client_govt_number, firm.client_insurance_number, firm.client_investment_cos_number,
-      firm.client_other_advisors_number, firm.client_swf_number,
-    ].reduce((sum, v) => sum + (v || 0), 0);
-
-    if (totalClients > 0 && firm.aum && firm.aum > 0) {
-      // Higher AUM per client = potentially better service
-      const aumPerClient = firm.aum / totalClients;
-      // Normalize: $1M/client = 50, $10M/client = 100, $100K/client = 10
-      clientGrowthScore = Math.min(100, Math.max(0, Math.log10(aumPerClient / 100000) * 25 + 50));
+    // 7. Advisor bandwidth score (10 pts)
+    const invEmployees = parseFloat(firm.employee_investment) || 0;
+    let advisorBandwidthScore = 0;
+    let advisorBandwidthPct = null;
+    if (invEmployees > 0 && totalClients > 0) {
+      const ratio = totalClients / invEmployees;
+      // Lower ratio is better
+      advisorBandwidthScore = quartileScore(ratio, bandwidthValues, false);
+      advisorBandwidthPct = getPercentile(ratio, bandwidthValues, false);
     }
 
-    // 4. Advisor bandwidth score (lower AUM per advisor = more personal attention)
-    let advisorBandwidthScore = 50;
-    if (firm.aum && firm.employee_investment && firm.employee_investment > 0) {
-      const aumPerAdvisor = firm.aum / firm.employee_investment;
-      // Normalize: $50M/advisor = 100, $500M/advisor = 10
-      advisorBandwidthScore = Math.min(100, Math.max(0, 100 - (aumPerAdvisor / 5000000) * 90));
-    }
+    // 8. Derivatives score (10 pts)
+    const derivativesPct = parseFloat(firm.asset_allocation_derivatives) || 0;
+    let derivativesScore = 0;
+    if (derivativesPct > 30) derivativesScore = 10;
+    else if (derivativesPct >= 20) derivativesScore = 8;
+    else if (derivativesPct >= 10) derivativesScore = 6;
 
-    // 5. Disclosure score (fewer disclosures = higher score)
-    let disclosureScore = 100;
-    const disclosureCount = disclosureMap.get(firm.crd) || 0;
-    if (disclosureCount > 0) {
-      disclosureScore = Math.max(0, 100 - disclosureCount * 20);
-    }
+    // 9. Upmarket score (10 pts)
+    let upmarketScore = 0;
+    const nonHnwPct = totalClients > 0 ? ((parseFloat(firm.client_non_hnw_number) || 0) / totalClients) * 100 : 100;
+    if (nonHnwPct < 10) upmarketScore = 10;
+    else if (nonHnwPct < 25) upmarketScore = 4;
+    else if (nonHnwPct < 50) upmarketScore = 2;
+    else upmarketScore = 0;
 
-    // Calculate composite score
-    const compositeScore = (
-      feeScore * WEIGHTS.fee_competitiveness +
-      aumGrowthScore * WEIGHTS.aum_growth +
-      clientGrowthScore * WEIGHTS.client_growth +
-      advisorBandwidthScore * WEIGHTS.advisor_bandwidth +
-      disclosureScore * WEIGHTS.disclosure
-    );
+    // 10. Viability score (10 pts)
+    const aum = parseFloat(firm.aum) || 0;
+    let viabilityScore = 0;
+    if (aum > 10_000_000_000) viabilityScore = 10;
+    else if (aum > 5_000_000_000) viabilityScore = 8;
+    else if (aum > 1_000_000_000) viabilityScore = 4;
+    else if (aum > 500_000_000) viabilityScore = 2;
+
+    // Composite / Final score
+    const compositeScore = disclosureScore + feeTransparencyScore + feeCompScore +
+      conflictFreeScore + aumGrowthScore + clientGrowthScore + advisorBandwidthScore +
+      derivativesScore + upmarketScore + viabilityScore;
 
     scores.push({
       crd: firm.crd,
-      fee_score: Math.round(feeScore),
-      aum_growth_score: Math.round(aumGrowthScore),
-      client_growth_score: Math.round(clientGrowthScore),
-      advisor_bandwidth_score: Math.round(advisorBandwidthScore),
-      disclosure_score: Math.round(disclosureScore),
-      composite_score: Math.round(compositeScore),
+      disclosure_score: disclosureScore,
+      fee_transparency_score: feeTransparencyScore,
+      fee_competitiveness_score: feeCompScore,
+      conflict_free_score: conflictFreeScore,
+      aum_growth_score: aumGrowthScore,
+      client_growth_score: clientGrowthScore,
+      advisor_bandwidth_score: advisorBandwidthScore,
+      derivatives_score: derivativesScore,
+      upmarket_score: upmarketScore,
+      viability_score: viabilityScore,
+      broker_penalty: 0,
+      insurance_penalty: 0,
+      composite_score: compositeScore,
+      final_score: compositeScore,
+      fee_competitiveness_pct: feeCompPct,
+      aum_growth_pct: aumGrowthPct,
+      client_growth_pct: clientGrowthPct,
+      advisor_bandwidth_pct: advisorBandwidthPct,
       calculated_at: new Date().toISOString(),
+      aum: aum,
+      client_count: totalClients,
+      derivatives_pct: derivativesPct,
+      non_hnw_pct: Math.round(nonHnwPct),
+      fee_disclosed: feeType !== 'not_disclosed' && feeType != null,
+      has_insurance: empIns > 0,
+      has_broker_dealer: empBD > 0,
     });
   }
 
   console.log(`✅ Calculated scores for ${scores.length} firms`);
 
-  // Upsert scores to database
-  // Note: This requires a firm_scores table to exist
-  try {
-    // Try to insert/update scores
-    const { error: upsertError } = await supabase
-      .from('firm_scores')
-      .upsert(scores, { onConflict: 'crd' });
+  // --- Show distribution ---
+  const finalScores = scores.map(s => s.final_score).sort((a, b) => a - b);
+  const p10 = finalScores[Math.floor(finalScores.length * 0.10)];
+  const p25 = finalScores[Math.floor(finalScores.length * 0.25)];
+  const p50 = finalScores[Math.floor(finalScores.length * 0.50)];
+  const p75 = finalScores[Math.floor(finalScores.length * 0.75)];
+  const p90 = finalScores[Math.floor(finalScores.length * 0.90)];
+  const avg = (finalScores.reduce((s, v) => s + v, 0) / finalScores.length).toFixed(1);
+  const min = finalScores[0];
+  const max = finalScores[finalScores.length - 1];
 
-    if (upsertError) {
-      console.log('⚠️ firm_scores table may not exist or has schema mismatch');
-      console.log('Scores calculated but not saved:', upsertError.message);
+  console.log('\n📊 Score Distribution:');
+  console.log(`   Min: ${min} | P10: ${p10} | P25: ${p25} | Median: ${p50} | P75: ${p75} | P90: ${p90} | Max: ${max} | Avg: ${avg}`);
+
+  // --- Upsert to firm_scores ---
+  // Batch in chunks of 500
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < scores.length; i += BATCH_SIZE) {
+    const batch = scores.slice(i, i + BATCH_SIZE);
+    const { error: upsertErr } = await supabase
+      .from('firm_scores')
+      .upsert(batch, { onConflict: 'crd' });
+    
+    if (upsertErr) {
+      console.error(`❌ Upsert error (batch ${i / BATCH_SIZE + 1}):`, upsertErr.message);
     } else {
-      console.log('💾 Saved firm scores to database');
+      console.log(`💾 Saved batch ${i / BATCH_SIZE + 1} (${batch.length} firms)`);
     }
-  } catch (e) {
-    console.log('⚠️ Could not save scores:', e);
   }
 
   const elapsed = Date.now() - startTime;
-  console.log(`✅ Firm scores calculation complete in ${elapsed}ms`);
-  
-  return scores;
+  console.log(`\n✅ Visor Value Score calculation complete in ${(elapsed / 1000).toFixed(1)}s`);
 }
 
-// Run if called directly
-calculateFirmScores()
+// Run
+calculateScores()
   .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('❌ Error:', err);
+  .catch(err => {
+    console.error('❌ Fatal error:', err);
     process.exit(1);
   });
