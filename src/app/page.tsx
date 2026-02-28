@@ -93,21 +93,11 @@ interface Suggestion {
   main_office_state: string | null;
 }
 
-interface TopFirm {
-  crd: number;
-  primary_business_name: string;
-  display_name?: string | null;
-  main_office_city: string | null;
-  main_office_state: string | null;
-  final_score: number;
-}
 
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [topFirms, setTopFirms] = useState<TopFirm[]>([]);
-  const [topFirmsLoading, setTopFirmsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -169,112 +159,6 @@ export default function HomePage() {
       setShowDropdown(false);
     }
   };
-
-  // Fetch top rated firms
-  useEffect(() => {
-    async function fetchTopFirms() {
-      try {
-        const { data: scores } = await supabase
-          .from('firm_scores')
-          .select('crd, final_score')
-          .order('final_score', { ascending: false })
-          .limit(10);
-        
-        if (!scores || scores.length === 0) {
-          setTopFirmsLoading(false);
-          return;
-        }
-        
-        const crds = scores.map(s => s.crd);
-        const { data: firms } = await supabase
-          .from('firmdata_current')
-          .select('crd, primary_business_name, main_office_city, main_office_state')
-          .in('crd', crds);
-        
-        const { data: firmNames } = await supabase
-          .from('firm_names')
-          .select('crd, display_name')
-          .in('crd', crds);
-        
-        const nameMap = new Map(firmNames?.map(n => [n.crd, n.display_name]) || []);
-        
-        const topFirmsWithNames = scores.map(score => {
-          const firm = firms?.find(f => f.crd === score.crd);
-          return {
-            crd: score.crd,
-            primary_business_name: firm?.primary_business_name || '',
-            display_name: nameMap.get(score.crd) || null,
-            main_office_city: firm?.main_office_city || null,
-            main_office_state: firm?.main_office_state || null,
-            final_score: score.final_score,
-          };
-        });
-        
-        setTopFirms(topFirmsWithNames);
-      } catch (error) {
-        console.error('Error fetching top firms:', error);
-      } finally {
-        setTopFirmsLoading(false);
-      }
-    }
-    
-    fetchTopFirms();
-  }, []);
-
-  // Update DOM when topFirms changes
-  useEffect(() => {
-    const loadingEl = document.getElementById('top-firms-loading');
-    const listEl = document.getElementById('top-firms-list');
-    
-    if (!loadingEl || !listEl) return;
-    
-    if (topFirmsLoading) {
-      loadingEl.style.display = 'block';
-      listEl.style.display = 'none';
-      return;
-    }
-    
-    loadingEl.style.display = 'none';
-    
-    if (topFirms.length === 0) {
-      listEl.innerHTML = '<p className="text-slate-500 text-center py-8">No top firms available</p>';
-      listEl.style.display = 'block';
-      return;
-    }
-    
-    listEl.innerHTML = topFirms.map((firm, index) => `
-      <a href="/firm/${firm.crd}" className="block">
-        <div className="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:border-green-300 hover:shadow-md transition-all">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-              index === 0 ? 'bg-yellow-100 text-yellow-800' :
-              index === 1 ? 'bg-slate-100 text-slate-600' :
-              index === 2 ? 'bg-orange-100 text-orange-800' :
-              'bg-slate-50 text-slate-500'
-            }">
-              ${index + 1}
-            </div>
-            <div>
-              <p className="font-semibold text-slate-900">${firm.display_name || firm.primary_business_name}</p>
-              <p className="text-sm text-slate-500">${firm.main_office_city || ''}, ${firm.main_office_state || ''}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-12 h-8 rounded-full text-sm font-bold ${
-              firm.final_score >= 70 ? 'bg-green-100 text-green-700' :
-              firm.final_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-              'bg-red-100 text-red-700'
-            }">
-              ${firm.final_score}
-            </span>
-            <span className="text-slate-400">›</span>
-          </div>
-        </div>
-      </a>
-    `).join('');
-    
-    listEl.style.display = 'block';
-  }, [topFirms, topFirmsLoading]);
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -568,28 +452,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Top Rated Firms */}
-      <section className="bg-white py-16 md:py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-bold text-slate-900">
-            Top Rated Firms
-          </h2>
-          <p className="mx-auto mt-2 max-w-xl text-center text-slate-600">
-            Highest scoring firms based on our Visor Value Score methodology.
-          </p>
-
-          <div className="mt-10" id="top-firms-loading">
-            <div className="animate-pulse space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-20 bg-slate-100 rounded-lg" />
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-10 space-y-4" id="top-firms-list" style={{ display: 'none' }} />
         </div>
       </section>
 
