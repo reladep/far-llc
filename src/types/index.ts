@@ -109,3 +109,13 @@ export function getScoreGrade(score: number): string {
   if (score >= 50) return 'C';
   return 'F';
 }
+
+export function getStarRating(score: number): { stars: number; display: string } {
+  if (score >= 80) return { stars: 5, display: '⭐⭐⭐⭐⭐' };
+  if (score >= 70) return { stars: 4.5, display: '⭐⭐⭐⭐½' };
+  if (score >= 60) return { stars: 4, display: '⭐⭐⭐⭐' };
+  if (score >= 50) return { stars: 3, display: '⭐⭐⭐' };
+  if (score >= 40) return { stars: 2.5, display: '⭐⭐½' };
+  if (score >= 30) return { stars: 2, display: '⭐⭐' };
+  return { stars: 1, display: '⭐' };
+}

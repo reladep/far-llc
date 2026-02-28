@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, Badge } from '@/components/ui';
 import { getFirmScores } from '@/lib/scores';
+import { getStarRating } from '@/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -149,13 +150,7 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
                       </div>
                       <div className="col-span-1 text-center">
                         {firm.final_score != null ? (
-                          <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-xs font-bold ${
-                            firm.final_score >= 70 ? 'bg-green-100 text-green-700' :
-                            firm.final_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {firm.final_score}
-                          </span>
+                          <span className="text-lg">{getStarRating(firm.final_score).display}</span>
                         ) : (
                           <span className="text-xs text-text-tertiary">—</span>
                         )}

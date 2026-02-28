@@ -12,6 +12,7 @@ import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 import ScoreDisplay from '@/components/firms/ScoreDisplay';
 import ScoreBreakdown from '@/components/firms/ScoreBreakdown';
 import { getFirmScore } from '@/lib/scores';
+import { getStarRating } from '@/types';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -391,7 +392,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
         return (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
-            <StatBox label="Visor Score" value={firmScore?.final_score ? `${firmScore.final_score}/100` : 'N/A'} color={firmScore?.final_score >= 70 ? 'green' : firmScore?.final_score >= 50 ? 'yellow' : 'red'} />
+            <StatBox label="Visor Rating" value={firmScore?.final_score ? getStarRating(firmScore.final_score).display : 'N/A'} color={firmScore?.final_score >= 70 ? 'green' : firmScore?.final_score >= 50 ? 'yellow' : 'red'} />
             <StatBox label="AUM" value={formatAUM(firm.aum)} />
             <StatBox label="Avg. Client Size" value={avgClientSize ? formatCurrency(avgClientSize) : 'N/A'} />
             <StatBox label="Min. Account Size" value={minAccount ? formatCurrency(minAccount) : 'N/A'} />

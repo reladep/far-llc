@@ -291,6 +291,7 @@ async function calculateScores() {
       insurance_penalty: 0,
       composite_score: compositeScore,
       final_score: compositeScore,
+      stars: compositeScore >= 80 ? 5 : compositeScore >= 70 ? 4.5 : compositeScore >= 60 ? 4 : compositeScore >= 50 ? 3 : compositeScore >= 40 ? 2.5 : compositeScore >= 30 ? 2 : 1,
       fee_competitiveness_pct: feeCompPct,
       aum_growth_pct: aumGrowthPct,
       client_growth_pct: clientGrowthPct,

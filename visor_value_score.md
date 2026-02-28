@@ -130,10 +130,28 @@ For context and debugging, also store in `firm_scores`:
 
 ---
 
+## Star Rating System
+
+Convert numeric score to star rating for display:
+
+| Score Range | Stars | Display |
+|-------------|-------|---------|
+| 80-100 | ⭐⭐⭐⭐⭐ | 5 stars |
+| 70-79 | ⭐⭐⭐⭐½ | 4.5 stars |
+| 60-69 | ⭐⭐⭐⭐ | 4 stars |
+| 50-59 | ⭐⭐⭐ | 3 stars |
+| 40-49 | ⭐⭐½ | 2.5 stars |
+| 30-39 | ⭐⭐ | 2 stars |
+| 0-29 | ⭐ | 1 star |
+
+The `stars` field is calculated in the worker and stored in the `firm_scores` table.
+
+---
+
 ## Display Locations
 
 - **Homepage** — Referenced as key feature
-- **Firm Profiles** — Prominent score display
-- **Search Results** — Score shown per firm
-- **Compare Page** — Side-by-side score comparison
-- **Match Results** — Score as ranking factor
+- **Firm Profiles** — Star rating display
+- **Search Results** — Stars shown per firm
+- **Compare Page** — Side-by-side star comparison
+- **Match Results** — Stars as ranking factor
