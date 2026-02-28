@@ -194,7 +194,7 @@ function FilterSidebar({
   );
 }
 
-function FirmCard({ firm, isSelected, cardRef }: { firm: Firm; isSelected?: boolean; cardRef?: React.RefObject<HTMLDivElement | null> }) {
+function FirmCard({ firm, isSelected, cardRef }: { firm: Firm; isSelected?: boolean; cardRef?: React.RefObject<HTMLDivElement> }) {
   return (
     <div ref={cardRef}>
     <Link href={`/firm/${firm.crd}`}>

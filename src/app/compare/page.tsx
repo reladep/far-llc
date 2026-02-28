@@ -277,7 +277,7 @@ export default function ComparePage() {
                     {rows.map(row => (
                       <div key={row.label} className="flex justify-between text-sm">
                         <span className="text-slate-500">{row.label}</span>
-                        <span className="text-slate-900 font-medium text-right max-w-[60%] truncate">{firm[row.key]}</span>
+                        <span className="text-slate-900 font-medium text-right max-w-[60%] truncate">{String(firm[row.key])}</span>
                       </div>
                     ))}
                   </div>
@@ -305,7 +305,7 @@ export default function ComparePage() {
                       <td key={f.crd} className="p-4 text-slate-700">
                         {row.key === 'website' && f.website !== 'N/A' ? (
                           <a href={`https://${f.website}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">{f.website}</a>
-                        ) : f[row.key]}
+                        ) : String(f[row.key])}
                       </td>
                     ))}
                   </tr>

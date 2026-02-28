@@ -368,9 +368,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
             <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
-            <Button variant="primary" asChild>
-              <Link href={`/compare?add=${firm.crd}`}>Compare</Link>
-            </Button>
+            <Link href={`/compare?add=${firm.crd}`} className="inline-flex items-center justify-center font-medium h-10 px-4 text-sm rounded-lg gap-2 bg-primary text-primary-foreground hover:bg-primary-700 active:bg-primary-800 transition-colors">
+              Compare
+            </Link>
           </div>
         </div>
       </div>
@@ -383,9 +383,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           firm.client_other_number, firm.client_banks_number, firm.client_bdc_number,
           firm.client_govt_number, firm.client_insurance_number, firm.client_investment_cos_number,
           firm.client_other_advisors_number, firm.client_swf_number,
-        ].reduce((sum, v) => sum + (v || 0), 0);
+        ].reduce((sum, v) => (sum || 0) + (v || 0), 0);
 
-        const avgClientSize = totalClients > 0 && firm.aum ? firm.aum / totalClients : null;
+        const avgClientSize = (totalClients ?? 0) > 0 && firm.aum ? firm.aum / (totalClients ?? 1) : null;
         const aumPerInvPro = firm.employee_investment && firm.employee_investment > 0 && firm.aum
           ? firm.aum / firm.employee_investment : null;
         const minAccount = feesAndMins?.minimum_account_size
@@ -455,7 +455,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           <FirmAlerts crd={firm.crd} />
 
           {/* Regulatory Disclosures */}
-          <RegulatoryDisclosures firmData={firm} />
+          <RegulatoryDisclosures firmData={firm as any} />
 
           {/* Firm Profile */}
           <Card>
@@ -984,7 +984,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         const regs: Record<string, string> = {};
         for (const key of stateKeys) {
           const col = `state_${key}`;
-          const val = (firm as Record<string, unknown>)[col];
+          const val = (firm as unknown as Record<string, unknown>)[col];
           regs[key] = val === 'Y' ? 'Y' : 'N';
         }
         const hasAny = Object.values(regs).some(v => v === 'Y');
