@@ -72,3 +72,40 @@ export interface UserAlert {
   notify_email: boolean;
   notify_push: boolean;
 }
+
+export interface FirmScore {
+  crd: number;
+  final_score: number;
+  composite_score: number;
+  disclosure_score: number;
+  fee_transparency_score: number;
+  fee_competitiveness_score: number;
+  conflict_free_score: number;
+  aum_growth_score: number;
+  client_growth_score: number;
+  advisor_bandwidth_score: number;
+  derivatives_score: number;
+  upmarket_score: number;
+  viability_score: number;
+}
+
+export type ScoreBadge = '🏆 Top 1%' | '⭐ Highly Recommended' | '✓ Good Value' | '⚠️ Review Carefully';
+
+export function getScoreBadge(score: number): ScoreBadge {
+  if (score >= 80) return '🏆 Top 1%';
+  if (score >= 70) return '⭐ Highly Recommended';
+  if (score >= 50) return '✓ Good Value';
+  return '⚠️ Review Carefully';
+}
+
+export function getScoreColor(score: number): string {
+  if (score >= 70) return 'text-green-600 bg-green-50 border-green-200';
+  if (score >= 50) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+  return 'text-red-600 bg-red-50 border-red-200';
+}
+
+export function getScoreGrade(score: number): string {
+  if (score >= 70) return 'A';
+  if (score >= 50) return 'C';
+  return 'F';
+}

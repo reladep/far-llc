@@ -151,7 +151,7 @@ async function calculateScores() {
   for (const firm of firms) {
     const g = growthMap.get(firm.crd);
     if (!g) continue;
-    const val = parseFloat(g.aum_5y_growth_annualized) || parseFloat(g.aum_1y_growth_annualized) || null;
+    const val = parseFloat(g.aum_5y_growth_annualized) ?? parseFloat(g.aum_1y_growth_annualized) ?? null;
     if (val != null) aumGrowthValues.push(val);
   }
   aumGrowthValues.sort((a, b) => a - b);
@@ -161,7 +161,7 @@ async function calculateScores() {
   for (const firm of firms) {
     const g = growthMap.get(firm.crd);
     if (!g) continue;
-    const val = parseFloat(g.clients_5y_growth_annualized) || parseFloat(g.clients_1y_growth_annualized) || null;
+    const val = parseFloat(g.clients_5y_growth_annualized) ?? parseFloat(g.clients_1y_growth_annualized) ?? null;
     if (val != null) clientGrowthValues.push(val);
   }
   clientGrowthValues.sort((a, b) => a - b);
@@ -198,7 +198,7 @@ async function calculateScores() {
     // Lower fees are better, so we invert: quartile based on lowest = best
     const feeCompScore = firmFee != null
       ? quartileScore(firmFee, sortedFees, false) // false = lower is better
-      : 0;
+      : 5; // Default to 5 (average) if no fee data
     const feeCompPct = firmFee != null ? getPercentile(firmFee, sortedFees, false) : null;
 
     // 4. Conflict free score (10 pts)
@@ -211,9 +211,9 @@ async function calculateScores() {
     // 5. AUM growth score (10 pts)
     const growth = growthMap.get(firm.crd);
     const aumGrowthVal = growth
-      ? (parseFloat(growth.aum_5y_growth_annualized) || parseFloat(growth.aum_1y_growth_annualized) || null)
+      ? (parseFloat(growth.aum_5y_growth_annualized) ?? parseFloat(growth.aum_1y_growth_annualized) ?? null)
       : null;
-    let aumGrowthScore = 0;
+    let aumGrowthScore = 5; // Default to 5 if no growth data
     let aumGrowthPct = null;
     if (aumGrowthVal != null) {
       const pctRank = aumGrowthValues.filter(v => v <= aumGrowthVal).length / aumGrowthValues.length;
@@ -225,9 +225,9 @@ async function calculateScores() {
 
     // 6. Client growth score (10 pts)
     const clientGrowthVal = growth
-      ? (parseFloat(growth.clients_5y_growth_annualized) || parseFloat(growth.clients_1y_growth_annualized) || null)
+      ? (parseFloat(growth.clients_5y_growth_annualized) ?? parseFloat(growth.clients_1y_growth_annualized) ?? null)
       : null;
-    let clientGrowthScore = 0;
+    let clientGrowthScore = 5; // Default to 5 if no growth data
     let clientGrowthPct = null;
     if (clientGrowthVal != null) {
       const pctRank = clientGrowthValues.filter(v => v <= clientGrowthVal).length / clientGrowthValues.length;
@@ -266,10 +266,9 @@ async function calculateScores() {
     // 10. Viability score (10 pts)
     const aum = parseFloat(firm.aum) || 0;
     let viabilityScore = 0;
-    if (aum > 10_000_000_000) viabilityScore = 10;
-    else if (aum > 5_000_000_000) viabilityScore = 8;
-    else if (aum > 1_000_000_000) viabilityScore = 4;
-    else if (aum > 500_000_000) viabilityScore = 2;
+    if (aum > 1_000_000_000) viabilityScore = 10;
+    else if (aum > 500_000_000) viabilityScore = 5;
+    else if (aum > 100_000_000) viabilityScore = 2;
 
     // Composite / Final score
     const compositeScore = disclosureScore + feeTransparencyScore + feeCompScore +

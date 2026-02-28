@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent, Badge } from '@/components/ui';
+import { getFirmScores } from '@/lib/scores';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -36,6 +37,7 @@ interface StateFirm {
   aum: number | null;
   employee_total: number | null;
   employee_investment: number | null;
+  final_score?: number | null;
 }
 
 async function getStateFirms(stateCode: string) {
@@ -55,9 +57,13 @@ async function getStateFirms(stateCode: string) {
 
   const nameMap = new Map(firmNames?.map(n => [n.crd, n.display_name]) || []);
 
+  // Fetch firm scores
+  const scoreMap = await getFirmScores(crds);
+
   return (data || []).map(firm => ({
     ...firm,
-    display_name: nameMap.get(firm.crd) || null
+    display_name: nameMap.get(firm.crd) || null,
+    final_score: scoreMap.get(firm.crd)?.final_score ?? null
   })) as StateFirm[];
 }
 
@@ -117,7 +123,8 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
           <div className="space-y-3">
             {/* Header row */}
             <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-medium text-text-tertiary uppercase tracking-wider">
-              <div className="col-span-5">Firm</div>
+              <div className="col-span-4">Firm</div>
+              <div className="col-span-1 text-center">Score</div>
               <div className="col-span-2 text-right">AUM</div>
               <div className="col-span-2">City</div>
               <div className="col-span-2 text-right">Employees</div>
@@ -129,7 +136,7 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
                 <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer">
                   <CardContent className="p-4">
                     <div className="sm:grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-5">
+                      <div className="col-span-4">
                         <p className="font-semibold text-text-primary text-sm truncate">
                           {firm.display_name || firm.primary_business_name || 'Unknown Firm'}
                         </p>
@@ -139,6 +146,19 @@ export default async function StateDirectoryPage({ params }: { params: { slug: s
                         <p className="text-xs text-text-tertiary sm:hidden mt-0.5">
                           {firm.main_office_city || ''} · {formatAUM(firm.aum)}
                         </p>
+                      </div>
+                      <div className="col-span-1 text-center">
+                        {firm.final_score != null ? (
+                          <span className={`inline-flex items-center justify-center w-10 h-7 rounded-full text-xs font-bold ${
+                            firm.final_score >= 70 ? 'bg-green-100 text-green-700' :
+                            firm.final_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {firm.final_score}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-tertiary">—</span>
+                        )}
                       </div>
                       <div className="hidden sm:block col-span-2 text-right">
                         <p className="text-sm font-medium text-text-primary">{formatAUM(firm.aum)}</p>

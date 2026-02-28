@@ -9,6 +9,8 @@ import FirmAlerts from '@/components/firms/FirmAlerts';
 import RegulatoryDisclosures from '@/components/firms/RegulatoryDisclosures';
 import FirmLogo from '@/components/firms/FirmLogo';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
+import ScoreDisplay from '@/components/firms/ScoreDisplay';
+import ScoreBreakdown from '@/components/firms/ScoreBreakdown';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -187,6 +189,9 @@ async function getFirmData(crd: string) {
     other: null, // Could calculate from other fields if needed
   } : null;
 
+  // Get firm score
+  const firmScore = await getFirmScore(parseInt(crd));
+
   return {
     firmData: firmData as FirmData | null,
     displayName: firmName?.display_name as string | null,
@@ -198,6 +203,7 @@ async function getFirmData(crd: string) {
     growth: growth as GrowthRecord[] | null,
     assetAllocation,
     clientBreakdown,
+    firmScore,
     error: firmError
   };
 }
@@ -261,7 +267,7 @@ function TabButton({ label, active }: { label: string; active?: boolean }) {
 }
 
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, displayName, logoKey, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, error } = await getFirmData(params.crd);
+  const { firmData, displayName, logoKey, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, firmScore, error } = await getFirmData(params.crd);
   const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
 
   if (error || !firmData) {
@@ -346,11 +352,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
-          <Button variant="primary" asChild>
-            <Link href={`/compare?add=${firm.crd}`}>Compare</Link>
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <ScoreDisplay score={firmScore?.final_score ?? null} size="md" />
+          <div className="flex gap-2">
+            <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
+            <Button variant="primary" asChild>
+              <Link href={`/compare?add=${firm.crd}`}>Compare</Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -403,6 +412,13 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           <TabButton label="Disclosures" />
         </div>
       </div>
+
+      {/* Score Breakdown */}
+      {firmScore && (
+        <div className="mb-6">
+          <ScoreBreakdown scores={firmScore} />
+        </div>
+      )}
 
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
