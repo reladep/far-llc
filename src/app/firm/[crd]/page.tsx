@@ -244,10 +244,20 @@ function formatAUM(value: number | null): string {
   return `$${value.toLocaleString()}`;
 }
 
-function StatBox({ label, value }: { label: string; value: string }) {
+function StatBox({ label, value, color }: { label: string; value: string; color?: 'green' | 'yellow' | 'red' }) {
+  const colorClasses = {
+    green: 'bg-green-50 border-green-200',
+    yellow: 'bg-yellow-50 border-yellow-200',
+    red: 'bg-red-50 border-red-200',
+  };
+  const textColorClasses = {
+    green: 'text-green-700',
+    yellow: 'text-yellow-700',
+    red: 'text-red-700',
+  };
   return (
-    <div className="rounded-lg border border-slate-200 p-4 text-center">
-      <p className="text-xl md:text-2xl font-bold text-slate-900">{value}</p>
+    <div className={`rounded-lg border p-4 text-center ${color ? colorClasses[color] : 'border-slate-200'}`}>
+      <p className={`text-xl md:text-2xl font-bold ${color ? textColorClasses[color] : 'text-slate-900'}`}>{value}</p>
       <p className="mt-1 text-xs text-slate-500">{label}</p>
     </div>
   );
@@ -382,8 +392,8 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
         return (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
+            <StatBox label="Visor Score" value={firmScore?.final_score ? `${firmScore.final_score}/100` : 'N/A'} color={firmScore?.final_score >= 70 ? 'green' : firmScore?.final_score >= 50 ? 'yellow' : 'red'} />
             <StatBox label="AUM" value={formatAUM(firm.aum)} />
-            <StatBox label="Discretionary AUM" value={formatAUM(firm.aum_discretionary)} />
             <StatBox label="Avg. Client Size" value={avgClientSize ? formatCurrency(avgClientSize) : 'N/A'} />
             <StatBox label="Min. Account Size" value={minAccount ? formatCurrency(minAccount) : 'N/A'} />
             <StatBox label="AUM per Inv. Pro" value={aumPerInvPro ? formatCurrency(aumPerInvPro) : 'N/A'} />
