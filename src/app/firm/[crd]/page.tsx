@@ -364,7 +364,6 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <ScoreDisplay score={firmScore?.final_score ?? null} size="md" />
           <div className="flex gap-2">
             <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
             <Button variant="primary" asChild>
