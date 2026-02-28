@@ -34,6 +34,21 @@ Maybe this is why memory stocks have run so much. Danger here is the cyclicality
 
 ---
 
+### 4. The $100T Transparency Gap
+The wealth transfer story from your FAR/Visor Index thesis — $100T moving from Boomers, and nobody can easily compare advisor fees. Regulatory data exists but it's buried. This could double as a thought leadership piece AND marketing for Visor Index. "We built a tool to fix this — here's why it matters."
+
+---
+
+### 5. Your Advisor Has a Criminal Record (And the SEC Knows)
+You now have disclosure data on 1,945 firms. You could write a data-driven piece: what % of RIAs have disclosures? How many felony convictions? How does the industry compare to what consumers expect? The Osaic example is wild — felony conviction + federal violations + SEC penalties, and they manage billions.
+
+---
+
+### 6. The Fee Negotiation Nobody Has
+From the negotiate page work — advisor fees are negotiable but almost nobody negotiates. You have the data to show fee ranges, how much variation exists, what the actual spread looks like. "The average UHNW client overpays by X% because they never asked."
+
+---
+
 ## Future Ideas
 
 - Add more as they come...
