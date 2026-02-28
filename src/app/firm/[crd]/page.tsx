@@ -11,6 +11,7 @@ import FirmLogo from '@/components/firms/FirmLogo';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 import ScoreDisplay from '@/components/firms/ScoreDisplay';
 import ScoreBreakdown from '@/components/firms/ScoreBreakdown';
+import { getFirmScore } from '@/lib/scores';
 
 // Create server-side Supabase client for data queries
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
