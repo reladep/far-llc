@@ -11,6 +11,7 @@ import FirmLogo from '@/components/firms/FirmLogo';
 import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
 import ScoreDisplay from '@/components/firms/ScoreDisplay';
 import ScoreBreakdown from '@/components/firms/ScoreBreakdown';
+import StarRating from '@/components/ui/StarRating';
 import { getFirmScore } from '@/lib/scores';
 import { getStarRating } from '@/types';
 
@@ -392,7 +393,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
         return (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
-            <StatBox label="Visor Rating" value={firmScore?.final_score ? getStarRating(firmScore.final_score).display : 'N/A'} color={firmScore?.final_score >= 70 ? 'green' : firmScore?.final_score >= 50 ? 'yellow' : 'red'} />
+            <div className="col-span-2 md:col-span-1 rounded-lg border border-slate-200 p-4 text-center bg-white">
+              {firmScore?.stars ? (
+                <StarRating stars={firmScore.stars} size="lg" showValue={true} />
+              ) : (
+                <p className="text-slate-400">N/A</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">Visor Rating</p>
+            </div>
             <StatBox label="AUM" value={formatAUM(firm.aum)} />
             <StatBox label="Avg. Client Size" value={avgClientSize ? formatCurrency(avgClientSize) : 'N/A'} />
             <StatBox label="Min. Account Size" value={minAccount ? formatCurrency(minAccount) : 'N/A'} />
