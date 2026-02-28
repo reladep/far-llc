@@ -7,6 +7,10 @@ interface StarRatingProps {
 }
 
 export default function StarRating({ stars, size = 'md', showValue = false }: StarRatingProps) {
+  if (stars === null || stars === undefined || stars === 0) {
+    return <span className="text-gray-300">—</span>;
+  }
+  
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-6 h-6',
