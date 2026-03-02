@@ -50,8 +50,9 @@ _Last updated: 2026-02-16_
   - **Issue**: Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
   - APIs: `/api/alerts/firm/[crd]`, `/api/alerts/news/[crd]`, user alerts/subscriptions
   - Frontend: `FirmAlerts.tsx` component on firm profile pages
-  - Cron jobs: EDGAR (15min), ADV Diff (6hr), News Scraper (hourly), RIA M&A (hourly, broken)
+  - Cron jobs: EDGAR (15min), ADV Diff (6hr), News Scraper (hourly)
   - Free tier = last 7 days, paid = full history
+  - **Resolved (3/1):** RIA M&A cron job removed — worker file didn't exist
 - **Directory page updated** (2/21): Now displays `display_name` from firm_names table alongside primary business name
 - **RegulatoryDisclosures.tsx deployed** (2/22): New disclosure badge + accordion component on firm profiles with severity-coded sections
 - **Firm scores worker created** (2/22): Calculates composite scores (fee competitiveness, AUM growth, client growth, advisor bandwidth, etc.) - pending table creation
