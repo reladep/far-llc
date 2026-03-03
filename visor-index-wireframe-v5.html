@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Index — Find a Financial Advisor You Can Trust</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white: #F7F9F8;
+  --navy: #0B1F2E;
+  --navy-mid: #122638;
+  --navy-light: #1D3A52;
+  --green: #1A7A4A;
+  --green-mid: #22995E;
+  --green-light: #2DBD74;
+  --green-pale: #E8F5EE;
+  --green-glow: rgba(26,122,74,0.12);
+  --ink: #0E1A14;
+  --ink-mid: #3D5248;
+  --ink-light: #7A9186;
+  --rule: #D0DDD6;
+  --rule-heavy: #B8C8C0;
+  --sans: 'DM Sans', sans-serif;
+  --serif: 'Playfair Display', serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 0px;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--white); color: var(--ink); font-family: var(--sans); overflow-x: hidden; }
+
+/* Grid texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.25;
+  pointer-events: none; z-index: 0;
+}
+
+.z1 { position: relative; z-index: 1; }
+
+/* ─── UTILITIES ─────────────────────────────────── */
+.inner { max-width: 1100px; margin: 0 auto; padding: 0 52px; }
+.section-rule { border-bottom: 1px solid var(--rule); }
+
+.eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-light);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.eyebrow::before { content: ''; width: 20px; height: 1px; background: currentColor; flex-shrink: 0; }
+
+.serif { font-family: var(--serif); }
+.mono { font-family: var(--mono); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green); color: #fff;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  letter-spacing: 0.02em; padding: 13px 28px;
+  border: none; cursor: pointer; text-decoration: none;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--ink);
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  letter-spacing: 0.02em; padding: 12px 28px;
+  border: 1.5px solid var(--rule-heavy); cursor: pointer; text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-outline:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ─── REVEAL ────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.rd1 { transition-delay: 0.08s; }
+.rd2 { transition-delay: 0.16s; }
+.rd3 { transition-delay: 0.24s; }
+.rd4 { transition-delay: 0.32s; }
+.rd5 { transition-delay: 0.40s; }
+
+/* ─── NAV ───────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(247,249,248,0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 52px;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto;
+  height: 58px; display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo-mark {
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--green);
+  display: grid; place-items: center;
+}
+.nav-logo-text { font-family: var(--serif); font-size: 17px; font-weight: 700; color: var(--ink); }
+.nav-logo-text em { font-style: normal; color: var(--green); }
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a { font-size: 13px; color: var(--ink-mid); text-decoration: none; font-weight: 400; letter-spacing: 0.01em; transition: color 0.15s; }
+.nav-links a:hover { color: var(--ink); }
+.nav-right { display: flex; align-items: center; gap: 20px; }
+.nav-login { font-size: 13px; color: var(--ink-mid); text-decoration: none; }
+.nav-cta { background: var(--green); color: #fff; font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 18px; text-decoration: none; transition: background 0.2s; }
+.nav-cta:hover { background: var(--green-mid); }
+
+/* ─── HERO ──────────────────────────────────────── */
+.hero { padding: 80px 0 0; overflow: hidden; }
+
+.hero-inner { display: grid; grid-template-columns: 1fr 440px; gap: 64px; align-items: start; padding-bottom: 64px; }
+
+.hero-eyebrow { margin-bottom: 24px; }
+
+.hero-headline {
+  font-family: var(--serif);
+  font-size: clamp(38px, 4.5vw, 60px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+.hero-headline em { font-style: italic; color: var(--green); }
+
+.hero-sub {
+  font-size: 16px; font-weight: 300; color: var(--ink-mid);
+  line-height: 1.7; max-width: 480px; margin-bottom: 36px;
+}
+
+.hero-search-wrap { margin-bottom: 20px; }
+.hero-search {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--rule-heavy);
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.hero-search:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); }
+.hero-search-icon { padding: 0 14px; flex-shrink: 0; }
+.hero-search-input {
+  flex: 1; border: none; outline: none;
+  font-family: var(--sans); font-size: 14px; color: var(--ink);
+  background: transparent; padding: 13px 0;
+}
+.hero-search-input::placeholder { color: var(--ink-light); }
+.hero-search-btn {
+  background: var(--green); color: #fff; border: none;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  padding: 13px 24px; cursor: pointer; letter-spacing: 0.03em;
+  transition: background 0.2s; white-space: nowrap; flex-shrink: 0;
+}
+.hero-search-btn:hover { background: var(--green-mid); }
+
+.hero-search-hint {
+  font-size: 11px; color: var(--ink-light);
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  margin-top: 9px;
+}
+.hero-search-hint a { color: var(--ink-mid); text-decoration: none; border-bottom: 1px dotted var(--rule-heavy); transition: color 0.15s; }
+.hero-search-hint a:hover { color: var(--green); }
+
+.hero-conflict-free {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-top: 28px; padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+.hero-cf-icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border: 1px solid var(--green); display: grid; place-items: center;
+}
+.hero-cf-text { font-size: 12px; color: var(--ink-mid); line-height: 1.6; }
+.hero-cf-text strong { display: block; color: var(--ink); font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+
+/* Hero right — profile card preview */
+.hero-card {
+  border: 1px solid var(--rule);
+  background: #fff;
+  box-shadow: 0 8px 48px rgba(11,31,46,0.08);
+  overflow: hidden;
+  position: relative;
+}
+.hero-card-header {
+  background: var(--navy); padding: 20px 24px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.hero-card-firm { font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.hero-card-meta { font-size: 10px; color: rgba(255,255,255,0.45); letter-spacing: 0.1em; text-transform: uppercase; }
+.hero-card-score-wrap { text-align: right; }
+.hero-card-score { font-family: var(--serif); font-size: 42px; font-weight: 800; color: var(--green-light); line-height: 1; }
+.hero-card-score-label { font-size: 9px; color: rgba(255,255,255,0.35); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+
+.hero-card-bar-section { padding: 16px 24px; border-bottom: 1px solid var(--rule); }
+.score-bar-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-light); margin-bottom: 7px; }
+.score-bar-track { height: 5px; background: var(--green-pale); overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--green); }
+.score-bar-sub { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-light); margin-top: 6px; }
+
+.hero-card-metrics { }
+.metric-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 24px; border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-name { color: var(--ink-mid); }
+.metric-val { font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-g { background: var(--green); }
+.dot-a { background: #F59E0B; }
+
+/* Lock overlay on card */
+.hero-card-lock {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(247,249,248,0.98) 55%, rgba(247,249,248,0) 100%);
+  padding: 40px 24px 24px;
+  text-align: center;
+}
+.hero-card-lock-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--rule-heavy); background: #fff;
+  padding: 10px 18px; font-size: 12px; font-weight: 500;
+  color: var(--ink-mid); margin-bottom: 12px;
+}
+.hero-card-lock-cta {
+  display: block; background: var(--green); color: #fff;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  padding: 12px; text-decoration: none; text-align: center;
+  letter-spacing: 0.03em; transition: background 0.2s;
+}
+.hero-card-lock-cta:hover { background: var(--green-mid); }
+.hero-card-lock-price { font-size: 11px; color: var(--ink-light); margin-top: 8px; }
+
+/* ─── TRUST BAR ─────────────────────────────────── */
+.trust-bar {
+  background: var(--navy);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.trust-bar-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 52px;
+  display: flex; align-items: stretch;
+  border-left: 1px solid rgba(255,255,255,0.06);
+}
+.trust-item {
+  flex: 1; padding: 22px 24px; text-align: center;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.trust-value { font-family: var(--serif); font-size: 28px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 4px; }
+.trust-value em { font-style: normal; color: var(--green-light); }
+.trust-label { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.04em; line-height: 1.4; }
+.trust-sub { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 2px; letter-spacing: 0.02em; }
+
+/* ─── STAKES ────────────────────────────────────── */
+.stakes { padding: 96px 0; }
+.stakes-header { margin-bottom: 56px; }
+.stakes-headline { font-family: var(--serif); font-size: clamp(30px, 3.5vw, 48px); font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; max-width: 640px; margin-top: 16px; }
+.stakes-sub { font-size: 15px; color: var(--ink-mid); line-height: 1.7; max-width: 500px; margin-top: 16px; }
+
+.cost-box { border: 1px solid var(--rule); background: #fff; overflow: hidden; }
+
+.cost-controls { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--rule); }
+.cost-ctrl { padding: 28px 32px; border-right: 1px solid var(--rule); }
+.cost-ctrl:last-child { border-right: none; }
+.cost-ctrl-label { font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; display: block; }
+.cost-ctrl-value { font-family: var(--serif); font-size: 30px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.cost-slider { width: 100%; -webkit-appearance: none; appearance: none; height: 3px; background: var(--rule); outline: none; cursor: pointer; }
+.cost-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--green); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--green); cursor: pointer; }
+.cost-slider::-moz-range-thumb { width: 16px; height: 16px; background: var(--green); border-radius: 50%; border: 2px solid #fff; cursor: pointer; }
+.cost-range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-light); margin-top: 6px; }
+
+.cost-chart-area { padding: 32px 40px 20px; height: 300px; }
+.cost-chart-svg { width: 100%; height: 100%; overflow: visible; }
+
+.cost-legend { display: flex; gap: 24px; padding: 0 40px 24px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); }
+.cost-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-mid); }
+.cost-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+.cost-outcomes { display: grid; grid-template-columns: repeat(3,1fr); }
+.cost-outcome { padding: 22px 28px; border-right: 1px solid var(--rule); text-align: center; }
+.cost-outcome:last-child { border-right: none; }
+.cost-outcome-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 6px; }
+.cost-outcome-value { font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1; }
+.cost-outcome-delta { font-size: 11px; color: var(--ink-light); margin-top: 3px; }
+.c-green { color: var(--green); }
+.c-amber { color: #D97706; }
+.c-red { color: #DC2626; }
+
+.cost-callout {
+  background: var(--navy); padding: 20px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+}
+.cost-callout-text { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+.cost-callout-text strong { color: var(--green-light); font-size: 18px; }
+.cost-callout-cta {
+  background: var(--green); color: #fff;
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 10px 22px; text-decoration: none; white-space: nowrap;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.cost-callout-cta:hover { background: var(--green-mid); }
+.cost-disclaimer { padding: 10px 32px; font-size: 10px; color: var(--ink-light); border-top: 1px solid var(--rule); line-height: 1.5; }
+
+/* ─── HOW IT WORKS ──────────────────────────────── */
+.how { padding: 96px 0; background: var(--navy); }
+.how-header { text-align: center; margin-bottom: 64px; }
+.how-eyebrow { color: var(--green-light); }
+.how-eyebrow::before { background: var(--green-light); }
+.how-headline { font-family: var(--serif); font-size: clamp(28px, 3vw, 42px); font-weight: 700; color: #fff; margin-top: 16px; }
+
+.how-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; border: 1px solid rgba(255,255,255,0.08); }
+.how-step { padding: 44px 40px; border-right: 1px solid rgba(255,255,255,0.08); position: relative; }
+.how-step:last-child { border-right: none; }
+.how-step-num {
+  font-family: var(--serif); font-size: 64px; font-weight: 800;
+  color: rgba(255,255,255,0.06); line-height: 1;
+  position: absolute; top: 24px; right: 28px;
+  letter-spacing: -0.04em; pointer-events: none;
+}
+.how-step-icon {
+  width: 44px; height: 44px; border: 1px solid rgba(45,189,116,0.3);
+  display: grid; place-items: center; margin-bottom: 24px;
+}
+.how-step-title { font-family: var(--serif); font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+.how-step-body { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7; }
+.how-step-tag {
+  display: inline-block; margin-top: 20px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--green-light);
+  border-bottom: 1px solid rgba(45,189,116,0.3); padding-bottom: 2px;
+}
+
+.how-connector {
+  display: flex; justify-content: center; align-items: center;
+  padding: 32px 0; gap: 16px;
+}
+.how-connector-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+.how-connector-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* ─── VVS SECTION ───────────────────────────────── */
+.vvs { padding: 96px 0; }
+.vvs-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+
+.vvs-left {}
+.vvs-headline { font-family: var(--serif); font-size: clamp(30px, 3.5vw, 46px); font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; margin-top: 16px; margin-bottom: 20px; }
+.vvs-headline em { font-style: italic; color: var(--green); }
+.vvs-body { font-size: 15px; color: var(--ink-mid); line-height: 1.7; margin-bottom: 24px; }
+.vvs-exclusive {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--green-pale); border: 1px solid rgba(26,122,74,0.2);
+  padding: 14px 18px; font-size: 12px; font-weight: 600;
+  color: var(--green); letter-spacing: 0.04em;
+  margin-bottom: 32px;
+}
+.vvs-not-available {
+  font-size: 13px; color: var(--ink-mid); line-height: 1.6;
+  border-left: 3px solid var(--rule-heavy); padding-left: 16px;
+}
+.vvs-not-available strong { color: var(--ink); display: block; margin-bottom: 4px; }
+
+.vvs-pillars { margin-top: 36px; display: flex; flex-direction: column; gap: 0; border: 1px solid var(--rule); }
+.vvs-pillar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 18px; border-bottom: 1px solid var(--rule); font-size: 13px;
+}
+.vvs-pillar:last-child { border-bottom: none; }
+.vvs-pillar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.vvs-pillar-name { color: var(--ink-mid); flex: 1; }
+.vvs-pillar-weight { font-family: var(--mono); font-size: 11px; color: var(--ink-light); }
+
+/* Right: live scorecard */
+.vvs-scorecard {
+  border: 1px solid var(--rule);
+  background: #fff;
+  box-shadow: 0 4px 32px rgba(11,31,46,0.07);
+  position: sticky; top: 80px;
+}
+.vvs-sc-header { background: var(--navy); padding: 22px 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+.vvs-sc-firm { font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.vvs-sc-meta { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+.vvs-sc-score { font-family: var(--serif); font-size: 44px; font-weight: 800; color: var(--green-light); line-height: 1; text-align: right; }
+.vvs-sc-score-label { font-size: 9px; color: rgba(255,255,255,0.35); letter-spacing: 0.12em; text-transform: uppercase; text-align: right; margin-top: 2px; }
+
+.vvs-sc-bar-section { padding: 18px 28px; border-bottom: 1px solid var(--rule); }
+.vvs-sc-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-light); margin-bottom: 8px; }
+.vvs-sc-bar-track { height: 6px; background: var(--green-pale); overflow: hidden; margin-bottom: 10px; }
+.vvs-sc-bar-fill { height: 100%; background: var(--green); transition: width 1.2s ease; }
+.vvs-sc-percentile { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-light); }
+
+.vvs-sc-metrics {}
+.vvs-sc-metric { display: flex; align-items: center; justify-content: space-between; padding: 11px 28px; border-bottom: 1px solid var(--rule); font-size: 12.5px; }
+.vvs-sc-metric:last-child { border-bottom: none; }
+.vvs-sc-metric-name { color: var(--ink-mid); }
+.vvs-sc-metric-val { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.vvs-sc-footer { padding: 12px 28px; background: var(--green-pale); font-size: 10px; color: var(--ink-light); line-height: 1.5; border-top: 1px solid var(--rule); }
+.vvs-sc-footer strong { color: var(--green); }
+
+/* ─── PRODUCT PROOF ─────────────────────────────── */
+.proof { padding: 96px 0; background: var(--navy); }
+.proof-header { text-align: center; margin-bottom: 64px; }
+.proof-eyebrow { color: rgba(255,255,255,0.4); }
+.proof-eyebrow::before { background: rgba(255,255,255,0.4); }
+.proof-headline { font-family: var(--serif); font-size: clamp(28px, 3.5vw, 44px); font-weight: 700; color: #fff; margin-top: 16px; }
+.proof-sub { font-size: 15px; color: rgba(255,255,255,0.5); margin-top: 12px; }
+
+.proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+
+.proof-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+.proof-panel-label {
+  padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px;
+}
+.proof-panel-label.free { color: rgba(255,255,255,0.4); }
+.proof-panel-label.paid { color: var(--green-light); }
+.proof-badge {
+  font-size: 9px; padding: 3px 8px; letter-spacing: 0.1em;
+}
+.proof-badge.free { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+.proof-badge.paid { background: rgba(45,189,116,0.15); color: var(--green-light); }
+
+.proof-content { padding: 24px; }
+
+/* Free panel fields */
+.proof-field { margin-bottom: 16px; }
+.proof-field-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 5px; }
+.proof-field-value { font-size: 13px; color: rgba(255,255,255,0.65); }
+
+/* Paid panel */
+.proof-score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.proof-score-big { font-family: var(--serif); font-size: 52px; font-weight: 800; color: var(--green-light); line-height: 1; }
+.proof-score-meta { text-align: right; }
+.proof-score-label { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.1em; text-transform: uppercase; }
+.proof-score-percentile { font-size: 13px; color: var(--green-light); font-weight: 600; margin-top: 4px; }
+
+.proof-bar-section { margin-bottom: 20px; }
+.proof-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
+.proof-bar-track { height: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.proof-bar-fill { height: 100%; background: var(--green); }
+
+.proof-metrics { border: 1px solid rgba(255,255,255,0.08); }
+.proof-metric { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 11.5px; }
+.proof-metric:last-child { border-bottom: none; }
+.proof-metric-name { color: rgba(255,255,255,0.5); }
+.proof-metric-val { font-weight: 600; color: rgba(255,255,255,0.85); display: flex; align-items: center; gap: 6px; }
+.proof-mini-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.proof-trend { margin-top: 16px; border: 1px solid rgba(255,255,255,0.08); padding: 14px; }
+.proof-trend-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+.proof-trend-svg { width: 100%; height: 60px; }
+
+/* Lock overlay */
+.proof-lock-overlay {
+  background: rgba(11,31,46,0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 48px 32px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 16px;
+  min-height: 400px;
+}
+.proof-lock-icon { width: 48px; height: 48px; border: 1px solid rgba(255,255,255,0.15); display: grid; place-items: center; }
+.proof-lock-title { font-family: var(--serif); font-size: 22px; font-weight: 700; color: #fff; }
+.proof-lock-body { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; max-width: 280px; }
+.proof-lock-cta {
+  background: var(--green); color: #fff;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  padding: 12px 28px; text-decoration: none; transition: background 0.2s;
+  letter-spacing: 0.03em;
+}
+.proof-lock-cta:hover { background: var(--green-mid); }
+.proof-lock-price { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+/* ─── PRICING ────────────────────────────────────── */
+.pricing { padding: 96px 0; }
+.pricing-header { text-align: center; margin-bottom: 64px; }
+.pricing-headline { font-family: var(--serif); font-size: clamp(30px, 3.5vw, 46px); font-weight: 700; line-height: 1.1; margin-top: 16px; }
+.pricing-sub { font-size: 15px; color: var(--ink-mid); margin-top: 12px; }
+
+.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; max-width: 800px; margin: 0 auto; }
+
+.pricing-card { border: 1px solid var(--rule); background: #fff; padding: 40px 36px; position: relative; }
+.pricing-card.featured { border-color: var(--green); }
+.pricing-featured-badge {
+  position: absolute; top: -1px; right: 28px;
+  background: var(--green); color: #fff;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 5px 12px;
+}
+.pricing-card-label { font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 16px; }
+.pricing-price { margin-bottom: 6px; }
+.pricing-amount { font-family: var(--serif); font-size: 48px; font-weight: 800; color: var(--ink); line-height: 1; }
+.pricing-amount sup { font-size: 22px; font-weight: 700; vertical-align: super; }
+.pricing-period { font-size: 13px; color: var(--ink-light); margin-left: 4px; }
+.pricing-desc { font-size: 13px; color: var(--ink-mid); margin-bottom: 28px; line-height: 1.6; }
+.pricing-features { list-style: none; margin-bottom: 32px; display: flex; flex-direction: column; gap: 10px; }
+.pricing-features li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--ink-mid); }
+.pricing-features li::before { content: '✓'; color: var(--green); font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+.pricing-cta { display: block; text-align: center; padding: 13px; font-family: var(--sans); font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+.pricing-cta.primary { background: var(--green); color: #fff; }
+.pricing-cta.primary:hover { background: var(--green-mid); }
+.pricing-cta.secondary { border: 1.5px solid var(--rule-heavy); color: var(--ink); }
+.pricing-cta.secondary:hover { border-color: var(--ink); }
+
+.pricing-guarantee { text-align: center; margin-top: 28px; font-size: 12px; color: var(--ink-light); }
+.pricing-guarantee strong { color: var(--ink); }
+
+/* ─── TESTIMONIALS ──────────────────────────────── */
+.testimonials { padding: 96px 0; border-top: 1px solid var(--rule); }
+.testimonials-header { margin-bottom: 56px; }
+.testimonials-headline { font-family: var(--serif); font-size: clamp(28px, 3.5vw, 42px); font-weight: 700; line-height: 1.1; margin-top: 16px; max-width: 500px; }
+
+.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.testi-card { border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 32px 28px; position: relative; }
+.testi-card:nth-child(2) { border-top: 3px solid var(--green); }
+.testi-quote-mark { font-family: var(--serif); font-size: 48px; color: var(--rule-heavy); line-height: 0.8; margin-bottom: 16px; }
+.testi-quote { font-family: var(--serif); font-size: 15px; font-style: italic; line-height: 1.65; margin-bottom: 20px; color: var(--ink); }
+.testi-author { font-size: 11px; color: var(--ink-light); }
+.testi-author strong { display: block; color: var(--ink); font-size: 12px; font-weight: 600; margin-bottom: 2px; font-style: normal; }
+.testi-outcome { position: absolute; top: 28px; right: 24px; text-align: right; }
+.testi-outcome-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); display: block; margin-bottom: 3px; }
+.testi-outcome-value { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--ink); }
+.testi-outcome-value em { font-style: normal; color: var(--green); }
+
+/* ─── TRUST & METHODOLOGY ───────────────────────── */
+.trust { padding: 96px 0; background: var(--green-pale); border-top: 1px solid rgba(26,122,74,0.15); border-bottom: 1px solid rgba(26,122,74,0.15); }
+.trust-inner { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid rgba(26,122,74,0.15); }
+.trust-block { padding: 36px 32px; border-right: 1px solid rgba(26,122,74,0.15); }
+.trust-block:last-child { border-right: none; }
+.trust-block-icon { width: 36px; height: 36px; border: 1px solid rgba(26,122,74,0.3); display: grid; place-items: center; margin-bottom: 18px; }
+.trust-block-title { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.trust-block-body { font-size: 13px; color: var(--ink-mid); line-height: 1.7; }
+.trust-block-link { display: inline-block; margin-top: 14px; font-size: 12px; font-weight: 600; color: var(--green); text-decoration: none; border-bottom: 1px solid rgba(26,122,74,0.3); padding-bottom: 1px; }
+.trust-block-link:hover { color: var(--green-mid); }
+
+/* ─── FINAL CTA ─────────────────────────────────── */
+.final-cta { padding: 96px 0; text-align: center; overflow: hidden; }
+.final-cta-eyebrow { justify-content: center; }
+.final-cta-headline { font-family: var(--serif); font-size: clamp(34px, 4.5vw, 58px); font-weight: 800; line-height: 1.05; letter-spacing: -0.025em; max-width: 720px; margin: 20px auto 16px; }
+.final-cta-headline em { font-style: italic; color: var(--green); }
+.final-cta-sub { font-size: 15px; color: var(--ink-mid); max-width: 460px; margin: 0 auto 40px; line-height: 1.65; }
+
+.final-cta-actions { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.final-cta-trust { font-size: 12px; color: var(--ink-light); }
+
+.social-proof-count { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-light); margin-top: 16px; }
+.social-proof-avatars { display: flex; }
+.social-proof-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--white);
+  background: var(--green-pale);
+  display: grid; place-items: center;
+  margin-left: -6px; font-size: 9px; color: var(--green); font-weight: 700;
+}
+.social-proof-avatar:first-child { margin-left: 0; }
+
+/* Skyline */
+.skyline { width: 100%; margin-top: 64px; overflow: hidden; }
+.skyline svg { display: block; width: 100%; }
+
+/* ─── FOOTER ────────────────────────────────────── */
+footer {
+  background: var(--navy);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.45);
+}
+.footer-top {
+  display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  padding: 56px 52px; max-width: 1100px; margin: 0 auto;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: 0;
+}
+.footer-brand { padding-right: 48px; border-right: 1px solid rgba(255,255,255,0.06); margin-right: 40px; }
+.footer-logo { font-family: var(--serif); font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+.footer-logo em { font-style: normal; color: var(--green-light); }
+.footer-tagline { font-size: 12px; line-height: 1.65; max-width: 200px; margin-bottom: 20px; }
+.footer-conflict { font-size: 11px; color: var(--green-light); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; line-height: 1.5; }
+.footer-col-title { font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 16px; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-links a { font-size: 13px; color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: #fff; }
+.footer-bottom {
+  max-width: 1100px; margin: 0 auto; padding: 18px 52px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px;
+}
+.footer-socials { display: flex; gap: 20px; }
+.footer-socials a { font-size: 11px; color: rgba(255,255,255,0.3); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.15s; }
+.footer-socials a:hover { color: rgba(255,255,255,0.7); }
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══════════════════════════════════════════════ -->
+<nav class="z1">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-mark">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="7,1 13,4 13,10 7,13 1,10 1,4"/>
+          <line x1="7" y1="1" x2="7" y2="13"/>
+          <line x1="1" y1="4" x2="13" y2="10"/>
+          <line x1="13" y1="4" x2="1" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-logo-text">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">Find Advisors</a></li>
+      <li><a href="#">Rankings</a></li>
+      <li><a href="#">Methodology</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="#" class="nav-login">Log in</a>
+      <a href="#" class="nav-cta">Get Full Access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══════════════════════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="hero">
+    <div class="inner">
+      <div class="hero-inner">
+
+        <!-- Left -->
+        <div>
+          <span class="eyebrow hero-eyebrow reveal">Powered by SEC ADV Filings · Updated Quarterly</span>
+          <h1 class="hero-headline reveal rd1">
+            Before you hand over your life savings,<br>
+            <em>know exactly who you're trusting.</em>
+          </h1>
+          <p class="hero-sub reveal rd2">Every registered investment advisor in America files detailed disclosures with the SEC. We transform those filings into a single, unbiased score — so you can make the most important financial decision of your life with complete information.</p>
+
+          <div class="hero-search-wrap reveal rd3">
+            <div class="hero-search">
+              <div class="hero-search-icon">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#7A9186" stroke-width="1.5" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="9.8" y1="9.8" x2="13" y2="13"/></svg>
+              </div>
+              <input class="hero-search-input" type="text" placeholder="Search by firm name, city, or advisor…">
+              <button class="hero-search-btn">Search Free</button>
+            </div>
+            <div class="hero-search-hint">
+              <span>Try:</span>
+              <a href="#">Vanguard Personal Advisor</a>
+              <a href="#">Fee-only advisors, New York</a>
+              <a href="#">RIAs under $500K minimum</a>
+            </div>
+          </div>
+
+          <div class="hero-conflict-free reveal rd4">
+            <div class="hero-cf-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round"><path d="M8 1.5L2 4v4c0 3.5 2.5 6 6 7 3.5-1 6-3.5 6-7V4L8 1.5z"/><polyline points="5,8 7,10 11,6"/></svg>
+            </div>
+            <p class="hero-cf-text">
+              <strong>Conflict-free by design.</strong>
+              No advisor has ever paid to appear here, improve their ranking, or influence their score. We make money from subscriptions — not from the industry we evaluate.
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: profile card preview -->
+        <div class="reveal rd2">
+          <div class="hero-card">
+            <div class="hero-card-header">
+              <div>
+                <div class="hero-card-firm">Meridian Wealth Advisors</div>
+                <div class="hero-card-meta">SEC RIA · New York, NY · Est. 2008</div>
+              </div>
+              <div class="hero-card-score-wrap">
+                <div class="hero-card-score" id="heroScore">84</div>
+                <div class="hero-card-score-label">Visor Score™</div>
+              </div>
+            </div>
+
+            <div class="hero-card-bar-section">
+              <div class="score-bar-row"><span>Visor Value Score™</span><span style="font-weight:600;color:var(--green);">84 / 100</span></div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:84%"></div></div>
+              <div class="score-bar-sub"><span>Percentile rank</span><span style="font-weight:600;color:var(--ink);">Top 8% nationally</span></div>
+            </div>
+
+            <div class="hero-card-metrics">
+              <div class="metric-row"><span class="metric-name">Regulatory Compliance</span><span class="metric-val"><span class="dot dot-g"></span>96</span></div>
+              <div class="metric-row"><span class="metric-name">AUM Growth Trajectory</span><span class="metric-val"><span class="dot dot-g"></span>88</span></div>
+              <div class="metric-row"><span class="metric-name">Fee Transparency</span><span class="metric-val"><span class="dot dot-g"></span>91</span></div>
+              <div class="metric-row"><span class="metric-name">Conflict of Interest Exposure</span><span class="metric-val"><span class="dot dot-a"></span>67</span></div>
+              <div class="metric-row" style="opacity:0.25;filter:blur(3px);user-select:none;"><span class="metric-name">Ownership Stability</span><span class="metric-val">—</span></div>
+              <div class="metric-row" style="opacity:0.25;filter:blur(3px);user-select:none;"><span class="metric-name">Client Retention Proxy</span><span class="metric-val">—</span></div>
+            </div>
+
+            <div class="hero-card-lock">
+              <div class="hero-card-lock-badge">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="0.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
+                Full profile requires access
+              </div>
+              <a href="#pricing" class="hero-card-lock-cta">Unlock Full Profile →</a>
+              <div class="hero-card-lock-price">From $29/month · or $79 one-time access</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Illustration -->
+    <svg viewBox="0 0 1100 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;margin-top:-20px;">
+      <defs>
+        <linearGradient id="illuFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F7F9F8" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#F7F9F8" stop-opacity="1"/>
+        </linearGradient>
+      </defs>
+      <!-- ground -->
+      <line x1="0" y1="188" x2="1100" y2="188" stroke="#D0DDD6" stroke-width="1"/>
+      <!-- buildings left -->
+      <rect x="0" y="140" width="50" height="48" fill="none" stroke="#D0DDD6" stroke-width="0.6"/>
+      <rect x="54" y="110" width="60" height="78" fill="none" stroke="#C8D4CC" stroke-width="0.6"/>
+      <rect x="118" y="72" width="52" height="116" fill="none" stroke="#B8C8C0" stroke-width="0.7"/>
+      <line x1="144" y1="72" x2="144" y2="60" stroke="#B8C8C0" stroke-width="0.7"/>
+      <rect x="174" y="98" width="72" height="90" fill="none" stroke="#B8C8C0" stroke-width="0.6"/>
+      <rect x="250" y="50" width="54" height="138" fill="none" stroke="#A8B8B0" stroke-width="0.8"/>
+      <line x1="277" y1="50" x2="277" y2="36" stroke="#A8B8B0" stroke-width="0.7"/>
+      <circle cx="277" cy="34" r="3" fill="none" stroke="#A8B8B0" stroke-width="0.6"/>
+      <rect x="308" y="82" width="64" height="106" fill="none" stroke="#B0C0B8" stroke-width="0.7"/>
+      <!-- buildings center-right -->
+      <rect x="376" y="60" width="48" height="128" fill="none" stroke="#A8B8B0" stroke-width="0.7"/>
+      <rect x="428" y="90" width="70" height="98" fill="none" stroke="#B0C0B8" stroke-width="0.6"/>
+      <rect x="502" y="44" width="56" height="144" fill="none" stroke="#A0B0A8" stroke-width="0.8"/>
+      <line x1="530" y1="44" x2="530" y2="30" stroke="#A0B0A8" stroke-width="0.7"/>
+      <rect x="562" y="105" width="65" height="83" fill="none" stroke="#B0C0B8" stroke-width="0.6"/>
+      <rect x="631" y="78" width="48" height="110" fill="none" stroke="#B8C8C0" stroke-width="0.6"/>
+      <!-- buildings right -->
+      <rect x="683" y="120" width="70" height="68" fill="none" stroke="#C0D0C8" stroke-width="0.6"/>
+      <rect x="757" y="140" width="55" height="48" fill="none" stroke="#C8D4CC" stroke-width="0.5"/>
+      <rect x="816" y="125" width="65" height="63" fill="none" stroke="#C0D0C8" stroke-width="0.5"/>
+      <rect x="885" y="148" width="80" height="40" fill="none" stroke="#C8D4CC" stroke-width="0.5"/>
+      <rect x="969" y="135" width="60" height="53" fill="none" stroke="#C8D4CC" stroke-width="0.5"/>
+      <rect x="1033" y="152" width="67" height="36" fill="none" stroke="#D0DDD6" stroke-width="0.5"/>
+      <!-- window details -->
+      <rect x="123" y="82" width="8" height="7" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+      <rect x="136" y="82" width="8" height="7" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+      <rect x="155" y="82" width="8" height="7" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+      <rect x="255" y="62" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="268" y="62" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="281" y="62" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="255" y="74" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="268" y="74" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="255" y="86" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="268" y="86" width="8" height="6" fill="none" stroke="#C0CCBF" stroke-width="0.4"/>
+      <rect x="507" y="56" width="9" height="7" fill="none" stroke="#B8C8C0" stroke-width="0.4"/>
+      <rect x="521" y="56" width="9" height="7" fill="none" stroke="#B8C8C0" stroke-width="0.4"/>
+      <rect x="535" y="56" width="9" height="7" fill="none" stroke="#B8C8C0" stroke-width="0.4"/>
+      <rect x="507" y="70" width="9" height="7" fill="none" stroke="#B8C8C0" stroke-width="0.4"/>
+      <rect x="521" y="70" width="9" height="7" fill="none" stroke="#B8C8C0" stroke-width="0.4"/>
+      <!-- fade overlay -->
+      <rect x="0" y="80" width="1100" height="120" fill="url(#illuFade)"/>
+    </svg>
+
+  </section>
+</div>
+
+<!-- ═══ TRUST BAR ══════════════════════════════════════════ -->
+<div class="z1">
+  <div class="trust-bar">
+    <div class="trust-bar-inner">
+      <div class="trust-item">
+        <div class="trust-value">40<em>K+</em></div>
+        <div class="trust-label">Advisors indexed</div>
+        <div class="trust-sub">Every SEC-registered RIA in the US</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-value"><em>$</em>128<em>T</em></div>
+        <div class="trust-label">AUM tracked</div>
+        <div class="trust-sub">More than the world's two largest economies</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-value">500<em>+</em></div>
+        <div class="trust-label">Data points per firm</div>
+        <div class="trust-sub">Per filing, per year, per advisor</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-value" style="font-size:20px;padding-top:6px;">Quarterly</div>
+        <div class="trust-label">SEC EDGAR sync</div>
+        <div class="trust-sub">Always current, never stale</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-value" style="font-size:20px;padding-top:6px;">Zero</div>
+        <div class="trust-label">Paid placements</div>
+        <div class="trust-sub">Rankings are never for sale</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STAKES ═════════════════════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="stakes">
+    <div class="inner">
+      <div class="stakes-header reveal">
+        <span class="eyebrow">Why This Decision Matters</span>
+        <h2 class="stakes-headline">A financial advisor is one of the largest expenses of your lifetime. Choose wrong and the cost compounds for decades.</h2>
+        <p class="stakes-sub">The gap between a top-quartile and bottom-quartile advisor isn't just fees — it's decades of compounding returns, conflict-driven decisions, and opportunity cost. See what's actually at stake.</p>
+      </div>
+
+      <div class="cost-box reveal rd1">
+        <div class="cost-controls">
+          <div class="cost-ctrl">
+            <span class="cost-ctrl-label">Starting Portfolio Value</span>
+            <div class="cost-ctrl-value" id="portDisplay">$500,000</div>
+            <input type="range" class="cost-slider" id="portSlider" min="100000" max="5000000" step="50000" value="500000">
+            <div class="cost-range-labels"><span>$100K</span><span>$5M</span></div>
+          </div>
+          <div class="cost-ctrl">
+            <span class="cost-ctrl-label">Time Horizon</span>
+            <div class="cost-ctrl-value" id="yrDisplay">20 years</div>
+            <input type="range" class="cost-slider" id="yrSlider" min="5" max="30" step="1" value="20">
+            <div class="cost-range-labels"><span>5 yrs</span><span>30 yrs</span></div>
+          </div>
+        </div>
+        <div class="cost-chart-area">
+          <svg class="cost-chart-svg" id="costChart" viewBox="0 0 900 260" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="cost-legend">
+          <div class="cost-legend-item"><div class="cost-legend-dot" style="background:#1A7A4A"></div>Top-Quartile Advisor &nbsp;<span style="color:var(--ink-light);font-size:11px;">~7.2% net annual · Visor Score 80–100</span></div>
+          <div class="cost-legend-item"><div class="cost-legend-dot" style="background:#D97706"></div>Average Advisor &nbsp;<span style="color:var(--ink-light);font-size:11px;">~5.8% net annual · Visor Score 50–79</span></div>
+          <div class="cost-legend-item"><div class="cost-legend-dot" style="background:#DC2626"></div>Low-Score Advisor &nbsp;<span style="color:var(--ink-light);font-size:11px;">~4.1% net annual · Visor Score 0–49</span></div>
+        </div>
+        <div class="cost-outcomes">
+          <div class="cost-outcome"><div class="cost-outcome-label">Top-Quartile Outcome</div><div class="cost-outcome-value c-green" id="outG">—</div><div class="cost-outcome-delta" id="outGd"></div></div>
+          <div class="cost-outcome"><div class="cost-outcome-label">Average Advisor Outcome</div><div class="cost-outcome-value c-amber" id="outA">—</div><div class="cost-outcome-delta" id="outAd"></div></div>
+          <div class="cost-outcome"><div class="cost-outcome-label">Low-Score Outcome</div><div class="cost-outcome-value c-red" id="outR">—</div><div class="cost-outcome-delta" id="outRd"></div></div>
+        </div>
+        <div class="cost-callout">
+          <p class="cost-callout-text" id="costCallout">On a $500K portfolio over 20 years, the difference between a top and low-score advisor is an estimated <strong>—</strong>.</p>
+          <a href="#pricing" class="cost-callout-cta">Get Full Access →</a>
+        </div>
+        <p class="cost-disclaimer">* Illustrative only. Estimated from industry research on net-of-fee performance by advisor quartile. Actual results will vary. Not investment advice.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ HOW IT WORKS ═══════════════════════════════════════ -->
+<div class="z1">
+  <section class="how">
+    <div class="inner">
+      <div class="how-header reveal">
+        <span class="eyebrow how-eyebrow">The Process</span>
+        <h2 class="how-headline">Three steps to a decision you can defend.</h2>
+      </div>
+      <div class="how-steps reveal rd1">
+        <div class="how-step">
+          <div class="how-step-num">01</div>
+          <div class="how-step-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#2DBD74" stroke-width="1.4" stroke-linecap="round"><circle cx="8" cy="8" r="5"/><line x1="12" y1="12" x2="16" y2="16"/></svg>
+          </div>
+          <div class="how-step-title">Search any advisor, free</div>
+          <div class="how-step-body">Browse our full database of 40,000+ registered advisors. Filter by location, AUM range, fee structure, client type, and minimum account size. No account required.</div>
+          <span class="how-step-tag">Always free</span>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">02</div>
+          <div class="how-step-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#2DBD74" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="3" width="14" height="12" rx="0.5"/><line x1="6" y1="7" x2="12" y2="7"/><line x1="6" y1="10" x2="10" y2="10"/></svg>
+          </div>
+          <div class="how-step-title">Unlock the full profile</div>
+          <div class="how-step-body">Get the complete picture: Visor Value Score™, all six sub-metrics, historical trend data, conflict-of-interest flags, ownership changes, and disciplinary history.</div>
+          <span class="how-step-tag">Paid access</span>
+        </div>
+        <div class="how-step">
+          <div class="how-step-num">03</div>
+          <div class="how-step-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#2DBD74" stroke-width="1.4" stroke-linecap="round"><path d="M9 2L3 5v5c0 4 2.5 6 6 7 3.5-1 6-3 6-7V5L9 2z"/><polyline points="6,9 8,11 12,7"/></svg>
+          </div>
+          <div class="how-step-title">Make your decision with confidence</div>
+          <div class="how-step-body">Compare advisors side by side, run our personalized matching questionnaire, and walk into every conversation knowing exactly what the regulatory record shows.</div>
+          <span class="how-step-tag">Fully informed</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ VVS ════════════════════════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="vvs">
+    <div class="inner">
+      <div class="vvs-inner">
+        <div class="vvs-left reveal">
+          <span class="eyebrow">The Intelligence Layer</span>
+          <h2 class="vvs-headline">The <em>Visor Value Score™</em> — our proprietary edge.</h2>
+          <p class="vvs-body">We transform 500+ raw data points from SEC ADV filings into a single composite score from 0–100 for every registered advisor in the country. Not available anywhere else. Not influenced by the advisory industry. Built entirely on public regulatory data.</p>
+          <div class="vvs-exclusive">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><polygon points="7,1 8.8,5 13,5.4 10,8.2 10.9,12.4 7,10.2 3.1,12.4 4,8.2 1,5.4 5.2,5"/></svg>
+            Exclusive to Visor Index — not available on FINRA BrokerCheck, Morningstar, or anywhere else.
+          </div>
+          <div class="vvs-not-available">
+            <strong>Why no other platform has this</strong>
+            Building this score required years of work parsing, structuring, and normalizing decades of SEC filing data — not just reading the PDFs, but extracting the underlying data relationships across 500+ fields per filing. The result is a defensible, reproducible metric that any investor can understand and any methodology page can explain.
+          </div>
+
+          <div class="vvs-pillars reveal rd2">
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#1A7A4A"></div><span class="vvs-pillar-name">Regulatory Compliance History</span><span class="vvs-pillar-weight">20%</span></div>
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#22995E"></div><span class="vvs-pillar-name">Fee Transparency &amp; Structure</span><span class="vvs-pillar-weight">18%</span></div>
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#2DBD74"></div><span class="vvs-pillar-name">Conflict of Interest Exposure</span><span class="vvs-pillar-weight">22%</span></div>
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#7A9186"></div><span class="vvs-pillar-name">AUM Growth Trajectory</span><span class="vvs-pillar-weight">15%</span></div>
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#B8C8C0"></div><span class="vvs-pillar-name">Ownership &amp; Structural Stability</span><span class="vvs-pillar-weight">13%</span></div>
+            <div class="vvs-pillar"><div class="vvs-pillar-dot" style="background:#D0DDD6"></div><span class="vvs-pillar-name">Client Retention Proxy</span><span class="vvs-pillar-weight">12%</span></div>
+          </div>
+          <a href="#" style="display:inline-block;margin-top:20px;font-size:12px;font-weight:600;color:var(--green);text-decoration:none;border-bottom:1px solid rgba(26,122,74,0.3);padding-bottom:2px;">Read the full methodology →</a>
+        </div>
+
+        <div class="reveal rd1">
+          <div class="vvs-scorecard">
+            <div class="vvs-sc-header">
+              <div>
+                <div class="vvs-sc-firm">Meridian Wealth Advisors</div>
+                <div class="vvs-sc-meta">SEC RIA · New York, NY · $2.4B AUM</div>
+              </div>
+              <div>
+                <div class="vvs-sc-score">84</div>
+                <div class="vvs-sc-score-label">/ 100 Score</div>
+              </div>
+            </div>
+            <div class="vvs-sc-bar-section">
+              <div class="vvs-sc-bar-labels"><span>Visor Value Score™</span><span style="font-weight:600;color:var(--green);">84 / 100</span></div>
+              <div class="vvs-sc-bar-track"><div class="vvs-sc-bar-fill" style="width:84%"></div></div>
+              <div class="vvs-sc-percentile"><span>Percentile rank</span><span style="font-weight:600;color:var(--ink);">Top 8% of 40,000+ firms</span></div>
+            </div>
+            <div class="vvs-sc-metrics">
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">Regulatory Compliance</span><span class="vvs-sc-metric-val"><span class="dot dot-g"></span>96 / 100</span></div>
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">AUM Growth Trajectory</span><span class="vvs-sc-metric-val"><span class="dot dot-g"></span>88 / 100</span></div>
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">Fee Transparency</span><span class="vvs-sc-metric-val"><span class="dot dot-g"></span>91 / 100</span></div>
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">Conflict of Interest Exposure</span><span class="vvs-sc-metric-val"><span class="dot dot-a"></span>67 / 100</span></div>
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">Ownership Stability</span><span class="vvs-sc-metric-val"><span class="dot dot-g"></span>82 / 100</span></div>
+              <div class="vvs-sc-metric"><span class="vvs-sc-metric-name">Client Retention Proxy</span><span class="vvs-sc-metric-val"><span class="dot dot-g"></span>79 / 100</span></div>
+            </div>
+            <div class="vvs-sc-footer"><strong>Visor Value Score™</strong> is derived exclusively from SEC EDGAR public filings. Updated quarterly. For informational purposes only — not investment advice.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PRODUCT PROOF ══════════════════════════════════════ -->
+<div class="z1">
+  <section class="proof">
+    <div class="inner">
+      <div class="proof-header reveal">
+        <span class="eyebrow proof-eyebrow">What You Get</span>
+        <h2 class="proof-headline">Here's exactly what full access unlocks.</h2>
+        <p class="proof-sub">Free search shows the basics. Full access shows everything the SEC knows about an advisor — structured, scored, and made readable.</p>
+      </div>
+
+      <div class="proof-grid reveal rd1">
+
+        <!-- FREE -->
+        <div class="proof-panel">
+          <div class="proof-panel-label free">
+            <span>Free Search</span>
+            <span class="proof-badge free">No Account Required</span>
+          </div>
+          <div class="proof-content">
+            <div class="proof-field"><div class="proof-field-label">Firm Name</div><div class="proof-field-value">Meridian Wealth Advisors</div></div>
+            <div class="proof-field"><div class="proof-field-label">Registration Status</div><div class="proof-field-value">SEC Registered RIA — Active</div></div>
+            <div class="proof-field"><div class="proof-field-label">Location</div><div class="proof-field-value">New York, NY</div></div>
+            <div class="proof-field"><div class="proof-field-label">AUM Range</div><div class="proof-field-value">$1B – $5B</div></div>
+            <div class="proof-field"><div class="proof-field-label">Fee Structure</div><div class="proof-field-value">AUM-based</div></div>
+            <div class="proof-field"><div class="proof-field-label">Number of Clients</div><div class="proof-field-value">342</div></div>
+            <div class="proof-field"><div class="proof-field-label">Registration Date</div><div class="proof-field-value">March 2008</div></div>
+            <div style="margin-top:28px;padding:16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-align:center;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px;">That's where free access ends.</div>
+              <a href="#pricing" style="font-size:12px;font-weight:600;color:var(--green-light);text-decoration:none;letter-spacing:0.04em;">Unlock full profile →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAID -->
+        <div class="proof-panel">
+          <div class="proof-panel-label paid">
+            <span>Full Access</span>
+            <span class="proof-badge paid">Paid</span>
+          </div>
+          <div class="proof-content">
+            <div class="proof-score-row">
+              <div class="proof-score-big">84</div>
+              <div class="proof-score-meta">
+                <div class="proof-score-label">Visor Value Score™</div>
+                <div class="proof-score-percentile">Top 8% nationally</div>
+              </div>
+            </div>
+            <div class="proof-bar-section">
+              <div class="proof-bar-label"><span>Score</span><span>84 / 100</span></div>
+              <div class="proof-bar-track"><div class="proof-bar-fill" style="width:84%"></div></div>
+            </div>
+            <div class="proof-metrics">
+              <div class="proof-metric"><span class="proof-metric-name">Regulatory Compliance</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#1A7A4A"></span>96</span></div>
+              <div class="proof-metric"><span class="proof-metric-name">Fee Transparency</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#1A7A4A"></span>91</span></div>
+              <div class="proof-metric"><span class="proof-metric-name">AUM Growth</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#1A7A4A"></span>88</span></div>
+              <div class="proof-metric"><span class="proof-metric-name">Conflict Exposure</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#F59E0B"></span>67</span></div>
+              <div class="proof-metric"><span class="proof-metric-name">Ownership Stability</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#1A7A4A"></span>82</span></div>
+              <div class="proof-metric"><span class="proof-metric-name">Client Retention</span><span class="proof-metric-val"><span class="proof-mini-dot" style="background:#1A7A4A"></span>79</span></div>
+            </div>
+            <div class="proof-trend">
+              <div class="proof-trend-label">AUM Growth — 5 Year Trend</div>
+              <svg class="proof-trend-svg" viewBox="0 0 300 60" fill="none" preserveAspectRatio="none">
+                <defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A7A4A" stop-opacity="0.2"/><stop offset="100%" stop-color="#1A7A4A" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,50 L50,42 L100,36 L150,28 L200,18 L250,10 L300,4" fill="none" stroke="#1A7A4A" stroke-width="2"/>
+                <path d="M0,50 L50,42 L100,36 L150,28 L200,18 L250,10 L300,4 L300,60 L0,60 Z" fill="url(#trendGrad)"/>
+                <text x="0" y="58" font-size="8" fill="rgba(255,255,255,0.3)" font-family="DM Sans">2020</text>
+                <text x="252" y="58" font-size="8" fill="rgba(255,255,255,0.3)" font-family="DM Sans">2025</text>
+              </svg>
+            </div>
+            <div style="margin-top:12px;padding:10px 14px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);">
+              <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#EF4444;margin-bottom:4px;">⚑ Conflict Flag Detected</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);">Advisor discloses referral arrangement with 3rd-party custodian. See full disclosure →</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PRICING ════════════════════════════════════════════ -->
+<div class="section-rule z1" id="pricing">
+  <section class="pricing">
+    <div class="inner">
+      <div class="pricing-header reveal">
+        <span class="eyebrow">Access</span>
+        <h2 class="pricing-headline">One decision. Two ways to access it.</h2>
+        <p class="pricing-sub">Choose the option that fits your situation. Both include everything.</p>
+      </div>
+
+      <div class="pricing-grid reveal rd1">
+
+        <div class="pricing-card">
+          <div class="pricing-card-label">Monthly Access</div>
+          <div class="pricing-price">
+            <span class="pricing-amount"><sup>$</sup>29</span>
+            <span class="pricing-period">/ month</span>
+          </div>
+          <p class="pricing-desc">For investors doing ongoing due diligence, family offices, and compliance professionals who need continuous access.</p>
+          <ul class="pricing-features">
+            <li>Full Visor Value Score™ for every firm</li>
+            <li>All six sub-metric scores with detail</li>
+            <li>Historical AUM trend data</li>
+            <li>Conflict of interest flags &amp; disclosures</li>
+            <li>Firm comparison tool (up to 5 firms)</li>
+            <li>Personalized advisor matching</li>
+            <li>Cancel anytime</li>
+          </ul>
+          <a href="#" class="pricing-cta secondary">Start Monthly Access</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="pricing-featured-badge">Most Popular</div>
+          <div class="pricing-card-label">One-Time Access</div>
+          <div class="pricing-price">
+            <span class="pricing-amount"><sup>$</sup>79</span>
+            <span class="pricing-period">/ 90 days</span>
+          </div>
+          <p class="pricing-desc">For investors actively searching for an advisor right now. Full access for 90 days — long enough to make a fully informed decision.</p>
+          <ul class="pricing-features">
+            <li>Everything in Monthly Access</li>
+            <li>90 days of full platform access</li>
+            <li>No recurring billing — ever</li>
+            <li>Unlimited firm searches</li>
+            <li>Download &amp; export capability</li>
+            <li>Priority email support</li>
+          </ul>
+          <a href="#" class="pricing-cta primary">Get 90-Day Access</a>
+        </div>
+
+      </div>
+
+      <p class="pricing-guarantee reveal rd2">
+        <strong>Not sure yet?</strong> Search any advisor free — no account required. The full profile unlocks when you're ready to go deeper.
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ TESTIMONIALS ═══════════════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="testimonials">
+    <div class="inner">
+      <div class="testimonials-header reveal">
+        <span class="eyebrow">From Investors Like You</span>
+        <h2 class="testimonials-headline">What it feels like to make this decision with complete information.</h2>
+      </div>
+      <div class="testi-grid reveal rd1">
+        <div class="testi-card">
+          <div class="testi-quote-mark">"</div>
+          <p class="testi-quote">I had two advisors on my shortlist. The scores were close — 78 versus 71 — but when I looked at the conflict-of-interest sub-metric, one had a 43 and the other had an 89. The 43 had three undisclosed referral relationships. That single number made the decision for me.</p>
+          <div class="testi-outcome"><span class="testi-outcome-label">Portfolio</span><span class="testi-outcome-value">$1.8<em>M</em></span></div>
+          <div class="testi-author"><strong>Sarah K.</strong>Private investor, New York</div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-quote-mark">"</div>
+          <p class="testi-quote">We use Visor Index for every manager evaluation we do. The AUM growth trend data and the ownership stability score are things we used to spend weeks building internally. Now it takes twenty minutes. It's become a standard part of our due diligence process.</p>
+          <div class="testi-outcome"><span class="testi-outcome-label">Assets</span><span class="testi-outcome-value">$12<em>M</em></span></div>
+          <div class="testi-author"><strong>Marcus T.</strong>Family office principal, Chicago</div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-quote-mark">"</div>
+          <p class="testi-quote">My previous advisor had a Visor Score of 44. I didn't know that when I signed with him. Three years later I switched — and the new advisor has an 88. I wish I'd had this before I made the first decision. The $79 access fee is laughable compared to what I lost.</p>
+          <div class="testi-outcome"><span class="testi-outcome-label">Portfolio</span><span class="testi-outcome-value">$640<em>K</em></span></div>
+          <div class="testi-author"><strong>David R.</strong>Retiree, Houston</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ TRUST & METHODOLOGY ═══════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="trust">
+    <div class="inner">
+      <div class="trust-inner reveal">
+        <div class="trust-block">
+          <div class="trust-block-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="2" width="12" height="14" rx="0.5"/><line x1="6" y1="6" x2="12" y2="6"/><line x1="6" y1="9" x2="12" y2="9"/><line x1="6" y1="12" x2="10" y2="12"/></svg>
+          </div>
+          <div class="trust-block-title">Public Methodology</div>
+          <p class="trust-block-body">Every weight, every data point, every calculation in the Visor Value Score™ is documented publicly. If you want to know exactly how we score Conflict of Interest Exposure, you can read the methodology page and check our work.</p>
+          <a href="#" class="trust-block-link">Read the methodology →</a>
+        </div>
+        <div class="trust-block">
+          <div class="trust-block-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round"><path d="M9 2L3 5.5v4.5c0 3.5 2.5 5.5 6 6.5 3.5-1 6-3 6-6.5V5.5L9 2z"/><polyline points="6,9 8,11 12,7"/></svg>
+          </div>
+          <div class="trust-block-title">SEC EDGAR Provenance</div>
+          <p class="trust-block-body">Every data point comes directly from official SEC EDGAR filings — the same regulatory disclosures advisors are legally required to submit. This isn't self-reported. It isn't marketing copy. It's the regulatory record.</p>
+          <a href="#" class="trust-block-link">About our data sources →</a>
+        </div>
+        <div class="trust-block">
+          <div class="trust-block-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round"><circle cx="9" cy="9" r="7"/><line x1="9" y1="5" x2="9" y2="9"/><line x1="9" y1="12" x2="9" y2="12.5" stroke-width="2"/></svg>
+          </div>
+          <div class="trust-block-title">No Industry Affiliations</div>
+          <p class="trust-block-body">Visor Index is entirely independent. We have no referral arrangements, no advisor partnerships, and no financial relationship with any firm we score. Our revenue comes exclusively from the people using the platform — not from the industry we evaluate.</p>
+          <a href="#" class="trust-block-link">About Visor Index →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ FINAL CTA ═══════════════════════════════════════════ -->
+<div class="section-rule z1">
+  <section class="final-cta">
+    <div class="inner">
+      <span class="eyebrow final-cta-eyebrow reveal">Make the Decision</span>
+      <h2 class="final-cta-headline reveal rd1">
+        You're about to make a decision worth<br><em>hundreds of thousands of dollars.</em>
+      </h2>
+      <p class="final-cta-sub reveal rd2">Start by searching any advisor free. When you're ready to see the full picture, full access starts at $79.</p>
+
+      <div class="final-cta-actions reveal rd3">
+        <a href="#" class="btn-primary" style="font-size:15px;padding:15px 36px;">
+          Get Full Access — $79
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+        </a>
+        <a href="#" class="btn-outline">Search Advisors Free</a>
+      </div>
+
+      <div class="final-cta-trust reveal rd4">No credit card to search. No recurring billing on one-time access. Cancel monthly anytime.</div>
+
+      <div class="social-proof-count reveal rd5">
+        <div class="social-proof-avatars">
+          <div class="social-proof-avatar">SK</div>
+          <div class="social-proof-avatar">MT</div>
+          <div class="social-proof-avatar">DR</div>
+          <div class="social-proof-avatar">+</div>
+        </div>
+        Joined by investors researching over $2B in assets this month
+      </div>
+    </div>
+
+    <div class="skyline">
+      <svg viewBox="0 0 1100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="skyT2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F7F9F8" stop-opacity="1"/><stop offset="40%" stop-color="#F7F9F8" stop-opacity="0"/></linearGradient>
+          <linearGradient id="skyB2" x1="0" y1="0" x2="0" y2="1"><stop offset="65%" stop-color="#F7F9F8" stop-opacity="0"/><stop offset="100%" stop-color="#F7F9F8" stop-opacity="1"/></linearGradient>
+        </defs>
+        <line x1="0" y1="172" x2="1100" y2="172" stroke="#D0DDD6" stroke-width="0.8"/>
+        <rect x="0" y="130" width="44" height="42" fill="none" stroke="#D0DDD6" stroke-width="0.5"/>
+        <rect x="48" y="105" width="58" height="67" fill="none" stroke="#C8D4CC" stroke-width="0.5"/>
+        <rect x="110" y="68" width="50" height="104" fill="none" stroke="#B8C8C0" stroke-width="0.6"/>
+        <line x1="135" y1="68" x2="135" y2="56" stroke="#B8C8C0" stroke-width="0.6"/>
+        <rect x="164" y="90" width="68" height="82" fill="none" stroke="#B8C8C0" stroke-width="0.6"/>
+        <rect x="236" y="44" width="52" height="128" fill="none" stroke="#A8B8B0" stroke-width="0.7"/>
+        <line x1="262" y1="44" x2="262" y2="30" stroke="#A8B8B0" stroke-width="0.6"/>
+        <rect x="292" y="76" width="62" height="96" fill="none" stroke="#B0C0B8" stroke-width="0.6"/>
+        <rect x="358" y="56" width="46" height="116" fill="none" stroke="#A8B8B0" stroke-width="0.6"/>
+        <rect x="408" y="84" width="68" height="88" fill="none" stroke="#B0C0B8" stroke-width="0.5"/>
+        <rect x="480" y="40" width="54" height="132" fill="none" stroke="#A0B0A8" stroke-width="0.7"/>
+        <line x1="507" y1="40" x2="507" y2="26" stroke="#A0B0A8" stroke-width="0.6"/>
+        <rect x="538" y="96" width="62" height="76" fill="none" stroke="#B0C0B8" stroke-width="0.5"/>
+        <rect x="604" y="72" width="46" height="100" fill="none" stroke="#B8C8C0" stroke-width="0.5"/>
+        <rect x="654" y="112" width="68" height="60" fill="none" stroke="#C0D0C8" stroke-width="0.5"/>
+        <rect x="726" y="130" width="52" height="42" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+        <rect x="782" y="118" width="62" height="54" fill="none" stroke="#C0D0C8" stroke-width="0.4"/>
+        <rect x="848" y="140" width="76" height="32" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+        <rect x="928" y="128" width="58" height="44" fill="none" stroke="#C8D4CC" stroke-width="0.4"/>
+        <rect x="990" y="144" width="64" height="28" fill="none" stroke="#D0DDD6" stroke-width="0.4"/>
+        <rect x="0" y="0" width="1100" height="180" fill="url(#skyT2)"/>
+        <rect x="0" y="0" width="1100" height="180" fill="url(#skyB2)"/>
+      </svg>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ FOOTER ═════════════════════════════════════════════ -->
+<footer class="z1">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo">Visor <em>Index</em></div>
+      <p class="footer-tagline">Independent intelligence for the most important financial decision of your life.</p>
+      <div class="footer-conflict">Conflict-free by design. We make money from subscriptions — not from advisors.</div>
+    </div>
+    <div style="padding-left:40px;">
+      <div class="footer-col-title">Platform</div>
+      <ul class="footer-links">
+        <li><a href="#">Find Advisors</a></li>
+        <li><a href="#">Rankings</a></li>
+        <li><a href="#">Compare Tool</a></li>
+        <li><a href="#">Advisor Matching</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#">About Visor Index</a></li>
+        <li><a href="#">Methodology</a></li>
+        <li><a href="#">Data Sources</a></li>
+        <li><a href="#">Pricing</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <ul class="footer-links">
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Disclosures</a></li>
+        <li><a href="#">Cookie Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Visor Index. Data sourced from SEC EDGAR public filings. Not investment advice.</span>
+    <div class="footer-socials">
+      <a href="#">LinkedIn</a>
+      <a href="#">X / Twitter</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── REVEAL ──────────────────────────────────────
+const reveals = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07 });
+reveals.forEach(el => obs.observe(el));
+
+// ─── COST CALCULATOR ─────────────────────────────
+const pSlider = document.getElementById('portSlider');
+const ySlider = document.getElementById('yrSlider');
+const RATES = { g: 0.072, a: 0.058, r: 0.041 };
+
+function fmt(v) {
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  return '$' + Math.round(v/1000) + 'K';
+}
+function series(p, y, r) {
+  const s = [];
+  for (let i = 0; i <= y; i++) s.push(p * Math.pow(1+r, i));
+  return s;
+}
+
+function draw() {
+  const p = +pSlider.value, y = +ySlider.value;
+  document.getElementById('portDisplay').textContent = fmt(p);
+  document.getElementById('yrDisplay').textContent = y + (y===1?' year':' years');
+
+  const gs = series(p,y,RATES.g), as = series(p,y,RATES.a), rs = series(p,y,RATES.r);
+  const fG=gs[y], fA=as[y], fR=rs[y], gap=fG-fR;
+
+  document.getElementById('outG').textContent = fmt(fG);
+  document.getElementById('outGd').textContent = '+'+fmt(fG-p)+' gain';
+  document.getElementById('outA').textContent = fmt(fA);
+  document.getElementById('outAd').textContent = '+'+fmt(fA-p)+' gain';
+  document.getElementById('outR').textContent = fmt(fR);
+  document.getElementById('outRd').textContent = '+'+fmt(fR-p)+' gain';
+  document.getElementById('costCallout').innerHTML =
+    `On a ${fmt(p)} portfolio over ${y} years, the difference between a top and low-score advisor is an estimated <strong style="color:var(--green-light);font-size:18px;">${fmt(gap)}</strong>.`;
+
+  // Chart
+  const svg = document.getElementById('costChart');
+  const W=900,H=260,pL=72,pR=20,pT=12,pB=32,cW=W-pL-pR,cH=H-pT-pB;
+  const all=[...gs,...as,...rs], minV=p*0.95, maxV=Math.max(...all)*1.04;
+  const xP = i => pL+(i/y)*cW;
+  const yP = v => pT+cH-((v-minV)/(maxV-minV))*cH;
+  const path = s => s.map((v,i)=>(i?'L':'M')+xP(i).toFixed(1)+','+yP(v).toFixed(1)).join(' ');
+  const area = s => path(s)+' L'+xP(y).toFixed(1)+','+(pT+cH)+' L'+pL+','+(pT+cH)+' Z';
+
+  let grid='', xL='';
+  for(let i=0;i<=5;i++){
+    const v=minV+(maxV-minV)*(i/5), yy=yP(v).toFixed(1);
+    grid+=`<line x1="${pL}" y1="${yy}" x2="${W-pR}" y2="${yy}" stroke="#D0DDD6" stroke-width="0.8" stroke-dasharray="4,4"/>`;
+    grid+=`<text x="${pL-6}" y="${parseFloat(yy)+4}" text-anchor="end" font-size="10" fill="#7A9186" font-family="DM Sans,sans-serif">${fmt(v)}</text>`;
+  }
+  const step=Math.max(1,Math.floor(y/6));
+  for(let i=0;i<=y;i+=step)
+    xL+=`<text x="${xP(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="10" fill="#7A9186" font-family="DM Sans,sans-serif">Yr ${i}</text>`;
+  const dot=(s,c)=>`<circle cx="${xP(y).toFixed(1)}" cy="${yP(s[y]).toFixed(1)}" r="5" fill="${c}" stroke="#fff" stroke-width="2"/>`;
+
+  svg.innerHTML=`<defs>
+    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A7A4A" stop-opacity="0.12"/><stop offset="100%" stop-color="#1A7A4A" stop-opacity="0.01"/></linearGradient>
+    <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D97706" stop-opacity="0.08"/><stop offset="100%" stop-color="#D97706" stop-opacity="0.01"/></linearGradient>
+    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC2626" stop-opacity="0.06"/><stop offset="100%" stop-color="#DC2626" stop-opacity="0.01"/></linearGradient>
+  </defs>
+  ${grid}${xL}
+  <path d="${area(rs)}" fill="url(#gr)"/>
+  <path d="${area(as)}" fill="url(#ga)"/>
+  <path d="${area(gs)}" fill="url(#gg)"/>
+  <path d="${path(rs)}" fill="none" stroke="#DC2626" stroke-width="2" stroke-dasharray="6,3"/>
+  <path d="${path(as)}" fill="none" stroke="#D97706" stroke-width="2" stroke-dasharray="6,3"/>
+  <path d="${path(gs)}" fill="none" stroke="#1A7A4A" stroke-width="2.5"/>
+  ${dot(gs,'#1A7A4A')}${dot(as,'#D97706')}${dot(rs,'#DC2626')}`;
+}
+
+pSlider.addEventListener('input', draw);
+ySlider.addEventListener('input', draw);
+draw();
+</script>
+</body>
+</html>
