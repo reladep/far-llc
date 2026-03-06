@@ -63,6 +63,7 @@ _Last updated: 2026-02-16_
     - Viability is pure AUM bias ($500M minimum to score any points)
     - Needs revision before production use
 - **/match and /match/results pages built** (2/25): 8-step questionnaire for user-to-firm matching with ranked results, match %, reason badges, Visor Score, and estimated fees
+- **Visor Index static landing page** (3/4): Added `visor-index-homepage-live.html` and `visor_logo.png` to far/ repo — static HTML landing page for Visor Index product
 - Logo scraping in test phase (45% hit rate)
 - Dev server running at localhost:3001
 - **Issues:**
