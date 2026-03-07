@@ -1,6 +1,11 @@
 # MEMORY.md — Long-term memory for Maxwell
 
-_Last updated: 2026-02-16_
+_Last updated: 2026-03-05_
+
+## System Info
+- OpenClaw version: **2026.3.2** (updated from 2026.2.14 on 3/5/2026)
+- Running on: Alex's Mac mini (Darwin 25.2.0, arm64)
+- Dev server: localhost:3001
 
 ## About Alex
 
