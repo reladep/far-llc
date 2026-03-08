@@ -16,6 +16,8 @@ _Last updated: 2026-03-05_
 
 ## FAR, LLC — Alex's Company
 
+**NOTE (March 2026):** Project formally called "FAR" is now branded as **Visor Index**. FAR Research LLC remains the legal entity, but the product is now called "Visor Index".
+
 **Mission:** "Bringing the Footnotes to the Frontpage" — making buried regulatory filing data transparent for consumers.
 
 **Core value propositions:**
