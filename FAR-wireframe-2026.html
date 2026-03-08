@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAR — Financial Advisor Research | Know Your Advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --navy:#0A1C2A;
+  --navy-2:#0F2538;
+  --navy-3:#162F45;
+  --green:#1A7A4A;
+  --green-2:#22995E;
+  --green-3:#2DBD74;
+  --green-pale:#E6F4ED;
+  --white:#F6F8F7;
+  --ink:#0C1810;
+  --ink-2:#2E4438;
+  --ink-3:#5A7568;
+  --rule:#CAD8D0;
+  --rule-2:#B0C4BA;
+  --red:#C0392B;
+  --amber:#C97A0A;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--navy);color:#fff;font-family:var(--sans);overflow-x:hidden}
+
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.028;pointer-events:none;z-index:1000;
+}
+
+.wrap{max-width:1200px;margin:0 auto;padding:0 48px;position:relative;z-index:2}
+.green{color:var(--green-3)}
+.green-2{color:var(--green-2)}
+.rule-h{border:none;border-top:1px solid rgba(255,255,255,0.06)}
+
+.r{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease}
+.r.in{opacity:1;transform:none}
+.r.d1{transition-delay:.07s}.r.d2{transition-delay:.14s}.r.d3{transition-delay:.21s}
+.r.d4{transition-delay:.28s}.r.d5{transition-delay:.35s}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:0 48px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  background:rgba(10,28,42,0.92);
+  backdrop-filter:blur(20px);
+}
+.nav-i{
+  max-width:1200px;margin:0 auto;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-hex{
+  width:28px;height:28px;display:grid;place-items:center;
+  border:1px solid rgba(45,189,116,0.4);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:rgba(26,122,74,0.15);
+}
+.logo-name{font-family:var(--serif);font-size:20px;font-weight:700;color:#fff;letter-spacing:0.01em}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{font-size:12px;color:rgba(255,255,255,0.4);text-decoration:none;letter-spacing:0.04em;transition:color 0.15s}
+.nav-links a:hover{color:rgba(255,255,255,0.85)}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-in{font-size:12px;color:rgba(255,255,255,0.35);text-decoration:none;transition:color 0.15s}
+.nav-in:hover{color:#fff}
+.nav-btn{
+  font-family:var(--sans);font-size:11px;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  background:var(--green);color:#fff;
+  padding:9px 22px;text-decoration:none;
+  transition:background 0.2s;border:none;cursor:pointer;
+}
+.nav-btn:hover{background:var(--green-2)}
+
+/* HERO */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:120px 0 80px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-55%);
+  width:700px;height:700px;
+  background:radial-gradient(ellipse,rgba(26,122,74,0.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-grid-lines{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.hero-grid-lines::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);
+  background-size:72px 72px;
+}
+
+.hero-content{max-width:680px;position:relative;z-index:2}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:10px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--green-3);margin-bottom:28px;
+}
+.hero-eyebrow::before{content:'';width:24px;height:1px;background:var(--green-3)}
+.hero-h{
+  font-family:var(--serif);
+  font-size:clamp(38px,5vw,64px);
+  font-weight:700;
+  line-height:1.08;
+  letter-spacing:-0.02em;
+  color:#fff;
+  margin-bottom:24px;
+}
+.hero-h em{font-style:italic;color:var(--green-3)}
+
+.hero-sub{
+  font-size:16px;font-weight:300;
+  color:rgba(255,255,255,0.5);
+  line-height:1.75;
+  margin-bottom:40px;
+}
+
+/* Search Box */
+.search-box{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.12);
+  padding:8px 8px 8px 20px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:36px;
+  max-width:520px;
+}
+.search-box-icon{
+  width:20px;height:20px;color:rgba(255,255,255,0.3);
+}
+.search-box input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-size:15px;color:#fff;font-family:var(--sans);
+}
+.search-box input::placeholder{color:rgba(255,255,255,0.3)}
+.search-box-btn{
+  background:var(--green);color:#fff;border:none;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  padding:12px 24px;cursor:pointer;transition:background 0.2s;
+}
+.search-box-btn:hover{background:var(--green-2)}
+
+.hero-cf{
+  margin-top:32px;padding-top:28px;
+  border-top:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;gap:10px;
+  font-size:12px;color:rgba(255,255,255,0.35);
+}
+.hero-cf-dot{width:6px;height:6px;border-radius:50%;background:var(--green-3);flex-shrink:0}
+
+/* Trust Claims */
+.trust-claims{
+  display:flex;gap:32px;margin-top:48px;flex-wrap:wrap;
+}
+.trust-claim{
+  display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,0.5);
+}
+.trust-claim-icon{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(26,122,74,0.15);
+  display:grid;place-items:center;
+  color:var(--green-3);
+}
+
+/* Metrics Strip */
+.metrics-strip{
+  background:var(--navy-2);
+  border-top:1px solid rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.metrics-strip-i{
+  display:flex;align-items:stretch;
+  border-left:1px solid rgba(255,255,255,0.06);
+}
+.metric-item{
+  flex:1;padding:28px 32px;
+  border-right:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;gap:14px;
+}
+.metric-item-val{font-family:var(--serif);font-size:32px;font-weight:700;color:#fff;white-space:nowrap}
+.metric-item-val em{font-style:normal;color:var(--green-3)}
+.metric-item-text{font-size:11px;color:rgba(255,255,255,0.3);line-height:1.5}
+
+/* SECTIONS COMMON */
+section{padding:96px 0}
+section.dark{background:var(--navy)}
+section.light{background:var(--white);color:var(--ink)}
+section.dark-2{background:var(--navy-2)}
+
+.section-header{max-width:680px;margin-bottom:56px}
+.section-eyebrow{
+  font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:20px;display:block;
+}
+.section-eyebrow.light{color:var(--ink-3)}
+.section-h{
+  font-family:var(--serif);
+  font-size:clamp(32px,4vw,52px);
+  font-weight:700;line-height:1.05;
+  letter-spacing:-0.02em;
+  color:#fff;
+}
+.section-h.light{color:var(--ink)}
+.section-h em{font-style:italic;color:var(--green-3)}
+.section-h em.light{color:var(--green)}
+.section-sub{
+  font-size:15px;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:16px;
+}
+.section-sub.light{color:var(--ink-3)}
+
+/* HOW IT WORKS */
+.how-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:2px;
+  background:rgba(255,255,255,0.06);
+}
+.how-cell{
+  padding:32px;
+  background:var(--navy-3);
+  position:relative;
+}
+.how-num{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--green-3);letter-spacing:0.08em;
+  margin-bottom:16px;display:block;
+}
+.how-cell-title{
+  font-family:var(--serif);font-size:18px;font-weight:700;
+  color:#fff;margin-bottom:10px;line-height:1.2;
+}
+.how-cell-body{
+  font-size:13px;color:rgba(255,255,255,0.4);line-height:1.7;
+}
+.how-arrow{
+  position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  font-size:24px;color:rgba(255,255,255,0.1);
+}
+
+/* PRICING */
+.pricing-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:2px;
+  background:rgba(255,255,255,0.06);
+}
+.pricing-card{
+  background:var(--navy-3);
+  padding:40px 36px;
+  position:relative;
+  display:flex;flex-direction:column;
+}
+.pricing-card.featured{border-top:3px solid var(--green-3)}
+.pricing-card-label{
+  font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:16px;
+}
+.pricing-card-amount{
+  font-family:var(--serif);font-size:56px;font-weight:700;color:#fff;line-height:1;
+  letter-spacing:-0.03em;
+}
+.pricing-card-amount sup{font-size:24px;vertical-align:super}
+.pricing-card-period{font-size:13px;color:rgba(255,255,255,0.35);margin-left:4px}
+.pricing-card-desc{
+  font-size:13px;color:rgba(255,255,255,0.4);margin:20px 0;line-height:1.6;
+}
+.pricing-card-features{
+  list-style:none;margin-bottom:28px;flex:1;
+  display:flex;flex-direction:column;gap:12px;
+}
+.pricing-card-features li{
+  display:flex;align-items:flex-start;gap:10px;font-size:13px;color:rgba(255,255,255,0.55);
+}
+.pricing-card-features li::before{
+  content:'✓';color:var(--green-3);font-weight:600;flex-shrink:0;
+}
+.pricing-card-cta{
+  display:block;text-align:center;padding:14px;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  text-decoration:none;letter-spacing:0.04em;transition:all 0.2s;
+  margin-top:auto;
+}
+.pricing-card-cta.primary{background:var(--green);color:#fff}
+.pricing-card-cta.primary:hover{background:var(--green-2)}
+.pricing-card-cta.outline{border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6)}
+.pricing-card-cta.outline:hover{border-color:rgba(255,255,255,0.4);color:#fff}
+
+/* SEARCH RESULTS */
+.search-results{padding-top:80px}
+.search-layout{
+  display:grid;
+  grid-template-columns:280px 1fr;
+  gap:40px;
+  align-items:start;
+}
+
+/* Filters Sidebar */
+.filters-sidebar{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:24px;
+  position:sticky;top:80px;
+}
+.filters-title{
+  font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.4);margin-bottom:24px;
+}
+.filter-group{margin-bottom:24px}
+.filter-label{
+  font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:10px;display:block;
+}
+.filter-select{
+  width:100%;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  color:#fff;font-family:var(--sans);font-size:13px;
+  padding:10px 12px;outline:none;cursor:pointer;
+}
+.filter-range{display:flex;gap:8px;align-items:center}
+.filter-range input{
+  flex:1;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  color:#fff;font-family:var(--mono);font-size:12px;
+  padding:8px 10px;outline:none;
+}
+.filter-check{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;
+}
+.filter-check input{width:16px;height:16px;accent-color:var(--green-3)}
+.filter-check span{font-size:13px;color:rgba(255,255,255,0.6)}
+
+/* Results Grid */
+.results-header{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;
+}
+.results-count{font-size:13px;color:rgba(255,255,255,0.4)}
+.results-sort{display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,0.4)}
+.results-sort select{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:#fff;padding:6px 10px;font-size:12px;
+}
+
+.firm-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  margin-bottom:16px;
+  transition:border-color 0.2s;cursor:pointer;
+}
+.firm-card:hover{border-color:rgba(255,255,255,0.2)}
+.firm-card-main{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:24px;
+}
+.firm-card-left{flex:1}
+.firm-card-name{
+  font-family:var(--serif);font-size:18px;font-weight:600;color:#fff;margin-bottom:4px;
+}
+.firm-card-meta{
+  font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.04em;
+}
+.firm-card-meta span{margin-right:16px}
+.firm-card-score{
+  text-align:right;
+}
+.firm-card-score-num{
+  font-family:var(--serif);font-size:36px;font-weight:700;line-height:1;
+  letter-spacing:-0.02em;
+}
+.firm-card-score-num.high{color:var(--green-3)}
+.firm-card-score-num.mid{color:var(--amber)}
+.firm-card-score-num.low{color:var(--red)}
+.firm-card-score-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px}
+
+.firm-card-details{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  padding:16px 24px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  background:rgba(255,255,255,0.02);
+}
+.firm-detail{font-size:12px}
+.firm-detail-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px}
+.firm-detail-val{color:rgba(255,255,255,0.7);font-weight:500}
+
+/* COMPARE TABLE */
+.compare-table-wrap{overflow-x:auto}
+.compare-table{
+  width:100%;border-collapse:collapse;
+  font-size:14px;
+}
+.compare-table th,.compare-table td{
+  padding:18px 20px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.compare-table th{
+  font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.03);
+}
+.compare-table td{color:rgba(255,255,255,0.7)}
+.compare-table tr:hover td{background:rgba(255,255,255,0.02)}
+.compare-table .firm-col{
+  font-family:var(--serif);font-size:16px;font-weight:600;color:#fff;
+  background:rgba(255,255,255,0.03);
+}
+.compare-table .score-cell{font-family:var(--serif);font-size:28px;font-weight:700}
+.compare-table .score-cell.high{color:var(--green-3)}
+.compare-table .score-cell.mid{color:var(--amber)}
+.compare-table .score-cell.low{color:var(--red)}
+.compare-table .best{color:var(--green-3);font-weight:600}
+
+/* NEGOTIATE */
+.negotiate-layout{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.negotiate-form{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:32px;
+}
+.form-group{margin-bottom:20px}
+.form-label{
+  font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.4);margin-bottom:8px;display:block;
+}
+.form-input{
+  width:100%;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  color:#fff;font-family:var(--sans);font-size:15px;
+  padding:12px 16px;outline:none;transition:border-color 0.2s;
+}
+.form-input:focus{border-color:var(--green-3)}
+.form-input::placeholder{color:rgba(255,255,255,0.3)}
+
+.savings-calc{
+  background:var(--navy-3);padding:32px;
+}
+.savings-title{
+  font-family:var(--serif);font-size:20px;font-weight:600;color:#fff;margin-bottom:24px;
+}
+.savings-projections{display:flex;flex-direction:column;gap:16px}
+.savings-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px;background:rgba(255,255,255,0.03);border-radius:4px;
+}
+.savings-year{font-size:13px;color:rgba(255,255,255,0.5)}
+.savings-amt{
+  font-family:var(--serif);font-size:22px;font-weight:700;color:#fff;
+}
+.savings-amt.highlight{color:var(--green-3)}
+.savings-note{
+  font-size:11px;color:rgba(255,255,255,0.3);margin-top:16px;font-style:italic;
+}
+
+/* DIRECTORY */
+.directory-toolbar{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;
+}
+.dir-search{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  padding:12px 16px;display:flex;align-items:center;gap:12px;width:320px;
+}
+.dir-search input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:#fff;font-size:14px;
+}
+.dir-search input::placeholder{color:rgba(255,255,255,0.3)}
+.dir-filters{display:flex;gap:12px}
+.dir-filter-btn{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.6);font-size:12px;padding:10px 16px;
+  cursor:pointer;transition:all 0.2s;
+}
+.dir-filter-btn:hover,.dir-filter-btn.active{
+  border-color:var(--green-3);color:var(--green-3);
+}
+
+.dir-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+}
+.dir-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:24px;cursor:pointer;transition:all 0.2s;
+}
+.dir-card:hover{border-color:rgba(255,255,255,0.2);transform:translateY(-2px)}
+.dir-card-score{
+  width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:22px;font-weight:700;
+  margin-bottom:16px;
+}
+.dir-card-score.high{background:rgba(45,189,116,0.15);color:var(--green-3)}
+.dir-card-score.mid{background:rgba(201,122,10,0.15);color:var(--amber)}
+.dir-card-score.low{background:rgba(192,57,43,0.15);color:var(--red)}
+.dir-card-name{
+  font-family:var(--serif);font-size:16px;font-weight:600;color:#fff;margin-bottom:4px;
+}
+.dir-card-meta{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:12px}
+.dir-card-stats{display:flex;gap:16px;font-size:12px}
+.dir-card-stat{color:rgba(255,255,255,0.5)}
+.dir-card-stat strong{color:#fff}
+
+/* FIRM PROFILE */
+.firm-profile{padding-top:80px}
+.fp-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.fp-header-left{}
+.fp-name{
+  font-family:var(--serif);font-size:36px;font-weight:700;color:#fff;margin-bottom:8px;
+}
+.fp-meta{font-size:13px;color:rgba(255,255,255,0.4)}
+.fp-meta span{margin-right:20px}
+.fp-header-right{display:flex;align-items:center;gap:16px}
+.fp-save-btn{
+  background:transparent;border:1px solid rgba(255,255,255,0.2);
+  color:#fff;font-size:12px;font-weight:600;padding:10px 20px;
+  cursor:pointer;transition:all 0.2s;
+}
+.fp-save-btn:hover{background:var(--green);border-color:var(--green)}
+
+.fp-score-card{
+  display:flex;gap:40px;align-items:center;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:32px;margin-bottom:32px;
+}
+.fp-score-ring{
+  width:140px;height:140px;position:relative;
+}
+.fp-score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.fp-score-ring circle{fill:none;stroke-width:8}
+.fp-score-ring .bg{stroke:rgba(255,255,255,0.08)}
+.fp-score-ring .fill{stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s}
+.fp-score-num{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:42px;font-weight:700;
+}
+.fp-score-num.high{color:var(--green-3)}.fp-score-num.mid{color:var(--amber)}.fp-score-num.low{color:var(--red)}
+.fp-score-num span{font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase}
+
+.fp-score-details{flex:1}
+.fp-metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.fp-metric{}
+.fp-metric-label{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.fp-metric-val{font-family:var(--serif);font-size:20px;font-weight:600;color:#fff}
+.fp-metric-bar{height:4px;background:rgba(255,255,255,0.1);margin-top:8px;overflow:hidden}
+.fp-metric-bar-fill{height:100%;transition:width 0.8s}
+
+/* Tabs */
+.fp-tabs{margin-bottom:32px}
+.fp-tabs-nav{
+  display:flex;gap:8px;border-bottom:1px solid rgba(255,255,255,0.08);
+  margin-bottom:24px;
+}
+.fp-tab{
+  padding:14px 24px;font-size:12px;font-weight:600;letter-spacing:0.06em;
+  color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.fp-tab:hover{color:rgba(255,255,255,0.7)}
+.fp-tab.active{color:#fff;border-bottom-color:var(--green-3)}
+.fp-tab-content{display:none}
+.fp-tab-content.active{display:block}
+
+.fp-content-block{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:24px;margin-bottom:16px;
+}
+.fp-content-h{
+  font-size:14px;font-weight:600;color:#fff;margin-bottom:16px;
+}
+.fp-content-text{font-size:14px;color:rgba(255,255,255,0.6);line-height:1.7}
+
+/* Fee Calculator */
+.fee-calc{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:24px;
+}
+.fee-calc-input{
+  display:flex;align-items:center;gap:16px;margin-bottom:24px;
+}
+.fee-calc-input label{font-size:12px;color:rgba(255,255,255,0.5)}
+.fee-calc-input input{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:#fff;font-family:var(--mono);font-size:18px;padding:12px 16px;width:180px;
+}
+.fee-calc-results{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+}
+.fee-result{
+  background:rgba(255,255,255,0.02);padding:16px;text-align:center;
+}
+.fee-result-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.fee-result-val{font-family:var(--serif);font-size:24px;font-weight:700;color:#fff}
+.fee-result-val.highlight{color:var(--green-3)}
+
+/* Similar Firms Carousel */
+.similar-firms{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px}
+.similar-card{
+  min-width:240px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);padding:20px;
+  cursor:pointer;transition:border-color 0.2s;
+}
+.similar-card:hover{border-color:rgba(255,255,255,0.2)}
+.similar-card-name{font-family:var(--serif);font-size:14px;font-weight:600;color:#fff;margin-bottom:4px}
+.similar-card-meta{font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:12px}
+.similar-card-score{font-family:var(--serif);font-size:20px;font-weight:700}
+
+/* MATCH */
+.match-section{padding-top:80px}
+.match-progress{
+  display:flex;align-items:center;gap:8px;margin-bottom:48px;
+}
+.match-step{
+  flex:1;height:4px;background:rgba(255,255,255,0.1);position:relative;
+}
+.match-step-fill{
+  position:absolute;left:0;top:0;height:100%;background:var(--green-3);
+  transition:width 0.5s;
+}
+.match-step-num{
+  position:absolute;right:-24px;top:50%;transform:translateY(-50%);
+  font-size:10px;color:rgba(255,255,255,0.3);
+}
+.match-step.active .match-step-num,
+.match-step.completed .match-step-num{color:#fff}
+
+.match-card{
+  max-width:640px;margin:0 auto;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:48px;
+}
+.match-step-title{
+  font-family:var(--serif);font-size:28px;font-weight:600;color:#fff;margin-bottom:12px;
+}
+.match-step-desc{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:32px}
+
+.match-options{display:flex;flex-direction:column;gap:12px}
+.match-option{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  padding:16px 20px;font-size:14px;color:#fff;
+  cursor:pointer;transition:all 0.2s;
+  text-align:left;
+}
+.match-option:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2)}
+.match-option.selected{background:rgba(26,122,74,0.15);border-color:var(--green-3)}
+
+.match-nav{
+  display:flex;justify-content:space-between;margin-top:32px;
+}
+.match-nav-btn{
+  background:transparent;border:1px solid rgba(255,255,255,0.2);
+  color:#fff;font-size:12px;font-weight:600;padding:12px 24px;
+  cursor:pointer;transition:all 0.2s;
+}
+.match-nav-btn:hover{background:rgba(255,255,255,0.1)}
+.match-nav-btn.primary{background:var(--green);border-color:var(--green)}
+.match-nav-btn.primary:hover{background:var(--green-2)}
+.match-nav-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* Match Results */
+.match-results{padding-top:80px}
+.match-results-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.match-result-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:28px;text-align:center;
+}
+.match-result-score{
+  width:100px;height:100px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  font-family:var(--serif);font-size:32px;font-weight:700;
+}
+.match-result-name{
+  font-family:var(--serif);font-size:18px;font-weight:600;color:#fff;margin-bottom:8px;
+}
+.match-result-meta{font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:16px}
+.match-result-match{font-size:11px;color:var(--green-3);letter-spacing:0.1em;text-transform:uppercase;font-weight:600}
+
+/* ABOUT */
+.about-mission{
+  max-width:800px;margin:0 auto;text-align:center;
+  padding:80px 0;
+}
+.about-mission h2{
+  font-family:var(--serif);font-size:clamp(36px,5vw,56px);
+  font-weight:700;color:#fff;margin-bottom:24px;
+  line-height:1.15;
+}
+.about-mission h2 em{font-style:italic;color:var(--green-3)}
+.about-mission p{
+  font-size:18px;color:rgba(255,255,255,0.5);line-height:1.8;
+}
+.about-values{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:80px}
+.about-value{
+  text-align:center;padding:32px;
+}
+.about-value-num{
+  font-family:var(--serif);font-size:48px;font-weight:700;color:var(--green-3);margin-bottom:16px;
+}
+.about-value-h{font-size:18px;font-weight:600;color:#fff;margin-bottom:12px}
+.about-value-p{font-size:14px;color:rgba(255,255,255,0.4);line-height:1.6}
+
+/* GUIDES */
+.guides-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.guide-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  overflow:hidden;cursor:pointer;transition:all 0.2s;
+}
+.guide-card:hover{border-color:rgba(255,255,255,0.2)}
+.guide-card-img{
+  height:160px;background:linear-gradient(135deg,var(--navy-3),var(--navy));
+  display:flex;align-items:center;justify-content:center;
+}
+.guide-card-img-icon{font-size:48px;opacity:0.3}
+.guide-card-body{padding:24px}
+.guide-card-cat{font-size:10px;color:var(--green-3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px}
+.guide-card-title{font-family:var(--serif);font-size:18px;font-weight:600;color:#fff;margin-bottom:8px}
+.guide-card-excerpt{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6}
+
+/* BLOG */
+.blog-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;
+}
+.blog-card{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  cursor:pointer;transition:all 0.2s;
+}
+.blog-card:hover{border-color:rgba(255,255,255,0.2)}
+.blog-card-img{
+  height:180px;background:var(--navy-3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:14px;color:rgba(255,255,255,0.3);
+}
+.blog-card-body{padding:24px}
+.blog-card-date{font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:12px}
+.blog-card-title{font-family:var(--serif);font-size:17px;font-weight:600;color:#fff;margin-bottom:12px;line-height:1.3}
+.blog-card-excerpt{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6}
+
+/* CONTACT */
+.contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:64px}
+.contact-info{}
+.contact-h{font-family:var(--serif);font-size:28px;font-weight:600;color:#fff;margin-bottom:16px}
+.contact-p{font-size:14px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:32px}
+
+.contact-details{display:flex;flex-direction:column;gap:20px}
+.contact-detail{display:flex;align-items:flex-start;gap:16px}
+.contact-detail-icon{
+  width:40px;height:40px;background:rgba(26,122,74,0.15);
+  display:grid;place-items:center;border-radius:50%;color:var(--green-3);
+}
+.contact-detail-text{font-size:14px;color:#fff}
+.contact-detail-text strong{display:block;color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+
+.contact-form{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:40px;
+}
+.contact-form .form-group{margin-bottom:20px}
+.contact-form .form-input{width:100%}
+.contact-form textarea.form-input{min-height:120px;resize:vertical}
+.contact-form .nav-btn{width:100%}
+
+/* DASHBOARD */
+.dashboard{padding-top:80px}
+.dashboard-grid{
+  display:grid;grid-template-columns:280px 1fr;gap:40px;
+}
+.dashboard-sidebar{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:24px;
+}
+.dash-sidebar-section{margin-bottom:32px}
+.dash-sidebar-title{
+  font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:16px;
+}
+.dash-nav-item{
+  display:block;padding:12px 16px;font-size:13px;color:rgba(255,255,255,0.5);
+  text-decoration:none;transition:all 0.2s;margin-bottom:4px;
+}
+.dash-nav-item:hover,.dash-nav-item.active{background:rgba(255,255,255,0.05);color:#fff}
+
+.dashboard-main{}
+.dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+.dash-title{font-family:var(--serif);font-size:28px;font-weight:600;color:#fff}
+.dash-alerts{}
+.dash-alert{
+  display:flex;align-items:flex-start;gap:16px;
+  padding:20px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);margin-bottom:12px;
+}
+.dash-alert-icon{
+  width:32px;height:32px;background:rgba(26,122,74,0.15);
+  display:grid;place-items:center;border-radius:50%;color:var(--green-3);flex-shrink:0;
+}
+.dash-alert-text{flex:1}
+.dash-alert-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px}
+.dash-alert-time{font-size:11px;color:rgba(255,255,255,0.3)}
+
+.dash-saved-firms{}
+.dash-saved-title{font-size:16px;font-weight:600;color:#fff;margin-bottom:20px}
+.dash-saved-list{display:flex;flex-direction:column;gap:12px}
+.dash-saved-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+}
+.dash-saved-info{}
+.dash-saved-name{font-family:var(--serif);font-size:14px;font-weight:600;color:#fff;margin-bottom:4px}
+.dash-saved-meta{font-size:11px;color:rgba(255,255,255,0.35)}
+.dash-saved-score{font-family:var(--serif);font-size:20px;font-weight:700}
+
+/* FOOTER */
+footer{background:var(--navy-2);color:rgba(255,255,255,0.3);border-top:1px solid rgba(255,255,255,0.05)}
+.footer-top{
+  display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;
+  padding:64px 48px;max-width:1200px;margin:0 auto;
+  gap:48px;border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.footer-brand{padding-right:48px}
+.footer-logo{font-family:var(--serif);font-size:22px;font-weight:700;color:#fff;margin-bottom:12px}
+.footer-logo em{font-style:normal;color:var(--green-3)}
+.footer-tagline{font-size:13px;line-height:1.7;max-width:240px;margin-bottom:20px}
+.footer-col-title{font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:16px}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-links a{font-size:13px;color:rgba(255,255,255,0.35);text-decoration:none;transition:color 0.15s}
+.footer-links a:hover{color:#fff}
+.footer-bottom{
+  max-width:1200px;margin:0 auto;padding:20px 48px;
+  display:flex;justify-content:space-between;align-items:center;font-size:11px;
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-i">
+    <a href="#home" class="logo">
+      <div class="logo-hex">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="rgba(45,189,116,0.8)" stroke-width="1.2" stroke-linecap="round"><polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5"/></svg>
+      </div>
+      <span class="logo-name">FAR</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#search">Search</a></li>
+      <li><a href="#compare">Compare</a></li>
+      <li><a href="#negotiate">Negotiate</a></li>
+      <li><a href="#directory">Directory</a></li>
+      <li><a href="#match">Match</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="#dashboard" class="nav-in">Dashboard</a>
+      <a href="#contact" class="nav-btn">Get Access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO / HOMEPAGE -->
+<section class="hero" id="home">
+  <div class="hero-grid-lines"></div>
+  <div class="wrap">
+    <div class="hero-content">
+      <div class="hero-eyebrow r">SEC Data · No Sponsored Rankings · Nationwide</div>
+      <h1 class="hero-h r d1">
+        Bringing the <em>Footnotes</em> to the <em>Frontpage</em>.
+      </h1>
+      <p class="hero-sub r d2">
+        Search, compare, and evaluate financial advisors with data that actually matters. 
+        All 40,000+ SEC-registered advisors — indexed, scored, and ready for your diligence.
+      </p>
+
+      <div class="search-box r d3">
+        <svg class="search-box-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search by firm name, location, or CRD number...">
+        <button class="search-box-btn">Search Advisors</button>
+      </div>
+
+      <div class="hero-cf r d4">
+        <div class="hero-cf-dot"></div>
+        No advisor has ever paid to appear here. Rankings are based purely on regulatory data.
+      </div>
+
+      <div class="trust-claims r d5">
+        <div class="trust-claim">
+          <div class="trust-claim-icon">📊</div>
+          <span>SEC EDGAR Data</span>
+        </div>
+        <div class="trust-claim">
+          <div class="trust-claim-icon">🚫</div>
+          <span>No Paid Rankings</span>
+        </div>
+        <div class="trust-claim">
+          <div class="trust-claim-icon">🇺🇸</div>
+          <span>50 States</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<div class="metrics-strip">
+  <div class="wrap" style="padding:0 48px">
+    <div class="metrics-strip-i">
+      <div class="metric-item r">
+        <div class="metric-item-val">2,000<em>+</em></div>
+        <div class="metric-item-text">Advisors indexed<br>Every US-registered RIA</div>
+      </div>
+      <div class="metric-item r d1">
+        <div class="metric-item-val">$500B<em>+</em></div>
+        <div class="metric-item-text">Assets under management<br>In our database</div>
+      </div>
+      <div class="metric-item r d2">
+        <div class="metric-item-val">50</div>
+        <div class="metric-item-text">States<br>Represented</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="section-header r">
+      <span class="section-eyebrow">How It Works</span>
+      <h2 class="section-h">From search to selection — <em>data-driven.</em></h2>
+      <p class="section-sub">Four steps to finding the right advisor for your wealth.</p>
+    </div>
+    <div class="how-grid r d1">
+      <div class="how-cell">
+        <span class="how-num">01</span>
+        <div class="how-cell-title">Search</div>
+        <p class="how-cell-body">Find advisors by name, location, AUM, fee structure, or any combination of attributes.</p>
+        <div class="how-arrow">→</div>
+      </div>
+      <div class="how-cell">
+        <span class="how-num">02</span>
+        <div class="how-cell-title">Compare</div>
+        <p class="how-cell-body">Side-by-side comparisons of fees, compliance history, conflicts, and performance metrics.</p>
+        <div class="how-arrow">→</div>
+      </div>
+      <div class="how-cell">
+        <span class="how-num">03</span>
+        <div class="how-cell-title">Negotiate</div>
+        <p class="how-cell-body">Benchmark advisory fees using comprehensive industry data — and negotiate with confidence.</p>
+        <div class="how-arrow">→</div>
+      </div>
+      <div class="how-cell">
+        <span class="how-num">04</span>
+        <div class="how-cell-title">Monitor</div>
+        <p class="how-cell-body">Track material changes via automated alerts — fee shifts, ownership changes, disciplinary actions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="section-header r">
+      <span class="section-eyebrow">Access</span>
+      <h2 class="section-h">Transparent pricing. <em>No surprises.</em></h2>
+    </div>
+    <div class="pricing-grid r d1">
+      <div class="pricing-card">
+        <div class="pricing-card-label">Consumer</div>
+        <div class="pricing-card-amount"><sup>$</sup>200<span class="pricing-card-period">/year</span></div>
+        <p class="pricing-card-desc">For individual investors researching advisors. Full platform access.</p>
+        <ul class="pricing-card-features">
+          <li>Search all 40,000+ advisors</li>
+          <li>View full Visor Score™ profiles</li>
+          <li>Compare up to 5 firms</li>
+          <li>Fee benchmarking calculator</li>
+          <li>Save up to 10 firms</li>
+          <li>Email alerts for saved firms</li>
+        </ul>
+        <a href="#" class="pricing-card-cta outline">Get Started</a>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-card-label" style="color:var(--green-3)">Professional</div>
+        <div class="pricing-card-amount"><sup>$</sup>1,000<span class="pricing-card-period">/year</span></div>
+        <p class="pricing-card-desc">For wealth professionals, family offices, and institutional buyers.</p>
+        <ul class="pricing-card-features">
+          <li>Everything in Consumer</li>
+          <li>Unlimited firm comparisons</li>
+          <li>Bulk export & API access</li>
+          <li>Custom shortlist builder</li>
+          <li>Real-time filing alerts</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="pricing-card-cta primary">Get Started</a>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-card-label">Enterprise</div>
+        <div class="pricing-card-amount"><sup>$</sup>5,000<span class="pricing-card-period">/year</span></div>
+        <p class="pricing-card-desc">For large institutions, OCIO selection, and endowment committees.</p>
+        <ul class="pricing-card-features">
+          <li>Everything in Professional</li>
+          <li>Dedicated account manager</li>
+          <li>Custom RFP workflows</li>
+          <li>White-label reports</li>
+          <li>Team seats (up to 10)</li>
+          <li>Quarterly strategy calls</li>
+        </ul>
+        <a href="#" class="pricing-card-cta outline">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH RESULTS -->
+<section class="search-results" id="search">
+  <div class="wrap">
+    <div class="section-header">
+      <h2 class="section-h">Search Results</h2>
+    </div>
+    <div class="search-layout">
+      <div class="filters-sidebar">
+        <div class="filters-title">Filters</div>
+        <div class="filter-group">
+          <label class="filter-label">AUM Range</label>
+          <div class="filter-range">
+            <input type="text" placeholder="Min">
+            <input type="text" placeholder="Max">
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Fee Structure</label>
+          <select class="filter-select">
+            <option>All Types</option>
+            <option>Flat Fee</option>
+            <option>Hourly</option>
+            <option>AUM %</option>
+            <option>Tiered AUM</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Location</label>
+          <select class="filter-select">
+            <option>All States</option>
+            <option>New York</option>
+            <option>California</option>
+            <option>Texas</option>
+            <option>Illinois</option>
+            <option>Florida</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Services</label>
+          <label class="filter-check"><input type="checkbox"><span>Wealth Management</span></label>
+          <label class="filter-check"><input type="checkbox"><span>Financial Planning</span></label>
+          <label class="filter-check"><input type="checkbox"><span>Estate Planning</span></label>
+          <label class="filter-check"><input type="checkbox"><span>Tax Services</span></label>
+        </div>
+      </div>
+      <div class="results-main">
+        <div class="results-header">
+          <div class="results-count">3 firms found</div>
+          <div class="results-sort">
+            Sort by: 
+            <select>
+              <option>Visor Score</option>
+              <option>AUM</option>
+              <option>Fee (low to high)</option>
+              <option>Location</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Firm Card 1 -->
+        <div class="firm-card" id="firm1">
+          <div class="firm-card-main">
+            <div class="firm-card-left">
+              <div class="firm-card-name">Meridian Wealth Partners</div>
+              <div class="firm-card-meta">
+                <span>CRD 158369</span>
+                <span>New York, NY</span>
+              </div>
+            </div>
+            <div class="firm-card-score">
+              <div class="firm-card-score-num high">84</div>
+              <div class="firm-card-score-label">Visor Score™</div>
+            </div>
+          </div>
+          <div class="firm-card-details">
+            <div class="firm-detail">
+              <div class="firm-detail-label">AUM</div>
+              <div class="firm-detail-val">$2.4B</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Fee</div>
+              <div class="firm-detail-val">0.85% tiered</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Employees</div>
+              <div class="firm-detail-val">45</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Founded</div>
+              <div class="firm-detail-val">2008</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Firm Card 2 -->
+        <div class="firm-card" id="firm2">
+          <div class="firm-card-main">
+            <div class="firm-card-left">
+              <div class="firm-card-name">Harborview Capital</div>
+              <div class="firm-card-meta">
+                <span>CRD 284751</span>
+                <span>Chicago, IL</span>
+              </div>
+            </div>
+            <div class="firm-card-score">
+              <div class="firm-card-score-num mid">67</div>
+              <div class="firm-card-score-label">Visor Score™</div>
+            </div>
+          </div>
+          <div class="firm-card-details">
+            <div class="firm-detail">
+              <div class="firm-detail-label">AUM</div>
+              <div class="firm-detail-val">$890M</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Fee</div>
+              <div class="firm-detail-val">1.0% flat</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Employees</div>
+              <div class="firm-detail-val">22</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Founded</div>
+              <div class="firm-detail-val">2012</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Firm Card 3 -->
+        <div class="firm-card" id="firm3">
+          <div class="firm-card-main">
+            <div class="firm-card-left">
+              <div class="firm-card-name">Crestwood Advisors</div>
+              <div class="firm-card-meta">
+                <span>CRD 412936</span>
+                <span>Austin, TX</span>
+              </div>
+            </div>
+            <div class="firm-card-score">
+              <div class="firm-card-score-num high">79</div>
+              <div class="firm-card-score-label">Visor Score™</div>
+            </div>
+          </div>
+          <div class="firm-card-details">
+            <div class="firm-detail">
+              <div class="firm-detail-label">AUM</div>
+              <div class="firm-detail-val">$1.1B</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Fee</div>
+              <div class="firm-detail-val">0.75%-0.50%</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Employees</div>
+              <div class="firm-detail-val">31</div>
+            </div>
+            <div class="firm-detail">
+              <div class="firm-detail-label">Founded</div>
+              <div class="firm-detail-val">2015</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="dark" id="compare">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Compare</span>
+      <h2 class="section-h">Side-by-side. <em>Apples to apples.</em></h2>
+    </div>
+    <div class="compare-table-wrap">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="firm-col">Meridian Wealth Partners</th>
+            <th class="firm-col">Harborview Capital</th>
+            <th class="firm-col">Crestwood Advisors</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Visor Score™</td>
+            <td class="score-cell high">84</td>
+            <td class="score-cell mid">67</td>
+            <td class="score-cell high">79</td>
+          </tr>
+          <tr>
+            <td>AUM</td>
+            <td>$2.4B</td>
+            <td>$890M</td>
+            <td>$1.1B</td>
+          </tr>
+          <tr>
+            <td>Fee Structure</td>
+            <td>0.85% tiered</td>
+            <td>1.0% flat</td>
+            <td>0.75%-0.50% tiered</td>
+          </tr>
+          <tr>
+            <td>Employees</td>
+            <td>45</td>
+            <td>22</td>
+            <td>31</td>
+          </tr>
+          <tr>
+            <td>Location</td>
+            <td>New York, NY</td>
+            <td>Chicago, IL</td>
+            <td>Austin, TX</td>
+          </tr>
+          <tr>
+            <td>Regulatory Compliance</td>
+            <td class="best">96</td>
+            <td>82</td>
+            <td>91</td>
+          </tr>
+          <tr>
+            <td>Fee Transparency</td>
+            <td>91</td>
+            <td>58</td>
+            <td class="best">94</td>
+          </tr>
+          <tr>
+            <td>Conflict Exposure</td>
+            <td class="best">88</td>
+            <td>45</td>
+            <td>72</td>
+          </tr>
+          <tr>
+            <td>AUM Growth</td>
+            <td class="best">88</td>
+            <td>62</td>
+            <td>75</td>
+          </tr>
+          <tr>
+            <td>Ownership Stability</td>
+            <td>82</td>
+            <td>71</td>
+            <td class="best">89</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- NEGOTIATE -->
+<section class="dark" id="negotiate">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Negotiate</span>
+      <h2 class="section-h">Know the market. <em>Negotiate with confidence.</em></h2>
+    </div>
+    <div class="negotiate-layout">
+      <div class="negotiate-form">
+        <h3 style="font-family:var(--serif);font-size:20px;color:#fff;margin-bottom:24px">Fee Benchmark Calculator</h3>
+        <div class="form-group">
+          <label class="form-label">Your Investment Amount</label>
+          <input type="text" class="form-input" value="$1,000,000" id="negAmount">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Fee Quote</label>
+          <input type="text" class="form-input" value="1.0%">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Industry Benchmark</label>
+          <select class="form-input">
+            <option>Average AUM fee: 0.82%</option>
+            <option>Median AUM fee: 0.75%</option>
+            <option>Top quartile: 0.50%</option>
+          </select>
+        </div>
+        <button class="nav-btn" style="width:100%">Calculate Savings</button>
+      </div>
+      <div class="savings-calc">
+        <div class="savings-title">Potential Savings Over Time</div>
+        <div class="savings-projections">
+          <div class="savings-row">
+            <span class="savings-year">5 Years</span>
+            <span class="savings-amt">$25,000</span>
+          </div>
+          <div class="savings-row">
+            <span class="savings-year">10 Years</span>
+            <span class="savings-amt highlight">$62,000</span>
+          </div>
+          <div class="savings-row">
+            <span class="savings-year">20 Years</span>
+            <span class="savings-amt highlight">$165,000</span>
+          </div>
+        </div>
+        <p class="savings-note">Based on industry average returns of 6% annually and fee differential of 0.25%.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIRECTORY -->
+<section class="dark" id="directory">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Directory</span>
+      <h2 class="section-h">Browse all <em>40,000+ advisors</em></h2>
+    </div>
+    <div class="directory-toolbar">
+      <div class="dir-search">
+        <input type="text" placeholder="Search firms...">
+      </div>
+      <div class="dir-filters">
+        <button class="dir-filter-btn active">All</button>
+        <button class="dir-filter-btn">Top Rated</button>
+        <button class="dir-filter-btn">Fee-Only</button>
+        <button class="dir-filter-btn"> fiduciary</button>
+      </div>
+    </div>
+    <div class="dir-grid">
+      <div class="dir-card">
+        <div class="dir-card-score high">84</div>
+        <div class="dir-card-name">Meridian Wealth Partners</div>
+        <div class="dir-card-meta">CRD 158369 · New York, NY</div>
+        <div class="dir-card-stats">
+          <div class="dir-card-stat"><strong>$2.4B</strong> AUM</div>
+          <div class="dir-card-stat"><strong>0.85%</strong> Fee</div>
+        </div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-card-score high">79</div>
+        <div class="dir-card-name">Crestwood Advisors</div>
+        <div class="dir-card-meta">CRD 412936 · Austin, TX</div>
+        <div class="dir-card-stats">
+          <div class="dir-card-stat"><strong>$1.1B</strong> AUM</div>
+          <div class="dir-card-stat"><strong>0.65%</strong> Fee</div>
+        </div>
+      </div>
+      <div class="dir-card">
+        <div class="dir-card-score mid">67</div>
+        <div class="dir-card-name">Harborview Capital</div>
+        <div class="dir-card-meta">CRD 284751 · Chicago, IL</div>
+        <div class="dir-card-stats">
+          <div class="dir-card-stat"><strong>$890M</strong> AUM</div>
+          <div class="dir-card-stat"><strong>1.0%</strong> Fee</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FIRM PROFILE (Meridian) -->
+<section class="firm-profile" id="profile-meridian">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Firm Profile</span>
+      <h2 class="section-h">Meridian Wealth Partners</h2>
+    </div>
+    <div class="fp-header">
+      <div class="fp-header-left">
+        <h1 class="fp-name">Meridian Wealth Partners</h1>
+        <div class="fp-meta">
+          <span>CRD 158369</span>
+          <span>SEC RIA</span>
+          <span>New York, NY</span>
+          <span>Est. 2008</span>
+        </div>
+      </div>
+      <div class="fp-header-right">
+        <button class="fp-save-btn">★ Save Firm</button>
+      </div>
+    </div>
+
+    <div class="fp-score-card">
+      <div class="fp-score-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="bg" cx="70" cy="70" r="60"/>
+          <circle class="fill" cx="70" cy="70" r="60" stroke="var(--green-3)" stroke-dasharray="377" stroke-dashoffset="60" style="transform:rotate(-90deg);transform-origin:center"/>
+        </svg>
+        <div class="fp-score-num high">84<span>/ 100</span></div>
+      </div>
+      <div class="fp-score-details">
+        <div class="fp-metrics-grid">
+          <div class="fp-metric">
+            <div class="fp-metric-label">Regulatory Compliance</div>
+            <div class="fp-metric-val">96</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:96%;background:var(--green-3)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Fee Transparency</div>
+            <div class="fp-metric-val">91</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:91%;background:var(--green-3)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Conflict Exposure</div>
+            <div class="fp-metric-val">88</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:88%;background:var(--green-3)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fp-tabs">
+      <div class="fp-tabs-nav">
+        <div class="fp-tab active" data-tab="about">About</div>
+        <div class="fp-tab" data-tab="services">Services</div>
+        <div class="fp-tab" data-tab="clients">Client Types</div>
+        <div class="fp-tab" data-tab="disclosures">Disclosures</div>
+      </div>
+      <div class="fp-tab-content active" id="about">
+        <div class="fp-content-block">
+          <h4 class="fp-content-h">Firm Overview</h4>
+          <p class="fp-content-text">Meridian Wealth Partners is a registered investment adviser providing comprehensive wealth management services to high-net-worth individuals, families, and institutions. The firm specializes in portfolio management, financial planning, and estate coordination.</p>
+        </div>
+        <div class="fp-content-block">
+          <h4 class="fp-content-h">Key Metrics</h4>
+          <p class="fp-content-text">$2.4 billion in assets under management · 45 employees · 312 active clients</p>
+        </div>
+      </div>
+      <div class="fp-tab-content" id="services">
+        <div class="fp-content-block">
+          <h4 class="fp-content-h">Advisory Services</h4>
+          <p class="fp-content-text">Portfolio Management · Financial Planning · Estate Planning · Tax Strategy · Retirement Planning</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="fee-calc">
+      <h4 style="font-family:var(--serif);font-size:16px;color:#fff;margin-bottom:20px">Fee Calculator</h4>
+      <div class="fee-calc-input">
+        <label>Investment Amount:</label>
+        <input type="text" value="$1,000,000">
+      </div>
+      <div class="fee-calc-results">
+        <div class="fee-result">
+          <div class="fee-result-label">Annual Fee</div>
+          <div class="fee-result-val">$8,500</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">Quarterly Fee</div>
+          <div class="fee-result-val">$2,125</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">vs. Industry Avg</div>
+          <div class="fee-result-val highlight">-$900</div>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="font-family:var(--serif);font-size:18px;color:#fff;margin:40px 0 20px">Similar Firms</h4>
+    <div class="similar-firms">
+      <div class="similar-card">
+        <div class="similar-card-name">Crestwood Advisors</div>
+        <div class="similar-card-meta">Austin, TX · $1.1B AUM</div>
+        <div class="similar-card-score high">79</div>
+      </div>
+      <div class="similar-card">
+        <div class="similar-card-name">Harborview Capital</div>
+        <div class="similar-card-meta">Chicago, IL · $890M AUM</div>
+        <div class="similar-card-score mid">67</div>
+      </div>
+      <div class="similar-card">
+        <div class="similar-card-name">Pinnacle Wealth</div>
+        <div class="similar-card-meta">Boston, MA · $1.8B AUM</div>
+        <div class="similar-card-score high">81</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FIRM PROFILE (Harborview) -->
+<section class="firm-profile" id="profile-harborview" style="border-top:1px solid rgba(255,255,255,0.06)">
+  <div class="wrap">
+    <div class="fp-header">
+      <div class="fp-header-left">
+        <h1 class="fp-name">Harborview Capital</h1>
+        <div class="fp-meta">
+          <span>CRD 284751</span>
+          <span>SEC RIA</span>
+          <span>Chicago, IL</span>
+          <span>Est. 2012</span>
+        </div>
+      </div>
+      <div class="fp-header-right">
+        <button class="fp-save-btn">★ Save Firm</button>
+      </div>
+    </div>
+
+    <div class="fp-score-card">
+      <div class="fp-score-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="bg" cx="70" cy="70" r="60"/>
+          <circle class="fill" cx="70" cy="70" r="60" stroke="var(--amber)" stroke-dasharray="377" stroke-dashoffset="124" style="transform:rotate(-90deg);transform-origin:center"/>
+        </svg>
+        <div class="fp-score-num mid">67<span>/ 100</span></div>
+      </div>
+      <div class="fp-score-details">
+        <div class="fp-metrics-grid">
+          <div class="fp-metric">
+            <div class="fp-metric-label">Regulatory Compliance</div>
+            <div class="fp-metric-val">82</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:82%;background:var(--amber)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Fee Transparency</div>
+            <div class="fp-metric-val">58</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:58%;background:var(--amber)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Conflict Exposure</div>
+            <div class="fp-metric-val">45</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:45%;background:var(--red)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fee-calc">
+      <h4 style="font-family:var(--serif);font-size:16px;color:#fff;margin-bottom:20px">Fee Calculator</h4>
+      <div class="fee-calc-input">
+        <label>Investment Amount:</label>
+        <input type="text" value="$1,000,000">
+      </div>
+      <div class="fee-calc-results">
+        <div class="fee-result">
+          <div class="fee-result-label">Annual Fee</div>
+          <div class="fee-result-val">$10,000</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">Quarterly Fee</div>
+          <div class="fee-result-val">$2,500</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">vs. Industry Avg</div>
+          <div class="fee-result-val" style="color:var(--red)">+$1,800</div>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="font-family:var(--serif);font-size:18px;color:#fff;margin:40px 0 20px">Similar Firms</h4>
+    <div class="similar-firms">
+      <div class="similar-card">
+        <div class="similar-card-name">Meridian Wealth Partners</div>
+        <div class="similar-card-meta">New York, NY · $2.4B AUM</div>
+        <div class="similar-card-score high">84</div>
+      </div>
+      <div class="similar-card">
+        <div class="similar-card-name">Crestwood Advisors</div>
+        <div class="similar-card-meta">Austin, TX · $1.1B AUM</div>
+        <div class="similar-card-score high">79</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FIRM PROFILE (Crestwood) -->
+<section class="firm-profile" id="profile-crestwood" style="border-top:1px solid rgba(255,255,255,0.06)">
+  <div class="wrap">
+    <div class="fp-header">
+      <div class="fp-header-left">
+        <h1 class="fp-name">Crestwood Advisors</h1>
+        <div class="fp-meta">
+          <span>CRD 412936</span>
+          <span>SEC RIA</span>
+          <span>Austin, TX</span>
+          <span>Est. 2015</span>
+        </div>
+      </div>
+      <div class="fp-header-right">
+        <button class="fp-save-btn">★ Save Firm</button>
+      </div>
+    </div>
+
+    <div class="fp-score-card">
+      <div class="fp-score-ring">
+        <svg viewBox="0 0 140 140">
+          <circle class="bg" cx="70" cy="70" r="60"/>
+          <circle class="fill" cx="70" cy="70" r="60" stroke="var(--green-3)" stroke-dasharray="377" stroke-dashoffset="79" style="transform:rotate(-90deg);transform-origin:center"/>
+        </svg>
+        <div class="fp-score-num high">79<span>/ 100</span></div>
+      </div>
+      <div class="fp-score-details">
+        <div class="fp-metrics-grid">
+          <div class="fp-metric">
+            <div class="fp-metric-label">Regulatory Compliance</div>
+            <div class="fp-metric-val">91</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:91%;background:var(--green-3)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Fee Transparency</div>
+            <div class="fp-metric-val">94</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:94%;background:var(--green-3)"></div></div>
+          </div>
+          <div class="fp-metric">
+            <div class="fp-metric-label">Conflict Exposure</div>
+            <div class="fp-metric-val">72</div>
+            <div class="fp-metric-bar"><div class="fp-metric-bar-fill" style="width:72%;background:var(--green-2)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fee-calc">
+      <h4 style="font-family:var(--serif);font-size:16px;color:#fff;margin-bottom:20px">Fee Calculator</h4>
+      <div class="fee-calc-input">
+        <label>Investment Amount:</label>
+        <input type="text" value="$1,000,000">
+      </div>
+      <div class="fee-calc-results">
+        <div class="fee-result">
+          <div class="fee-result-label">Annual Fee</div>
+          <div class="fee-result-val">$7,500</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">Quarterly Fee</div>
+          <div class="fee-result-val">$1,875</div>
+        </div>
+        <div class="fee-result">
+          <div class="fee-result-label">vs. Industry Avg</div>
+          <div class="fee-result-val highlight">-$1,900</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MATCH -->
+<section class="match-section" id="match">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Advisor Matching</span>
+      <h2 class="section-h">Find your <em>perfect match</em></h2>
+    </div>
+    
+    <div class="match-progress">
+      <div class="match-step"><div class="match-step-fill" style="width:100%"></div><span class="match-step-num">1</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:100%"></div><span class="match-step-num">2</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:75%"></div><span class="match-step-num">3</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:0%"></div><span class="match-step-num">4</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:0%"></div><span class="match-step-num">5</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:0%"></div><span class="match-step-num">6</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:0%"></div><span class="match-step-num">7</span></div>
+      <div class="match-step"><div class="match-step-fill" style="width:0%"></div><span class="match-step-num">8</span></div>
+    </div>
+
+    <div class="match-card">
+      <div class="match-step-title">Investment Amount</div>
+      <p class="match-step-desc">What is the total investable assets you plan to bring to this relationship?</p>
+      
+      <div class="match-options">
+        <div class="match-option">Under $250,000</div>
+        <div class="match-option selected">$250,000 - $1,000,000</div>
+        <div class="match-option">$1,000,000 - $5,000,000</div>
+        <div class="match-option">$5,000,000 - $10,000,000</div>
+        <div class="match-option">Over $10,000,000</div>
+      </div>
+
+      <div class="match-nav">
+        <button class="match-nav-btn" disabled>← Back</button>
+        <button class="match-nav-btn primary">Next →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MATCH RESULTS -->
+<section class="match-results" id="match-results">
+  <div class="wrap">
+    <div class="section-header" style="text-align:center">
+      <span class="section-eyebrow">Your Matches</span>
+      <h2 class="section-h">Based on your <em>preferences</em></h2>
+    </div>
+    <div class="match-results-grid">
+      <div class="match-result-card">
+        <div class="match-result-score high" style="background:rgba(45,189,116,0.15)">92%</div>
+        <div class="match-result-name">Meridian Wealth Partners</div>
+        <div class="match-result-meta">New York, NY · $2.4B AUM</div>
+        <div class="match-result-match">Best Match</div>
+      </div>
+      <div class="match-result-card">
+        <div class="match-result-score high" style="background:rgba(45,189,116,0.15)">84%</div>
+        <div class="match-result-name">Crestwood Advisors</div>
+        <div class="match-result-meta">Austin, TX · $1.1B AUM</div>
+        <div class="match-result-match">Strong Match</div>
+      </div>
+      <div class="match-result-card">
+        <div class="match-result-score mid" style="background:rgba(201,122,10,0.15)">71%</div>
+        <div class="match-result-name">Harborview Capital</div>
+        <div class="match-result-meta">Chicago, IL · $890M AUM</div>
+        <div class="match-result-match">Good Match</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="dark" id="about">
+  <div class="wrap">
+    <div class="about-mission">
+      <h2 class="r">Bringing the <em>Footnotes</em> to the <em>Frontpage</em>.</h2>
+      <p class="r d1">We believe every investor deserves the same data that institutions use to evaluate their advisors. SEC filings are public — but they're designed for regulators, not individuals. We're changing that.</p>
+    </div>
+    <div class="about-values r d2">
+      <div class="about-value">
+        <div class="about-value-num">40K+</div>
+        <div class="about-value-h">Advisors Indexed</div>
+        <div class="about-value-p">Every SEC-registered investment adviser in the United States.</div>
+      </div>
+      <div class="about-value">
+        <div class="about-value-num">500+</div>
+        <div class="about-value-h">Data Points Per Firm</div>
+        <div class="about-value-p">Ownership, fees, conflicts, compliance history, and more.</div>
+      </div>
+      <div class="about-value">
+        <div class="about-value-num">0</div>
+        <div class="about-value-h">Paid Placements</div>
+        <div class="about-value-p">Rankings are never for sale. Our revenue comes from subscribers only.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDES -->
+<section class="dark" id="guides">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Resources</span>
+      <h2 class="section-h">Guides</h2>
+    </div>
+    <div class="guides-grid">
+      <div class="guide-card">
+        <div class="guide-card-img">
+          <div class="guide-card-img-icon">📖</div>
+        </div>
+        <div class="guide-card-body">
+          <div class="guide-card-cat">Beginner</div>
+          <div class="guide-card-title">How to Evaluate a Financial Advisor</div>
+          <div class="guide-card-excerpt">A step-by-step guide to understanding advisor credentials, fee structures, and regulatory history.</div>
+        </div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-card-img">
+          <div class="guide-card-img-icon">💰</div>
+        </div>
+        <div class="guide-card-body">
+          <div class="guide-card-cat">Fees</div>
+          <div class="guide-card-title">Understanding Advisory Fees</div>
+          <div class="guide-card-excerpt">Flat fee vs. hourly vs. AUM percentage — what each means and when to negotiate.</div>
+        </div>
+      </div>
+      <div class="guide-card">
+        <div class="guide-card-img">
+          <div class="guide-card-img-icon">⚖️</div>
+        </div>
+        <div class="guide-card-body">
+          <div class="guide-card-cat">Compliance</div>
+          <div class="guide-card-title">Red Flags in SEC Filings</div>
+          <div class="guide-card-excerpt">What disciplinary disclosures, conflict arrangements, and ownership changes really mean.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BLOG -->
+<section class="dark" id="blog">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Insights</span>
+      <h2 class="section-h">Blog</h2>
+    </div>
+    <div class="blog-grid">
+      <div class="blog-card">
+        <div class="blog-card-img">Feb 2026</div>
+        <div class="blog-card-body">
+          <div class="blog-card-date">February 15, 2026</div>
+          <div class="blog-card-title">Why Fee Transparency Matters More Than Ever</div>
+          <div class="blog-card-excerpt">As advisory fees face increased scrutiny, understanding what you're paying becomes critical to building wealth.</div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-card-img">Jan 2026</div>
+        <div class="blog-card-body">
+          <div class="blog-card-date">January 28, 2026</div>
+          <div class="blog-card-title">The Rise of Flat-Fee Advisors</div>
+          <div class="blog-card-excerpt">Why more investors are gravitating toward flat-fee models and what it means for the industry.</div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-card-img">Jan 2026</div>
+        <div class="blog-card-body">
+          <div class="blog-card-date">January 10, 2026</div>
+          <div class="blog-card-title">Private Equity's Grip on Wealth Management</div>
+          <div class="blog-card-excerpt">An analysis of PE acquisitions in the RIA space and what it means for advisor independence.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="dark" id="contact">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="section-eyebrow">Contact</span>
+      <h2 class="section-h">Get in <em>touch</em></h2>
+    </div>
+    <div class="contact-layout">
+      <div class="contact-info">
+        <div class="contact-h">Have questions?</div>
+        <p class="contact-p">Whether you're an individual investor or a wealth professional, we're here to help.</p>
+        
+        <div class="contact-details">
+          <div class="contact-detail">
+            <div class="contact-detail-icon">✉</div>
+            <div class="contact-detail-text">
+              <strong>Email</strong>
+              hello@farresearch.com
+            </div>
+          </div>
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📞</div>
+            <div class="contact-detail-text">
+              <strong>Phone</strong>
+              (888) 555-FAR1
+            </div>
+          </div>
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📍</div>
+            <div class="contact-detail-text">
+              <strong>Location</strong>
+              New York, NY
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-input" placeholder="How can we help?"></textarea>
+        </div>
+        <button class="nav-btn">Send Message</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="dashboard" id="dashboard">
+  <div class="wrap">
+    <div class="section-header">
+      <h2 class="section-h">Dashboard</h2>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dashboard-sidebar">
+        <div class="dash-sidebar-section">
+          <div class="dash-sidebar-title">Menu</div>
+          <a href="#" class="dash-nav-item active">Overview</a>
+          <a href="#" class="dash-nav-item">Saved Firms</a>
+          <a href="#" class="dash-nav-item">Alerts</a>
+          <a href="#" class="dash-nav-item">Comparisons</a>
+          <a href="#" class="dash-nav-item">Account</a>
+        </div>
+      </div>
+      <div class="dashboard-main">
+        <div class="dash-header">
+          <div class="dash-title">Recent Activity</div>
+        </div>
+        <div class="dash-alerts">
+          <div class="dash-alert">
+            <div class="dash-alert-icon">📋</div>
+            <div class="dash-alert-text">
+              <div class="dash-alert-title">Fee Schedule Update</div>
+              <div class="dash-alert-time">Meridian Wealth Partners filed an amendment • 2 hours ago</div>
+            </div>
+          </div>
+          <div class="dash-alert">
+            <div class="dash-alert-icon">⭐</div>
+            <div class="dash-alert-text">
+              <div class="dash-alert-title">New Firm Saved</div>
+              <div class="dash-alert-time">You saved Crestwood Advisors • Yesterday</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-saved-firms" style="margin-top:40px">
+          <div class="dash-saved-title">Saved Firms</div>
+          <div class="dash-saved-list">
+            <div class="dash-saved-item">
+              <div class="dash-saved-info">
+                <div class="dash-saved-name">Meridian Wealth Partners</div>
+                <div class="dash-saved-meta">New York, NY · $2.4B AUM</div>
+              </div>
+              <div class="dash-saved-score high">84</div>
+            </div>
+            <div class="dash-saved-item">
+              <div class="dash-saved-info">
+                <div class="dash-saved-name">Crestwood Advisors</div>
+                <div class="dash-saved-meta">Austin, TX · $1.1B AUM</div>
+              </div>
+              <div class="dash-saved-score high">79</div>
+            </div>
+            <div class="dash-saved-item">
+              <div class="dash-saved-info">
+                <div class="dash-saved-name">Harborview Capital</div>
+                <div class="dash-saved-meta">Chicago, IL · $890M AUM</div>
+              </div>
+              <div class="dash-saved-score mid">67</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo">FAR</div>
+      <p class="footer-tagline">Independent intelligence for financial advisor selection. Built on SEC data, not paid placements.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Platform</div>
+      <ul class="footer-links">
+        <li><a href="#search">Search</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li><a href="#negotiate">Negotiate</a></li>
+        <li><a href="#directory">Directory</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#about">About</a></li>
+        <li><a href="#guides">Guides</a></li>
+        <li><a href="#blog">Blog</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <ul class="footer-links">
+        <li><a href="#">Terms</a></li>
+        <li><a href="#">Privacy</a></li>
+        <li><a href="#">Disclosures</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 FAR Research · Data from SEC EDGAR · Not investment advice</span>
+    <div class="footer-soc"><a href="#">LinkedIn</a><a href="#">X</a></div>
+  </div>
+</footer>
+
+<script>
+// Reveal on scroll
+const revEls = document.querySelectorAll('.r');
+const ro = new IntersectionObserver(es => { es.forEach(e => { if(e.isIntersecting) e.target.classList.add('in') }) }, { threshold: 0.1 });
+revEls.forEach(el => ro.observe(el));
+
+// Tab functionality for firm profiles
+document.querySelectorAll('.fp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const contentId = tab.dataset.tab;
+    const parent = tab.closest('.firm-profile');
+    
+    parent.querySelectorAll('.fp-tab').forEach(t => t.classList.remove('active'));
+    parent.querySelectorAll('.fp-tab-content').forEach(c => c.classList.remove('active'));
+    
+    tab.classList.add('active');
+    parent.querySelector(`#${contentId}`).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
