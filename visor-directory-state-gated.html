@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Advisors in New York — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;
+  --rule:#CAD8D0;--amber:#F59E0B;--red:#EF4444;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --nav-h:52px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.016}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:600;height:var(--nav-h);background:rgba(10,28,42,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;padding:0 48px}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:24px;height:24px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:17px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a.active,.nav-links a:hover{color:rgba(255,255,255,.8)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-user{font-size:11px;color:rgba(255,255,255,.4);font-weight:500}
+.nav-cta{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--green);color:#fff;padding:7px 18px;text-decoration:none;transition:background .15s}
+.nav-cta:hover{background:var(--green-2)}
+
+/* PAGE */
+.page{padding-top:var(--nav-h)}
+
+/* HERO */
+.hero{background:var(--navy);padding:36px 0 40px;border-bottom:1px solid rgba(255,255,255,.05)}
+.hero-i{max-width:1100px;margin:0 auto;padding:0 48px}
+.breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.breadcrumb a{font-size:11px;color:var(--green-3);text-decoration:none;font-weight:500}
+.breadcrumb a:hover{color:#fff}
+.breadcrumb-sep{font-size:11px;color:rgba(255,255,255,.2)}
+.breadcrumb-cur{font-size:11px;color:rgba(255,255,255,.3)}
+.hero-title{font-family:var(--serif);font-size:38px;font-weight:700;color:#fff;letter-spacing:-.025em;line-height:1.05;margin-bottom:16px}
+.hero-meta{display:flex;align-items:center;gap:24px}
+.hm-stat{display:flex;align-items:center;gap:7px}
+.hm-val{font-family:var(--serif);font-size:22px;font-weight:700;color:#fff}
+.hm-label{font-size:11px;color:rgba(255,255,255,.3)}
+.hm-divider{width:1px;height:24px;background:rgba(255,255,255,.1)}
+
+/* GATE */
+.gate-wrap{position:relative}
+.gate-content{pointer-events:none;user-select:none;position:relative}
+.gate-content::after{content:'';position:absolute;inset:0;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 8%,rgba(0,0,0,1) 22%,rgba(0,0,0,1) 100%);mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 8%,rgba(0,0,0,1) 22%,rgba(0,0,0,1) 100%);pointer-events:none;z-index:2}
+.gate-content{-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 30%,rgba(0,0,0,.3) 52%,rgba(0,0,0,0) 68%);mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 30%,rgba(0,0,0,.3) 52%,rgba(0,0,0,0) 68%)}
+.gate-floor{position:absolute;bottom:0;left:0;right:0;height:42%;background:var(--white);pointer-events:none;z-index:5}
+.gate-card{position:absolute;top:310px;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;border:1px solid var(--rule);border-top:2px solid var(--navy);box-shadow:0 32px 80px rgba(10,28,42,.13),0 4px 20px rgba(10,28,42,.07);padding:40px 44px;text-align:center;z-index:50}
+.gc-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--green-3);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:7px}
+.gc-eyebrow::before,.gc-eyebrow::after{content:'';width:20px;height:1px;background:var(--green-3)}
+.gc-title{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1;margin-bottom:10px}
+.gc-sub{font-size:13px;color:var(--ink-3);line-height:1.75;max-width:360px;margin:0 auto 24px}
+.gc-perks{display:flex;flex-direction:column;gap:7px;text-align:left;margin-bottom:24px;padding:14px 18px;background:var(--white);border:1px solid var(--rule)}
+.gc-perk{font-size:12px;color:var(--ink-3);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.gc-perk::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.gc-cta{display:flex;width:100%;align-items:center;justify-content:center;gap:10px;background:var(--green);color:#fff;border:none;cursor:pointer;padding:15px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:background .15s;margin-bottom:12px}
+.gc-cta:hover{background:var(--green-2)}
+.gc-cta-arrow{font-size:16px;transition:transform .2s}
+.gc-cta:hover .gc-cta-arrow{transform:translateX(4px)}
+.gc-login{font-size:11px;color:var(--ink-3)}
+.gc-login a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--rule)}
+.gate-spacer{height:520px}
+
+/* TOOLBAR */
+.toolbar{
+  position:sticky;top:var(--nav-h);z-index:400;
+  background:rgba(246,248,247,.96);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--rule);
+}
+.toolbar-i{max-width:1100px;margin:0 auto;padding:0 48px;height:48px;display:flex;align-items:center;gap:16px}
+.tb-count{font-size:11px;color:var(--ink-3);font-weight:500;margin-right:auto;white-space:nowrap}
+.tb-count strong{color:var(--ink)}
+.tb-sort{display:flex;align-items:center;gap:6px}
+.tb-sort-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tb-sort-btn{font-size:11px;color:var(--ink-3);background:none;border:1px solid var(--rule);padding:4px 10px;cursor:pointer;font-family:var(--sans);transition:all .12s}
+.tb-sort-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tb-sort-btn:hover:not(.on){border-color:var(--ink-3);color:var(--ink)}
+.tb-filter{display:flex;align-items:center;gap:6px;padding-left:16px;border-left:1px solid var(--rule)}
+.tb-filter-btn{font-size:11px;color:var(--ink-3);background:none;border:1px solid var(--rule);padding:4px 10px;cursor:pointer;font-family:var(--sans);transition:all .12s;display:flex;align-items:center;gap:5px}
+.tb-filter-btn.on{background:var(--green-pale);color:var(--green);border-color:rgba(26,122,74,.3)}
+.tb-filter-btn:hover:not(.on){border-color:var(--ink-3)}
+
+/* TABLE HEADER */
+.tbl-wrap{max-width:1100px;margin:0 auto;padding:0 48px 80px}
+.tbl-head{
+  display:grid;
+  grid-template-columns: 2fr 100px 120px 140px 120px 80px 60px;
+  gap:0;
+  padding:10px 20px;
+  background:var(--navy);
+  margin-top:0;
+  position:sticky;top:calc(var(--nav-h) + 48px);
+  z-index:300;
+}
+.th{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.th.sortable{cursor:pointer;transition:color .12s;display:flex;align-items:center;gap:4px}
+.th.sortable:hover{color:rgba(255,255,255,.7)}
+.th.active{color:var(--green-3)}
+.th.r{text-align:right;justify-content:flex-end}
+
+/* FIRM ROWS */
+.firm-rows{display:flex;flex-direction:column}
+.firm-row{
+  display:grid;
+  grid-template-columns: 2fr 100px 120px 140px 120px 80px 60px;
+  gap:0;
+  padding:16px 20px;
+  background:#fff;
+  border-bottom:1px solid var(--rule);
+  align-items:center;
+  cursor:pointer;
+  transition:background .1s;
+  text-decoration:none;
+  color:inherit;
+}
+.firm-row:hover{background:#f0f6f3}
+.firm-row:hover .fr-arrow{opacity:1;transform:translateX(2px)}
+
+/* Firm name col */
+.fr-name-block{}
+.fr-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;line-height:1.3}
+.fr-legal{font-size:10px;color:var(--ink-3);font-family:var(--mono)}
+.fr-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.fr-tag{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;background:var(--white);border:1px solid var(--rule);color:var(--ink-3)}
+.fr-tag.fee-only{color:var(--green);border-color:rgba(26,122,74,.25);background:var(--green-pale)}
+
+/* VVS ring col */
+.fr-vvs{display:flex;align-items:center;justify-content:center}
+.vvs-ring-wrap{position:relative;width:44px;height:44px}
+.vvs-ring-wrap svg{position:absolute;top:0;left:0}
+.vvs-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:13px;font-weight:700;color:var(--ink)}
+
+/* AUM col */
+.fr-aum{text-align:right}
+.fr-aum-val{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink)}
+.fr-aum-growth{font-family:var(--mono);font-size:10px;margin-top:2px}
+.fr-aum-growth.up{color:var(--green)}
+.fr-aum-growth.dn{color:var(--red)}
+
+/* Fee col */
+.fr-fee{}
+.fr-fee-rate{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--ink);margin-bottom:2px}
+.fr-fee-type{font-size:10px;color:var(--ink-3)}
+.fr-fee-vs{font-family:var(--mono);font-size:10px;margin-top:2px}
+.fr-fee-vs.below{color:var(--green)}
+.fr-fee-vs.above{color:var(--amber)}
+
+/* City col */
+.fr-city{font-size:12px;color:var(--ink-2);font-family:var(--mono)}
+
+/* Employees col */
+.fr-emp{font-family:var(--mono);font-size:12px;color:var(--ink-3);text-align:right}
+
+/* Arrow */
+.fr-arrow{font-size:14px;color:var(--ink-3);text-align:right;opacity:0;transition:opacity .1s,transform .15s}
+
+/* Reg flag badge */
+.reg-flag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:600;letter-spacing:.06em;
+  padding:2px 6px;
+  background:rgba(239,68,68,.07);color:var(--red);
+  border:1px solid rgba(239,68,68,.2);
+  margin-top:4px;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1"><polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/></svg></div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="visor-compare-v4.html">Compare</a></li>
+      <li><a href="visor-negotiate.html">Negotiate</a></li>
+      <li><a href="visor-directory.html" class="active">Directory</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-user">Maxwell Test</span>
+      <a href="#" class="nav-cta">Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-i">
+      <div class="breadcrumb">
+        <a href="visor-directory.html">← Directory</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-cur">New York</span>
+      </div>
+      <div class="hero-title">Financial Advisors<br>in New York</div>
+      <div class="hero-meta">
+        <div class="hm-stat"><div class="hm-val">1,842</div><div class="hm-label">firms</div></div>
+        <div class="hm-divider"></div>
+        <div class="hm-stat"><div class="hm-val">$8.4T</div><div class="hm-label">total AUM</div></div>
+        <div class="hm-divider"></div>
+        <div class="hm-stat"><div class="hm-val">412</div><div class="hm-label">fee-only</div></div>
+        <div class="hm-divider"></div>
+        <div class="hm-stat"><div class="hm-val">0.94%</div><div class="hm-label">state median fee</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-i">
+      <div class="tb-count">Showing <strong>1,842</strong> firms</div>
+      <div class="tb-sort">
+        <span class="tb-sort-label">Sort</span>
+        <button class="tb-sort-btn on">VVS Score</button>
+        <button class="tb-sort-btn">AUM</button>
+        <button class="tb-sort-btn">Fee</button>
+        <button class="tb-sort-btn">A–Z</button>
+      </div>
+      <div class="tb-filter">
+        <button class="tb-filter-btn on">Fee-only</button>
+        <button class="tb-filter-btn">$1B+ AUM</button>
+        <button class="tb-filter-btn">No flags</button>
+        <button class="tb-filter-btn">NYC</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE WRAP -->
+  <div class="gate-wrap">
+    <div class="gate-content">
+
+      <!-- TABLE HEADER -->
+      <div class="tbl-wrap">
+        <div class="tbl-head">
+          <div class="th">Firm</div>
+          <div class="th sortable active">VVS Score ↓</div>
+          <div class="th sortable r">AUM</div>
+          <div class="th">Fee Structure</div>
+          <div class="th">City</div>
+          <div class="th r">Employees</div>
+          <div class="th"></div>
+        </div>
+
+        <div class="firm-rows" id="firmRows">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div><!-- /gate-content -->
+
+    <div class="gate-floor"></div>
+
+    <!-- Gate card -->
+    <div class="gate-card">
+      <div class="gc-eyebrow">Members only</div>
+      <div class="gc-title">Unlock 1,842 New York firms</div>
+      <div class="gc-sub">See Visor scores, fee structures, AUM data, and regulatory history for every SEC-registered advisor in New York.</div>
+      <div class="gc-perks">
+        <div class="gc-perk">VVS Score rings and full sub-metric breakdown</div>
+        <div class="gc-perk">Fee structures sourced directly from SEC ADV filings</div>
+        <div class="gc-perk">AUM growth rates — 1-year and 5-year</div>
+        <div class="gc-perk">Regulatory flags, disciplinary history, conflict disclosures</div>
+      </div>
+      <a href="#" class="gc-cta" onclick="alert('Sign-up flow in production')">
+        Create Free Account <span class="gc-cta-arrow">→</span>
+      </a>
+      <div class="gc-login">Already have an account? <a href="#">Sign in</a></div>
+    </div>
+
+    <div class="gate-spacer"></div>
+  </div><!-- /gate-wrap -->
+
+</div><!-- /page -->
+
+<script>
+const FIRMS = [
+  {name:"Rockbridge Family Partners",legal:"ROCKBRIDGE FAMILY PARTNERS LLC",score:91,aum:"$2.1B",growth:"+14.2%",growDir:"up",fee:"0.75–1.50%",feeType:"Tiered, fee-only",feeVs:"−26 bps vs median",feeDir:"below",city:"New York",emp:38,tags:["Fee-only","MFO"],flag:null},
+  {name:"Silverpeak Wealth Advisors",legal:"SILVERPEAK WEALTH MANAGEMENT LLC",score:88,aum:"$4.8B",growth:"+9.1%",growDir:"up",fee:"0.60–1.20%",feeType:"Tiered, fee-only",feeVs:"−34 bps vs median",feeDir:"below",city:"New York",emp:62,tags:["Fee-only","RIA"],flag:null},
+  {name:"Meridian Vantage Advisors",legal:"MERIDIAN VANTAGE ADVISORS LLC",score:87,aum:"$890M",growth:"+9.8%",growDir:"up",fee:"0.70–1.25%",feeType:"Tiered, fee-only",feeVs:"−24 bps vs median",feeDir:"below",city:"Greenwich",emp:24,tags:["Fee-only"],flag:null},
+  {name:"Ashford Private Capital",legal:"ASHFORD PRIVATE CAPITAL LLC",score:84,aum:"$1.2B",growth:"+6.1%",growDir:"up",fee:"0.72–1.40%",feeType:"Tiered, fee-only",feeVs:"−22 bps vs median",feeDir:"below",city:"New York",emp:31,tags:["Fee-only","MFO"],flag:null},
+  {name:"Blackstone Personal Wealth",legal:"BLACKSTONE PERSONAL WEALTH SOLUTIONS LLC",score:79,aum:"$18.4B",growth:"+22.4%",growDir:"up",fee:"0.50–1.00%",feeType:"Tiered + performance",feeVs:"−44 bps vs median",feeDir:"below",city:"New York",emp:284,tags:["Institutional"],flag:"Affiliated broker-dealer"},
+  {name:"Beacon Harbor Advisors",legal:"BEACON HARBOR ADVISORY GROUP LLC",score:76,aum:"$620M",growth:"+4.2%",growDir:"up",fee:"1.00–1.50%",feeType:"Flat rate",feeVs:"At median",feeDir:"below",city:"White Plains",emp:18,tags:["Fee-only"],flag:null},
+  {name:"Cornerstone Capital Group",legal:"CORNERSTONE CAPITAL GROUP INC",score:74,aum:"$2.9B",growth:"-1.2%",growDir:"dn",fee:"1.00–1.50%",feeType:"Tiered + 12b-1",feeVs:"+6 bps vs median",feeDir:"above",city:"New York",emp:89,tags:["Fee-based"],flag:"12b-1 fees disclosed"},
+  {name:"Harbor Point Wealth Management",legal:"HARBOR POINT WEALTH MANAGEMENT LLC",score:72,aum:"$440M",growth:"+2.8%",growDir:"up",fee:"1.10–1.75%",feeType:"Flat rate",feeVs:"+16 bps vs median",feeDir:"above",city:"Stamford",emp:14,tags:["Fee-based"],flag:null},
+  {name:"Northgate Capital Advisors",legal:"NORTHGATE CAPITAL ADVISORS INC",score:68,aum:"$1.1B",growth:"+7.4%",growDir:"up",fee:"0.90–1.40%",feeType:"Tiered",feeVs:"−4 bps vs median",feeDir:"below",city:"New York",emp:42,tags:["Fee-only"],flag:null},
+  {name:"Manhattan Private Office",legal:"MANHATTAN PRIVATE OFFICE LLC",score:65,aum:"$3.2B",growth:"+11.8%",growDir:"up",fee:"1.25–1.75%",feeType:"Tiered + performance",feeVs:"+31 bps vs median",feeDir:"above",city:"New York",emp:56,tags:["MFO"],flag:"PE ownership (65%)"},
+];
+
+function ring(score){
+  const r=18,cx=22,cy=22,circ=2*Math.PI*r;
+  const fill=score/100;
+  const color=score>=85?'var(--green-3)':score>=70?'var(--amber)':'var(--red)';
+  return `<div class="vvs-ring-wrap">
+    <svg width="44" height="44" viewBox="0 0 44 44">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--rule)" stroke-width="3"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${circ*fill} ${circ*(1-fill)}"
+        stroke-dashoffset="${circ*0.25}"
+        stroke-linecap="round"/>
+    </svg>
+    <div class="vvs-num" style="color:${color}">${score}</div>
+  </div>`;
+}
+
+function renderFirms(){
+  const container = document.getElementById('firmRows');
+  container.innerHTML = FIRMS.map(f => `
+    <a class="firm-row" href="visor-profile.html">
+      <div class="fr-name-block">
+        <div class="fr-name">${f.name}</div>
+        <div class="fr-legal">${f.legal}</div>
+        <div class="fr-tags">
+          ${f.tags.map(t=>`<span class="fr-tag${t==='Fee-only'?' fee-only':''}">${t}</span>`).join('')}
+          ${f.flag?`<span class="reg-flag">⚑ ${f.flag}</span>`:''}
+        </div>
+      </div>
+      <div class="fr-vvs">${ring(f.score)}</div>
+      <div class="fr-aum">
+        <div class="fr-aum-val">${f.aum}</div>
+        <div class="fr-aum-growth ${f.growDir}">${f.growth} 1yr</div>
+      </div>
+      <div class="fr-fee">
+        <div class="fr-fee-rate">${f.fee}</div>
+        <div class="fr-fee-type">${f.feeType}</div>
+        <div class="fr-fee-vs ${f.feeDir}">${f.feeVs}</div>
+      </div>
+      <div class="fr-city">${f.city}</div>
+      <div class="fr-emp">${f.emp}</div>
+      <div class="fr-arrow">→</div>
+    </a>
+  `).join('');
+}
+
+renderFirms();
+
+// Sort button interaction
+document.querySelectorAll('.tb-sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tb-sort-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  });
+});
+document.querySelectorAll('.tb-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('on'));
+});
+</script>
+</body>
+</html>

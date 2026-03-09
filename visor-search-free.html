@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Index — Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --navy:#0A1C2A;
+  --navy-2:#0F2538;
+  --navy-3:#162F45;
+  --green:#1A7A4A;
+  --green-2:#22995E;
+  --green-3:#2DBD74;
+  --green-pale:#E6F4ED;
+  --white:#F6F8F7;
+  --ink:#0C1810;
+  --ink-2:#2E4438;
+  --ink-3:#5A7568;
+  --rule:#CAD8D0;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--navy);color:#fff;font-family:var(--sans);overflow-x:hidden;min-height:100vh}
+
+/* Grain overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.028;pointer-events:none;z-index:1000;
+}
+
+/* ═══ NAV ═══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:0 56px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  background:rgba(10,28,42,0.92);
+  backdrop-filter:blur(20px);
+}
+.nav-i{
+  max-width:1120px;margin:0 auto;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-hex{
+  width:26px;height:26px;display:grid;place-items:center;
+  border:1px solid rgba(45,189,116,0.4);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:rgba(26,122,74,0.15);
+}
+.logo-name{font-family:var(--serif);font-size:18px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:12px;color:rgba(255,255,255,0.4);text-decoration:none;letter-spacing:0.04em;transition:color 0.15s}
+.nav-links a:hover{color:rgba(255,255,255,0.85)}
+.nav-links a.active{color:#fff}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-in{font-size:12px;color:rgba(255,255,255,0.35);text-decoration:none;transition:color 0.15s}
+.nav-in:hover{color:#fff}
+.nav-btn{
+  font-family:var(--sans);font-size:11px;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  background:var(--green);color:#fff;
+  padding:8px 20px;text-decoration:none;
+  transition:background 0.2s;border:none;cursor:pointer;
+}
+.nav-btn:hover{background:var(--green-2)}
+
+/* ═══ SEARCH BAR — pinned below nav ═════════════════ */
+.search-bar-wrap{
+  position:fixed;top:56px;left:0;right:0;z-index:400;
+  background:var(--navy-2);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.search-bar-inner{
+  max-width:1120px;margin:0 auto;padding:16px 56px;
+  display:flex;align-items:center;gap:12px;
+}
+.search-input-wrap{
+  flex:1;display:flex;align-items:center;gap:10px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.04);
+  padding:0 16px;
+  transition:border-color 0.2s;
+}
+.search-input-wrap:focus-within{border-color:rgba(45,189,116,0.5)}
+.search-input-wrap svg{flex-shrink:0;opacity:0.4}
+.search-input-wrap input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-family:var(--sans);font-size:14px;color:#fff;
+  padding:12px 0;
+}
+.search-input-wrap input::placeholder{color:rgba(255,255,255,0.25)}
+.search-clear{
+  font-size:11px;color:rgba(255,255,255,0.25);
+  background:none;border:none;cursor:pointer;padding:4px 8px;
+  transition:color 0.15s;font-family:var(--sans);
+}
+.search-clear:hover{color:rgba(255,255,255,0.6)}
+.search-submit{
+  background:var(--green);color:#fff;border:none;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  padding:12px 28px;cursor:pointer;
+  transition:background 0.2s;white-space:nowrap;
+}
+.search-submit:hover{background:var(--green-2)}
+.search-result-count{
+  font-size:12px;color:rgba(255,255,255,0.3);
+  white-space:nowrap;font-family:var(--mono);
+}
+
+/* ═══ QUICK FILTERS — thin tag row ══════════════════ */
+.quick-filters{
+  max-width:1120px;margin:0 auto;padding:0 56px 14px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.qf-label{
+  font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:rgba(255,255,255,0.25);margin-right:4px;
+}
+.qf-tag{
+  font-size:11px;color:rgba(255,255,255,0.5);
+  border:1px solid rgba(255,255,255,0.1);
+  padding:4px 12px;cursor:pointer;
+  transition:all 0.15s;background:none;font-family:var(--sans);
+}
+.qf-tag:hover,.qf-tag.active{
+  border-color:rgba(45,189,116,0.5);
+  color:var(--green-3);
+  background:rgba(45,189,116,0.06);
+}
+.qf-tag.active::before{content:'✓ ';font-size:9px}
+
+/* ═══ MAIN LAYOUT ════════════════════════════════════ */
+.page-body{
+  padding-top:calc(56px + 72px + 42px); /* nav + search bar + quick filters */
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:280px 1fr;
+  max-width:1120px;
+  margin:0 auto;
+  padding-left:56px;
+  padding-right:56px;
+  padding-bottom:80px;
+  gap:0;
+}
+
+/* ═══ FILTER PANEL ═══════════════════════════════════ */
+.filter-panel{
+  padding-right:32px;
+  border-right:1px solid rgba(255,255,255,0.06);
+  padding-top:32px;
+}
+.filter-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;
+}
+.filter-title{
+  font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);
+}
+.filter-clear{
+  font-size:11px;color:rgba(45,189,116,0.6);
+  background:none;border:none;cursor:pointer;font-family:var(--sans);
+  transition:color 0.15s;
+}
+.filter-clear:hover{color:var(--green-3)}
+
+.filter-group{margin-bottom:28px}
+.filter-group-label{
+  font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);margin-bottom:12px;display:block;
+}
+
+/* Checkbox options */
+.filter-option{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.filter-option:last-child{border-bottom:none}
+.filter-cb{
+  width:14px;height:14px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.2);
+  display:grid;place-items:center;
+  transition:all 0.15s;background:transparent;
+}
+.filter-cb.checked{background:var(--green);border-color:var(--green)}
+.filter-cb.checked::after{content:'✓';font-size:8px;color:#fff;font-weight:700}
+.filter-option-label{font-size:12px;color:rgba(255,255,255,0.5);flex:1;transition:color 0.15s}
+.filter-option:hover .filter-option-label{color:rgba(255,255,255,0.85)}
+.filter-option-count{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.2)}
+
+/* Range slider group */
+.filter-range{padding:4px 0}
+.filter-range-vals{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:rgba(255,255,255,0.4);
+  margin-bottom:10px;
+}
+.filter-slider{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:2px;background:rgba(255,255,255,0.1);outline:none;cursor:pointer;
+}
+.filter-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  background:var(--green-3);border-radius:50%;
+  border:2px solid var(--navy-2);
+}
+
+/* Score range visual */
+.score-range-track{
+  height:3px;background:rgba(255,255,255,0.08);
+  position:relative;margin:10px 0 14px;border-radius:2px;
+}
+.score-range-fill{
+  position:absolute;height:100%;background:var(--green);
+  left:30%;width:55%;border-radius:2px;
+}
+
+/* Divider */
+.filter-divider{
+  height:1px;background:rgba(255,255,255,0.05);
+  margin:4px 0 28px;
+}
+
+/* ═══ GATE BOX ═══════════════════════════════════════ */
+.results-panel{
+  padding-left:32px;
+  padding-top:32px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+
+.gate-box{
+  width:100%;
+  max-width:520px;
+  border:1px solid rgba(255,255,255,0.09);
+  border-top:2px solid var(--green);
+  background:var(--navy-2);
+  padding:44px 48px 40px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+
+/* Eyebrow */
+.gate-eyebrow{
+  display:flex;align-items:center;gap:8px;
+  font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--green-3);margin-bottom:20px;
+}
+
+/* Headline with inline live count */
+.gate-h{
+  font-family:var(--serif);
+  font-size:clamp(28px, 3.2vw, 40px);
+  font-weight:700;
+  line-height:1.15;
+  letter-spacing:-0.02em;
+  color:#fff;
+  margin-bottom:16px;
+  position:relative;
+}
+.gate-h em{
+  font-style:italic;
+  color:rgba(255,255,255,0.38);
+  display:block;
+  font-size:0.88em;
+  margin-top:4px;
+  letter-spacing:-0.01em;
+}
+
+/* The live number — same size as headline, green */
+.gate-count-inline{
+  color:var(--green-3);
+  font-family:var(--serif);
+  font-weight:700;
+  display:inline;
+  transition:opacity 0.1s;
+}
+.gate-count-inline.flash{ opacity:0.5 }
+
+/* Pulsing dots — inline beside the number */
+.gate-count-updating{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  vertical-align:middle;
+  margin-left:8px;
+  opacity:0;
+  transition:opacity 0.15s;
+  position:relative;
+  top:-4px;
+}
+.gate-count-updating.show{ opacity:1 }
+.gate-count-dot{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--green-3);
+  animation:pulse-dot 0.9s ease-in-out infinite;
+}
+.gate-count-dot:nth-child(2){ animation-delay:0.15s }
+.gate-count-dot:nth-child(3){ animation-delay:0.30s }
+@keyframes pulse-dot{
+  0%,100%{ opacity:0.2; transform:scale(0.7) }
+  50%{ opacity:1; transform:scale(1.1) }
+}
+
+/* Sub */
+.gate-sub{
+  font-size:13px;
+  color:rgba(255,255,255,0.35);
+  line-height:1.75;
+  margin-bottom:28px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding-top:20px;
+  width:100%;
+}
+
+/* Actions */
+.gate-actions{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:24px;flex-wrap:wrap;
+}
+.gate-btn-primary{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green);color:#fff;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  padding:12px 28px;text-decoration:none;
+  transition:background 0.2s;
+}
+.gate-btn-primary:hover{ background:var(--green-2) }
+.gate-btn-secondary{
+  display:inline-flex;align-items:center;
+  font-family:var(--sans);font-size:13px;color:rgba(255,255,255,0.38);
+  padding:12px 20px;border:1px solid rgba(255,255,255,0.1);
+  text-decoration:none;transition:all 0.2s;
+}
+.gate-btn-secondary:hover{ border-color:rgba(255,255,255,0.28);color:#fff }
+
+/* Trust line */
+.gate-trust{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:rgba(255,255,255,0.18);
+}
+.gate-trust-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--green-3);flex-shrink:0;
+}
+
+/* Responsive tweaks */
+@media(max-width:900px){
+  .page-body{grid-template-columns:1fr;padding-left:24px;padding-right:24px}
+  .filter-panel{display:none}
+  .results-panel{padding-left:0}
+  .search-bar-inner,.quick-filters{padding-left:24px;padding-right:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-hex">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="rgba(45,189,116,0.8)" stroke-width="1.2" stroke-linecap="round"><polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5"/></svg>
+      </div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#" class="active">Search</a></li>
+      <li><a href="#">Compare</a></li>
+      <li><a href="#">Negotiate</a></li>
+      <li><a href="#">Directory</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="#" class="nav-in">Log in</a>
+      <a href="#" class="nav-btn">Get Access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ PINNED SEARCH BAR ══════════════════════════════ -->
+<div class="search-bar-wrap">
+  <div class="search-bar-inner">
+    <div class="search-input-wrap">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" viewBox="0 0 15 15"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="13.5" y2="13.5"/></svg>
+      <input type="text" id="searchInput" placeholder="Search firm name, advisor, city, or ZIP…" value="Fee-only advisors, New York">
+      <button class="search-clear" onclick="document.getElementById('searchInput').value='';updateResults()">✕ Clear</button>
+    </div>
+    <button class="search-submit">Search</button>
+    <span class="search-result-count" id="resultCount">2,847 results</span>
+  </div>
+  <div class="quick-filters">
+    <span class="qf-label">Quick:</span>
+    <button class="qf-tag active" onclick="toggleTag(this)">Fee-only</button>
+    <button class="qf-tag" onclick="toggleTag(this)">Fiduciary</button>
+    <button class="qf-tag" onclick="toggleTag(this)">No minimum</button>
+    <button class="qf-tag" onclick="toggleTag(this)">Under $500K min</button>
+    <button class="qf-tag" onclick="toggleTag(this)">$1M+ AUM</button>
+    <button class="qf-tag" onclick="toggleTag(this)">Conflict-free</button>
+    <button class="qf-tag" onclick="toggleTag(this)">Top scored</button>
+  </div>
+</div>
+
+<!-- ══ PAGE BODY ══════════════════════════════════════ -->
+<div class="page-body">
+
+  <!-- Filter Panel -->
+  <aside class="filter-panel">
+    <div class="filter-header">
+      <span class="filter-title">Filters</span>
+      <button class="filter-clear">Clear all</button>
+    </div>
+
+    <!-- Fee Structure -->
+    <div class="filter-group">
+      <span class="filter-group-label">Fee Structure</span>
+      <label class="filter-option">
+        <div class="filter-cb checked"></div>
+        <span class="filter-option-label">Fee-only</span>
+        <span class="filter-option-count">1,204</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Fee-based</span>
+        <span class="filter-option-count">892</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Commission-based</span>
+        <span class="filter-option-count">418</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Flat / subscription</span>
+        <span class="filter-option-count">333</span>
+      </label>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Visor Score -->
+    <div class="filter-group">
+      <span class="filter-group-label">Visor Score™ Range</span>
+      <div class="filter-range">
+        <div class="filter-range-vals">
+          <span id="scoreMin">30</span>
+          <span id="scoreMax">100</span>
+        </div>
+        <div class="score-range-track">
+          <div class="score-range-fill" id="scoreRangeFill"></div>
+        </div>
+        <input type="range" class="filter-slider" min="0" max="100" value="30" id="scoreSliderMin"
+          oninput="updateScoreRange()">
+      </div>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- AUM -->
+    <div class="filter-group">
+      <span class="filter-group-label">Firm AUM</span>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Under $100M</span>
+        <span class="filter-option-count">341</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb checked"></div>
+        <span class="filter-option-label">$100M – $500M</span>
+        <span class="filter-option-count">628</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb checked"></div>
+        <span class="filter-option-label">$500M – $2B</span>
+        <span class="filter-option-count">512</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">$2B+</span>
+        <span class="filter-option-count">204</span>
+      </label>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Minimum Investment -->
+    <div class="filter-group">
+      <span class="filter-group-label">Minimum Investment</span>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">No minimum</span>
+        <span class="filter-option-count">289</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Under $250K</span>
+        <span class="filter-option-count">441</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb checked"></div>
+        <span class="filter-option-label">$250K – $1M</span>
+        <span class="filter-option-count">617</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">$1M+</span>
+        <span class="filter-option-count">398</span>
+      </label>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Firm Type -->
+    <div class="filter-group">
+      <span class="filter-group-label">Firm Type</span>
+      <label class="filter-option">
+        <div class="filter-cb checked"></div>
+        <span class="filter-option-label">RIA (independent)</span>
+        <span class="filter-option-count">1,847</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Multi-family office</span>
+        <span class="filter-option-count">142</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">OCIO</span>
+        <span class="filter-option-count">88</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">Bank-affiliated</span>
+        <span class="filter-option-count">334</span>
+      </label>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <!-- Conflict Flag -->
+    <div class="filter-group">
+      <span class="filter-group-label">Conflict Screening</span>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">No referral arrangements</span>
+        <span class="filter-option-count">982</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">No 12b-1 fees</span>
+        <span class="filter-option-count">1,204</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">No disciplinary history</span>
+        <span class="filter-option-count">2,491</span>
+      </label>
+      <label class="filter-option">
+        <div class="filter-cb"></div>
+        <span class="filter-option-label">No PE ownership</span>
+        <span class="filter-option-count">1,798</span>
+      </label>
+    </div>
+
+  </aside>
+
+  <!-- Results Panel -->
+  <main class="results-panel">
+
+    <!-- Gate box -->
+    <div class="gate-box">
+
+      <div class="gate-eyebrow">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" viewBox="0 0 11 11"><rect x="2" y="5" width="7" height="5" rx="0.5"/><path d="M3.5 5V3.5a2 2 0 0 1 4 0V5"/></svg>
+        Full Access Required
+      </div>
+
+      <h2 class="gate-h">
+        <span class="gate-count-inline" id="gateCount">2,847</span>
+        <span class="gate-count-updating" id="countUpdating">
+          <span class="gate-count-dot"></span>
+          <span class="gate-count-dot"></span>
+          <span class="gate-count-dot"></span>
+        </span>
+        <br>advisors match your filters.<br><em>You can't see any of them yet.</em>
+      </h2>
+
+      <p class="gate-sub">You can search and filter freely. Seeing the results — scores, conflict flags, rankings — requires a Visor Index subscription.</p>
+
+      <div class="gate-actions">
+        <a href="#" class="gate-btn-primary">Get Full Access →</a>
+        <a href="#" class="gate-btn-secondary">View Pricing</a>
+      </div>
+
+      <div class="gate-trust">
+        <span class="gate-trust-dot"></span>
+        No advisor has ever paid to appear here or influence their score.
+      </div>
+
+    </div>
+
+  </main>
+</div><!-- /page-body -->
+
+<script>
+// ── Filter state: counts per checkbox group ─────────
+// Each filter option maps to a count contribution.
+// When checked: add count. When unchecked: subtract.
+// Base count starts high; quick filters + checkboxes narrow it.
+
+const BASE = 8420;
+
+// Weights: how much each checked option contributes (multiplicative fraction of BASE)
+const FILTER_WEIGHTS = {
+  // Fee structure
+  'Fee-only':        0.338,
+  'Fee-based':       0.250,
+  'Commission-based':0.117,
+  'Flat / subscription': 0.094,
+  // AUM
+  'Under $100M':     0.096,
+  '$100M \u2013 $500M': 0.176,
+  '$500M \u2013 $2B':   0.144,
+  '$2B+':            0.057,
+  // Minimum
+  'No minimum':      0.081,
+  'Under $250K':     0.124,
+  '$250K \u2013 $1M':   0.173,
+  '$1M+':            0.112,
+  // Firm type
+  'RIA (independent)':  0.519,
+  'Multi-family office': 0.040,
+  'OCIO':            0.025,
+  'Bank-affiliated': 0.094,
+  // Conflict
+  'No referral arrangements': 0.276,
+  'No 12b-1 fees':   0.338,
+  'No disciplinary history':  0.700,
+  'No PE ownership': 0.505,
+};
+
+// Quick filter weights
+const QUICK_WEIGHTS = {
+  'Fee-only':     0.338,
+  'Fiduciary':    0.470,
+  'No minimum':   0.081,
+  'Under $500K min': 0.205,
+  '$1M+ AUM':     0.057,
+  'Conflict-free':0.276,
+  'Top scored':   0.210,
+};
+
+// Score slider: each point above 0 removes ~1.8% of results
+let scoreMin = 30;
+
+function recalcCount() {
+  // Gather active checkbox labels
+  const checkedLabels = [...document.querySelectorAll('.filter-cb.checked')]
+    .map(cb => cb.closest('.filter-option')?.querySelector('.filter-option-label')?.textContent?.trim())
+    .filter(Boolean);
+
+  // Gather active quick tags
+  const activeTags = [...document.querySelectorAll('.qf-tag.active')]
+    .map(t => t.textContent.trim());
+
+  // If nothing checked, show base
+  if (checkedLabels.length === 0 && activeTags.length === 0) {
+    return BASE;
+  }
+
+  // Multiplicative narrowing: start with BASE and apply each active filter
+  // Group by category — within a group, options are OR (additive fraction)
+  // Between groups, AND (multiply)
+  const GROUPS = {
+    fee:      ['Fee-only','Fee-based','Commission-based','Flat / subscription'],
+    aum:      ['Under $100M','$100M \u2013 $500M','$500M \u2013 $2B','$2B+'],
+    min:      ['No minimum','Under $250K','$250K \u2013 $1M','$1M+'],
+    type:     ['RIA (independent)','Multi-family office','OCIO','Bank-affiliated'],
+    conflict: ['No referral arrangements','No 12b-1 fees','No disciplinary history','No PE ownership'],
+  };
+
+  let result = BASE;
+
+  for (const [, opts] of Object.entries(GROUPS)) {
+    const activeInGroup = checkedLabels.filter(l => opts.includes(l));
+    if (activeInGroup.length > 0) {
+      const fraction = activeInGroup.reduce((s, l) => s + (FILTER_WEIGHTS[l] || 0), 0);
+      result *= Math.min(fraction, 1);
+    }
+  }
+
+  // Quick tags narrow further (take lowest single fraction if active)
+  for (const tag of activeTags) {
+    if (QUICK_WEIGHTS[tag]) result *= QUICK_WEIGHTS[tag];
+  }
+
+  // Score slider: each 10pts above 0 = ~18% narrowing
+  if (scoreMin > 0) result *= (1 - (scoreMin / 100) * 0.9);
+
+  return Math.max(Math.round(result), 1);
+}
+
+function formatCount(n) {
+  return n.toLocaleString('en-US');
+}
+
+let animFrame = null;
+let currentDisplay = 2847;
+
+function animateCount(target) {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const start = currentDisplay;
+  const diff = target - start;
+  const duration = 420;
+  const startTime = performance.now();
+
+  const countEl = document.getElementById('gateCount');
+  const dotsEl  = document.getElementById('countUpdating');
+
+  dotsEl.classList.add('show');
+  countEl.classList.add('flash');
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const val = Math.round(start + diff * eased);
+    countEl.textContent = formatCount(val);
+    if (progress < 1) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      currentDisplay = target;
+      countEl.classList.remove('flash');
+      dotsEl.classList.remove('show');
+    }
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function onFilterChange() {
+  const target = recalcCount();
+  animateCount(target);
+}
+
+// ── Filter checkbox toggle ──────────────────────────
+document.querySelectorAll('.filter-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    opt.querySelector('.filter-cb').classList.toggle('checked');
+    onFilterChange();
+  });
+});
+
+// ── Quick filter tags ───────────────────────────────
+function toggleTag(el) {
+  el.classList.toggle('active');
+  onFilterChange();
+}
+
+// ── Score range ─────────────────────────────────────
+function updateScoreRange() {
+  const val = parseInt(document.getElementById('scoreSliderMin').value);
+  scoreMin = val;
+  document.getElementById('scoreMin').textContent = val;
+  const fill = document.getElementById('scoreRangeFill');
+  fill.style.left = val + '%';
+  fill.style.width = (100 - val) + '%';
+  onFilterChange();
+}
+updateScoreRange();
+
+// ── Search bar input ────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', () => {
+  // Vary count slightly on text changes to feel responsive
+  const len = document.getElementById('searchInput').value.length;
+  onFilterChange();
+});
+</script>
+</body>
+</html>

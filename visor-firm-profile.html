@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rockbridge Family Partners — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A; --navy-2:#0F2538; --navy-3:#162F45;
+  --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
+  --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
+  --rule:#CAD8D0; --rule-2:#B0C4BA;
+  --red:#EF4444; --amber:#F59E0B;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.018;pointer-events:none;z-index:1000;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:0 56px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  background:rgba(10,28,42,0.94);
+  backdrop-filter:blur(20px);
+}
+.nav-i{max-width:1200px;margin:0 auto;height:56px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-hex{width:26px;height:26px;display:grid;place-items:center;border:1px solid rgba(45,189,116,0.4);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(26,122,74,0.15)}
+.logo-name{font-family:var(--serif);font-size:18px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:12px;color:rgba(255,255,255,0.4);text-decoration:none;letter-spacing:0.04em;transition:color .15s}
+.nav-links a:hover{color:rgba(255,255,255,.85)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-in{font-size:12px;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-in:hover{color:#fff}
+.nav-btn{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--green);color:#fff;padding:8px 20px;text-decoration:none;transition:background .2s;border:none}
+.nav-btn:hover{background:var(--green-2)}
+
+/* ── BREADCRUMB ──────────────────────────────────── */
+.breadcrumb{
+  position:fixed;top:56px;left:0;right:0;z-index:400;
+  background:rgba(10,28,42,0.88);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:0 56px;
+}
+.breadcrumb-i{
+  max-width:1200px;margin:0 auto;height:40px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.bc-trail{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.3)}
+.bc-trail a{color:rgba(255,255,255,.3);text-decoration:none;transition:color .15s}
+.bc-trail a:hover{color:rgba(255,255,255,.7)}
+.bc-sep{opacity:.3}
+.bc-current{color:rgba(255,255,255,.6)}
+.bc-actions{display:flex;align-items:center;gap:8px}
+.bc-compare{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--sans);font-size:11px;font-weight:600;
+  background:var(--green);color:#fff;
+  padding:7px 16px;border:none;cursor:pointer;
+  transition:background .2s;letter-spacing:.04em;
+}
+.bc-compare:hover{background:var(--green-2)}
+.bc-save{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(255,255,255,.4);
+  background:none;border:1px solid rgba(255,255,255,.1);
+  padding:7px 14px;cursor:pointer;font-family:var(--sans);
+  transition:all .15s;
+}
+.bc-save:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8)}
+
+/* ── PAGE SHELL ──────────────────────────────────── */
+.page{padding-top:96px;max-width:1200px;margin:0 auto;padding-left:56px;padding-right:56px;padding-bottom:120px}
+
+/* ── HERO BAND (dark) ────────────────────────────── */
+.firm-hero{
+  background:var(--navy);
+  margin:0 -56px;padding:48px 56px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:relative;overflow:hidden;
+}
+.firm-hero::before{
+  content:'';position:absolute;top:-40px;right:120px;
+  width:500px;height:400px;
+  background:radial-gradient(ellipse,rgba(26,122,74,.1) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+.firm-hero-top{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:32px;align-items:center;
+  padding-bottom:32px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+/* Logo mark */
+.firm-logo-mark{
+  width:72px;height:72px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  display:grid;place-items:center;flex-shrink:0;
+}
+.firm-logo-initials{
+  font-family:var(--serif);font-size:26px;font-weight:700;
+  color:rgba(255,255,255,.3);letter-spacing:.04em;
+}
+
+/* Name + meta */
+.firm-id{}
+.firm-name{
+  font-family:var(--serif);font-size:clamp(26px,3.2vw,40px);
+  font-weight:700;color:#fff;line-height:1.1;
+  letter-spacing:-.02em;margin-bottom:10px;
+}
+.firm-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.firm-badge{
+  font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 10px;border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.45);
+}
+.firm-badge.green{border-color:rgba(45,189,116,.35);color:var(--green-3);background:rgba(45,189,116,.07)}
+.firm-meta-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.firm-meta-item{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.35)}
+.firm-meta-item svg{opacity:.5;flex-shrink:0}
+
+/* Score ring area */
+.firm-score-block{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  padding-left:32px;
+  border-left:1px solid rgba(255,255,255,.07);
+}
+.firm-score-ring-wrap{position:relative;width:120px;height:120px}
+.firm-score-ring-wrap svg{transform:rotate(-90deg)}
+.firm-score-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.firm-score-num{
+  font-family:var(--serif);font-size:40px;font-weight:700;
+  line-height:1;letter-spacing:-.03em;color:#fff;
+}
+.firm-score-denom{font-size:11px;color:rgba(255,255,255,.25);margin-top:1px}
+.firm-score-label{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:8px;text-align:center}
+
+/* ── KEY STATS ROW ───────────────────────────────── */
+.firm-stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.firm-stat{
+  padding:20px 24px;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.firm-stat:last-child{border-right:none}
+.firm-stat-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:6px}
+.firm-stat-val{font-family:var(--serif);font-size:26px;font-weight:700;color:#fff;line-height:1;letter-spacing:-.02em}
+.firm-stat-val em{font-style:normal;color:var(--green-3);font-size:.75em}
+.firm-stat-sub{font-size:10px;color:rgba(255,255,255,.25);margin-top:4px;font-family:var(--mono)}
+
+/* ── STICKY SECTION NAV ──────────────────────────── */
+.section-nav{
+  background:var(--white);
+  border-bottom:1px solid var(--rule);
+  margin:0 -56px;
+  position:sticky;top:96px;z-index:300;
+}
+.section-nav-i{
+  max-width:1200px;margin:0 auto;padding:0 56px;
+  display:flex;align-items:center;gap:0;overflow-x:auto;
+}
+.snav-link{
+  font-size:12px;font-weight:500;color:var(--ink-3);
+  text-decoration:none;padding:14px 20px;white-space:nowrap;
+  border-bottom:2px solid transparent;
+  transition:all .15s;letter-spacing:.02em;
+}
+.snav-link:hover{color:var(--ink)}
+.snav-link.active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+
+/* ── CONTENT AREA ────────────────────────────────── */
+.profile-body{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:48px;
+  padding-top:48px;
+}
+
+/* ── SECTION BLOCKS ──────────────────────────────── */
+.section-block{margin-bottom:48px}
+.section-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:24px;padding-bottom:14px;
+  border-bottom:1px solid var(--rule);
+}
+.section-title{
+  font-family:var(--serif);font-size:22px;font-weight:700;
+  color:var(--ink);letter-spacing:-.01em;
+}
+.section-meta{font-size:11px;color:var(--ink-3);font-family:var(--mono)}
+
+/* ── VVS SCORE SECTION ───────────────────────────── */
+.vvs-overall{
+  display:grid;grid-template-columns:auto 1fr;
+  gap:32px;align-items:center;
+  padding:28px 32px;
+  background:#fff;border:1px solid var(--rule);
+  margin-bottom:20px;
+}
+.vvs-big-score{
+  font-family:var(--serif);font-size:72px;font-weight:700;
+  line-height:1;letter-spacing:-.04em;color:var(--green);
+}
+.vvs-big-label{font-size:11px;color:var(--ink-3);margin-top:6px;letter-spacing:.06em}
+.vvs-rank{
+  font-size:13px;color:var(--ink-3);line-height:1.7;
+  border-left:2px solid var(--green);padding-left:20px;
+}
+.vvs-rank strong{color:var(--ink);font-weight:600}
+
+/* Bar rows */
+.vvs-bars{display:flex;flex-direction:column;gap:0}
+.vvs-bar-row{
+  display:grid;grid-template-columns:160px 1fr 48px;
+  align-items:center;gap:16px;
+  padding:14px 0;
+  border-bottom:1px solid var(--rule);
+}
+.vvs-bar-row:last-child{border-bottom:none}
+.vvs-bar-label{font-size:12px;color:var(--ink-2);font-weight:500}
+.vvs-bar-track{height:4px;background:var(--rule);position:relative;overflow:visible}
+.vvs-bar-fill{height:100%;transition:width 1s ease;position:relative}
+.vvs-bar-fill::after{
+  content:'';position:absolute;right:-3px;top:-4px;
+  width:8px;height:12px;background:inherit;border-radius:1px;
+  opacity:.6;
+}
+.vvs-bar-val{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right}
+.vvs-bar-flag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#DC2626;padding:2px 6px;
+  border:1px solid rgba(220,38,38,.2);background:rgba(220,38,38,.05);
+  margin-left:8px;vertical-align:middle;
+}
+
+/* ── AUM CHART ───────────────────────────────────── */
+.aum-chart-wrap{
+  background:#fff;border:1px solid var(--rule);
+  overflow:hidden;
+}
+.aum-chart-head{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border-bottom:1px solid var(--rule);
+}
+.aum-stat{padding:18px 24px;border-right:1px solid var(--rule)}
+.aum-stat:last-child{border-right:none}
+.aum-stat-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.aum-stat-val{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);line-height:1}
+.aum-stat-delta{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;margin-top:4px;font-family:var(--mono);
+}
+.aum-stat-delta.up{color:var(--green)}
+.aum-stat-delta.down{color:var(--red)}
+.aum-chart-svg{padding:24px 32px 16px;height:180px}
+.aum-chart-svg svg{width:100%;height:100%;overflow:visible}
+.aum-chart-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 24px;border-top:1px solid var(--rule);
+  font-size:10px;color:var(--ink-3);
+}
+
+/* ── CLIENT SECTION ──────────────────────────────── */
+.client-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.client-card{
+  background:#fff;border:1px solid var(--rule);
+  padding:24px 28px;
+}
+.client-card-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.client-card-val{font-family:var(--serif);font-size:32px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:6px;letter-spacing:-.02em}
+.client-card-sub{font-size:12px;color:var(--ink-3);line-height:1.6}
+.client-bar-wrap{margin-top:16px}
+.client-bar-label{font-size:10px;color:var(--ink-3);margin-bottom:6px;display:flex;justify-content:space-between}
+.client-bar-track{height:3px;background:var(--rule)}
+.client-bar-fill{height:100%;background:var(--green)}
+
+/* Client type breakdown */
+.client-breakdown{
+  background:#fff;border:1px solid var(--rule);
+  margin-top:16px;
+}
+.client-breakdown-head{
+  padding:16px 24px;border-bottom:1px solid var(--rule);
+  font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;
+}
+.client-type-row{
+  display:grid;grid-template-columns:1fr auto 120px;
+  align-items:center;gap:16px;
+  padding:12px 24px;border-bottom:1px solid var(--rule);
+}
+.client-type-row:last-child{border-bottom:none}
+.client-type-name{font-size:13px;color:var(--ink-2)}
+.client-type-pct{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.client-type-bar{height:3px;background:var(--rule)}
+.client-type-fill{height:100%;background:var(--green-2);border-radius:1px}
+
+/* ── OWNERSHIP ───────────────────────────────────── */
+.ownership-card{
+  background:#fff;border:1px solid var(--rule);
+  margin-bottom:16px;
+}
+.ownership-row{
+  display:grid;grid-template-columns:200px 1fr auto;
+  align-items:center;gap:24px;padding:16px 24px;
+  border-bottom:1px solid var(--rule);
+}
+.ownership-row:last-child{border-bottom:none}
+.ownership-name{font-size:13px;font-weight:600;color:var(--ink)}
+.ownership-role{font-size:11px;color:var(--ink-3);margin-top:2px}
+.ownership-pct{font-family:var(--mono);font-size:14px;color:var(--ink-2);font-weight:500}
+.ownership-badge{
+  font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 8px;background:var(--green-pale);color:var(--green);
+  border:1px solid rgba(26,122,74,.15);
+}
+
+/* ── CONFLICT SECTION ────────────────────────────── */
+.conflict-summary{
+  display:grid;grid-template-columns:auto 1fr;
+  gap:24px;align-items:center;
+  padding:24px 28px;
+  background:#fff;border:1px solid var(--rule);
+  margin-bottom:16px;
+}
+.conflict-score-circle{
+  width:72px;height:72px;border-radius:50%;
+  display:grid;place-items:center;flex-shrink:0;
+  border:2px solid #DC2626;
+  background:rgba(220,38,38,.04);
+}
+.conflict-score-num{font-family:var(--serif);font-size:26px;font-weight:700;color:#DC2626;line-height:1}
+.conflict-score-sub{font-size:8px;color:#DC2626;opacity:.6;letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.conflict-summary-text{}
+.conflict-summary-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.conflict-summary-sub{font-size:12px;color:var(--ink-3);line-height:1.65}
+
+.conflict-items{display:flex;flex-direction:column;gap:10px}
+.conflict-item{
+  background:#fff;border:1px solid var(--rule);
+  border-left:3px solid var(--rule);
+  padding:16px 20px;
+  display:grid;grid-template-columns:auto 1fr;
+  gap:14px;align-items:start;
+}
+.conflict-item.flag{border-left-color:#DC2626}
+.conflict-item.clear{border-left-color:var(--green)}
+.conflict-item-icon{
+  width:28px;height:28px;border-radius:50%;
+  display:grid;place-items:center;flex-shrink:0;margin-top:1px;
+}
+.conflict-item.flag .conflict-item-icon{background:rgba(220,38,38,.08)}
+.conflict-item.clear .conflict-item-icon{background:rgba(45,189,116,.08)}
+.conflict-item-label{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.conflict-item-detail{font-size:11px;color:var(--ink-3);line-height:1.6}
+
+/* ── REGULATORY ──────────────────────────────────── */
+.reg-status-banner{
+  display:flex;align-items:center;gap:16px;
+  padding:20px 24px;
+  background:var(--green-pale);
+  border:1px solid rgba(26,122,74,.15);
+  margin-bottom:16px;
+}
+.reg-status-icon{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(26,122,74,.12);
+  display:grid;place-items:center;flex-shrink:0;
+}
+.reg-status-text{}
+.reg-status-label{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.reg-status-sub{font-size:12px;color:var(--ink-3)}
+.reg-table{background:#fff;border:1px solid var(--rule)}
+.reg-table-head{
+  display:grid;grid-template-columns:1fr 140px 100px;
+  padding:10px 20px;border-bottom:1px solid var(--rule);
+  background:var(--white);
+}
+.reg-table-head span{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.reg-row{
+  display:grid;grid-template-columns:1fr 140px 100px;
+  padding:14px 20px;border-bottom:1px solid var(--rule);
+  align-items:center;
+}
+.reg-row:last-child{border-bottom:none}
+.reg-row-event{font-size:13px;color:var(--ink-2)}
+.reg-row-date{font-size:12px;color:var(--ink-3);font-family:var(--mono)}
+.reg-row-status{display:flex;justify-content:flex-end}
+.reg-badge{
+  font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 8px;
+}
+.reg-badge.none{background:var(--green-pale);color:var(--green);border:1px solid rgba(26,122,74,.2)}
+.reg-badge.flag{background:rgba(220,38,38,.06);color:#DC2626;border:1px solid rgba(220,38,38,.2)}
+
+/* ── FEE SCHEDULE ────────────────────────────────── */
+.fee-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:16px;margin-bottom:16px;
+}
+.fee-card{background:#fff;border:1px solid var(--rule);padding:22px 26px}
+.fee-card-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.fee-card-val{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:4px;letter-spacing:-.02em}
+.fee-card-sub{font-size:12px;color:var(--ink-3);line-height:1.6}
+.fee-table{background:#fff;border:1px solid var(--rule)}
+.fee-table-head{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  padding:10px 20px;border-bottom:1px solid var(--rule);background:var(--white);
+}
+.fee-table-head span{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.fee-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  padding:14px 20px;border-bottom:1px solid var(--rule);align-items:center;
+}
+.fee-row:last-child{border-bottom:none}
+.fee-row span{font-size:13px;color:var(--ink-2)}
+.fee-row .fee-rate{font-family:var(--mono);font-size:13px;color:var(--ink);font-weight:500}
+.fee-row .fee-note{font-size:11px;color:var(--ink-3)}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar{
+  position:sticky;top:160px;
+  display:flex;flex-direction:column;gap:16px;
+  align-self:start;
+}
+.sidebar-card{
+  background:#fff;border:1px solid var(--rule);
+  overflow:hidden;
+}
+.sidebar-card-head{
+  padding:14px 20px;border-bottom:1px solid var(--rule);
+  font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.sidebar-card-body{padding:20px}
+
+/* CRD / Filing info */
+.sidebar-field{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid var(--rule);
+}
+.sidebar-field:last-child{border-bottom:none}
+.sidebar-field-label{font-size:11px;color:var(--ink-3)}
+.sidebar-field-val{font-family:var(--mono);font-size:11px;color:var(--ink-2);font-weight:500}
+
+/* CTA card */
+.sidebar-cta-card{
+  background:var(--navy);border:none;
+  border-top:2px solid var(--green-3);
+}
+.sidebar-cta-card .sidebar-card-body{padding:24px}
+.sidebar-cta-eyebrow{
+  font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--green-3);margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.sidebar-cta-h{
+  font-family:var(--serif);font-size:20px;font-weight:700;
+  color:#fff;line-height:1.25;margin-bottom:10px;
+}
+.sidebar-cta-sub{font-size:12px;color:rgba(255,255,255,.38);line-height:1.6;margin-bottom:20px}
+.sidebar-cta-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;background:var(--green);color:#fff;
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  padding:12px;text-decoration:none;border:none;cursor:pointer;
+  transition:background .2s;
+}
+.sidebar-cta-btn:hover{background:var(--green-2)}
+.sidebar-cta-trust{
+  font-size:10px;color:rgba(255,255,255,.2);
+  text-align:center;margin-top:10px;line-height:1.5;
+}
+
+/* Similar firms */
+.similar-firm{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--rule);
+  text-decoration:none;
+  transition:opacity .15s;
+}
+.similar-firm:last-child{border-bottom:none}
+.similar-firm:hover{opacity:.7}
+.similar-initials{
+  width:32px;height:32px;flex-shrink:0;
+  background:var(--white);border:1px solid var(--rule);
+  display:grid;place-items:center;
+  font-family:var(--serif);font-size:12px;font-weight:700;color:var(--ink-3);
+}
+.similar-info{flex:1;min-width:0}
+.similar-name{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.similar-meta{font-size:10px;color:var(--ink-3);margin-top:1px}
+.similar-score{
+  font-family:var(--serif);font-size:18px;font-weight:700;
+  flex-shrink:0;
+}
+
+/* ── VVS TOOLTIP ─────────────────────────────────── */
+.vvs-info{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--ink-3);cursor:default;
+  margin-left:5px;vertical-align:middle;opacity:.5;
+  position:relative;
+}
+.vvs-info:hover{opacity:1}
+.vvs-info:hover::after{
+  content:attr(title);
+  position:absolute;left:50%;bottom:calc(100% + 6px);
+  transform:translateX(-50%);
+  background:var(--ink);color:#fff;
+  font-size:11px;line-height:1.5;padding:8px 12px;
+  width:220px;white-space:normal;
+  font-family:var(--sans);font-weight:400;letter-spacing:0;
+  pointer-events:none;z-index:20;
+  border-top:2px solid var(--green-3);
+}
+.vvs-bar-label{display:flex;align-items:center}
+
+/* ── BAR CHARTS (AUM + Clients) ─────────────────── */
+.bar-chart-wrap{padding:28px 32px 20px}
+.bar-chart-title{
+  font-size:11px;font-weight:600;color:var(--ink-2);
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px;
+}
+.bar-chart-range{color:var(--ink-3);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px}
+.bar-chart{
+  display:flex;align-items:flex-end;gap:16px;height:160px;
+}
+.bar-col{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  height:100%;gap:0;
+}
+.bar-label-top{
+  font-family:var(--mono);font-size:10px;color:var(--ink-3);
+  margin-bottom:6px;white-space:nowrap;
+}
+.bar-outer{
+  flex:1;width:100%;display:flex;align-items:flex-end;
+  background:rgba(0,0,0,.04);
+}
+.bar-fill{
+  width:100%;
+  transform-origin:bottom;
+  transform:scaleY(0);
+  transition:transform .7s cubic-bezier(.25,.46,.45,.94);
+  border-radius:1px 1px 0 0;
+}
+.bar-fill.revealed{transform:scaleY(1)}
+.bar-label-bot{
+  font-family:var(--mono);font-size:10px;color:var(--ink-3);
+  margin-top:8px;
+}
+.bar-delta{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  margin-top:2px;
+}
+
+/* ── NEWS FEED ───────────────────────────────────── */
+.news-filter-row{
+  display:flex;gap:6px;margin-bottom:16px;
+}
+.news-filter{
+  font-family:var(--sans);font-size:11px;font-weight:500;
+  padding:6px 14px;background:none;
+  border:1px solid var(--rule);color:var(--ink-3);
+  cursor:pointer;transition:all .15s;
+}
+.news-filter:hover{border-color:var(--ink-3);color:var(--ink)}
+.news-filter.active{
+  background:var(--ink);color:#fff;border-color:var(--ink);
+}
+
+.news-list{display:flex;flex-direction:column;gap:2px}
+
+.news-item{
+  display:grid;
+  grid-template-columns:80px 1fr auto;
+  gap:16px;align-items:start;
+  padding:16px 20px;
+  background:#fff;border:1px solid var(--rule);
+  transition:border-color .15s;
+}
+.news-item:hover{border-color:var(--rule-2)}
+.news-item.hidden{display:none}
+
+.news-item-type{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 8px;border:1px solid;
+  white-space:nowrap;margin-top:2px;
+}
+.news-item-type.filing{color:var(--green);border-color:rgba(26,122,74,.25);background:var(--green-pale)}
+.news-item-type.news{color:#6B7FCC;border-color:rgba(107,127,204,.25);background:rgba(107,127,204,.06)}
+.news-item-type.ownership{color:var(--amber);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.06)}
+
+.news-item-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px;line-height:1.4}
+.news-item-detail{font-size:12px;color:var(--ink-3);line-height:1.65}
+
+.news-item-meta{text-align:right;flex-shrink:0}
+.news-item-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-bottom:6px}
+.news-item-relevance{
+  display:inline-block;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 8px;border:1px solid;
+}
+.news-item-relevance.low{color:var(--ink-3);border-color:var(--rule)}
+.news-item-relevance.medium{color:#B45309;border-color:rgba(180,83,9,.2);background:rgba(245,158,11,.06)}
+.news-item-relevance.high{color:#DC2626;border-color:rgba(220,38,38,.2);background:rgba(220,38,38,.05)}
+
+/* ── FEE CALCULATOR ──────────────────────────────── */
+.fee-calc{
+  background:#fff;border:1px solid var(--rule);
+  border-top:2px solid var(--green);
+  margin-top:4px;
+}
+.fee-calc-head{
+  padding:18px 24px;border-bottom:1px solid var(--rule);
+}
+.fee-calc-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.fee-calc-sub{font-size:11px;color:var(--ink-3)}
+.fee-calc-body{padding:24px;display:flex;flex-direction:column;gap:20px}
+
+.fee-calc-input-wrap{
+  display:flex;align-items:center;
+  border:1px solid var(--rule);background:var(--white);
+}
+.fee-calc-dollar{
+  padding:0 14px;font-family:var(--serif);font-size:20px;
+  color:var(--ink-3);border-right:1px solid var(--rule);
+  line-height:46px;flex-shrink:0;
+}
+.fee-calc-input{
+  flex:1;border:none;background:none;outline:none;
+  font-family:var(--mono);font-size:15px;color:var(--ink);
+  padding:10px 16px;
+}
+.fee-calc-input::placeholder{color:var(--rule-2);font-size:13px;font-family:var(--sans)}
+
+.fee-calc-slider-wrap{margin-top:-8px}
+.fee-calc-slider{
+  width:100%;-webkit-appearance:none;appearance:none;
+  height:2px;background:var(--rule);outline:none;margin-bottom:8px;
+}
+.fee-calc-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  background:var(--green);border-radius:50%;
+  border:2px solid #fff;box-shadow:0 0 0 1px var(--green);cursor:pointer;
+}
+.fee-calc-slider-labels{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;color:var(--ink-3);
+}
+
+/* Top 3 stats */
+.fee-calc-top-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border:1px solid var(--rule);
+}
+.fee-calc-top-stat{
+  padding:16px 20px;border-right:1px solid var(--rule);
+}
+.fee-calc-top-stat:last-child{border-right:none}
+.fee-calc-top-stat.green{background:var(--green-pale)}
+.fee-calc-top-label{font-size:9px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.fee-calc-top-val{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:3px;letter-spacing:-.02em}
+.fee-calc-top-stat.green .fee-calc-top-val{color:var(--green)}
+.fee-calc-top-sub{font-size:11px;color:var(--ink-3);font-family:var(--mono)}
+
+/* Industry comparison track */
+.fee-comp-block{
+  border:1px solid var(--rule);padding:18px 20px;
+  background:var(--white);
+}
+.fee-comp-title{
+  font-size:12px;font-weight:600;color:var(--ink);margin-bottom:16px;
+}
+.fee-comp-meta{font-weight:400;color:var(--ink-3);font-size:11px;margin-left:6px}
+.fee-comp-track-wrap{margin-bottom:8px}
+.fee-comp-track{
+  height:8px;background:var(--rule);position:relative;border-radius:4px;overflow:visible;
+}
+.fee-comp-track-fill{
+  position:absolute;inset:0;
+  background:linear-gradient(to right, var(--green-pale) 0%, rgba(245,158,11,.15) 50%, rgba(239,68,68,.12) 100%);
+  border-radius:4px;
+}
+.fee-comp-dot{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  width:14px;height:14px;border-radius:50%;
+  background:var(--amber);border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  transition:left .3s ease;
+}
+.fee-comp-labels{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;color:var(--ink-3);
+  margin-bottom:10px;
+}
+.fee-comp-note{font-size:11px;color:var(--ink-3);line-height:1.6}
+
+/* Portfolio table */
+.fee-portfolio-block{
+  border:1px solid var(--rule);overflow:hidden;
+}
+.fee-portfolio-title{
+  font-size:12px;font-weight:600;color:var(--ink);
+  padding:14px 20px 4px;
+}
+.fee-portfolio-sub{
+  font-size:11px;color:var(--ink-3);font-style:italic;
+  padding:0 20px 12px;border-bottom:1px solid var(--rule);
+}
+.fee-portfolio-table{
+  width:100%;border-collapse:collapse;
+  font-size:13px;
+}
+.fee-portfolio-table th{
+  padding:9px 20px;text-align:left;
+  font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);background:var(--white);
+  border-bottom:1px solid var(--rule);
+}
+.fee-portfolio-table td{
+  padding:13px 20px;color:var(--ink-2);
+  border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;
+}
+.fee-portfolio-table tbody tr:last-child td{border-bottom:none}
+.fee-portfolio-table td:first-child{font-family:var(--sans);font-size:13px;color:var(--ink);font-weight:500}
+.red-col{color:#DC2626 !important;text-align:right}
+.fee-portfolio-table th.red-col{color:var(--ink-3) !important;text-align:right}
+
+.fee-calc-disclaimer{
+  font-size:10px;color:var(--ink-3);line-height:1.6;font-style:italic;
+  border-top:1px solid var(--rule);padding-top:16px;
+}
+
+/* ── REVEAL ANIMATIONS ───────────────────────────── */
+.r{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.r.in{opacity:1;transform:none}
+.r.d1{transition-delay:.06s}.r.d2{transition-delay:.12s}.r.d3{transition-delay:.18s}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-hex"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="rgba(45,189,116,0.8)" stroke-width="1.2" stroke-linecap="round"><polygon points="6,1 11,3.5 11,8.5 6,11 1,8.5 1,3.5"/></svg></div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="#">Compare</a></li>
+      <li><a href="#">Negotiate</a></li>
+      <li><a href="#">Directory</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="#" class="nav-in">Log in</a>
+      <a href="#" class="nav-btn">Get Access</a>
+    </div>
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb">
+  <div class="breadcrumb-i">
+    <div class="bc-trail">
+      <a href="visor-search.html">Search</a>
+      <span class="bc-sep">›</span>
+      <a href="#">New York · Fee-only · RIA</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">Rockbridge Family Partners</span>
+    </div>
+    <div class="bc-actions">
+      <button class="bc-save">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 11 11"><path d="M5.5 1.5 L5.5 9.5 M1.5 5.5 L9.5 5.5"/></svg>
+        Save
+      </button>
+      <button class="bc-compare">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 11 11"><rect x="1" y="4" width="3" height="6"/><rect x="4.5" y="2" width="3" height="8"/><rect x="8" y="5" width="3" height="5"/></svg>
+        Add to Compare
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- FIRM HERO (dark band) -->
+  <div class="firm-hero">
+    <div class="firm-hero-top">
+
+      <!-- Logo mark -->
+      <div class="firm-logo-mark">
+        <div class="firm-logo-initials">RF</div>
+      </div>
+
+      <!-- Identity -->
+      <div class="firm-id">
+        <h1 class="firm-name">Rockbridge Family Partners</h1>
+        <div class="firm-badges">
+          <span class="firm-badge green">Fee-only</span>
+          <span class="firm-badge green">Fiduciary</span>
+          <span class="firm-badge">Multi-family office</span>
+          <span class="firm-badge">RIA · Independent</span>
+        </div>
+        <div class="firm-meta-row">
+          <span class="firm-meta-item">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 11 11"><circle cx="5.5" cy="4.5" r="2"/><path d="M1 10c0-2.5 2-4.5 4.5-4.5S10 7.5 10 10"/></svg>
+            New York, NY
+          </span>
+          <span class="firm-meta-item">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="4.5"/><path d="M1 5.5h9M5.5 1c-1.4 1.5-2.2 3-2.2 4.5s.8 3 2.2 4.5M5.5 1c1.4 1.5 2.2 3 2.2 4.5S6.9 8.5 5.5 10"/></svg>
+            <a href="#" style="color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s" onmouseover="this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.color='rgba(255,255,255,.35)'">rockbridgefp.com</a>
+          </span>
+          <span class="firm-meta-item">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 11 11"><path d="M5.5 1v1M5.5 9v1M1 5.5h1M9 5.5h1"/><circle cx="5.5" cy="5.5" r="2.5"/></svg>
+            CRD #128441
+          </span>
+        </div>
+      </div>
+
+      <!-- Score ring -->
+      <div class="firm-score-block">
+        <div class="firm-score-ring-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#2DBD74" stroke-width="6"
+              stroke-dasharray="314" stroke-dashoffset="28" stroke-linecap="round"
+              id="scoreRing"/>
+          </svg>
+          <div class="firm-score-center">
+            <div class="firm-score-num">91</div>
+            <div class="firm-score-denom">/100</div>
+          </div>
+        </div>
+        <div class="firm-score-label">Visor Score™</div>
+      </div>
+
+    </div>
+
+    <!-- Stats row -->
+    <div class="firm-stats-row" style="grid-template-columns:repeat(5,1fr)">
+      <div class="firm-stat">
+        <div class="firm-stat-label">Assets Under Management</div>
+        <div class="firm-stat-val">$2.1<em>B</em></div>
+        <div class="firm-stat-sub">↑ 14.2% YoY</div>
+      </div>
+      <div class="firm-stat">
+        <div class="firm-stat-label">Avg. Client Size</div>
+        <div class="firm-stat-val">$9.8<em>M</em></div>
+        <div class="firm-stat-sub">214 total clients</div>
+      </div>
+      <div class="firm-stat">
+        <div class="firm-stat-label">Avg. Account Size</div>
+        <div class="firm-stat-val">$4.2<em>M</em></div>
+        <div class="firm-stat-sub">Per managed account</div>
+      </div>
+      <div class="firm-stat">
+        <div class="firm-stat-label">Minimum Account Size</div>
+        <div class="firm-stat-val">$5<em>M</em></div>
+        <div class="firm-stat-sub">High net worth focus</div>
+      </div>
+      <div class="firm-stat">
+        <div class="firm-stat-label">Employees</div>
+        <div class="firm-stat-val">38</div>
+        <div class="firm-stat-sub">12 advisory staff</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION NAV -->
+  <div class="section-nav">
+    <div class="section-nav-i">
+      <a href="#vvs" class="snav-link active">Visor Score™</a>
+      <a href="#fees" class="snav-link">Fee Schedule</a>
+      <a href="#aum" class="snav-link">AUM & Growth</a>
+      <a href="#clients" class="snav-link">Clients</a>
+      <a href="#regulatory" class="snav-link">Regulatory</a>
+      <a href="#news" class="snav-link">News</a>
+      <a href="#personnel" class="snav-link">Key Personnel</a>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="profile-body">
+
+    <!-- MAIN COLUMN -->
+    <div class="main-col">
+
+      <!-- ── VISOR SCORE ── -->
+      <div class="section-block r" id="vvs">
+        <div class="section-head">
+          <span class="section-title">Visor Value Score™</span>
+          <span class="section-meta">Updated Feb 2025 · Based on Form ADV filing</span>
+        </div>
+
+        <div class="vvs-overall">
+          <div>
+            <div class="vvs-big-score">91</div>
+            <div class="vvs-big-label">out of 100</div>
+          </div>
+          <div class="vvs-rank">
+            Rockbridge ranks in the <strong>top 4%</strong> of all registered advisors nationally,
+            and <strong>#6 of 312</strong> fee-only multi-family offices in the New York metro area.
+            Score is driven by exceptional fee transparency and a clean conflict record.
+          </div>
+        </div>
+
+        <div class="vvs-bars">
+          <div class="vvs-bar-row r d1">
+            <div class="vvs-bar-label">Disclosure Quality
+              <span class="vvs-info" title="Measures completeness and clarity of ADV filings, including brochure quality and update frequency.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:94%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">94</div>
+          </div>
+          <div class="vvs-bar-row r d2">
+            <div class="vvs-bar-label">Fee Transparency
+              <span class="vvs-info" title="Assesses how explicitly the firm discloses its fee structure, tiers, and any additional costs.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:96%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">96</div>
+          </div>
+          <div class="vvs-bar-row r d3">
+            <div class="vvs-bar-label">Fee Competitiveness
+              <span class="vvs-info" title="Benchmarks the firm's stated fees against peers of similar AUM and client type.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:78%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">78</div>
+          </div>
+          <div class="vvs-bar-row r d1">
+            <div class="vvs-bar-label">Conflict-Free
+              <span class="vvs-info" title="Evaluates disclosed conflicts of interest including referral arrangements, proprietary products, and third-party compensation.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:84%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">84</div>
+          </div>
+          <div class="vvs-bar-row r d2">
+            <div class="vvs-bar-label">AUM Growth
+              <span class="vvs-info" title="Measures AUM growth rate over 3 and 5 years relative to peer median.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:88%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">88</div>
+          </div>
+          <div class="vvs-bar-row r d3">
+            <div class="vvs-bar-label">Client Growth
+              <span class="vvs-info" title="Tracks net new client additions year-over-year as a signal of firm health and demand.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:82%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">82</div>
+          </div>
+          <div class="vvs-bar-row r d1">
+            <div class="vvs-bar-label">Advisor Bandwidth
+              <span class="vvs-info" title="Ratio of clients to advisory staff. Lower ratios indicate more attentive service capacity.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:91%;background:#2DBD74"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#2DBD74">91</div>
+          </div>
+          <div class="vvs-bar-row r d2">
+            <div class="vvs-bar-label">Derivatives Risk
+              <span class="vvs-info" title="Flags use of complex instruments like options, swaps, or leverage in client portfolios, which may indicate higher risk profiles.">ⓘ</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:73%;background:#F59E0B"></div>
+            </div>
+            <div class="vvs-bar-val" style="color:#F59E0B">73</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FEE SCHEDULE & CALCULATOR ── -->
+      <div class="section-block r" id="fees">
+        <div class="section-head">
+          <span class="section-title">Fee Schedule</span>
+          <span class="section-meta">Disclosed in ADV Part 2A · Item 5</span>
+        </div>
+
+        <div class="fee-grid">
+          <div class="fee-card">
+            <div class="fee-card-label">Fee Structure</div>
+            <div class="fee-card-val">AUM-based</div>
+            <div class="fee-card-sub">Annual percentage of assets under management. No performance fees. No hourly or flat-fee arrangements disclosed.</div>
+          </div>
+          <div class="fee-card">
+            <div class="fee-card-label">Minimum Annual Fee</div>
+            <div class="fee-card-val">$75K</div>
+            <div class="fee-card-sub">Effective minimum given $5M account minimum at ~1.5% base rate</div>
+          </div>
+        </div>
+
+        <div class="fee-table" style="margin-bottom:20px">
+          <div class="fee-table-head">
+            <span>AUM tier</span>
+            <span>Annual rate</span>
+            <span>Notes</span>
+          </div>
+          <div class="fee-row">
+            <span>First $5M</span>
+            <span class="fee-rate">1.50%</span>
+            <span class="fee-note">Minimum account size</span>
+          </div>
+          <div class="fee-row">
+            <span>$5M – $10M</span>
+            <span class="fee-rate">1.25%</span>
+            <span class="fee-note"></span>
+          </div>
+          <div class="fee-row">
+            <span>$10M – $25M</span>
+            <span class="fee-rate">1.00%</span>
+            <span class="fee-note"></span>
+          </div>
+          <div class="fee-row">
+            <span>$25M – $50M</span>
+            <span class="fee-rate">0.75%</span>
+            <span class="fee-note">Negotiable above $25M</span>
+          </div>
+          <div class="fee-row">
+            <span>Above $50M</span>
+            <span class="fee-rate">Negotiated</span>
+            <span class="fee-note">Case by case</span>
+          </div>
+        </div>
+
+        <!-- Fee Calculator -->
+        <div class="fee-calc">
+          <div class="fee-calc-head">
+            <div class="fee-calc-title">Fee Calculator</div>
+            <div class="fee-calc-sub">Enter your investable assets to estimate annual fees at this firm</div>
+          </div>
+          <div class="fee-calc-body">
+
+            <!-- Input -->
+            <div class="fee-calc-input-wrap">
+              <span class="fee-calc-dollar">$</span>
+              <input type="text" class="fee-calc-input" id="calcInput" placeholder="Enter investable assets" oninput="calcFees()" />
+            </div>
+            <div class="fee-calc-slider-wrap">
+              <input type="range" class="fee-calc-slider" id="calcSlider" min="5000000" max="50000000" step="500000" value="10000000" oninput="syncSlider()"/>
+              <div class="fee-calc-slider-labels">
+                <span>$5M</span><span>$15M</span><span>$25M</span><span>$35M</span><span>$50M+</span>
+              </div>
+            </div>
+
+            <!-- Est. fee + quarterly -->
+            <div class="fee-calc-top-stats">
+              <div class="fee-calc-top-stat green">
+                <div class="fee-calc-top-label">Est. Annual Fee</div>
+                <div class="fee-calc-top-val" id="calcAnnual">$112,500</div>
+                <div class="fee-calc-top-sub" id="calcRate">1.125% blended rate</div>
+              </div>
+              <div class="fee-calc-top-stat">
+                <div class="fee-calc-top-label">Quarterly Cost</div>
+                <div class="fee-calc-top-val" id="calcQuarterly">$28,125</div>
+                <div class="fee-calc-top-sub">per quarter</div>
+              </div>
+              <div class="fee-calc-top-stat">
+                <div class="fee-calc-top-label">vs. Median Peer</div>
+                <div class="fee-calc-top-val" id="calcVsPeer" style="color:var(--amber)">+$8,200</div>
+                <div class="fee-calc-top-sub">annual difference</div>
+              </div>
+            </div>
+
+            <!-- Industry comparison track -->
+            <div class="fee-comp-block">
+              <div class="fee-comp-title">Industry Comparison <span class="fee-comp-meta" id="compMeta">closest to $10M · 312 firms</span></div>
+              <div class="fee-comp-track-wrap">
+                <div class="fee-comp-track">
+                  <div class="fee-comp-track-fill"></div>
+                  <div class="fee-comp-dot" id="compDot"></div>
+                </div>
+              </div>
+              <div class="fee-comp-labels">
+                <span>P25: 0.85%</span>
+                <span>Median: 1.00%</span>
+                <span>P75: 1.35%</span>
+              </div>
+              <div class="fee-comp-note" id="compNote">This firm's blended rate is above the peer median at this asset level.</div>
+            </div>
+
+            <!-- Portfolio value net of fees -->
+            <div class="fee-portfolio-block">
+              <div class="fee-portfolio-title">Portfolio Value Net of Fees</div>
+              <div class="fee-portfolio-sub">Assumes 7% annual return</div>
+              <table class="fee-portfolio-table">
+                <thead>
+                  <tr>
+                    <th>Horizon</th>
+                    <th>No Fees</th>
+                    <th>With Fees</th>
+                    <th class="red-col">Total Fees Paid</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>5 years</td>
+                    <td id="p5nf">—</td>
+                    <td id="p5wf">—</td>
+                    <td class="red-col" id="p5fees">—</td>
+                  </tr>
+                  <tr>
+                    <td>10 years</td>
+                    <td id="p10nf">—</td>
+                    <td id="p10wf">—</td>
+                    <td class="red-col" id="p10fees">—</td>
+                  </tr>
+                  <tr>
+                    <td>20 years</td>
+                    <td id="p20nf">—</td>
+                    <td id="p20wf">—</td>
+                    <td class="red-col" id="p20fees">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="fee-calc-disclaimer">Estimates based on disclosed fee tiers. Actual fees are negotiated and may differ. Peer comparison uses national median for fee-only MFOs at equivalent AUM.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── AUM & GROWTH ── -->
+      <div class="section-block r" id="aum">
+        <div class="section-head">
+          <span class="section-title">AUM & Client Growth</span>
+          <span class="section-meta">Annual · SEC ADV filings</span>
+        </div>
+
+        <div class="aum-chart-wrap">
+          <div class="aum-chart-head">
+            <div class="aum-stat">
+              <div class="aum-stat-label">Current AUM</div>
+              <div class="aum-stat-val">$2.1B</div>
+              <div class="aum-stat-delta up">↑ +14.2% vs prior year</div>
+            </div>
+            <div class="aum-stat">
+              <div class="aum-stat-label">5-Year Growth</div>
+              <div class="aum-stat-val">+$890M</div>
+              <div class="aum-stat-delta up">↑ +73% since 2020</div>
+            </div>
+            <div class="aum-stat">
+              <div class="aum-stat-label">Avg. Annual Growth</div>
+              <div class="aum-stat-val">11.6%</div>
+              <div class="aum-stat-delta up">↑ Above national median</div>
+            </div>
+          </div>
+
+          <!-- AUM Bar chart -->
+          <div class="bar-chart-wrap">
+            <div class="bar-chart-title">AUM Growth <span class="bar-chart-range">Annual (last 5 years)</span></div>
+            <div class="bar-chart" id="aumChart">
+              <div class="bar-col">
+                <div class="bar-label-top">$1.2B</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:42%;background:var(--green-2)"></div></div>
+                <div class="bar-label-bot">2020</div>
+                <div class="bar-delta" style="color:var(--green)">+8%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">$1.4B</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:52%;background:var(--green-2)"></div></div>
+                <div class="bar-label-bot">2021</div>
+                <div class="bar-delta" style="color:var(--green)">+17%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">$1.6B</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:62%;background:var(--green-2)"></div></div>
+                <div class="bar-label-bot">2022</div>
+                <div class="bar-delta" style="color:var(--green)">+14%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">$1.84B</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:76%;background:var(--green-2)"></div></div>
+                <div class="bar-label-bot">2023</div>
+                <div class="bar-delta" style="color:var(--green)">+15%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">$2.1B</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:100%;background:var(--green)"></div></div>
+                <div class="bar-label-bot">2024</div>
+                <div class="bar-delta" style="color:var(--green)">+14%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Client Growth Bar chart -->
+          <div class="bar-chart-wrap" style="border-top:1px solid var(--rule)">
+            <div class="bar-chart-title">Client Growth <span class="bar-chart-range">Annual (last 5 years)</span></div>
+            <div class="bar-chart" id="clientChart">
+              <div class="bar-col">
+                <div class="bar-label-top">168</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:58%;background:#4B8ECC"></div></div>
+                <div class="bar-label-bot">2020</div>
+                <div class="bar-delta" style="color:#4B8ECC">+6%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">178</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:65%;background:#4B8ECC"></div></div>
+                <div class="bar-label-bot">2021</div>
+                <div class="bar-delta" style="color:#4B8ECC">+6%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">188</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:72%;background:#4B8ECC"></div></div>
+                <div class="bar-label-bot">2022</div>
+                <div class="bar-delta" style="color:#4B8ECC">+6%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">198</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:84%;background:#4B8ECC"></div></div>
+                <div class="bar-label-bot">2023</div>
+                <div class="bar-delta" style="color:#4B8ECC">+5%</div>
+              </div>
+              <div class="bar-col">
+                <div class="bar-label-top">214</div>
+                <div class="bar-outer"><div class="bar-fill" style="height:100%;background:#2E6DA8"></div></div>
+                <div class="bar-label-bot">2024</div>
+                <div class="bar-delta" style="color:#4B8ECC">+8%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="aum-chart-footer">
+            <span>Source: SEC Form ADV filings · Reported annually</span>
+            <span>Discretionary AUM only</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CLIENTS ── -->
+      <div class="section-block r" id="clients">
+        <div class="section-head">
+          <span class="section-title">Client Count & Retention</span>
+          <span class="section-meta">As of Feb 2025 filing</span>
+        </div>
+
+        <div class="client-grid">
+          <div class="client-card">
+            <div class="client-card-label">Total Clients</div>
+            <div class="client-card-val">214</div>
+            <div class="client-card-sub">Up from 198 in prior year — net 16 new clients</div>
+            <div class="client-bar-wrap">
+              <div class="client-bar-label">
+                <span>Estimated retention</span><span style="color:var(--green);font-weight:600">~96%</span>
+              </div>
+              <div class="client-bar-track"><div class="client-bar-fill" style="width:96%"></div></div>
+            </div>
+          </div>
+          <div class="client-card">
+            <div class="client-card-label">Avg. Client Relationship</div>
+            <div class="client-card-val">8.4 <span style="font-size:16px;color:var(--ink-3)">yrs</span></div>
+            <div class="client-card-sub">Long-tenure relationships indicate strong satisfaction and low churn</div>
+          </div>
+        </div>
+
+        <div class="client-breakdown">
+          <div class="client-breakdown-head">Client Type Breakdown</div>
+          <div class="client-type-row">
+            <div class="client-type-name">High net worth individuals</div>
+            <div class="client-type-pct">68%</div>
+            <div class="client-type-bar"><div class="client-type-fill" style="width:68%"></div></div>
+          </div>
+          <div class="client-type-row">
+            <div class="client-type-name">Families / family offices</div>
+            <div class="client-type-pct">22%</div>
+            <div class="client-type-bar"><div class="client-type-fill" style="width:22%"></div></div>
+          </div>
+          <div class="client-type-row">
+            <div class="client-type-name">Foundations & endowments</div>
+            <div class="client-type-pct">7%</div>
+            <div class="client-type-bar"><div class="client-type-fill" style="width:7%"></div></div>
+          </div>
+          <div class="client-type-row">
+            <div class="client-type-name">Other institutional</div>
+            <div class="client-type-pct">3%</div>
+            <div class="client-type-bar"><div class="client-type-fill" style="width:3%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REGULATORY ── -->
+      <div class="section-block r" id="regulatory">
+        <div class="section-head">
+          <span class="section-title">Regulatory History</span>
+          <span class="section-meta">IAPD · SEC EDGAR · FINRA BrokerCheck</span>
+        </div>
+
+        <div class="reg-status-banner">
+          <div class="reg-status-icon">
+            <svg width="18" height="18" fill="none" stroke="#1A7A4A" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 18 18"><polyline points="3,9 7,13 15,5"/></svg>
+          </div>
+          <div class="reg-status-text">
+            <div class="reg-status-label">No disciplinary events on record</div>
+            <div class="reg-status-sub">Clean history across all checked sources. No SEC enforcement, state sanctions, or FINRA actions found.</div>
+          </div>
+        </div>
+
+        <div class="reg-table">
+          <div class="reg-table-head">
+            <span>Event type</span>
+            <span>Date checked</span>
+            <span style="text-align:right">Status</span>
+          </div>
+          <div class="reg-row">
+            <div class="reg-row-event">SEC enforcement actions</div>
+            <div class="reg-row-date">Feb 2025</div>
+            <div class="reg-row-status"><span class="reg-badge none">None found</span></div>
+          </div>
+          <div class="reg-row">
+            <div class="reg-row-event">State regulatory sanctions</div>
+            <div class="reg-row-date">Feb 2025</div>
+            <div class="reg-row-status"><span class="reg-badge none">None found</span></div>
+          </div>
+          <div class="reg-row">
+            <div class="reg-row-event">FINRA disciplinary history</div>
+            <div class="reg-row-date">Feb 2025</div>
+            <div class="reg-row-status"><span class="reg-badge none">None found</span></div>
+          </div>
+          <div class="reg-row">
+            <div class="reg-row-event">Civil judicial proceedings</div>
+            <div class="reg-row-date">Feb 2025</div>
+            <div class="reg-row-status"><span class="reg-badge none">None found</span></div>
+          </div>
+          <div class="reg-row">
+            <div class="reg-row-event">Bankruptcy disclosures</div>
+            <div class="reg-row-date">Feb 2025</div>
+            <div class="reg-row-status"><span class="reg-badge none">None found</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVITY & NEWS ── -->
+      <div class="section-block r" id="news">
+        <div class="section-head">
+          <span class="section-title">Activity & News</span>
+          <span class="section-meta">SEC filings · Industry news · <span id="newsCount">12</span> items</span>
+        </div>
+
+        <div class="news-filter-row">
+          <button class="news-filter active" onclick="filterNews(this,'all')">All</button>
+          <button class="news-filter" onclick="filterNews(this,'filing')">SEC Filings</button>
+          <button class="news-filter" onclick="filterNews(this,'news')">News</button>
+          <button class="news-filter" onclick="filterNews(this,'ownership')">Ownership</button>
+        </div>
+
+        <div class="news-list" id="newsList">
+
+          <div class="news-item" data-type="filing">
+            <div class="news-item-type filing">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx=".5"/><line x1="1" y1="4" x2="9" y2="4"/></svg>
+              Filing
+            </div>
+            <div class="news-item-body">
+              <div class="news-item-title">Annual ADV amendment filed with the SEC</div>
+              <div class="news-item-detail">Form ADV Part 1 and Part 2A updated. AUM reported at $2.1B. No material changes to conflict disclosures.</div>
+            </div>
+            <div class="news-item-meta">
+              <div class="news-item-date">Feb 14, 2025</div>
+              <div class="news-item-relevance low">Low</div>
+            </div>
+          </div>
+
+          <div class="news-item" data-type="news">
+            <div class="news-item-type news">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/><line x1="5" y1="3" x2="5" y2="5.5"/><circle cx="5" cy="7" r=".5" fill="currentColor"/></svg>
+              News
+            </div>
+            <div class="news-item-body">
+              <div class="news-item-title">Industry: SEC proposes new conflict disclosure requirements for RIAs</div>
+              <div class="news-item-detail">Proposed rulemaking would require more granular disclosure of compensation arrangements — likely to affect how fee-based advisors document client agreements.</div>
+            </div>
+            <div class="news-item-meta">
+              <div class="news-item-date">Jan 28, 2025</div>
+              <div class="news-item-relevance medium">Medium</div>
+            </div>
+          </div>
+
+          <div class="news-item" data-type="ownership">
+            <div class="news-item-type ownership">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><circle cx="5" cy="3" r="1.5"/><path d="M1 9c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg>
+              Ownership
+            </div>
+            <div class="news-item-body">
+              <div class="news-item-title">Schedule A updated — David A. Park ownership stake increased to 18.4%</div>
+              <div class="news-item-detail">ADV Schedule A reflects a revised ownership structure following an internal equity redistribution. No change in control disclosed.</div>
+            </div>
+            <div class="news-item-meta">
+              <div class="news-item-date">Feb 14, 2025</div>
+              <div class="news-item-relevance high">High</div>
+            </div>
+          </div>
+
+          <div class="news-item" data-type="news">
+            <div class="news-item-type news">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/><line x1="5" y1="3" x2="5" y2="5.5"/><circle cx="5" cy="7" r=".5" fill="currentColor"/></svg>
+              News
+            </div>
+            <div class="news-item-body">
+              <div class="news-item-title">Fee compression continues across multi-family office segment — Barron's</div>
+              <div class="news-item-detail">Average MFO fees declined for the third consecutive year. Rockbridge's disclosed 1.5% base rate is above the segment median of 1.1%, worth monitoring.</div>
+            </div>
+            <div class="news-item-meta">
+              <div class="news-item-date">Jan 12, 2025</div>
+              <div class="news-item-relevance medium">Medium</div>
+            </div>
+          </div>
+
+          <div class="news-item" data-type="filing">
+            <div class="news-item-type filing">
+              <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx=".5"/><line x1="1" y1="4" x2="9" y2="4"/></svg>
+              Filing
+            </div>
+            <div class="news-item-body">
+              <div class="news-item-title">Prior year ADV amendment — AUM updated to $1.84B</div>
+              <div class="news-item-detail">Annual amendment reflecting year-end 2023 AUM. Client count increased from 188 to 198.</div>
+            </div>
+            <div class="news-item-meta">
+              <div class="news-item-date">Feb 2024</div>
+              <div class="news-item-relevance low">Low</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── KEY PERSONNEL ── -->
+      <div class="section-block r" id="personnel">
+        <div class="section-head">
+          <span class="section-title">Key Personnel</span>
+          <span class="section-meta">Disclosed in ADV Part 1A · Schedule A</span>
+        </div>
+
+        <div class="ownership-card">
+          <div class="ownership-row">
+            <div>
+              <div class="ownership-name">James R. Whitfield</div>
+              <div class="ownership-role">Managing Partner · Founder</div>
+            </div>
+            <div class="ownership-pct">41.2%</div>
+            <div class="ownership-badge">Founder-owned</div>
+          </div>
+          <div class="ownership-row">
+            <div>
+              <div class="ownership-name">Catherine L. Morse</div>
+              <div class="ownership-role">Partner · Chief Investment Officer</div>
+            </div>
+            <div class="ownership-pct">28.7%</div>
+            <div class="ownership-badge">Founder-owned</div>
+          </div>
+          <div class="ownership-row">
+            <div>
+              <div class="ownership-name">David A. Park</div>
+              <div class="ownership-role">Partner · Head of Planning</div>
+            </div>
+            <div class="ownership-pct">18.4%</div>
+            <div></div>
+          </div>
+          <div class="ownership-row">
+            <div>
+              <div class="ownership-name">Employee ownership pool</div>
+              <div class="ownership-role">Senior advisors · restricted units</div>
+            </div>
+            <div class="ownership-pct">11.7%</div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="conflict-item clear" style="margin-top:12px">
+          <div class="conflict-item-icon">
+            <svg width="14" height="14" fill="none" stroke="#1A7A4A" stroke-width="1.8" stroke-linecap="round" viewBox="0 0 14 14"><polyline points="2,7 6,11 12,3"/></svg>
+          </div>
+          <div>
+            <div class="conflict-item-label">No private equity or institutional ownership</div>
+            <div class="conflict-item-detail">100% owned by employees and founders. No change in control events disclosed in the past 5 years.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-col -->
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- Contact -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-head">Contact</div>
+        <div class="sidebar-card-body" style="padding:16px 20px">
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Address</span>
+            <span class="sidebar-field-val" style="text-align:right;line-height:1.6">410 Park Ave<br>New York, NY 10022</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Phone</span>
+            <span class="sidebar-field-val">(212) 555-0182</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Website</span>
+            <a href="#" class="sidebar-field-val" style="color:var(--green);text-decoration:none;transition:color .15s" onmouseover="this.style.color='var(--green-2)'" onmouseout="this.style.color='var(--green)'">rockbridgefp.com ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filing info -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-head">Filing Details</div>
+        <div class="sidebar-card-body" style="padding:16px 20px">
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">CRD Number</span>
+            <span class="sidebar-field-val">128441</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">SEC Number</span>
+            <span class="sidebar-field-val">801-74291</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Filing type</span>
+            <span class="sidebar-field-val">Form ADV</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Last amended</span>
+            <span class="sidebar-field-val">Feb 14 2025</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">Registration</span>
+            <span class="sidebar-field-val">SEC (federal)</span>
+          </div>
+          <div class="sidebar-field">
+            <span class="sidebar-field-label">States registered</span>
+            <span class="sidebar-field-val">NY, CT, NJ, FL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Similar firms -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-head">Similar Firms</div>
+        <div class="sidebar-card-body" style="padding:12px 20px">
+          <a href="#" class="similar-firm">
+            <div class="similar-initials">MV</div>
+            <div class="similar-info">
+              <div class="similar-name">Meridian Vantage Advisors</div>
+              <div class="similar-meta">New York · Fee-only · MFO</div>
+            </div>
+            <div class="similar-score" style="color:#2DBD74">87</div>
+          </a>
+          <a href="#" class="similar-firm">
+            <div class="similar-initials">AP</div>
+            <div class="similar-info">
+              <div class="similar-name">Ashford Private Wealth</div>
+              <div class="similar-meta">Greenwich · Fee-only · RIA</div>
+            </div>
+            <div class="similar-score" style="color:#2DBD74">84</div>
+          </a>
+          <a href="#" class="similar-firm">
+            <div class="similar-initials">NP</div>
+            <div class="similar-info">
+              <div class="similar-name">Northgate Private Capital</div>
+              <div class="similar-meta">New York · Fee-only · RIA</div>
+            </div>
+            <div class="similar-score" style="color:#2DBD74">79</div>
+          </a>
+          <a href="#" class="similar-firm">
+            <div class="similar-initials">SF</div>
+            <div class="similar-info">
+              <div class="similar-name">Sterling Fiduciary Group</div>
+              <div class="similar-meta">Hoboken · Fee-only · RIA</div>
+            </div>
+            <div class="similar-score" style="color:#2DBD74">76</div>
+          </a>
+        </div>
+      </div>
+
+    </aside>
+  </div><!-- /profile-body -->
+</div><!-- /page -->
+
+<script>
+// Scroll-reveal
+const ro = new IntersectionObserver(es => {
+  es.forEach(e => { if(e.isIntersecting) e.target.classList.add('in') })
+}, { threshold: 0.06 });
+document.querySelectorAll('.r').forEach(el => ro.observe(el));
+
+// Animate VVS bars on entry
+const barObserver = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if(e.isIntersecting){
+      const fills = e.target.querySelectorAll('.vvs-bar-fill');
+      fills.forEach((f,i) => {
+        const target = f.style.width;
+        f.style.width = '0';
+        setTimeout(() => { f.style.width = target }, i * 80 + 100);
+      });
+      barObserver.unobserve(e.target);
+    }
+  })
+}, { threshold: 0.2 });
+document.querySelectorAll('.vvs-bars').forEach(el => barObserver.observe(el));
+
+// Animate bar charts (AUM + Clients) on scroll into view
+const chartObserver = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if(e.isIntersecting){
+      const fills = e.target.querySelectorAll('.bar-fill');
+      fills.forEach((f, i) => {
+        setTimeout(() => f.classList.add('revealed'), i * 80 + 60);
+      });
+      chartObserver.unobserve(e.target);
+    }
+  })
+}, { threshold: 0.15 });
+document.querySelectorAll('.bar-chart').forEach(el => chartObserver.observe(el));
+
+// Score ring animation
+const ring = document.getElementById('scoreRing');
+const circumference = 314;
+const score = 91;
+const offset = circumference * (1 - score/100);
+ring.style.strokeDashoffset = circumference;
+setTimeout(() => {
+  ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.25,0.46,0.45,0.94)';
+  ring.style.strokeDashoffset = offset;
+}, 400);
+
+// Section nav active state on scroll
+const sections = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.snav-link');
+const sectionObserver = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if(e.isIntersecting){
+      navLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.snav-link[href="#${e.target.id}"]`);
+      if(active) active.classList.add('active');
+    }
+  })
+}, { threshold: 0.4, rootMargin: '-100px 0px -60% 0px' });
+sections.forEach(s => sectionObserver.observe(s));
+
+// ── Fee Calculator ────────────────────────────────
+const TIERS = [
+  { max: 5_000_000,  rate: 0.0150 },
+  { max: 10_000_000, rate: 0.0125 },
+  { max: 25_000_000, rate: 0.0100 },
+  { max: 50_000_000, rate: 0.0075 },
+  { max: Infinity,   rate: 0.0075 },
+];
+const PEER_RATE = 0.0102; // national median fee-only MFO
+const RETURN_RATE = 0.07;
+// Percentile positions (0–1) on track for P25=0.85%, Median=1.00%, P75=1.35%
+const P25 = 0.85, PMED = 1.00, P75 = 1.35; // rates
+const TRACK_MIN_RATE = 0.60, TRACK_MAX_RATE = 1.60; // display range
+
+function calcFeeForAUM(aum) {
+  let fee = 0, remaining = aum, prev = 0;
+  for (const tier of TIERS) {
+    const slice = Math.min(remaining, tier.max - prev);
+    if (slice <= 0) break;
+    fee += slice * tier.rate;
+    remaining -= slice;
+    prev = tier.max;
+    if (remaining <= 0) break;
+  }
+  return fee;
+}
+
+function fmtDollar(n) {
+  if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2).replace(/\.?0+$/,'') + 'M';
+  if (n >= 1_000)     return '$' + (n / 1_000).toFixed(1).replace(/\.0$/,'') + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+// Compound growth: aum * (1+r)^n
+function grow(aum, rate, years) {
+  return aum * Math.pow(1 + rate, years);
+}
+// Portfolio net of annual fee percentage (fee deducted annually)
+function growNetFees(aum, grossRate, feeRate, years) {
+  return aum * Math.pow(1 + grossRate - feeRate, years);
+}
+// Total fees paid over horizon
+function totalFees(aum, grossRate, feeRate, years) {
+  return grow(aum, grossRate, years) - growNetFees(aum, grossRate, feeRate, years);
+}
+
+function updateCalcDisplay(aum) {
+  const annual = calcFeeForAUM(aum);
+  const blended = annual / aum;
+  const blendedPct = (blended * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  const peerFee = aum * PEER_RATE;
+  const diff = annual - peerFee;
+
+  // Top stats
+  document.getElementById('calcAnnual').textContent = fmtDollar(annual);
+  document.getElementById('calcRate').textContent = blendedPct + '% blended rate';
+  document.getElementById('calcQuarterly').textContent = fmtDollar(annual / 4);
+  const peerEl = document.getElementById('calcVsPeer');
+  peerEl.textContent = (diff >= 0 ? '+' : '-') + fmtDollar(Math.abs(diff));
+  peerEl.style.color = diff > 0 ? 'var(--amber)' : 'var(--green)';
+
+  // Industry comparison dot position
+  const trackPct = Math.min(Math.max((blended * 100 - TRACK_MIN_RATE) / (TRACK_MAX_RATE - TRACK_MIN_RATE), 0.02), 0.98);
+  document.getElementById('compDot').style.left = (trackPct * 100) + '%';
+  // Update meta
+  const millions = Math.round(aum / 1_000_000);
+  document.getElementById('compMeta').textContent = 'closest to $' + millions + 'M · 312 firms';
+  // Note
+  const noteEl = document.getElementById('compNote');
+  if (blended * 100 <= P25) noteEl.textContent = 'This firm\'s rate is below the 25th percentile — competitive for this asset level.';
+  else if (blended * 100 <= PMED) noteEl.textContent = 'This firm\'s blended rate is below the peer median — in line or favorable.';
+  else if (blended * 100 <= P75) noteEl.textContent = 'This firm\'s blended rate is above the peer median but within a typical range at this asset level.';
+  else noteEl.textContent = 'This firm\'s rate is above the 75th percentile — consider negotiating before engaging.';
+
+  // Portfolio table
+  const horizons = [5, 10, 20];
+  const ids = [['p5nf','p5wf','p5fees'],['p10nf','p10wf','p10fees'],['p20nf','p20wf','p20fees']];
+  horizons.forEach((yrs, i) => {
+    const noFees  = grow(aum, RETURN_RATE, yrs);
+    const withFee = growNetFees(aum, RETURN_RATE, blended, yrs);
+    const fees    = noFees - withFee;
+    document.getElementById(ids[i][0]).textContent = fmtDollar(noFees);
+    document.getElementById(ids[i][1]).textContent = fmtDollar(withFee);
+    document.getElementById(ids[i][2]).textContent = fmtDollar(fees);
+  });
+}
+
+function calcFees() {
+  const raw = document.getElementById('calcInput').value.replace(/[^0-9]/g,'');
+  const aum = parseInt(raw) || 10_000_000;
+  document.getElementById('calcSlider').value = Math.min(Math.max(aum, 5_000_000), 50_000_000);
+  updateCalcDisplay(aum);
+  if (raw) document.getElementById('calcInput').value = parseInt(raw).toLocaleString();
+}
+
+function syncSlider() {
+  const aum = parseInt(document.getElementById('calcSlider').value);
+  document.getElementById('calcInput').value = aum.toLocaleString();
+  updateCalcDisplay(aum);
+}
+
+// Init at $10M
+document.getElementById('calcInput').value = (10_000_000).toLocaleString();
+updateCalcDisplay(10_000_000);
+function filterNews(btn, type) {
+  document.querySelectorAll('.news-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.news-item').forEach(item => {
+    if(type === 'all' || item.dataset.type === type) {
+      item.classList.remove('hidden');
+    } else {
+      item.classList.add('hidden');
+    }
+  });
+}
+</script>
+</body>
+</html>
