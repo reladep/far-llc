@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Cormorant_Garamond, DM_Mono, Inter } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import '@/styles/globals.css';
@@ -7,6 +7,20 @@ import '@/styles/globals.css';
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['400', '500'],
   display: 'swap',
 });
 
@@ -26,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${cormorant.variable} ${dmMono.variable}`}>
       <body className="min-h-screen flex flex-col bg-bg-primary text-text-primary font-sans antialiased">
         <Header />
         <main className="flex-1">{children}</main>
