@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Index — Homepage Wireframe</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white: #F8FAF9;
+  --navy: #0B1F2E;
+  --navy-mid: #122638;
+  --navy-light: #1A3A50;
+  --green: #1A7A4A;
+  --green-mid: #22995E;
+  --green-light: #2DBD74;
+  --green-pale: #E8F5EE;
+  --ink: #111C18;
+  --ink-mid: #3D5248;
+  --ink-light: #7A9186;
+  --rule: #C8D8D0;
+  --rule-dark: rgba(255,255,255,0.08);
+  --grid-color: rgba(11,31,46,0.04);
+  --sans: 'DM Sans', sans-serif;
+  --serif: 'Playfair Display', serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  position: relative;
+}
+
+/* Grid texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- UTILITIES ---- */
+.section-wrap {
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid var(--rule);
+}
+
+.inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  display: block;
+  margin-bottom: 18px;
+}
+
+.serif-headline {
+  font-family: var(--serif);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.rule { width: 100%; height: 1px; background: var(--rule); }
+
+.btn-primary {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 11px 26px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--green-mid); }
+
+.btn-ghost {
+  display: inline-block;
+  background: transparent;
+  color: var(--navy);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 10px 26px;
+  border: 1px solid var(--navy);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { background: var(--navy); color: #fff; }
+
+/* ---- NAVBAR ---- */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(250,250,248,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 48px;
+}
+.nav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+.nav-logo-icon {
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-logo-text {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.nav-logo-text span { color: var(--green); }
+.nav-links {
+  display: flex;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-mid);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.nav-links a:hover { color: var(--ink); }
+.nav-cta { display: flex; align-items: center; gap: 20px; }
+.nav-login { font-size: 13px; color: var(--ink-mid); text-decoration: none; }
+
+/* ---- HERO ---- */
+.hero {
+  padding: 72px 0 0;
+  text-align: center;
+  overflow: hidden;
+}
+.hero-eyebrow { margin-bottom: 22px; }
+.hero-headline {
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 800;
+  max-width: 820px;
+  margin: 0 auto 20px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.hero-sub {
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink-mid);
+  max-width: 480px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+}
+.hero-btns { display: flex; gap: 14px; justify-content: center; margin-bottom: 52px; }
+
+/* Hero illustration */
+.hero-illustration {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Logo strip */
+.logo-strip {
+  border-top: 1px solid var(--rule);
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+.logo-strip-item {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+/* ---- PROBLEM ---- */
+.problem { padding: 80px 0; }
+.problem-headline { font-size: clamp(28px, 3.5vw, 46px); max-width: 580px; margin: 0 auto 56px; text-align: center; }
+.pain-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.pain-cell {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 32px 32px 36px;
+}
+.pain-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 14px;
+  opacity: 0.6;
+}
+.pain-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.pain-body {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.65;
+}
+
+/* ---- FEATURES ---- */
+.features { padding: 80px 0; }
+.features-header { text-align: center; margin-bottom: 56px; }
+.features-headline { font-size: clamp(28px, 3.5vw, 46px); max-width: 600px; margin: 0 auto; }
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.feature-cell {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 32px 28px 36px;
+  transition: background 0.2s;
+}
+.feature-cell:hover { background: var(--green-pale); }
+.feature-num {
+  font-family: var(--serif);
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin-bottom: 14px;
+}
+.feature-title {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.feature-body {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+.feature-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.feature-link:hover { color: var(--green-mid); }
+
+/* ---- GLOBE / COVERAGE ---- */
+.coverage { padding: 80px 0 60px; text-align: center; }
+.coverage-headline { font-size: clamp(28px, 3.5vw, 46px); max-width: 560px; margin: 0 auto 48px; }
+
+.globe-wrap {
+  position: relative;
+  width: 480px;
+  margin: 0 auto 40px;
+}
+
+.city-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: 8px;
+}
+.city-item { text-align: center; flex: 1; }
+.city-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.city-stat { font-size: 11px; color: var(--ink-light); }
+
+/* ---- PRODUCT PREVIEW ---- */
+.product { padding: 80px 0; }
+.product-header { text-align: center; margin-bottom: 52px; }
+.product-headline { font-size: clamp(28px, 3.5vw, 46px); max-width: 600px; margin: 0 auto; }
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--rule);
+}
+.product-card {
+  padding: 36px 32px;
+  border-right: 1px solid var(--rule);
+}
+.product-card:last-child { border-right: none; }
+.product-card-badge {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  margin-bottom: 16px;
+}
+.product-card-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.product-card-desc {
+  font-size: 13px;
+  color: var(--ink-mid);
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+.product-card .btn-primary { margin-bottom: 28px; }
+
+.data-rows { border-top: 1px solid var(--rule); }
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+  color: var(--ink-mid);
+}
+.data-row-toggle {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ink-light);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.data-row.active { color: var(--ink); font-weight: 500; }
+.data-row.active .data-row-toggle { color: var(--ink); }
+
+/* ---- STATS BAR ---- */
+.stats-bar {
+  padding: 0;
+  background: var(--navy);
+}
+.stats-bar-inner {
+  display: flex;
+  border-left: 1px solid rgba(255,255,255,0.08);
+}
+.stat-block {
+  flex: 1;
+  padding: 36px 32px;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--serif);
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-value em { font-style: normal; color: var(--green-light); }
+.stat-label {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+}
+
+/* ---- TESTIMONIALS ---- */
+.testimonials { padding: 80px 0; }
+.testimonials-header { text-align: center; margin-bottom: 56px; }
+.testimonials-headline { font-size: clamp(28px, 3.5vw, 44px); max-width: 580px; margin: 0 auto; }
+.testi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.testi-card {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 32px 28px;
+  position: relative;
+}
+.testi-card:nth-child(2) { margin-top: 32px; }
+.testi-quote {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+.testi-author { font-size: 11px; color: var(--ink-light); letter-spacing: 0.04em; }
+.testi-author strong { display: block; color: var(--ink); font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.testi-badge {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  text-align: right;
+}
+.testi-badge-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); display: block; margin-bottom: 4px; }
+.testi-badge-value { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--ink); }
+.testi-badge-value em { font-style: normal; color: var(--green); }
+
+/* ---- FAQ ---- */
+.faq { padding: 80px 0; }
+.faq-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 80px;
+  align-items: start;
+}
+.faq-left {}
+.faq-headline { font-size: clamp(28px, 3vw, 42px); line-height: 1.15; margin-bottom: 16px; }
+.faq-sub { font-size: 14px; color: var(--ink-mid); line-height: 1.6; }
+.faq-list { border-top: 1px solid var(--rule); }
+.faq-item {
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  gap: 16px;
+}
+.faq-q { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.4; }
+.faq-toggle {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink-light);
+  flex-shrink: 0;
+}
+
+/* ---- FINAL CTA ---- */
+.final-cta {
+  padding: 80px 0 0;
+  text-align: center;
+  overflow: hidden;
+}
+.final-cta-eyebrow { margin-bottom: 20px; }
+.final-cta-headline { font-size: clamp(32px, 4.5vw, 58px); max-width: 680px; margin: 0 auto 32px; }
+.final-cta-btns { margin-bottom: 56px; }
+
+/* Skyline illustration */
+.skyline-wrap { width: 100%; overflow: hidden; }
+
+/* ---- FOOTER ---- */
+footer {
+  background: var(--navy);
+  color: rgba(255,255,255,0.55);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 0;
+  padding: 52px 48px;
+  max-width: 1080px;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.footer-col { padding-right: 32px; }
+.footer-logo-text {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.footer-logo-text span { color: var(--green-light); }
+.footer-tagline { font-size: 12px; line-height: 1.6; max-width: 200px; }
+.footer-col-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 16px;
+}
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 10px; }
+.footer-links a { font-size: 13px; color: rgba(255,255,255,0.55); text-decoration: none; }
+.footer-links a:hover { color: #fff; }
+.footer-bottom {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 18px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+.footer-socials { display: flex; gap: 16px; }
+.footer-socials a { font-size: 11px; color: rgba(255,255,255,0.4); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---- LOGO BAR ---- */
+.logo-bar-section {
+  background: var(--navy);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0;
+}
+.logo-bar-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.logo-bar-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  white-space: nowrap;
+  padding: 22px 32px 22px 0;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  margin-right: 32px;
+  flex-shrink: 0;
+}
+.logo-bar-logos {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+.logo-bar-item {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  transition: color 0.2s;
+}
+.logo-bar-item:hover { color: rgba(255,255,255,0.7); }
+.logo-bar-item.featured { color: var(--green-light); }
+
+/* ---- VISOR VALUE SCORE ---- */
+.vvs-section { padding: 0; overflow: hidden; }
+.vvs-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 560px;
+}
+.vvs-left {
+  background: var(--navy);
+  padding: 72px 56px 72px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.vvs-left::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 1px solid rgba(45,189,116,0.12);
+}
+.vvs-left::after {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 1px solid rgba(45,189,116,0.08);
+}
+.vvs-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--green-light);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vvs-eyebrow::before {
+  content: '';
+  width: 24px;
+  height: 1px;
+  background: var(--green-light);
+  flex-shrink: 0;
+}
+.vvs-headline {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.vvs-headline em { font-style: italic; color: var(--green-light); }
+.vvs-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  margin-bottom: 28px;
+  max-width: 400px;
+}
+.vvs-prop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(45,189,116,0.12);
+  border: 1px solid rgba(45,189,116,0.25);
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green-light);
+  margin-bottom: 36px;
+}
+.vvs-where {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 14px;
+}
+.vvs-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.vvs-loc-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 5px 12px;
+  letter-spacing: 0.04em;
+}
+
+/* Score card mock on the right */
+.vvs-right {
+  background: var(--white);
+  border-left: 1px solid var(--rule);
+  padding: 56px 48px 56px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+.vvs-right-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+}
+.vvs-scorecard {
+  border: 1px solid var(--rule);
+  background: #fff;
+}
+.vvs-scorecard-header {
+  background: var(--navy);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.vvs-firm-name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.vvs-firm-type {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.vvs-score-badge {
+  text-align: right;
+}
+.vvs-score-num {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--green-light);
+  line-height: 1;
+}
+.vvs-score-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.vvs-score-bar-wrap {
+  padding: 20px 24px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.vvs-score-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+.vvs-bar-track {
+  height: 6px;
+  background: var(--green-pale);
+  border-radius: 0;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.vvs-bar-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 0;
+  transition: width 1.2s ease;
+}
+.vvs-metrics {
+  padding: 0;
+}
+.vvs-metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 24px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+}
+.vvs-metric-row:last-child { border-bottom: none; }
+.vvs-metric-name { color: var(--ink-mid); }
+.vvs-metric-score {
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.vvs-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-high { background: var(--green); }
+.dot-mid { background: #F59E0B; }
+.dot-low { background: #EF4444; }
+.vvs-disclaimer {
+  font-size: 10px;
+  color: var(--ink-light);
+  line-height: 1.5;
+  padding: 12px 24px;
+  border-top: 1px solid var(--rule);
+  background: var(--green-pale);
+}
+.vvs-disclaimer strong { color: var(--green); }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="7,1 13,4 13,10 7,13 1,10 1,4"/>
+          <line x1="7" y1="1" x2="7" y2="13"/>
+          <line x1="1" y1="4" x2="13" y2="10"/>
+          <line x1="13" y1="4" x2="1" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-logo-text">Visor <span>Index</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">Find Advisors</a></li>
+      <li><a href="#">Rankings</a></li>
+      <li><a href="#">Analytics</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#" class="nav-login">Log in</a>
+      <a href="#" class="btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<div class="section-wrap">
+  <section class="hero">
+    <div class="inner">
+      <span class="eyebrow hero-eyebrow reveal">Powered by SEC ADV Data</span>
+      <h1 class="serif-headline hero-headline reveal reveal-delay-1">The smartest way to find a financial advisor you can trust.</h1>
+      <p class="hero-sub reveal reveal-delay-2">We parse every Form ADV filing so you don't have to. Independent, data-driven, conflict-free.</p>
+      <div class="hero-btns reveal reveal-delay-3">
+        <a href="#" class="btn-primary">Search Advisors</a>
+        <a href="#" class="btn-ghost">See How It Works</a>
+      </div>
+    </div>
+
+    <!-- Architectural illustration — Wall St / classical building SVG -->
+    <svg class="hero-illustration" viewBox="0 0 900 340" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+      <!-- Ground line -->
+      <line x1="0" y1="330" x2="900" y2="330" stroke="#D8D4CC" stroke-width="1"/>
+
+      <!-- Left background buildings -->
+      <rect x="30" y="200" width="70" height="130" fill="none" stroke="#C8C4BC" stroke-width="0.8"/>
+      <line x1="65" y1="200" x2="65" y2="330" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="35" y="210" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="53" y="210" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="35" y="228" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="53" y="228" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="35" y="246" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="53" y="246" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="35" y="264" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="53" y="264" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="35" y="282" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="53" y="282" width="12" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+
+      <rect x="110" y="160" width="85" height="170" fill="none" stroke="#C8C4BC" stroke-width="0.8"/>
+      <line x1="152" y1="160" x2="152" y2="330" stroke="#C8C4BC" stroke-width="0.5"/>
+      <!-- Windows mid building -->
+      <rect x="118" y="172" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="138" y="172" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="158" y="172" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="178" y="172" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="118" y="190" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="138" y="190" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="158" y="190" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="178" y="190" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="118" y="208" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="138" y="208" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="158" y="208" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="178" y="208" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+
+      <!-- Main central classical building -->
+      <!-- Steps -->
+      <rect x="280" y="312" width="340" height="8" fill="none" stroke="#888" stroke-width="0.8"/>
+      <rect x="290" y="304" width="320" height="8" fill="none" stroke="#888" stroke-width="0.8"/>
+      <rect x="300" y="296" width="300" height="8" fill="none" stroke="#888" stroke-width="0.8"/>
+
+      <!-- Main body -->
+      <rect x="310" y="140" width="280" height="156" fill="none" stroke="#555" stroke-width="1"/>
+
+      <!-- Pediment / triangular top -->
+      <polygon points="290,140 450,68 610,140" fill="none" stroke="#555" stroke-width="1"/>
+      <!-- Pediment detail lines -->
+      <line x1="310" y1="140" x2="450" y2="78" stroke="#888" stroke-width="0.5"/>
+      <line x1="590" y1="140" x2="450" y2="78" stroke="#888" stroke-width="0.5"/>
+      <!-- Pediment decorative element -->
+      <circle cx="450" cy="105" r="12" fill="none" stroke="#888" stroke-width="0.8"/>
+      <line x1="450" y1="93" x2="450" y2="117" stroke="#888" stroke-width="0.5"/>
+      <line x1="438" y1="105" x2="462" y2="105" stroke="#888" stroke-width="0.5"/>
+
+      <!-- Entablature -->
+      <rect x="290" y="130" width="320" height="10" fill="none" stroke="#666" stroke-width="0.8"/>
+      <rect x="290" y="138" width="320" height="4" fill="none" stroke="#888" stroke-width="0.5"/>
+
+      <!-- Columns -->
+      <line x1="316" y1="140" x2="316" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="348" y1="140" x2="348" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="380" y1="140" x2="380" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="412" y1="140" x2="412" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="444" y1="140" x2="444" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="476" y1="140" x2="476" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="508" y1="140" x2="508" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="540" y1="140" x2="540" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="572" y1="140" x2="572" y2="296" stroke="#555" stroke-width="2"/>
+      <line x1="584" y1="140" x2="584" y2="296" stroke="#555" stroke-width="2"/>
+
+      <!-- Column capitals (simple lines) -->
+      <line x1="308" y1="142" x2="324" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="340" y1="142" x2="356" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="372" y1="142" x2="388" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="404" y1="142" x2="420" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="436" y1="142" x2="452" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="468" y1="142" x2="484" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="500" y1="142" x2="516" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="532" y1="142" x2="548" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="564" y1="142" x2="580" y2="142" stroke="#666" stroke-width="1.5"/>
+      <line x1="576" y1="142" x2="592" y2="142" stroke="#666" stroke-width="1.5"/>
+
+      <!-- Doors -->
+      <rect x="415" y="240" width="70" height="56" fill="none" stroke="#666" stroke-width="0.8"/>
+      <!-- Arch door top -->
+      <path d="M415,240 Q450,216 485,240" fill="none" stroke="#666" stroke-width="0.8"/>
+      <line x1="450" y1="240" x2="450" y2="296" stroke="#888" stroke-width="0.5"/>
+
+      <!-- Windows upper -->
+      <rect x="330" y="165" width="28" height="40" fill="none" stroke="#777" stroke-width="0.7"/>
+      <path d="M330,165 Q344,152 358,165" fill="none" stroke="#888" stroke-width="0.6"/>
+      <rect x="374" y="165" width="28" height="40" fill="none" stroke="#777" stroke-width="0.7"/>
+      <path d="M374,165 Q388,152 402,165" fill="none" stroke="#888" stroke-width="0.6"/>
+      <rect x="498" y="165" width="28" height="40" fill="none" stroke="#777" stroke-width="0.7"/>
+      <path d="M498,165 Q512,152 526,165" fill="none" stroke="#888" stroke-width="0.6"/>
+      <rect x="542" y="165" width="28" height="40" fill="none" stroke="#777" stroke-width="0.7"/>
+      <path d="M542,165 Q556,152 570,165" fill="none" stroke="#888" stroke-width="0.6"/>
+
+      <!-- Windows lower -->
+      <rect x="330" y="218" width="28" height="38" fill="none" stroke="#777" stroke-width="0.7"/>
+      <rect x="374" y="218" width="28" height="38" fill="none" stroke="#777" stroke-width="0.7"/>
+      <rect x="498" y="218" width="28" height="38" fill="none" stroke="#777" stroke-width="0.7"/>
+      <rect x="542" y="218" width="28" height="38" fill="none" stroke="#777" stroke-width="0.7"/>
+
+      <!-- Right background buildings -->
+      <rect x="640" y="175" width="90" height="155" fill="none" stroke="#C8C4BC" stroke-width="0.8"/>
+      <line x1="685" y1="175" x2="685" y2="330" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="648" y="187" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="669" y="187" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="648" y="205" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="669" y="205" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="648" y="223" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="669" y="223" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="648" y="241" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="669" y="241" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="648" y="259" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="669" y="259" width="14" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+
+      <rect x="740" y="210" width="65" height="120" fill="none" stroke="#C8C4BC" stroke-width="0.8"/>
+      <rect x="746" y="220" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="763" y="220" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="746" y="236" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="763" y="236" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="746" y="252" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="763" y="252" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="746" y="268" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="763" y="268" width="11" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+
+      <rect x="815" y="190" width="75" height="140" fill="none" stroke="#C8C4BC" stroke-width="0.8"/>
+      <rect x="822" y="202" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="840" y="202" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="858" y="202" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="822" y="220" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="840" y="220" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="858" y="220" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="822" y="238" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="840" y="238" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="858" y="238" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="822" y="256" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="840" y="256" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+      <rect x="858" y="256" width="13" height="10" fill="none" stroke="#C8C4BC" stroke-width="0.5"/>
+
+      <!-- Fade to white gradient at bottom via rect -->
+      <defs>
+        <linearGradient id="fadeBot" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FAFAF8" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#FAFAF8" stop-opacity="1"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="220" width="900" height="120" fill="url(#fadeBot)"/>
+    </svg>
+
+    <!-- Logo strip -->
+    <div class="logo-strip reveal">
+      <span class="logo-strip-item">SEC EDGAR</span>
+      <span class="logo-strip-item">·</span>
+      <span class="logo-strip-item">FINRA</span>
+      <span class="logo-strip-item">·</span>
+      <span class="logo-strip-item">Investment Adviser Public Disclosure</span>
+      <span class="logo-strip-item">·</span>
+      <span class="logo-strip-item">EDGAR Full-Text Search</span>
+    </div>
+  </section>
+</div>
+
+<!-- ============ LOGO BAR ============ -->
+<div class="logo-bar-section">
+  <div class="logo-bar-inner">
+    <span class="logo-bar-label">Trusted by investors researching</span>
+    <div class="logo-bar-logos">
+      <span class="logo-bar-item">Family Offices</span>
+      <span class="logo-bar-item">·</span>
+      <span class="logo-bar-item">HNW Individuals</span>
+      <span class="logo-bar-item">·</span>
+      <span class="logo-bar-item">Institutional Investors</span>
+      <span class="logo-bar-item">·</span>
+      <span class="logo-bar-item">RIA Due Diligence</span>
+      <span class="logo-bar-item">·</span>
+      <span class="logo-bar-item">Endowments</span>
+      <span class="logo-bar-item">·</span>
+      <span class="logo-bar-item featured">Powered by SEC EDGAR</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VISOR VALUE SCORE ============ -->
+<div class="section-wrap">
+  <section class="vvs-section">
+    <div class="vvs-inner">
+
+      <!-- Left: Copy -->
+      <div class="vvs-left reveal">
+        <span class="vvs-eyebrow">Proprietary Intelligence</span>
+        <h2 class="vvs-headline">Introducing the<br><em>Visor Value Score™</em></h2>
+        <p class="vvs-desc">The only composite score that translates 500+ raw SEC regulatory data points into a single, actionable number for every registered investment advisor in the country. Independent. Unbiased. Unavailable anywhere else.</p>
+        <div class="vvs-prop-badge">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1l1.5 3 3.5.5-2.5 2.5.5 3.5L6 9l-3 1.5.5-3.5L1 4.5 4.5 4z"/></svg>
+          Exclusive to Visor Index — not available elsewhere
+        </div>
+        <div class="vvs-where">Displayed across</div>
+        <div class="vvs-locations">
+          <span class="vvs-loc-tag">Firm Profiles</span>
+          <span class="vvs-loc-tag">Search Results</span>
+          <span class="vvs-loc-tag">Compare Tool</span>
+          <span class="vvs-loc-tag">Match Results</span>
+        </div>
+      </div>
+
+      <!-- Right: Score card mockup -->
+      <div class="vvs-right reveal reveal-delay-2">
+        <div class="vvs-right-label">Sample Visor Value Score™ Card</div>
+
+        <div class="vvs-scorecard">
+          <div class="vvs-scorecard-header">
+            <div>
+              <div class="vvs-firm-name">Meridian Wealth Advisors</div>
+              <div class="vvs-firm-type">SEC Registered RIA · New York, NY</div>
+            </div>
+            <div class="vvs-score-badge">
+              <div class="vvs-score-num">84</div>
+              <div class="vvs-score-label">/ 100 Score</div>
+            </div>
+          </div>
+
+          <div class="vvs-score-bar-wrap">
+            <div class="vvs-score-bar-label">
+              <span>Visor Value Score™</span>
+              <span style="font-weight:600;color:var(--green);">84 / 100</span>
+            </div>
+            <div class="vvs-bar-track">
+              <div class="vvs-bar-fill" style="width:84%"></div>
+            </div>
+            <div class="vvs-score-bar-label" style="margin-bottom:0;">
+              <span>Percentile rank</span>
+              <span style="font-weight:600;color:var(--ink);">Top 8% of 40,000+ firms</span>
+            </div>
+          </div>
+
+          <div class="vvs-metrics">
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">Regulatory Compliance</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-high"></span>96 / 100</span>
+            </div>
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">AUM Growth Trajectory</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-high"></span>88 / 100</span>
+            </div>
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">Fee Transparency</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-high"></span>91 / 100</span>
+            </div>
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">Conflict of Interest Exposure</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-mid"></span>67 / 100</span>
+            </div>
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">Ownership Stability</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-high"></span>82 / 100</span>
+            </div>
+            <div class="vvs-metric-row">
+              <span class="vvs-metric-name">Client Retention Proxy</span>
+              <span class="vvs-metric-score"><span class="vvs-dot dot-high"></span>79 / 100</span>
+            </div>
+          </div>
+
+          <div class="vvs-disclaimer">
+            <strong>Visor Value Score™</strong> is derived from SEC EDGAR public filings. Updated quarterly. For informational purposes only — not investment advice.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ============ PROBLEM ============ -->
+<div class="section-wrap">
+  <section class="problem">
+    <div class="inner">
+      <span class="eyebrow reveal" style="text-align:center;display:block;">The Problem</span>
+      <h2 class="serif-headline problem-headline reveal reveal-delay-1">Finding the right advisor shouldn't require a law degree.</h2>
+      <div class="pain-grid reveal reveal-delay-2">
+        <div class="pain-cell">
+          <svg class="pain-icon" viewBox="0 0 32 32" fill="none" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"><rect x="6" y="10" width="20" height="16" rx="1"/><path d="M11 10V8a5 5 0 0110 0v2"/><line x1="16" y1="18" x2="16" y2="21"/></svg>
+          <div class="pain-title">Opaque fee structures</div>
+          <p class="pain-body">Fee disclosures are buried in dense legal filings. Most investors never know the full cost until it's too late.</p>
+        </div>
+        <div class="pain-cell">
+          <svg class="pain-icon" viewBox="0 0 32 32" fill="none" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"><polyline points="6,22 12,14 18,18 26,8"/><line x1="22" y1="8" x2="26" y2="8"/><line x1="26" y1="8" x2="26" y2="12"/></svg>
+          <div class="pain-title">No standardized performance data</div>
+          <p class="pain-body">Advisors self-report returns. Without a common standard, comparisons are meaningless — and often misleading.</p>
+        </div>
+        <div class="pain-cell">
+          <svg class="pain-icon" viewBox="0 0 32 32" fill="none" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"><circle cx="16" cy="12" r="5"/><path d="M8 26c0-4 3.6-7 8-7s8 3 8 7"/><line x1="20" y1="6" x2="26" y2="4"/></svg>
+          <div class="pain-title">Marketing masks credentials</div>
+          <p class="pain-body">Anyone can claim expertise. Actual regulatory filings reveal the truth about experience, client base, and disciplinary history.</p>
+        </div>
+        <div class="pain-cell">
+          <svg class="pain-icon" viewBox="0 0 32 32" fill="none" stroke="#0A1628" stroke-width="1.5" stroke-linecap="round"><path d="M16 4L4 12v16h24V12L16 4z"/><path d="M12 28V20h8v8"/></svg>
+          <div class="pain-title">Hidden conflicts of interest</div>
+          <p class="pain-body">Broker relationships, referral fees, and dual registration conflicts are disclosed in ADV filings — but rarely surfaced to clients.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ FEATURES ============ -->
+<div class="section-wrap">
+  <section class="features">
+    <div class="inner">
+      <div class="features-header reveal">
+        <span class="eyebrow">What Visor Index Does</span>
+        <h2 class="serif-headline features-headline">Institutional-grade research. Built for everyone.</h2>
+      </div>
+      <div class="feature-grid reveal reveal-delay-1">
+        <!-- VVS featured cell — full width -->
+        <div class="feature-cell" style="grid-column: 1 / -1; background: var(--navy); border-color: var(--navy); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+          <div>
+            <div class="feature-num" style="color: var(--green-light);">★ Signature Feature</div>
+            <div class="feature-title" style="color: #fff; font-size: 22px;">Visor Value Score™</div>
+            <p class="feature-body" style="color: rgba(255,255,255,0.6);">The only composite score built entirely from SEC regulatory filings. Every firm ranked across 500+ data points — compliance history, AUM trajectory, fee structure, conflict exposure, and more — distilled into a single, transparent score from 0–100. Proprietary to Visor Index. Independent. Unbiased.</p>
+            <a href="#" class="feature-link" style="color: var(--green-light);">See how it's calculated →</a>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="flex:1; min-width:120px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px;">
+              <div style="font-size:28px; font-family:var(--serif); font-weight:800; color: var(--green-light); line-height:1;">84</div>
+              <div style="font-size:10px; color: rgba(255,255,255,0.4); letter-spacing:.08em; text-transform: uppercase; margin-top: 4px;">Visor Score</div>
+              <div style="height:3px; background: rgba(255,255,255,0.08); margin-top: 10px;"><div style="height:100%; width:84%; background: var(--green-mid);"></div></div>
+            </div>
+            <div style="flex:1; min-width:120px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px;">
+              <div style="font-size:28px; font-family:var(--serif); font-weight:800; color: #F59E0B; line-height:1;">61</div>
+              <div style="font-size:10px; color: rgba(255,255,255,0.4); letter-spacing:.08em; text-transform: uppercase; margin-top: 4px;">Visor Score</div>
+              <div style="height:3px; background: rgba(255,255,255,0.08); margin-top: 10px;"><div style="height:100%; width:61%; background: #F59E0B;"></div></div>
+            </div>
+            <div style="flex:1; min-width:120px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px;">
+              <div style="font-size:28px; font-family:var(--serif); font-weight:800; color: #EF4444; line-height:1;">38</div>
+              <div style="font-size:10px; color: rgba(255,255,255,0.4); letter-spacing:.08em; text-transform: uppercase; margin-top: 4px;">Visor Score</div>
+              <div style="height:3px; background: rgba(255,255,255,0.08); margin-top: 10px;"><div style="height:100%; width:38%; background: #EF4444;"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">02</div>
+          <div class="feature-title">SEC Filing Intelligence</div>
+          <p class="feature-body">We parse every Form ADV filing across 40,000+ registered advisors — extracting, structuring, and scoring what matters.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">03</div>
+          <div class="feature-title">Personalized Advisor Matching</div>
+          <p class="feature-body">Weighted scoring across 500+ data points aligned to your goals: AUM range, fee type, client type, specialty, and more.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">04</div>
+          <div class="feature-title">Firm Benchmarking</div>
+          <p class="feature-body">Compare AUM growth, client composition, fee structures, and headcount trends side by side across any two firms.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">05</div>
+          <div class="feature-title">Conflict of Interest Flags</div>
+          <p class="feature-body">Automated detection of disclosed conflicts — broker-dealer relationships, referral arrangements, and dual registrations.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">06</div>
+          <div class="feature-title">Credential Verification</div>
+          <p class="feature-body">Cross-referenced licensing, registration status, and disciplinary history pulled directly from regulatory sources.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+        <div class="feature-cell">
+          <div class="feature-num">07</div>
+          <div class="feature-title">Historical Trend Analysis</div>
+          <p class="feature-body">Track how firms have grown, shrunk, or shifted strategy over a decade of filings. Growth tells the real story.</p>
+          <a href="#" class="feature-link">Learn more →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ COVERAGE / GLOBE ============ -->
+<div class="section-wrap">
+  <section class="coverage">
+    <div class="inner">
+      <span class="eyebrow reveal">Coverage</span>
+      <h2 class="serif-headline coverage-headline reveal reveal-delay-1">Every registered advisor.<br>One platform.</h2>
+
+      <div class="globe-wrap reveal reveal-delay-2">
+        <svg viewBox="0 0 480 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Globe arcs -->
+          <g stroke="#C8C4BC" stroke-width="0.7">
+            <ellipse cx="240" cy="260" rx="60" ry="25"/>
+            <ellipse cx="240" cy="260" rx="120" ry="58"/>
+            <ellipse cx="240" cy="260" rx="180" ry="95"/>
+            <ellipse cx="240" cy="260" rx="240" ry="134"/>
+            <ellipse cx="240" cy="260" rx="300" ry="174"/>
+          </g>
+          <!-- Radial lines -->
+          <g stroke="#D4D0C8" stroke-width="0.5">
+            <line x1="240" y1="260" x2="20" y2="20"/>
+            <line x1="240" y1="260" x2="100" y2="4"/>
+            <line x1="240" y1="260" x2="200" y2="0"/>
+            <line x1="240" y1="260" x2="300" y2="0"/>
+            <line x1="240" y1="260" x2="390" y2="4"/>
+            <line x1="240" y1="260" x2="460" y2="20"/>
+          </g>
+          <!-- Gold nodes -->
+          <circle cx="148" cy="130" r="4" fill="#1A7A4A" opacity="0.8"/>
+          <circle cx="310" cy="110" r="4" fill="#1A7A4A" opacity="0.8"/>
+          <circle cx="200" cy="80" r="3" fill="#22995E" opacity="0.6"/>
+          <circle cx="360" cy="155" r="3" fill="#22995E" opacity="0.6"/>
+          <circle cx="95" cy="165" r="3" fill="#22995E" opacity="0.5"/>
+          <!-- Node labels -->
+          <text x="140" y="120" font-family="DM Sans, sans-serif" font-size="9" fill="#888" text-anchor="middle">New York</text>
+          <text x="310" y="100" font-family="DM Sans, sans-serif" font-size="9" fill="#888" text-anchor="middle">Chicago</text>
+          <text x="200" y="70" font-family="DM Sans, sans-serif" font-size="9" fill="#888" text-anchor="middle">Boston</text>
+          <text x="360" y="145" font-family="DM Sans, sans-serif" font-size="9" fill="#888" text-anchor="middle">Houston</text>
+          <text x="92" y="155" font-family="DM Sans, sans-serif" font-size="9" fill="#888" text-anchor="middle">LA</text>
+          <!-- Fade bottom -->
+          <defs>
+            <linearGradient id="globeFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="60%" stop-color="#FAFAF8" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#FAFAF8" stop-opacity="1"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="180" width="480" height="80" fill="url(#globeFade)"/>
+        </svg>
+
+        <div class="city-strip">
+          <div class="city-item"><div class="city-name">New York</div><div class="city-stat">8,400 firms</div></div>
+          <div class="city-item"><div class="city-name">Los Angeles</div><div class="city-stat">3,200 firms</div></div>
+          <div class="city-item"><div class="city-name">Chicago</div><div class="city-stat">2,100 firms</div></div>
+          <div class="city-item"><div class="city-name">Houston</div><div class="city-stat">1,400 firms</div></div>
+          <div class="city-item"><div class="city-name">Miami</div><div class="city-stat">1,800 firms</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ PRODUCT PREVIEW ============ -->
+<div class="section-wrap">
+  <section class="product">
+    <div class="inner">
+      <div class="product-header reveal">
+        <span class="eyebrow">The Platform</span>
+        <h2 class="serif-headline product-headline">An inside look at how we surface what matters.</h2>
+      </div>
+      <div class="product-grid reveal reveal-delay-1">
+        <div class="product-card">
+          <span class="product-card-badge">Advisor Search</span>
+          <h3 class="product-card-title">Find by what matters to you.</h3>
+          <p class="product-card-desc">Filter by location, AUM range, client type, fee structure, and specialty. Then dig into the full regulatory history before you ever pick up the phone.</p>
+          <a href="#" class="btn-primary">Search Advisors</a>
+          <div class="data-rows">
+            <div class="data-row active"><span>Minimum account size</span><div class="data-row-toggle">×</div></div>
+            <div class="data-row active"><span>Fee structure (AUM / flat / hourly)</span><div class="data-row-toggle">×</div></div>
+            <div class="data-row"><span>Assets under management</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Years registered with SEC</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Client types served</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Number of employees</span><div class="data-row-toggle">+</div></div>
+          </div>
+        </div>
+        <div class="product-card">
+          <span class="product-card-badge">Firm Analytics</span>
+          <h3 class="product-card-title">Go beyond the brochure.</h3>
+          <p class="product-card-desc">Our scoring engine synthesizes raw SEC data into clear, comparable metrics. Growth trends, ownership changes, custody arrangements — nothing hidden.</p>
+          <a href="#" class="btn-primary">Explore Analytics</a>
+          <div class="data-rows">
+            <div class="data-row active"><span>AUM growth (3-year trend)</span><div class="data-row-toggle">×</div></div>
+            <div class="data-row active"><span>Employee headcount trend</span><div class="data-row-toggle">×</div></div>
+            <div class="data-row"><span>Complaint & disciplinary history</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Ownership structure changes</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Custody arrangements</span><div class="data-row-toggle">+</div></div>
+            <div class="data-row"><span>Conflict of interest disclosures</span><div class="data-row-toggle">+</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ STATS BAR ============ -->
+<div class="section-wrap" style="border-bottom:none;">
+  <section class="stats-bar">
+    <div class="inner" style="padding:0;">
+      <div class="stats-bar-inner">
+        <div class="stat-block">
+          <div class="stat-value">40<em>K+</em></div>
+          <div class="stat-label">advisors<br>indexed</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value"><em>$</em>128<em>T</em></div>
+          <div class="stat-label">AUM<br>tracked</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value">500<em>+</em></div>
+          <div class="stat-label">data points<br>per firm</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value" style="font-size:22px;padding-top:8px;">Quarterly</div>
+          <div class="stat-label">updates from<br>SEC EDGAR</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ TESTIMONIALS ============ -->
+<div class="section-wrap">
+  <section class="testimonials">
+    <div class="inner">
+      <div class="testimonials-header reveal">
+        <span class="eyebrow">Early Users</span>
+        <h2 class="serif-headline testimonials-headline">What investors say about finding advisors through Visor Index.</h2>
+      </div>
+      <div class="testi-grid reveal reveal-delay-1">
+        <div class="testi-card">
+          <p class="testi-quote">"I found three red flags in my current advisor's ADV filings within ten minutes. I had no idea this data was even publicly available."</p>
+          <div class="testi-badge"><span class="testi-badge-label">Assets Searched</span><span class="testi-badge-value">$2<em>M+</em></span></div>
+          <div class="testi-author"><strong>Sarah K.</strong>Private investor, NYC</div>
+        </div>
+        <div class="testi-card" style="margin-top:32px;">
+          <p class="testi-quote">"The benchmarking tool completely changed how I evaluate managers. It's the first platform that treats retail investors like institutions."</p>
+          <div class="testi-badge"><span class="testi-badge-label">Assets Searched</span><span class="testi-badge-value">$8<em>M+</em></span></div>
+          <div class="testi-author"><strong>Marcus T.</strong>Family office, Chicago</div>
+        </div>
+        <div class="testi-card">
+          <p class="testi-quote">"The conflict-of-interest flags alone are worth it. My previous advisor had four disclosed relationships I was never told about."</p>
+          <div class="testi-badge"><span class="testi-badge-label">Assets Searched</span><span class="testi-badge-value">$500<em>K+</em></span></div>
+          <div class="testi-author"><strong>David R.</strong>Retiree, Houston</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ FAQ ============ -->
+<div class="section-wrap">
+  <section class="faq">
+    <div class="inner">
+      <div class="faq-inner reveal">
+        <div class="faq-left">
+          <span class="eyebrow">Frequent Questions</span>
+          <h2 class="serif-headline faq-headline">Everything you need to know before you search.</h2>
+          <p class="faq-sub" style="margin-top:16px;">Our data comes directly from official regulatory filings — not self-reported profiles or paid listings.</p>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item"><span class="faq-q">How is this different from FINRA BrokerCheck?</span><div class="faq-toggle">+</div></div>
+          <div class="faq-item"><span class="faq-q">How often is the SEC ADV data updated?</span><div class="faq-toggle">+</div></div>
+          <div class="faq-item"><span class="faq-q">How does the advisor matching score work?</span><div class="faq-toggle">+</div></div>
+          <div class="faq-item"><span class="faq-q">Is Visor Index affiliated with any advisory firms?</span><div class="faq-toggle">+</div></div>
+          <div class="faq-item"><span class="faq-q">Can advisors pay to improve their ranking?</span><div class="faq-toggle">+</div></div>
+          <div class="faq-item"><span class="faq-q">What does the data actually tell me about an advisor?</span><div class="faq-toggle">+</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ FINAL CTA ============ -->
+<div class="section-wrap" style="border-bottom:none;">
+  <section class="final-cta">
+    <div class="inner">
+      <span class="eyebrow final-cta-eyebrow reveal">Your Next Step</span>
+      <h2 class="serif-headline final-cta-headline reveal reveal-delay-1">Start your search with the data that matters.</h2>
+      <div class="final-cta-btns reveal reveal-delay-2">
+        <a href="#" class="btn-primary">Search Advisors</a>
+      </div>
+    </div>
+
+    <!-- Skyline SVG -->
+    <div class="skyline-wrap">
+      <svg viewBox="0 0 1080 280" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+        <defs>
+          <linearGradient id="skyFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FAFAF8" stop-opacity="1"/>
+            <stop offset="30%" stop-color="#FAFAF8" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#FAFAF8" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="skyFadeBottom" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="60%" stop-color="#FAFAF8" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#FAFAF8" stop-opacity="1"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Ground -->
+        <line x1="0" y1="270" x2="1080" y2="270" stroke="#D8D4CC" stroke-width="0.8"/>
+
+        <!-- Building group — various heights and widths across full width -->
+        <!-- Far left -->
+        <rect x="0" y="200" width="45" height="70" fill="none" stroke="#C8C4BC" stroke-width="0.7"/>
+        <rect x="5" y="208" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="20" y="208" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="5" y="222" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="20" y="222" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="5" y="236" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="20" y="236" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="5" y="250" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="20" y="250" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="48" y="170" width="55" height="100" fill="none" stroke="#B8B4AC" stroke-width="0.7"/>
+        <rect x="54" y="178" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="72" y="178" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="54" y="194" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="72" y="194" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="54" y="210" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="72" y="210" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="54" y="226" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="72" y="226" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="54" y="242" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+        <rect x="72" y="242" width="12" height="9" fill="none" stroke="#B8B4AC" stroke-width="0.4"/>
+
+        <!-- Tall skyscraper left -->
+        <rect x="106" y="80" width="48" height="190" fill="none" stroke="#999" stroke-width="0.8"/>
+        <line x1="130" y1="80" x2="130" y2="270" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="110" y="90" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="122" y="90" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="134" y="90" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="110" y="102" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="122" y="102" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="134" y="102" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="110" y="114" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="122" y="114" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="134" y="114" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="110" y="126" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="122" y="126" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="134" y="126" width="8" height="6" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <line x1="130" y1="80" x2="130" y2="65" stroke="#999" stroke-width="0.8"/>
+        <circle cx="130" cy="63" r="2" fill="none" stroke="#999" stroke-width="0.7"/>
+
+        <rect x="158" y="140" width="70" height="130" fill="none" stroke="#AAA" stroke-width="0.7"/>
+        <rect x="164" y="150" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="184" y="150" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="204" y="150" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="164" y="168" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="184" y="168" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="204" y="168" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="164" y="186" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="184" y="186" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="204" y="186" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="164" y="204" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="184" y="204" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="204" y="204" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+
+        <!-- Center tall tower -->
+        <rect x="232" y="40" width="52" height="230" fill="none" stroke="#888" stroke-width="0.9"/>
+        <line x1="258" y1="40" x2="258" y2="270" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="236" y="50" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="250" y="50" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="264" y="50" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="236" y="64" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="250" y="64" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="264" y="64" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="236" y="78" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="250" y="78" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="264" y="78" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="236" y="92" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="250" y="92" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="264" y="92" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="236" y="106" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="250" y="106" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <rect x="264" y="106" width="9" height="7" fill="none" stroke="#999" stroke-width="0.4"/>
+        <line x1="258" y1="40" x2="258" y2="24" stroke="#888" stroke-width="0.8"/>
+        <circle cx="258" cy="22" r="3" fill="none" stroke="#888" stroke-width="0.7"/>
+
+        <!-- Mid-right buildings -->
+        <rect x="288" y="100" width="60" height="170" fill="none" stroke="#999" stroke-width="0.8"/>
+        <rect x="294" y="112" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="312" y="112" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="330" y="112" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="294" y="128" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="312" y="128" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="330" y="128" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="294" y="144" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="312" y="144" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="330" y="144" width="12" height="9" fill="none" stroke="#AAA" stroke-width="0.4"/>
+
+        <rect x="352" y="130" width="80" height="140" fill="none" stroke="#AAA" stroke-width="0.7"/>
+        <line x1="392" y1="130" x2="392" y2="270" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="358" y="142" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="378" y="142" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="398" y="142" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="416" y="142" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="358" y="160" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="378" y="160" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="398" y="160" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="416" y="160" width="14" height="10" fill="none" stroke="#BBB" stroke-width="0.4"/>
+
+        <!-- Right cluster -->
+        <rect x="436" y="90" width="55" height="180" fill="none" stroke="#999" stroke-width="0.8"/>
+        <line x1="463" y1="90" x2="463" y2="270" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="440" y="100" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="456" y="100" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="472" y="100" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="440" y="116" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="456" y="116" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="472" y="116" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="440" y="132" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="456" y="132" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <rect x="472" y="132" width="10" height="8" fill="none" stroke="#AAA" stroke-width="0.4"/>
+        <line x1="463" y1="90" x2="463" y2="74" stroke="#999" stroke-width="0.8"/>
+
+        <rect x="495" y="150" width="65" height="120" fill="none" stroke="#AAA" stroke-width="0.7"/>
+        <rect x="502" y="162" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="520" y="162" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="538" y="162" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="502" y="178" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="520" y="178" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="538" y="178" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="502" y="194" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="520" y="194" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="538" y="194" width="12" height="9" fill="none" stroke="#BBB" stroke-width="0.4"/>
+
+        <!-- Far right -->
+        <rect x="564" y="120" width="50" height="150" fill="none" stroke="#AAA" stroke-width="0.7"/>
+        <rect x="570" y="130" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="587" y="130" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="570" y="146" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="587" y="146" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="570" y="162" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+        <rect x="587" y="162" width="11" height="8" fill="none" stroke="#BBB" stroke-width="0.4"/>
+
+        <rect x="618" y="175" width="75" height="95" fill="none" stroke="#B8B4AC" stroke-width="0.7"/>
+        <rect x="625" y="185" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="644" y="185" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="663" y="185" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="625" y="202" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="644" y="202" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="663" y="202" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="625" y="219" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="644" y="219" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="663" y="219" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="625" y="236" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="644" y="236" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+        <rect x="663" y="236" width="13" height="10" fill="none" stroke="#C0BDB4" stroke-width="0.4"/>
+
+        <rect x="697" y="200" width="55" height="70" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="703" y="210" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="719" y="210" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="735" y="210" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="703" y="226" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="719" y="226" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="735" y="226" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="703" y="242" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="719" y="242" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="735" y="242" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="756" y="185" width="45" height="85" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="762" y="195" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="778" y="195" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="762" y="211" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="778" y="211" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="762" y="227" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="778" y="227" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="762" y="243" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="778" y="243" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="805" y="210" width="60" height="60" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="812" y="220" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="829" y="220" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="846" y="220" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="812" y="236" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="829" y="236" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="846" y="236" width="11" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="868" y="220" width="80" height="50" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="875" y="230" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="893" y="230" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="911" y="230" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="929" y="230" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="875" y="248" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="893" y="248" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="911" y="248" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="950" y="190" width="55" height="80" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="957" y="200" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="974" y="200" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="990" y="200" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="957" y="216" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="974" y="216" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="990" y="216" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="957" y="232" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="974" y="232" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="990" y="232" width="10" height="8" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <rect x="1008" y="205" width="72" height="65" fill="none" stroke="#C8C4BC" stroke-width="0.6"/>
+        <rect x="1014" y="215" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="1032" y="215" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="1050" y="215" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="1014" y="232" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="1032" y="232" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+        <rect x="1050" y="232" width="12" height="9" fill="none" stroke="#C8C4BC" stroke-width="0.4"/>
+
+        <!-- Overlay fade top and bottom -->
+        <rect x="0" y="0" width="1080" height="280" fill="url(#skyFade)"/>
+        <rect x="0" y="0" width="1080" height="280" fill="url(#skyFadeBottom)"/>
+      </svg>
+    </div>
+  </section>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-col">
+      <div class="footer-logo-text">Visor <span>Index</span></div>
+      <p class="footer-tagline">Independent intelligence for finding financial advisors you can trust.</p>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Platform</div>
+      <ul class="footer-links">
+        <li><a href="#">Find Advisors</a></li>
+        <li><a href="#">Rankings</a></li>
+        <li><a href="#">Analytics</a></li>
+        <li><a href="#">Pricing</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#">About</a></li>
+        <li><a href="#">Methodology</a></li>
+        <li><a href="#">Data Sources</a></li>
+        <li><a href="#">Blog</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Legal</div>
+      <ul class="footer-links">
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Disclosures</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Visor Index. Data sourced from SEC EDGAR public filings.</span>
+    <div class="footer-socials">
+      <a href="#">LinkedIn</a>
+      <a href="#">X / Twitter</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // FAQ toggles
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const toggle = item.querySelector('.faq-toggle');
+      toggle.textContent = toggle.textContent === '+' ? '−' : '+';
+    });
+  });
+
+  // Data row toggles
+  document.querySelectorAll('.data-row').forEach(row => {
+    row.addEventListener('click', () => {
+      row.classList.toggle('active');
+      const t = row.querySelector('.data-row-toggle');
+      t.textContent = row.classList.contains('active') ? '×' : '+';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Index — Simplified Homepage Wireframe (v1)</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white: #F8FAF9;
+  --navy: #0B1F2E;
+  --navy-mid: #122638;
+  --green: #1A7A4A;
+  --green-mid: #22995E;
+  --green-light: #2DBD74;
+  --green-pale: #E8F5EE;
+  --ink: #111C18;
+  --ink-mid: #3D5248;
+  --ink-light: #7A9186;
+  --rule: #C8D8D0;
+  --grid-color: rgba(11,31,46,0.04);
+  --sans: 'DM Sans', sans-serif;
+  --serif: 'Playfair Display', serif;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  position: relative;
+}
+
+/* Subtle grid texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-wrap { position: relative; z-index: 1; border-bottom: 1px solid var(--rule); }
+.inner { max-width: 1080px; margin: 0 auto; padding: 0 48px; }
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  display: block;
+  margin-bottom: 18px;
+}
+
+.serif-headline {
+  font-family: var(--serif);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.btn-primary {
+  display: inline-block;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 12px 26px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--green-mid); }
+
+.btn-ghost {
+  display: inline-block;
+  background: transparent;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 11px 26px;
+  border: 1px solid var(--navy);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { background: var(--navy); color: #fff; }
+
+/* NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(248,250,249,0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule);
+  padding: 0 48px;
+}
+.nav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-logo { display:flex; align-items:center; gap: 10px; text-decoration:none; }
+.nav-logo-icon {
+  width: 26px; height: 26px;
+  border: 1.5px solid var(--green);
+  display:flex; align-items:center; justify-content:center;
+  background: #fff;
+}
+.nav-logo-text {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.nav-logo-text span { color: var(--green); }
+.nav-links { display:flex; gap: 34px; list-style:none; }
+.nav-links a { font-size: 12.75px; color: var(--ink-mid); text-decoration:none; }
+.nav-links a:hover { color: var(--ink); }
+.nav-cta { display:flex; align-items:center; gap: 16px; }
+.nav-login { font-size: 12.75px; color: var(--ink-mid); text-decoration:none; }
+.nav-login:hover { color: var(--ink); }
+
+/* HERO */
+.hero { padding: 78px 0 58px; text-align:center; }
+.hero-headline { font-size: clamp(40px, 5.2vw, 70px); max-width: 900px; margin: 0 auto 18px; letter-spacing: -0.02em; }
+.hero-headline em { font-style: italic; color: var(--green); }
+.hero-sub { font-size: 16px; font-weight: 300; color: var(--ink-mid); max-width: 640px; margin: 0 auto 30px; line-height: 1.65; }
+.hero-btns { display:flex; justify-content:center; gap: 14px; margin-bottom: 26px; flex-wrap: wrap; }
+.hero-proof {
+  display:flex; gap: 18px; justify-content:center; flex-wrap:wrap;
+  margin-top: 10px;
+}
+.hero-proof-chip {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--ink-light);
+  letter-spacing: 0.04em;
+}
+.hero-proof-chip strong { color: var(--ink); font-weight: 600; }
+
+/* LOGO BAR */
+.logo-bar {
+  background: var(--navy);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.logo-bar-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.logo-bar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+  padding-right: 18px;
+  border-right: 1px solid rgba(255,255,255,0.10);
+}
+.logo-bar-logos { display:flex; gap: 18px; flex-wrap:wrap; align-items:center; }
+.logo-pill {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.14);
+  padding: 7px 10px;
+}
+.logo-pill.featured { color: var(--green-light); border-color: rgba(45,189,116,0.35); }
+
+/* HOW IT WORKS */
+.hiw { padding: 78px 0; }
+.hiw-head { text-align:center; margin-bottom: 46px; }
+.hiw-title { font-size: clamp(28px, 3.4vw, 46px); max-width: 760px; margin: 0 auto 14px; }
+.hiw-sub { font-size: 15px; color: var(--ink-mid); max-width: 640px; margin: 0 auto; line-height: 1.7; }
+
+.hiw-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.hiw-card {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 26px 24px 30px;
+  background: rgba(255,255,255,0.6);
+}
+.hiw-num {
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--green);
+  margin-bottom: 14px;
+}
+.hiw-card h3 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.hiw-card p { font-size: 12.75px; color: var(--ink-mid); line-height: 1.65; }
+.hiw-mini {
+  margin-top: 22px;
+  display:flex;
+  justify-content:center;
+}
+.hiw-mini a {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--rule);
+  padding-bottom: 2px;
+}
+.hiw-mini a:hover { color: var(--green-mid); border-color: var(--green); }
+
+/* STAKES (kept close to existing visual language) */
+.cost-section { padding: 78px 0; }
+.cost-header { text-align:center; margin-bottom: 44px; }
+.cost-headline { font-size: clamp(28px, 3.4vw, 46px); max-width: 760px; margin: 0 auto 14px; }
+.cost-sub { font-size: 15px; color: var(--ink-mid); max-width: 640px; margin: 0 auto; line-height: 1.7; }
+
+.cost-interactive {
+  border: 1px solid var(--rule);
+  background: #fff;
+  overflow: hidden;
+}
+.cost-controls {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--rule);
+}
+.cost-control-group { padding: 26px 30px; border-right: 1px solid var(--rule); }
+.cost-control-group:last-child { border-right: none; }
+.cost-control-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 10px;
+  display:block;
+}
+.cost-control-value {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.cost-slider { width: 100%; appearance: none; height: 4px; background: var(--rule); outline:none; cursor:pointer; }
+.cost-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px; height: 16px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--green);
+}
+.cost-slider::-moz-range-thumb {
+  width: 16px; height: 16px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.cost-slider-range {
+  display:flex; justify-content:space-between;
+  font-size: 10px; color: var(--ink-light);
+  margin-top: 6px;
+}
+.cost-chart-area { padding: 30px 34px 18px; height: 280px; }
+.cost-chart-svg { width:100%; height:100%; overflow: visible; }
+.cost-legend {
+  display:flex; gap: 22px; flex-wrap:wrap;
+  padding: 0 34px 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.cost-legend-item { display:flex; align-items:center; gap: 8px; font-size: 12px; color: var(--ink-mid); }
+.cost-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.cost-legend-score { font-size: 11px; color: var(--ink-light); }
+
+.cost-outcome {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--rule);
+}
+.cost-outcome-cell { padding: 22px 26px; border-right: 1px solid var(--rule); text-align:center; }
+.cost-outcome-cell:last-child { border-right: none; }
+.cost-outcome-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 6px;
+}
+.cost-outcome-value { font-family: var(--serif); font-size: 26px; font-weight: 800; line-height: 1; }
+.cost-outcome-delta { font-size: 11px; color: var(--ink-light); margin-top: 4px; }
+.val-green { color: var(--green); }
+.val-amber { color: #D97706; }
+.val-red { color: #DC2626; }
+
+.cost-gap-callout {
+  background: var(--navy);
+  padding: 18px 26px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 18px;
+  flex-wrap:wrap;
+}
+.cost-gap-text { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+.cost-gap-text strong { color: var(--green-light); font-size: 17px; }
+.cost-gap-cta {
+  background: var(--green);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  text-decoration:none;
+  white-space: nowrap;
+}
+.cost-gap-cta:hover { background: var(--green-mid); }
+.cost-disclaimer {
+  padding: 12px 26px;
+  font-size: 10px;
+  color: var(--ink-light);
+  border-top: 1px solid var(--rule);
+  line-height: 1.5;
+}
+
+/* FIRM PROFILE / COMPARE */
+.preview { padding: 78px 0; }
+.preview-head { text-align:center; margin-bottom: 46px; }
+.preview-title { font-size: clamp(28px, 3.4vw, 46px); max-width: 760px; margin: 0 auto 14px; }
+.preview-sub { font-size: 15px; color: var(--ink-mid); max-width: 640px; margin: 0 auto; line-height: 1.7; }
+
+.preview-grid {
+  display:grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+}
+.card {
+  border: 1px solid var(--rule);
+  background: #fff;
+}
+.card-pad { padding: 22px 22px; }
+.card-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  background: rgba(255,255,255,0.7);
+}
+
+.profile-header {
+  padding: 18px 18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap: 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--navy);
+}
+.profile-name { font-family: var(--serif); font-size: 16px; font-weight: 800; color:#fff; line-height: 1.2; }
+.profile-meta { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 0.10em; text-transform: uppercase; margin-top: 4px; }
+.score-badge { text-align:right; }
+.score-num { font-family: var(--serif); font-size: 36px; font-weight: 900; color: var(--green-light); line-height: 1; }
+.score-label { font-size: 9px; color: rgba(255,255,255,0.45); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.profile-body { padding: 0; }
+.metric-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+}
+.metric-row:last-child { border-bottom:none; }
+.metric-name { color: var(--ink-mid); }
+.metric-score { font-weight: 700; display:flex; align-items:center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-high { background: var(--green); }
+.dot-mid { background: #F59E0B; }
+.dot-low { background: #EF4444; }
+
+.compare-grid {
+  display:grid;
+  grid-template-columns: 1fr;
+}
+.compare-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+}
+.compare-row:last-child { border-bottom:none; }
+.compare-label { color: var(--ink-mid); }
+.compare-val { font-weight: 800; }
+.compare-val.good { color: var(--green); }
+.compare-val.mid { color: #D97706; }
+.compare-val.bad { color: #DC2626; }
+.compare-cta {
+  padding: 16px 18px;
+  display:flex;
+  gap: 10px;
+  flex-wrap:wrap;
+  border-top: 1px solid var(--rule);
+  background: rgba(232,245,238,0.45);
+}
+
+/* PRICING */
+.pricing { padding: 78px 0; }
+.pricing-head { text-align:center; margin-bottom: 42px; }
+.pricing-title { font-size: clamp(28px, 3.4vw, 46px); max-width: 760px; margin: 0 auto 10px; }
+.pricing-sub { font-size: 15px; color: var(--ink-mid); max-width: 640px; margin: 0 auto; line-height: 1.7; }
+.pricing-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 34px;
+}
+.price-card {
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 26px 24px 22px;
+}
+.price-card.recommended {
+  border-color: rgba(26,122,74,0.75);
+  box-shadow: 0 8px 24px rgba(11,31,46,0.08);
+}
+.badge {
+  display:inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  color: var(--ink-mid);
+  margin-bottom: 12px;
+}
+.badge.reco {
+  background: rgba(45,189,116,0.10);
+  border-color: rgba(45,189,116,0.35);
+  color: var(--green);
+}
+.plan-name { font-size: 11px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mid); margin-bottom: 10px; }
+.price { font-family: var(--serif); font-size: 34px; font-weight: 900; margin-bottom: 4px; }
+.price small { font-size: 14px; font-family: var(--sans); font-weight: 600; color: var(--ink-light); }
+.bill { font-size: 12px; color: var(--ink-light); margin-bottom: 14px; }
+.ul { list-style: none; margin: 16px 0 18px; }
+.ul li {
+  display:flex; gap: 10px; align-items:flex-start;
+  font-size: 12.75px; color: var(--ink-mid); line-height: 1.55;
+  padding: 8px 0;
+  border-top: 1px solid rgba(200,216,208,0.45);
+}
+.ul li:first-child { border-top:none; }
+.tick { color: var(--green); font-weight: 900; margin-top: 1px; }
+.price-cta { margin-top: 6px; display:flex; }
+.price-cta a { width:100%; text-align:center; }
+
+/* FOOTER */
+footer {
+  background: var(--navy);
+  color: rgba(255,255,255,0.55);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.footer-inner { max-width:1080px; margin: 0 auto; padding: 28px 48px; display:flex; justify-content:space-between; align-items:center; gap: 18px; flex-wrap:wrap; }
+.footer-left { font-size: 11px; letter-spacing: 0.03em; }
+.footer-links { display:flex; gap: 16px; flex-wrap:wrap; }
+.footer-links a { font-size: 11px; color: rgba(255,255,255,0.45); text-decoration:none; letter-spacing: 0.08em; text-transform: uppercase; }
+.footer-links a:hover { color: #fff; }
+
+/* Responsive */
+@media (max-width: 980px) {
+  .inner { padding: 0 22px; }
+  nav { padding: 0 22px; }
+  .nav-links { display:none; }
+  .hiw-grid { grid-template-columns: 1fr; }
+  .cost-controls { grid-template-columns: 1fr; }
+  .cost-control-group { border-right: none; border-bottom: 1px solid var(--rule); }
+  .cost-control-group:last-child { border-bottom: none; }
+  .preview-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1A7A4A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="7,1 13,4 13,10 7,13 1,10 1,4"/>
+          <line x1="7" y1="1" x2="7" y2="13"/>
+          <line x1="1" y1="4" x2="13" y2="10"/>
+          <line x1="13" y1="4" x2="1" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-logo-text">Visor <span>Index</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#stakes">The Stakes</a></li>
+      <li><a href="#preview">Example</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#" class="nav-login">Log in</a>
+      <a href="#pricing" class="btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="section-wrap">
+  <section class="hero">
+    <div class="inner">
+      <span class="eyebrow">40,000+ SEC-Registered Advisors · No Paid Placements · Updated Quarterly</span>
+
+      <h1 class="serif-headline hero-headline">
+        Find <em>value</em>. Save <em>money</em>.<br>
+        Choose an advisor with <em>no conflicts.</em>
+      </h1>
+
+      <p class="hero-sub">
+        Visor Index ranks every SEC-registered investment advisor in America using only public regulatory filings — never advertising budgets, referral fees, or paid inclusion.
+      </p>
+
+      <div class="hero-btns">
+        <a href="#preview" class="btn-primary">Search</a>
+        <a href="#how" class="btn-ghost">How It Works</a>
+      </div>
+
+      <div class="hero-proof" aria-label="proof points">
+        <div class="hero-proof-chip"><strong>Independent</strong> — rules-based scoring</div>
+        <div class="hero-proof-chip"><strong>Comparable</strong> — one score + factor breakdown</div>
+        <div class="hero-proof-chip"><strong>Transparent</strong> — methodology published</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- LOGO BAR: Firms We Review -->
+<div class="logo-bar">
+  <div class="logo-bar-inner">
+    <span class="logo-bar-label">Firms we review</span>
+    <div class="logo-bar-logos">
+      <span class="logo-pill featured">Vanguard</span>
+      <span class="logo-pill">Fisher Investments</span>
+      <span class="logo-pill">Creative Planning</span>
+      <span class="logo-pill">Mercer</span>
+      <span class="logo-pill">Mariner</span>
+      <span class="logo-pill">Edelman</span>
+      <span class="logo-pill">LPL RIA Network</span>
+      <span class="logo-pill">Local RIAs Nationwide</span>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section-wrap" id="how">
+  <section class="hiw">
+    <div class="inner">
+      <div class="hiw-head">
+        <span class="eyebrow">How it works</span>
+        <h2 class="serif-headline hiw-title">Institutional-grade diligence — end to end.</h2>
+        <p class="hiw-sub">Discover, compare, monitor, and negotiate with confidence — plus optional hands-on support when you want it.</p>
+      </div>
+
+      <div class="hiw-grid">
+        <div class="hiw-card">
+          <div class="hiw-num">01</div>
+          <h3>Search any advisor or firm</h3>
+          <p>Find firms by name, city, AUM, minimums, services, and other SEC-disclosed attributes.</p>
+        </div>
+        <div class="hiw-card">
+          <div class="hiw-num">02</div>
+          <h3>Review the Visor Value Score™</h3>
+          <p>One composite score plus factor grades (fees, conflicts, compliance, growth, ownership stability).</p>
+        </div>
+        <div class="hiw-card">
+          <div class="hiw-num">03</div>
+          <h3>Compare & shortlist</h3>
+          <p>Side-by-side comparisons and a curated shortlist workflow, built for real diligence.</p>
+        </div>
+
+        <div class="hiw-card">
+          <div class="hiw-num">04</div>
+          <h3>Track material changes</h3>
+          <p>Automated alerts monitor filings for fee changes, ownership shifts, disciplinary disclosures, and other updates that impact diligence.</p>
+        </div>
+        <div class="hiw-card">
+          <div class="hiw-num">05</div>
+          <h3>Negotiate from data</h3>
+          <p>Benchmark advisory fees using one of the most comprehensive industry fee datasets — giving you leverage and clarity in discussions.</p>
+        </div>
+        <div class="hiw-card">
+          <div class="hiw-num">06</div>
+          <h3>Personalize your selection</h3>
+          <p>Work directly with our team for curated introductions, custom shortlists, and structured vetting support tailored to your needs.</p>
+        </div>
+</div>
+
+      <div class="hiw-mini">
+        <a href="#pricing">See plans & access tiers →</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- THE STAKES -->
+<div class="section-wrap" id="stakes">
+  <section class="cost-section">
+    <div class="inner">
+      <div class="cost-header">
+        <span class="eyebrow">The stakes</span>
+        <h2 class="serif-headline cost-headline">Fee differences and performance gaps compound dramatically.</h2>
+        <p class="cost-sub">Adjust for your portfolio size and time horizon to see what’s at stake when advisor quality varies.</p>
+      </div>
+
+      <div class="cost-interactive">
+        <div class="cost-controls">
+          <div class="cost-control-group">
+            <span class="cost-control-label">Starting Portfolio Value</span>
+            <div class="cost-control-value" id="portfolioDisplay">$500,000</div>
+            <input type="range" class="cost-slider" id="portfolioSlider" min="100000" max="5000000" step="50000" value="500000">
+            <div class="cost-slider-range"><span>$100K</span><span>$5M</span></div>
+          </div>
+
+          <div class="cost-control-group">
+            <span class="cost-control-label">Time Horizon</span>
+            <div class="cost-control-value" id="yearsDisplay">20 years</div>
+            <input type="range" class="cost-slider" id="yearsSlider" min="5" max="30" step="1" value="20">
+            <div class="cost-slider-range"><span>5 yrs</span><span>30 yrs</span></div>
+          </div>
+        </div>
+
+        <div class="cost-chart-area">
+          <svg class="cost-chart-svg" id="costChart" viewBox="0 0 900 260" preserveAspectRatio="none"></svg>
+        </div>
+
+        <div class="cost-legend">
+          <div class="cost-legend-item">
+            <div class="cost-legend-dot" style="background:#1A7A4A"></div>
+            <span><strong style="font-weight:700;">Top-Quartile Advisor</strong></span>
+            <span class="cost-legend-score">~7.2% net annual return</span>
+          </div>
+          <div class="cost-legend-item">
+            <div class="cost-legend-dot" style="background:#D97706"></div>
+            <span><strong style="font-weight:700;">Average Advisor</strong></span>
+            <span class="cost-legend-score">~5.8% net annual return</span>
+          </div>
+          <div class="cost-legend-item">
+            <div class="cost-legend-dot" style="background:#DC2626"></div>
+            <span><strong style="font-weight:700;">Low-Score Advisor</strong></span>
+            <span class="cost-legend-score">~4.1% net annual return</span>
+          </div>
+        </div>
+
+        <div class="cost-outcome">
+          <div class="cost-outcome-cell">
+            <div class="cost-outcome-label">Top-Quartile Outcome</div>
+            <div class="cost-outcome-value val-green" id="outGreen">—</div>
+            <div class="cost-outcome-delta" id="outGreenDelta"></div>
+          </div>
+          <div class="cost-outcome-cell">
+            <div class="cost-outcome-label">Average Outcome</div>
+            <div class="cost-outcome-value val-amber" id="outAmber">—</div>
+            <div class="cost-outcome-delta" id="outAmberDelta"></div>
+          </div>
+          <div class="cost-outcome-cell">
+            <div class="cost-outcome-label">Low-Score Outcome</div>
+            <div class="cost-outcome-value val-red" id="outRed">—</div>
+            <div class="cost-outcome-delta" id="outRedDelta"></div>
+          </div>
+        </div>
+
+        <div class="cost-gap-callout">
+          <p class="cost-gap-text">On a <span id="gapPortfolioText">$500K</span> portfolio over <span id="gapYearsText">20</span> years, the estimated gap between top-quartile and low-score outcomes is <strong id="gapValue">$0</strong>.</p>
+          <a href="#preview" class="cost-gap-cta">See advisor examples →</a>
+        </div>
+
+        <p class="cost-disclaimer">* Illustrative projections only. Estimates are placeholders for wireframing and do not constitute investment advice.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- EXAMPLE: FIRM PROFILE / COMPARE -->
+<div class="section-wrap" id="preview">
+  <section class="preview">
+    <div class="inner">
+      <div class="preview-head">
+        <span class="eyebrow">Example</span>
+        <h2 class="serif-headline preview-title">What you see in a firm profile — and how you compare.</h2>
+        <p class="preview-sub">A score is useful only if you can see what drives it. Profiles show factor-level grades and a clean comparison view.</p>
+      </div>
+
+      <div class="preview-grid">
+        <!-- Firm Profile -->
+        <div class="card">
+          <div class="card-title">Sample firm profile</div>
+
+          <div class="profile-header">
+            <div>
+              <div class="profile-name">Meridian Wealth Advisors</div>
+              <div class="profile-meta">SEC Registered RIA · New York, NY</div>
+            </div>
+            <div class="score-badge">
+              <div class="score-num">84</div>
+              <div class="score-label">Visor Score / 100</div>
+            </div>
+          </div>
+
+          <div class="profile-body">
+            <div class="metric-row">
+              <span class="metric-name">Regulatory Compliance</span>
+              <span class="metric-score"><span class="dot dot-high"></span>96</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Fee Transparency</span>
+              <span class="metric-score"><span class="dot dot-high"></span>91</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Conflict Exposure</span>
+              <span class="metric-score"><span class="dot dot-mid"></span>67</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">AUM Growth</span>
+              <span class="metric-score"><span class="dot dot-high"></span>88</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Ownership Stability</span>
+              <span class="metric-score"><span class="dot dot-high"></span>82</span>
+            </div>
+          </div>
+
+          <div class="card-pad" style="border-top:1px solid var(--rule); background: rgba(232,245,238,0.45); display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="#pricing" class="btn-primary">Unlock full profile</a>
+            <a href="#how" class="btn-ghost">How scoring works</a>
+          </div>
+        </div>
+
+        <!-- Compare -->
+        <div class="card">
+          <div class="card-title">Compare view</div>
+
+          <div class="compare-grid">
+            <div class="compare-row">
+              <span class="compare-label">Visor Value Score™</span>
+              <span class="compare-val good">84</span>
+            </div>
+            <div class="compare-row">
+              <span class="compare-label">Published minimum</span>
+              <span class="compare-val mid">$1,000,000</span>
+            </div>
+            <div class="compare-row">
+              <span class="compare-label">Fee schedule clarity</span>
+              <span class="compare-val good">High</span>
+            </div>
+            <div class="compare-row">
+              <span class="compare-label">Disclosed conflicts</span>
+              <span class="compare-val mid">Moderate</span>
+            </div>
+            <div class="compare-row">
+              <span class="compare-label">Discretionary AUM</span>
+              <span class="compare-val good">78%</span>
+            </div>
+
+            <div class="compare-cta">
+              <a href="#pricing" class="btn-primary">Compare 3 firms</a>
+              <a href="#how" class="btn-ghost">See methodology</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- PRICING -->
+<div class="section-wrap" id="pricing">
+  <section class="pricing">
+    <div class="inner">
+      <div class="pricing-head">
+        <span class="eyebrow">Pricing</span>
+        <h2 class="serif-headline pricing-title">Access tiers</h2>
+        <p class="pricing-sub">Choose the level of support that fits your diligence workflow.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="plan-name">Data Access</div>
+          <div class="price">$20<small>/mo</small></div>
+          <div class="bill">Billed annually ($240/year)</div>
+          <ul class="ul">
+            <li><span class="tick">–</span> Full directory search and firm profile access</li>
+            <li><span class="tick">–</span> Fee schedule context and comparison tools</li>
+            <li><span class="tick">–</span> Saved firms and basic activity alerts</li>
+            <li><span class="tick">–</span> Match questionnaire and ranked recommendations</li>
+          </ul>
+          <div class="price-cta"><a class="btn-ghost" href="#">Get Started</a></div>
+        </div>
+
+        <div class="price-card recommended">
+          <span class="badge reco">Recommended</span>
+          <div class="plan-name">Personalized Intro</div>
+          <div class="price">$50<small>/mo</small></div>
+          <div class="bill">Billed annually ($600/year)</div>
+          <ul class="ul">
+            <li><span class="tick">–</span> Everything in Data Access</li>
+            <li><span class="tick">–</span> Strategy onboarding call</li>
+            <li><span class="tick">–</span> Curated shortlist of 3 advisor options</li>
+            <li><span class="tick">–</span> Annual review check-in</li>
+          </ul>
+          <div class="price-cta"><a class="btn-primary" href="#">Get Started</a></div>
+        </div>
+
+        <div class="price-card">
+          <div class="plan-name">Full Advisory</div>
+          <div class="price">Custom</div>
+          <div class="bill">Scope-based engagement</div>
+          <ul class="ul">
+            <li><span class="tick">–</span> Everything in Personalized Intro</li>
+            <li><span class="tick">–</span> Portfolio and advisor meeting support</li>
+            <li><span class="tick">–</span> Allocation and structure guidance</li>
+            <li><span class="tick">–</span> Ongoing diligence partnership</li>
+          </ul>
+          <div class="price-cta"><a class="btn-ghost" href="#">Contact Team</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">© Visor Index · Rankings based on public SEC filings · No paid placements</div>
+    <div class="footer-links">
+      <a href="#how">How it works</a>
+      <a href="#stakes">The stakes</a>
+      <a href="#preview">Example</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* -----------------------------
+   Stakes chart (simple SVG)
+-------------------------------- */
+const fmtCurrency = (n) =>
+  n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+const portfolioSlider = document.getElementById('portfolioSlider');
+const yearsSlider = document.getElementById('yearsSlider');
+const portfolioDisplay = document.getElementById('portfolioDisplay');
+const yearsDisplay = document.getElementById('yearsDisplay');
+
+const outGreen = document.getElementById('outGreen');
+const outAmber = document.getElementById('outAmber');
+const outRed = document.getElementById('outRed');
+
+const outGreenDelta = document.getElementById('outGreenDelta');
+const outAmberDelta = document.getElementById('outAmberDelta');
+const outRedDelta = document.getElementById('outRedDelta');
+
+const gapValue = document.getElementById('gapValue');
+const gapPortfolioText = document.getElementById('gapPortfolioText');
+const gapYearsText = document.getElementById('gapYearsText');
+
+const chart = document.getElementById('costChart');
+
+function projectFV(pv, r, years) {
+  return pv * Math.pow(1 + r, years);
+}
+
+function buildPath(points) {
+  return points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+}
+
+function render() {
+  const pv = Number(portfolioSlider.value);
+  const years = Number(yearsSlider.value);
+
+  // Placeholder net returns by "quartile" (as in your prior wireframe)
+  const rGreen = 0.072;
+  const rAmber = 0.058;
+  const rRed = 0.041;
+
+  const fvG = projectFV(pv, rGreen, years);
+  const fvA = projectFV(pv, rAmber, years);
+  const fvR = projectFV(pv, rRed, years);
+
+  portfolioDisplay.textContent = fmtCurrency(pv);
+  yearsDisplay.textContent = `${years} years`;
+
+  outGreen.textContent = fmtCurrency(fvG);
+  outAmber.textContent = fmtCurrency(fvA);
+  outRed.textContent = fmtCurrency(fvR);
+
+  outGreenDelta.textContent = `+${fmtCurrency(fvG - fvR)} vs low-score`;
+  outAmberDelta.textContent = `+${fmtCurrency(fvA - fvR)} vs low-score`;
+  outRedDelta.textContent = `Baseline`;
+
+  const gap = fvG - fvR;
+  gapValue.textContent = fmtCurrency(gap);
+  gapPortfolioText.textContent = fmtCurrency(pv).replace(/\.00$/, '');
+  gapYearsText.textContent = String(years);
+
+  // Chart rendering in 900x260 viewBox
+  const W = 900, H = 260, pad = 24;
+  const yearsSteps = 20; // smooth path
+  const maxFV = Math.max(fvG, fvA, fvR);
+
+  const series = [
+    { r: rGreen, stroke: "#1A7A4A" },
+    { r: rAmber, stroke: "#D97706" },
+    { r: rRed, stroke: "#DC2626" },
+  ];
+
+  // Clear
+  while (chart.firstChild) chart.removeChild(chart.firstChild);
+
+  // Axes (minimal)
+  const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  axis.setAttribute("x1", pad);
+  axis.setAttribute("y1", H - pad);
+  axis.setAttribute("x2", W - pad);
+  axis.setAttribute("y2", H - pad);
+  axis.setAttribute("stroke", "#C8D8D0");
+  axis.setAttribute("stroke-width", "1");
+  chart.appendChild(axis);
+
+  // Series paths
+  series.forEach((s) => {
+    const pts = [];
+    for (let i = 0; i <= yearsSteps; i++) {
+      const t = (years * i) / yearsSteps;
+      const fv = projectFV(pv, s.r, t);
+      const x = pad + ((W - 2*pad) * i) / yearsSteps;
+      const y = (H - pad) - ((H - 2*pad) * (fv / maxFV));
+      pts.push({ x, y });
+    }
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", buildPath(pts));
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke", s.stroke);
+    p.setAttribute("stroke-width", "2.2");
+    p.setAttribute("stroke-linecap", "round");
+    chart.appendChild(p);
+  });
+
+  // End markers
+  const endMarkers = [
+    { fv: fvG, color: "#1A7A4A" },
+    { fv: fvA, color: "#D97706" },
+    { fv: fvR, color: "#DC2626" },
+  ];
+  endMarkers.forEach((m) => {
+    const cx = W - pad;
+    const cy = (H - pad) - ((H - 2*pad) * (m.fv / maxFV));
+    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", cx);
+    c.setAttribute("cy", cy);
+    c.setAttribute("r", "4.5");
+    c.setAttribute("fill", m.color);
+    chart.appendChild(c);
+  });
+}
+
+portfolioSlider.addEventListener('input', render);
+yearsSlider.addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

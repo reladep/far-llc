@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;--rule:#CAD8D0;
+  --amber:#B45309;--amber-pale:#FEF3C7;--red:#DC2626;--red-pale:#FEE2E2;
+  --serif:'Cormorant Garamond',serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --nav-h:52px;
+}
+body{background:#f0f2f1;color:var(--ink);font-family:var(--sans);margin:0;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+/* ── NAV ── */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:600;height:var(--nav-h);
+  background:rgba(10,28,42,.98);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;padding:0 32px}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:22px;height:22px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:16px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:22px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:rgba(255,255,255,.75)}
+.nav-right{display:flex;align-items:center;gap:20px}
+.nav-user{font-size:11px;color:rgba(255,255,255,.45);font-family:var(--mono)}
+.nav-signout{font-size:11px;color:rgba(255,255,255,.25);text-decoration:none;font-family:var(--sans);transition:color .15s}
+.nav-signout:hover{color:rgba(255,255,255,.6)}
+
+/* ── PAGE LAYOUT ── */
+.page{display:flex;min-height:100vh;padding-top:var(--nav-h)}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;flex-shrink:0;
+  position:sticky;top:var(--nav-h);
+  height:calc(100vh - var(--nav-h));
+  background:#fff;
+  border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+
+/* User identity block */
+.sb-identity{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--rule);
+}
+.sb-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.sb-name{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink);line-height:1.1;margin-bottom:10px}
+.sb-plan{display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green);background:var(--green-pale);border:1px solid rgba(26,122,74,.2);padding:3px 9px}
+.sb-plan-dot{width:5px;height:5px;background:var(--green);border-radius:50%}
+.sb-renew{font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-top:6px}
+
+/* Nav items */
+.sb-nav{padding:12px 12px;display:flex;flex-direction:column;gap:4px;flex:1}
+
+.sb-nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;
+  cursor:pointer;
+  border:1px solid transparent;
+  border-radius:0;
+  text-decoration:none;
+  transition:all .15s;
+  user-select:none;
+  color:var(--ink-3);
+  font-size:13px;
+  font-weight:500;
+  background:none;
+  width:100%;
+  text-align:left;
+  font-family:var(--sans);
+}
+.sb-nav-item:hover{
+  background:var(--white);
+  border-color:var(--rule);
+  color:var(--ink);
+}
+.sb-nav-item.active{
+  background:var(--green-pale);
+  border-color:rgba(26,122,74,.25);
+  color:var(--green);
+  font-weight:600;
+  border-left:3px solid var(--green);
+}
+.sb-nav-item.active .sb-nav-icon{color:var(--green)}
+.sb-nav-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;color:var(--ink-3)}
+.sb-nav-label{flex:1}
+.sb-nav-count{
+  font-family:var(--mono);font-size:9px;font-weight:600;
+  background:var(--rule);color:var(--ink-3);
+  padding:2px 6px;letter-spacing:.03em;
+}
+.sb-nav-item.active .sb-nav-count{background:rgba(26,122,74,.15);color:var(--green)}
+
+.sb-footer{padding:16px 20px;border-top:1px solid var(--rule)}
+.sb-footer-link{display:block;font-size:11px;color:var(--ink-3);text-decoration:none;margin-bottom:4px;transition:color .12s}
+.sb-footer-link:hover{color:var(--green)}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;min-width:0;padding:36px 48px 80px;max-width:900px}
+
+.section-title{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ink);
+  letter-spacing:-.02em;margin-bottom:4px}
+.section-sub{font-size:13px;color:var(--ink-3);margin-bottom:24px}
+.section-divider{height:1px;background:var(--rule);margin-bottom:24px}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+.sort-group{display:flex;align-items:center;gap:6px}
+.sort-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.sort-btn{font-size:11px;font-family:var(--sans);padding:5px 11px;cursor:pointer;
+  background:#fff;border:1px solid var(--rule);color:var(--ink-3);transition:all .12s}
+.sort-btn:hover:not(.on){border-color:var(--ink-3);color:var(--ink)}
+.sort-btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.compare-bar{display:none;align-items:center;gap:8px}
+.compare-bar.show{display:flex}
+.cmp-btn{font-size:11px;font-family:var(--sans);font-weight:600;padding:6px 14px;
+  cursor:pointer;border:none;transition:all .12s}
+.cmp-btn.go{background:var(--green);color:#fff}
+.cmp-btn.go:hover{background:var(--green-2)}
+.cmp-btn.clear{background:none;border:1px solid var(--rule);color:var(--ink-3)}
+.cmp-btn.clear:hover{border-color:var(--ink-3);color:var(--ink)}
+
+/* ── FIRM LIST ── */
+.firm-list{border:1px solid var(--rule);background:var(--rule);display:flex;flex-direction:column;gap:1px}
+.firm-row{
+  background:#fff;
+  display:grid;
+  grid-template-columns:28px 1fr 60px 100px 80px;
+  align-items:center;
+  gap:12px;
+  padding:13px 16px;
+  transition:background .1s;
+  cursor:pointer;
+}
+.firm-row:hover{background:#f7faf8}
+.firm-check input{accent-color:var(--green);width:14px;height:14px;cursor:pointer}
+.firm-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.firm-meta{font-family:var(--mono);font-size:10px;color:var(--ink-3);display:flex;gap:8px}
+.vvs-dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-size:11px;font-weight:700;flex-shrink:0}
+.vvs-dot.hi{background:var(--green-pale);color:var(--green)}
+.vvs-dot.mid{background:var(--amber-pale);color:var(--amber)}
+.vvs-dot.lo{background:var(--red-pale);color:var(--red)}
+.firm-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-align:right}
+.firm-actions{display:flex;justify-content:flex-end;gap:6px;opacity:0;transition:opacity .12s}
+.firm-row:hover .firm-actions{opacity:1}
+.f-btn{font-size:10px;font-family:var(--sans);padding:3px 9px;cursor:pointer;
+  background:none;border:1px solid var(--rule);color:var(--ink-3);white-space:nowrap;transition:all .12s}
+.f-btn:hover{border-color:var(--green);color:var(--green)}
+.f-btn.remove:hover{border-color:var(--red);color:var(--red)}
+
+.empty{padding:48px 24px;text-align:center;background:#fff;border:1px solid var(--rule)}
+.empty-title{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--ink-3);margin-bottom:16px}
+.empty-link{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  background:var(--green);color:#fff;padding:8px 18px;text-decoration:none}
+
+/* ── ALERTS ── */
+.alerts-list{border:1px solid var(--rule);display:flex;flex-direction:column;gap:0}
+.alert-row{
+  background:#fff;
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  align-items:center;
+  gap:20px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--rule);
+  transition:background .1s;
+}
+.alert-row:last-child{border-bottom:none}
+.alert-row:hover{background:#f7faf8}
+.alert-firm-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.alert-firm-meta{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+/* Frequency segmented control */
+.freq-group{display:flex;gap:0;border:1px solid var(--rule)}
+.freq-btn{
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  font-family:var(--sans);padding:6px 12px;cursor:pointer;
+  background:#fff;border:none;border-right:1px solid var(--rule);
+  color:var(--ink-3);transition:all .12s;white-space:nowrap;
+}
+.freq-btn:last-child{border-right:none}
+.freq-btn:hover:not(.on){background:var(--white);color:var(--ink)}
+.freq-btn.on{background:var(--navy);color:#fff;}
+.alert-remove{font-size:11px;background:none;border:none;color:var(--rule);
+  cursor:pointer;font-family:var(--sans);transition:color .12s;padding:0 4px}
+.alert-remove:hover{color:var(--red)}
+.alerts-add-row{margin-top:12px}
+.alerts-add-btn{font-size:11px;font-family:var(--sans);font-weight:500;
+  background:none;border:1px solid var(--rule);color:var(--ink-3);
+  padding:8px 16px;cursor:pointer;transition:all .12s}
+.alerts-add-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* ── BILLING / ACCOUNT ── */
+.plan-card{background:var(--navy);padding:28px 30px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  position:relative;overflow:hidden}
+.plan-card::before{content:'';position:absolute;right:-40px;top:-40px;width:160px;height:160px;
+  border-radius:50%;background:radial-gradient(circle,rgba(26,122,74,.2) 0%,transparent 70%)}
+.plan-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:7px}
+.plan-name{font-family:var(--serif);font-size:24px;font-weight:700;color:#fff;
+  display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+.plan-price{font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.35)}
+.plan-renew{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.3);margin-bottom:10px}
+.plan-status{display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:9px;color:var(--green-3);
+  background:rgba(45,189,116,.1);border:1px solid rgba(45,189,116,.2);padding:3px 9px}
+.plan-dot{width:5px;height:5px;background:var(--green-3);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.plan-btns{display:flex;flex-direction:column;gap:7px;z-index:1}
+.plan-btn{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:9px 20px;cursor:pointer;text-align:center;font-family:var(--sans);
+  text-decoration:none;display:block;transition:all .12s;white-space:nowrap}
+.plan-btn.up{background:var(--green-3);color:var(--navy);border:none}
+.plan-btn.up:hover{background:#38d98a}
+.plan-btn.cancel{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.4)}
+.plan-btn.cancel:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.65)}
+
+.bcard{background:#fff;border:1px solid var(--rule);margin-bottom:14px}
+.bcard-hd{padding:14px 20px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between}
+.bcard-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.bcard-edit{font-size:11px;background:none;border:1px solid var(--rule);color:var(--ink-3);
+  padding:4px 12px;cursor:pointer;font-family:var(--sans);transition:all .12s}
+.bcard-edit:hover{border-color:var(--ink-3);color:var(--ink)}
+.bcard-body{padding:18px 20px}
+.bcard-body.flush{padding:0 20px}
+
+.pay-row{display:flex;align-items:center;justify-content:space-between}
+.card-chip{display:flex;align-items:center;gap:12px}
+.card-mark{width:36px;height:23px;background:var(--navy);display:grid;place-items:center;
+  font-family:var(--mono);font-size:7px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.05em}
+.card-num{font-family:var(--mono);font-size:13px;color:var(--ink)}
+.card-exp{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.card-link{font-size:12px;color:var(--green);background:none;border:none;
+  cursor:pointer;font-family:var(--sans)}
+.card-link:hover{text-decoration:underline}
+
+.inv-table{width:100%;border-collapse:collapse}
+.inv-table th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);padding:8px 0;border-bottom:1px solid var(--rule);text-align:left}
+.inv-table td{font-size:12px;padding:11px 0;border-bottom:1px solid var(--rule);
+  font-family:var(--mono);color:var(--ink-2)}
+.inv-table tr:last-child td{border-bottom:none}
+.inv-table td.inv-desc{font-family:var(--sans);font-size:13px;color:var(--ink)}
+.inv-badge{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 7px;background:var(--green-pale);color:var(--green)}
+.inv-dl{font-size:11px;color:var(--ink-3);background:none;border:none;
+  cursor:pointer;font-family:var(--sans);transition:color .12s}
+.inv-dl:hover{color:var(--green)}
+
+.acct-row{display:flex;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule)}
+.acct-row:last-child{border-bottom:none}
+.acct-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);width:150px;flex-shrink:0}
+.acct-val{font-size:13px;color:var(--ink);font-family:var(--mono)}
+.acct-val.dim{color:var(--ink-3)}
+.acct-input{font-family:var(--mono);font-size:13px;color:var(--ink);
+  border:none;border-bottom:1px solid var(--rule);background:none;
+  padding:2px 0;outline:none;transition:border-color .15s;width:220px}
+.acct-input:focus{border-color:var(--green)}
+.acct-save-row{display:flex;gap:8px;margin-top:14px}
+.acct-btn{font-size:11px;font-family:var(--sans);font-weight:600;padding:6px 14px;
+  cursor:pointer;border:none;transition:all .12s}
+.acct-btn.save{background:var(--green);color:#fff}
+.acct-btn.save:hover{background:var(--green-2)}
+.acct-btn.cancel{background:none;border:1px solid var(--rule);color:var(--ink-3)}
+.acct-btn.cancel:hover{border-color:var(--ink-3);color:var(--ink)}
+
+.notif-row{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;border-bottom:1px solid var(--rule)}
+.notif-row:last-child{border-bottom:none}
+.notif-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px}
+.notif-sub{font-size:11px;color:var(--ink-3)}
+
+.danger-link{font-size:11px;background:none;border:none;color:var(--ink-3);
+  cursor:pointer;font-family:var(--sans);padding:14px 0 0;display:block;transition:color .12s}
+.danger-link:hover{color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="topnav">
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark">
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1">
+          <polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/>
+        </svg>
+      </div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="visor-compare-v4.html">Compare</a></li>
+      <li><a href="visor-negotiate.html">Negotiate</a></li>
+      <li><a href="visor-directory-open.html">Directory</a></li>
+      <li><a href="visor-pricing.html">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-user">Maxwell Test</span>
+      <a href="#" class="nav-signout">Sign Out</a>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sb-identity">
+      <div class="sb-eyebrow">Dashboard</div>
+      <div class="sb-name">Maxwell Test</div>
+      <div class="sb-plan"><span class="sb-plan-dot"></span>Annual Access</div>
+      <div class="sb-renew">Renews Mar 1, 2027</div>
+    </div>
+
+    <div class="sb-nav">
+      <button class="sb-nav-item active" onclick="show('saved')">
+        <span class="sb-nav-icon">◈</span>
+        <span class="sb-nav-label">Saved Firms</span>
+        <span class="sb-nav-count" id="ct-saved">6</span>
+      </button>
+      <button class="sb-nav-item" onclick="show('alerts')">
+        <span class="sb-nav-icon">◯</span>
+        <span class="sb-nav-label">Alerts</span>
+        <span class="sb-nav-count" id="ct-alerts">4</span>
+      </button>
+      <button class="sb-nav-item" onclick="show('billing')">
+        <span class="sb-nav-icon">◎</span>
+        <span class="sb-nav-label">Account &amp; Billing</span>
+      </button>
+    </div>
+
+    <div class="sb-footer">
+      <a href="visor-search.html" class="sb-footer-link">→ Search advisors</a>
+      <a href="visor-negotiate.html" class="sb-footer-link">→ Negotiate fees</a>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ═══ SAVED FIRMS ═══ -->
+    <div class="panel active" id="panel-saved">
+      <div class="section-title">Saved Firms</div>
+      <div class="section-sub">Firms you've bookmarked. Click any row to view the full profile.</div>
+      <div class="section-divider"></div>
+
+      <div class="toolbar">
+        <div class="sort-group">
+          <span class="sort-label">Sort</span>
+          <button class="sort-btn on" onclick="setSort(this,'date')">Date saved</button>
+          <button class="sort-btn" onclick="setSort(this,'vvs')">VVS Score</button>
+          <button class="sort-btn" onclick="setSort(this,'aum')">AUM</button>
+          <button class="sort-btn" onclick="setSort(this,'name')">A–Z</button>
+        </div>
+        <div class="compare-bar" id="compareBar">
+          <button class="cmp-btn go" onclick="goCompare()">Compare Selected</button>
+          <button class="cmp-btn clear" onclick="clearSel()">Clear</button>
+        </div>
+      </div>
+
+      <div id="firmList"></div>
+    </div>
+
+    <!-- ═══ ALERTS ═══ -->
+    <div class="panel" id="panel-alerts">
+      <div class="section-title">Alerts</div>
+      <div class="section-sub">Monitor firms for filing changes. Toggle alert types per firm.</div>
+      <div class="section-divider"></div>
+
+      <div id="alertsList"></div>
+      <div class="alerts-add-row">
+        <button class="alerts-add-btn" onclick="show('saved')">+ Add from Saved Firms</button>
+      </div>
+    </div>
+
+    <!-- ═══ ACCOUNT & BILLING ═══ -->
+    <div class="panel" id="panel-billing">
+      <div class="section-title">Account &amp; Billing</div>
+      <div class="section-sub">Your plan, payment, invoices, and account settings.</div>
+      <div class="section-divider"></div>
+
+      <!-- Plan card -->
+      <div class="plan-card">
+        <div>
+          <div class="plan-eyebrow">Current Plan</div>
+          <div class="plan-name">Annual Access <span class="plan-price">$199 / yr</span></div>
+          <div class="plan-renew">Renews March 1, 2027</div>
+          <div class="plan-status"><span class="plan-dot"></span>Active</div>
+        </div>
+        <div class="plan-btns">
+          <a href="visor-pricing.html" class="plan-btn up">Upgrade to Concierge</a>
+          <button class="plan-btn cancel">Cancel Plan</button>
+        </div>
+      </div>
+
+      <!-- Payment method -->
+      <div class="bcard">
+        <div class="bcard-hd">
+          <div class="bcard-title">Payment Method</div>
+          <button class="bcard-edit">Update</button>
+        </div>
+        <div class="bcard-body">
+          <div class="pay-row">
+            <div class="card-chip">
+              <div class="card-mark">VISA</div>
+              <div>
+                <div class="card-num">•••• •••• •••• 4242</div>
+                <div class="card-exp">Expires 09 / 2028</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoices -->
+      <div class="bcard">
+        <div class="bcard-hd"><div class="bcard-title">Invoice History</div></div>
+        <div class="bcard-body flush">
+          <table class="inv-table">
+            <thead><tr>
+              <th>Description</th><th>Date</th><th>Amount</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="inv-desc">Annual Access — 2026</td>
+                <td>Mar 1, 2026</td><td>$199.00</td>
+                <td><span class="inv-badge">Paid</span></td>
+                <td><button class="inv-dl">↓ PDF</button></td>
+              </tr>
+              <tr>
+                <td class="inv-desc">Annual Access — 2025</td>
+                <td>Mar 1, 2025</td><td>$199.00</td>
+                <td><span class="inv-badge">Paid</span></td>
+                <td><button class="inv-dl">↓ PDF</button></td>
+              </tr>
+              <tr>
+                <td class="inv-desc">30-Day Access</td>
+                <td>Jan 14, 2025</td><td>$99.00</td>
+                <td><span class="inv-badge">Paid</span></td>
+                <td><button class="inv-dl">↓ PDF</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Account settings -->
+      <div class="bcard">
+        <div class="bcard-hd">
+          <div class="bcard-title">Account Settings</div>
+          <button class="bcard-edit" id="editToggleBtn" onclick="toggleEdit()">Edit</button>
+        </div>
+        <div class="bcard-body flush" id="acctView">
+          <div class="acct-row"><div class="acct-lbl">Name</div><div class="acct-val">Maxwell Test</div></div>
+          <div class="acct-row"><div class="acct-lbl">Email</div><div class="acct-val">maxwell@example.com</div></div>
+          <div class="acct-row"><div class="acct-lbl">Password</div><div class="acct-val dim">••••••••••</div></div>
+          <div class="acct-row"><div class="acct-lbl">Member since</div><div class="acct-val dim">March 1, 2025</div></div>
+        </div>
+        <div class="bcard-body flush" id="acctEdit" style="display:none">
+          <div class="acct-row"><div class="acct-lbl">Name</div><input class="acct-input" value="Maxwell Test"></div>
+          <div class="acct-row"><div class="acct-lbl">Email</div><input class="acct-input" value="maxwell@example.com"></div>
+          <div class="acct-row"><div class="acct-lbl">New Password</div><input class="acct-input" type="password" placeholder="Leave blank to keep current"></div>
+          <div class="acct-save-row">
+            <button class="acct-btn save" onclick="toggleEdit()">Save Changes</button>
+            <button class="acct-btn cancel" onclick="toggleEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="bcard">
+        <div class="bcard-hd"><div class="bcard-title">Email Notifications</div></div>
+        <div class="bcard-body flush">
+          <div class="notif-row">
+            <div><div class="notif-title">Watchlist alerts</div><div class="notif-sub">Email when a watched firm files a change matching your alert types</div></div>
+            <label class="tog"><input type="checkbox" checked><span class="tog-track"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-title">Weekly digest</div><div class="notif-sub">Sunday summary of changes across your saved firms</div></div>
+            <label class="tog"><input type="checkbox" checked><span class="tog-track"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-title">Score updates</div><div class="notif-sub">When VVS scores for saved firms change by more than 5 points</div></div>
+            <label class="tog"><input type="checkbox" checked><span class="tog-track"></span></label>
+          </div>
+          <div class="notif-row">
+            <div><div class="notif-title">Product announcements</div><div class="notif-sub">New features and platform updates</div></div>
+            <label class="tog"><input type="checkbox"><span class="tog-track"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <button class="danger-link"
+        onmouseover="this.style.color='var(--red)'"
+        onmouseout="this.style.color='var(--ink-3)'">
+        Request account deletion →
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const FIRMS = [
+  {name:"SCS Capital Management", city:"Boston",           state:"MA", aum:"$43.1B",  vvs:88, saved:"Mar 1, 2026",  ts:20260301},
+  {name:"Commonwealth",           city:"Waltham",          state:"MA", aum:"$210.0B", vvs:79, saved:"Feb 28, 2026", ts:20260228},
+  {name:"JFG Wealth Management",  city:"Denver",           state:"CO", aum:"$1.2B",   vvs:84, saved:"Feb 28, 2026", ts:20260228},
+  {name:"1650 Wealth Management", city:"Lighthouse Point", state:"FL", aum:"$112M",   vvs:71, saved:"Feb 25, 2026", ts:20260225},
+  {name:"Bison Wealth",           city:"Atlanta",          state:"GA", aum:"$2.8B",   vvs:76, saved:"Feb 25, 2026", ts:20260225},
+  {name:"180 Wealth Advisors",    city:"Federal Way",      state:"WA", aum:"$1.1B",   vvs:82, saved:"Feb 24, 2026", ts:20260224},
+];
+
+const ALERTS = [
+  {name:"SCS Capital Management", meta:"Boston, MA · $43.1B AUM",   freq:"Weekly"},
+  {name:"Commonwealth",           meta:"Waltham, MA · $210.0B AUM", freq:"Daily"},
+  {name:"JFG Wealth Management",  meta:"Denver, CO · $1.2B AUM",    freq:"Monthly"},
+  {name:"Bison Wealth",           meta:"Atlanta, GA · $2.8B AUM",   freq:"Weekly"},
+];
+
+let sel = new Set();
+let sortKey = 'date';
+
+// ── PANEL SWITCHING ───────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  // match button by onclick attribute
+  document.querySelectorAll('.sb-nav-item').forEach(b => {
+    if (b.getAttribute('onclick') === `show('${id}')`) b.classList.add('active');
+  });
+}
+
+// ── SAVED FIRMS ───────────────────────────────────────────────
+function vvsClass(v) { return v >= 85 ? 'hi' : v >= 70 ? 'mid' : 'lo' }
+function aumVal(s) {
+  const n = parseFloat(s.replace(/[$,BMK]/g,''));
+  return s.includes('B') ? n*1e9 : s.includes('M') ? n*1e6 : n;
+}
+
+function renderFirms() {
+  const list = FIRMS.map((f,i) => ({f,i}));
+  if (sortKey === 'vvs')  list.sort((a,b) => b.f.vvs - a.f.vvs);
+  else if (sortKey === 'aum')  list.sort((a,b) => aumVal(b.f.aum) - aumVal(a.f.aum));
+  else if (sortKey === 'name') list.sort((a,b) => a.f.name.localeCompare(b.f.name));
+  else list.sort((a,b) => b.f.ts - a.f.ts);
+
+  const el = document.getElementById('firmList');
+  if (!FIRMS.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-title">No saved firms yet</div>
+      <div class="empty-sub">Search advisors and bookmark any firm to track it here.</div>
+      <a href="visor-search.html" class="empty-link">Search Advisors</a>
+    </div>`;
+    document.getElementById('ct-saved').textContent = 0;
+    return;
+  }
+
+  el.innerHTML = `<div class="firm-list">${list.map(({f,i}) => `
+    <div class="firm-row" onclick="openFirm(event,${i})">
+      <div class="firm-check" onclick="event.stopPropagation()">
+        <input type="checkbox" ${sel.has(i)?'checked':''} onchange="toggleSel(${i},this)">
+      </div>
+      <div>
+        <div class="firm-name">${f.name}</div>
+        <div class="firm-meta"><span>${f.city}, ${f.state}</span><span>${f.aum} AUM</span></div>
+      </div>
+      <div class="vvs-dot ${vvsClass(f.vvs)}">${f.vvs}</div>
+      <div class="firm-date">${f.saved}</div>
+      <div class="firm-actions">
+        <button class="f-btn" onclick="event.stopPropagation();window.location.href='visor-profile.html'">View →</button>
+        <button class="f-btn remove" onclick="event.stopPropagation();removeFirm(${i})">Remove</button>
+      </div>
+    </div>`).join('')}</div>`;
+
+  document.getElementById('ct-saved').textContent = FIRMS.length;
+}
+
+function toggleSel(i, cb) {
+  if (cb.checked) sel.add(i); else sel.delete(i);
+  document.getElementById('compareBar').classList.toggle('show', sel.size >= 2);
+}
+function clearSel() {
+  sel.clear();
+  document.getElementById('compareBar').classList.remove('show');
+  renderFirms();
+}
+function goCompare() { window.location.href = 'visor-compare-v4.html' }
+function openFirm(e, i) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+  window.location.href = 'visor-profile.html';
+}
+function removeFirm(i) {
+  FIRMS.splice(i, 1);
+  sel.delete(i);
+  document.getElementById('compareBar').classList.toggle('show', sel.size >= 2);
+  renderFirms();
+}
+function setSort(btn, key) {
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  sortKey = key;
+  renderFirms();
+}
+
+// ── ALERTS ────────────────────────────────────────────────────
+const FREQS = ['Daily','Weekly','Monthly','Quarterly'];
+
+function renderAlerts() {
+  const el = document.getElementById('alertsList');
+  if (!ALERTS.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-title">No alerts set</div><div class="empty-sub">Add firms from your Saved Firms list to start monitoring them.</div></div>';
+    document.getElementById('ct-alerts').textContent = 0;
+    return;
+  }
+  el.innerHTML = '<div class="alerts-list">' + ALERTS.map((a,i) => `
+    <div class="alert-row">
+      <div>
+        <div class="alert-firm-name">${a.name}</div>
+        <div class="alert-firm-meta">${a.meta}</div>
+      </div>
+      <div class="freq-group">
+        ${FREQS.map(f => `<button class="freq-btn${a.freq===f?' on':''}" onclick="setFreq(${i},'${f}',this)">${f}</button>`).join('')}
+      </div>
+      <button class="alert-remove" onclick="removeAlert(${i})" title="Remove">✕</button>
+    </div>`).join('') + '</div>';
+  document.getElementById('ct-alerts').textContent = ALERTS.length;
+}
+
+function setFreq(i, freq, btn) {
+  ALERTS[i].freq = freq;
+  btn.closest('.freq-group').querySelectorAll('.freq-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function removeAlert(i) { ALERTS.splice(i,1); renderAlerts(); }
+
+// ── ACCOUNT EDIT ──────────────────────────────────────────────
+let editing = false;
+function toggleEdit() {
+  editing = !editing;
+  document.getElementById('acctView').style.display = editing ? 'none' : 'block';
+  document.getElementById('acctEdit').style.display = editing ? 'block' : 'none';
+  document.getElementById('editToggleBtn').textContent = editing ? 'Cancel' : 'Edit';
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderFirms();
+renderAlerts();
+</script>
+</body>
+</html>

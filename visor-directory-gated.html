@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Directory — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;
+  --rule:#CAD8D0;--amber:#F59E0B;--red:#EF4444;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --nav-h:52px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.016}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:600;height:var(--nav-h);background:rgba(10,28,42,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;padding:0 48px}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:24px;height:24px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:17px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a.active,.nav-links a:hover{color:rgba(255,255,255,.8)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-user{font-size:11px;color:rgba(255,255,255,.4);font-weight:500}
+.nav-cta{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--green);color:#fff;padding:7px 18px;text-decoration:none;transition:background .15s}
+.nav-cta:hover{background:var(--green-2)}
+
+/* PAGE */
+.page{padding-top:var(--nav-h)}
+
+/* HERO */
+.hero{background:var(--navy);padding:40px 0 48px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;right:-60px;top:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(26,122,74,.07) 0%,transparent 70%);pointer-events:none}
+.hero-i{max-width:1100px;margin:0 auto;padding:0 48px}
+.hero-eyebrow{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--green-3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';width:16px;height:1px;background:var(--green-3)}
+.hero-title{font-family:var(--serif);font-size:36px;font-weight:700;color:#fff;letter-spacing:-.02em;margin-bottom:6px}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.35);line-height:1.65;max-width:480px;margin-bottom:28px}
+.hero-stats{display:flex;gap:32px}
+.hs{border-left:1px solid rgba(255,255,255,.08);padding-left:20px}
+.hs-val{font-family:var(--serif);font-size:24px;font-weight:700;color:#fff;line-height:1}
+.hs-label{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;letter-spacing:.04em}
+
+/* GATE WRAP */
+.gate-wrap{position:relative}
+.gate-content{pointer-events:none;user-select:none;position:relative}
+.gate-content::after{content:'';position:absolute;inset:0;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.4) 10%,rgba(0,0,0,1) 25%,rgba(0,0,0,1) 100%);mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.4) 10%,rgba(0,0,0,1) 25%,rgba(0,0,0,1) 100%);pointer-events:none;z-index:2}
+.gate-content{-webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 20%,rgba(0,0,0,.35) 42%,rgba(0,0,0,0) 62%);mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 20%,rgba(0,0,0,.35) 42%,rgba(0,0,0,0) 62%)}
+.gate-floor{position:absolute;bottom:0;left:0;right:0;height:50%;background:var(--white);pointer-events:none;z-index:5}
+.gate-card{position:absolute;top:260px;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;border:1px solid var(--rule);border-top:2px solid var(--navy);box-shadow:0 32px 80px rgba(10,28,42,.13),0 4px 20px rgba(10,28,42,.07);padding:40px 44px;text-align:center;z-index:50}
+.gc-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--green-3);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:7px}
+.gc-eyebrow::before,.gc-eyebrow::after{content:'';width:20px;height:1px;background:var(--green-3)}
+.gc-title{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1;margin-bottom:10px}
+.gc-sub{font-size:13px;color:var(--ink-3);line-height:1.75;max-width:380px;margin:0 auto 24px}
+.gc-perks{display:flex;flex-direction:column;gap:7px;text-align:left;margin-bottom:24px;padding:14px 18px;background:var(--white);border:1px solid var(--rule)}
+.gc-perk{font-size:12px;color:var(--ink-3);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.gc-perk::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.gc-cta{display:flex;width:100%;align-items:center;justify-content:center;gap:10px;background:var(--green);color:#fff;border:none;cursor:pointer;padding:15px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:background .15s;margin-bottom:12px}
+.gc-cta:hover{background:var(--green-2)}
+.gc-cta-arrow{font-size:16px;transition:transform .2s}
+.gc-cta:hover .gc-cta-arrow{transform:translateX(4px)}
+.gc-login{font-size:11px;color:var(--ink-3)}
+.gc-login a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--rule)}
+.gate-spacer{height:560px}
+
+/* MAP SECTION */
+.map-section{max-width:1100px;margin:0 auto;padding:40px 48px 32px}
+.map-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px}
+.map-title{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.map-hint{font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.map-hint::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green-3);flex-shrink:0}
+
+/* SVG Map */
+.map-wrap{
+  position:relative;
+  background:#fff;
+  border:1px solid var(--rule);
+  border-top:2px solid var(--ink);
+  padding:28px;
+  margin-bottom:8px;
+}
+.us-map{width:100%;height:auto;display:block}
+.us-map path{
+  fill:#e8f0ed;
+  stroke:#fff;
+  stroke-width:1.5;
+  cursor:pointer;
+  transition:fill .15s;
+}
+.us-map path:hover{fill:var(--green-2)}
+.us-map path.has-firms{fill:#c8dfd5}
+.us-map path.has-firms:hover{fill:var(--green)}
+.us-map path.selected{fill:var(--green)!important}
+
+/* State tooltip */
+.map-tooltip{
+  position:absolute;
+  background:var(--navy);
+  color:#fff;
+  padding:10px 14px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .12s;
+  white-space:nowrap;
+  z-index:100;
+  border-top:2px solid var(--green-3);
+}
+.map-tooltip.show{opacity:1}
+.mtt-state{font-family:var(--serif);font-size:16px;font-weight:700;color:#fff;margin-bottom:2px}
+.mtt-count{font-family:var(--mono);font-size:11px;color:var(--green-3)}
+.mtt-aum{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
+
+/* Map legend */
+.map-legend{display:flex;align-items:center;gap:20px;padding:8px 0 0;font-size:10px;color:var(--ink-3)}
+.ml-item{display:flex;align-items:center;gap:6px}
+.ml-swatch{width:14px;height:10px;border:1px solid var(--rule)}
+
+/* Quick stats bar */
+.state-stats-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--rule);
+  border:1px solid var(--rule);
+  margin-bottom:32px;
+}
+.ssb-cell{background:#fff;padding:14px 20px}
+.ssb-label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.ssb-val{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink)}
+.ssb-sub{font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-top:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1"><polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/></svg></div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="visor-compare-v4.html">Compare</a></li>
+      <li><a href="visor-negotiate.html">Negotiate</a></li>
+      <li><a href="#" class="active">Directory</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-user">Maxwell Test</span>
+      <a href="#" class="nav-cta">Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-i">
+      <div class="hero-eyebrow">Paid Member Directory</div>
+      <div class="hero-title">Advisor Directory</div>
+      <div class="hero-sub">Every SEC-registered investment advisory firm, organized by state. Click any state to browse firms, scores, fees, and regulatory history.</div>
+      <div class="hero-stats">
+        <div class="hs"><div class="hs-val">14,280</div><div class="hs-label">Registered firms</div></div>
+        <div class="hs"><div class="hs-val">$48.2T</div><div class="hs-label">Total AUM covered</div></div>
+        <div class="hs"><div class="hs-val">50</div><div class="hs-label">States indexed</div></div>
+        <div class="hs"><div class="hs-val">Feb 2025</div><div class="hs-label">Last updated</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GATE WRAP -->
+  <div class="gate-wrap">
+    <div class="gate-content">
+
+      <!-- MAP -->
+      <div class="map-section">
+        <div class="map-header">
+          <div class="map-title">Browse by State</div>
+          <div class="map-hint">Click any state to view firms</div>
+        </div>
+
+        <div class="map-wrap">
+          <div class="map-tooltip" id="mapTooltip">
+            <div class="mtt-state" id="ttState">California</div>
+            <div class="mtt-count" id="ttCount">249 firms</div>
+            <div class="mtt-aum" id="ttAum">$851.6B total AUM</div>
+          </div>
+
+          <!-- Full US SVG map with all 50 states -->
+          <svg class="us-map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" id="usMap">
+            <!-- Continental states — simplified but recognizable paths -->
+            <path id="AL" data-name="Alabama" data-firms="142" data-aum="$89.4B" d="M 583 425 L 570 428 L 562 480 L 570 490 L 587 490 L 600 478 L 600 430 Z"/>
+            <path id="AK" data-name="Alaska" data-firms="18" data-aum="$9.1B" d="M 90 520 L 90 570 L 200 570 L 230 550 L 210 530 L 160 510 Z"/>
+            <path id="AZ" data-name="Arizona" data-firms="312" data-aum="$198.3B" d="M 188 340 L 188 430 L 270 450 L 290 430 L 290 360 L 270 330 Z"/>
+            <path id="AR" data-name="Arkansas" data-firms="89" data-aum="$41.2B" d="M 522 380 L 522 420 L 570 420 L 572 400 L 565 375 Z"/>
+            <path id="CA" data-name="California" data-firms="2849" data-aum="$4.2T" d="M 100 230 L 88 290 L 100 360 L 130 400 L 165 430 L 188 430 L 188 340 L 160 300 L 155 240 L 130 210 Z"/>
+            <path id="CO" data-name="Colorado" data-firms="521" data-aum="$312.8B" d="M 290 300 L 290 370 L 400 370 L 400 300 Z"/>
+            <path id="CT" data-name="Connecticut" data-firms="287" data-aum="$521.4B" d="M 760 238 L 760 258 L 780 260 L 782 240 Z"/>
+            <path id="DE" data-name="Delaware" data-firms="67" data-aum="$89.3B" d="M 748 278 L 748 298 L 758 298 L 762 280 Z"/>
+            <path id="FL" data-name="Florida" data-firms="1124" data-aum="$892.1B" d="M 590 490 L 570 490 L 562 510 L 580 540 L 610 560 L 650 560 L 680 540 L 680 500 L 650 490 Z"/>
+            <path id="GA" data-name="Georgia" data-firms="389" data-aum="$241.7B" d="M 600 430 L 587 490 L 600 490 L 650 490 L 660 460 L 648 425 Z"/>
+            <path id="HI" data-name="Hawaii" data-firms="42" data-aum="$18.2B" d="M 220 555 L 240 560 L 260 555 L 280 560 L 300 555 L 290 545 L 260 540 L 230 545 Z"/>
+            <path id="ID" data-name="Idaho" data-firms="94" data-aum="$52.3B" d="M 200 160 L 195 220 L 218 240 L 248 240 L 248 185 L 230 160 Z"/>
+            <path id="IL" data-name="Illinois" data-firms="842" data-aum="$1.1T" d="M 545 280 L 540 310 L 535 355 L 555 360 L 565 340 L 568 280 Z"/>
+            <path id="IN" data-name="Indiana" data-firms="248" data-aum="$138.4B" d="M 568 280 L 565 340 L 590 342 L 595 310 L 592 278 Z"/>
+            <path id="IA" data-name="Iowa" data-firms="178" data-aum="$98.2B" d="M 490 260 L 488 300 L 545 302 L 545 260 Z"/>
+            <path id="KS" data-name="Kansas" data-firms="142" data-aum="$78.9B" d="M 400 320 L 400 370 L 488 370 L 490 318 Z"/>
+            <path id="KY" data-name="Kentucky" data-firms="162" data-aum="$94.5B" d="M 565 340 L 560 360 L 600 368 L 640 362 L 648 345 L 620 335 L 592 335 Z"/>
+            <path id="LA" data-name="Louisiana" data-firms="128" data-aum="$67.8B" d="M 522 420 L 515 455 L 525 475 L 545 480 L 570 480 L 572 460 L 570 420 Z"/>
+            <path id="ME" data-name="Maine" data-firms="62" data-aum="$38.1B" d="M 800 165 L 795 195 L 815 200 L 830 185 L 820 165 Z"/>
+            <path id="MD" data-name="Maryland" data-firms="312" data-aum="$412.8B" d="M 720 295 L 718 312 L 748 315 L 750 295 Z"/>
+            <path id="MA" data-name="Massachusetts" data-firms="521" data-aum="$1.8T" d="M 775 225 L 772 245 L 800 248 L 820 240 L 810 225 Z"/>
+            <path id="MI" data-name="Michigan" data-firms="412" data-aum="$284.3B" d="M 575 210 L 572 250 L 568 278 L 592 278 L 615 265 L 620 235 L 605 210 Z"/>
+            <path id="MN" data-name="Minnesota" data-firms="387" data-aum="$421.8B" d="M 455 170 L 453 245 L 490 248 L 490 190 L 485 168 Z"/>
+            <path id="MS" data-name="Mississippi" data-firms="98" data-aum="$42.1B" d="M 545 380 L 538 420 L 540 460 L 558 462 L 565 440 L 565 375 Z"/>
+            <path id="MO" data-name="Missouri" data-firms="298" data-aum="$198.7B" d="M 488 318 L 490 370 L 522 372 L 535 355 L 540 310 L 524 300 Z"/>
+            <path id="MT" data-name="Montana" data-firms="68" data-aum="$38.9B" d="M 248 160 L 248 230 L 360 232 L 362 195 L 345 162 Z"/>
+            <path id="NE" data-name="Nebraska" data-firms="112" data-aum="$82.4B" d="M 400 260 L 400 320 L 490 318 L 490 260 Z"/>
+            <path id="NV" data-name="Nevada" data-firms="198" data-aum="$112.3B" d="M 155 240 L 160 300 L 188 340 L 218 300 L 218 240 Z"/>
+            <path id="NH" data-name="New Hampshire" data-firms="78" data-aum="$62.4B" d="M 782 195 L 778 225 L 790 228 L 795 195 Z"/>
+            <path id="NJ" data-name="New Jersey" data-firms="648" data-aum="$892.4B" d="M 748 265 L 745 290 L 762 295 L 765 268 Z"/>
+            <path id="NM" data-name="New Mexico" data-firms="98" data-aum="$48.2B" d="M 290 360 L 290 440 L 360 440 L 360 362 Z"/>
+            <path id="NY" data-name="New York" data-firms="1842" data-aum="$8.4T" d="M 710 215 L 705 260 L 720 265 L 748 265 L 762 238 L 745 218 Z"/>
+            <path id="NC" data-name="North Carolina" data-firms="342" data-aum="$218.4B" d="M 648 368 L 645 392 L 700 392 L 730 382 L 725 365 L 685 360 Z"/>
+            <path id="ND" data-name="North Dakota" data-firms="38" data-aum="$22.8B" d="M 362 168 L 362 215 L 455 215 L 455 168 Z"/>
+            <path id="OH" data-name="Ohio" data-firms="521" data-aum="$412.8B" d="M 595 278 L 592 335 L 640 338 L 648 308 L 640 275 Z"/>
+            <path id="OK" data-name="Oklahoma" data-firms="148" data-aum="$82.1B" d="M 400 370 L 400 418 L 490 420 L 522 420 L 520 372 Z"/>
+            <path id="OR" data-name="Oregon" data-firms="218" data-aum="$142.8B" d="M 130 210 L 155 240 L 218 240 L 218 185 L 195 175 L 155 178 Z"/>
+            <path id="PA" data-name="Pennsylvania" data-firms="612" data-aum="$712.4B" d="M 680 258 L 678 292 L 718 295 L 720 265 L 710 258 Z"/>
+            <path id="RI" data-name="Rhode Island" data-firms="48" data-aum="$42.1B" d="M 788 248 L 785 262 L 795 264 L 796 248 Z"/>
+            <path id="SC" data-name="South Carolina" data-firms="162" data-aum="$98.4B" d="M 648 392 L 645 420 L 670 432 L 690 415 L 695 392 Z"/>
+            <path id="SD" data-name="South Dakota" data-firms="42" data-aum="$28.4B" d="M 362 215 L 362 262 L 455 262 L 455 215 Z"/>
+            <path id="TN" data-name="Tennessee" data-firms="228" data-aum="$148.2B" d="M 560 365 L 558 385 L 600 388 L 648 385 L 648 368 L 600 368 Z"/>
+            <path id="TX" data-name="Texas" data-firms="1248" data-aum="$1.2T" d="M 360 370 L 355 440 L 360 480 L 400 520 L 450 530 L 490 510 L 510 470 L 522 420 L 490 420 L 400 418 L 400 370 Z"/>
+            <path id="UT" data-name="Utah" data-firms="218" data-aum="$128.4B" d="M 248 285 L 248 370 L 290 370 L 290 300 L 270 285 Z"/>
+            <path id="VT" data-name="Vermont" data-firms="52" data-aum="$42.8B" d="M 768 195 L 765 225 L 778 228 L 782 195 Z"/>
+            <path id="VA" data-name="Virginia" data-firms="428" data-aum="$512.4B" d="M 680 315 L 678 345 L 720 348 L 730 325 L 718 312 Z"/>
+            <path id="WA" data-name="Washington" data-firms="312" data-aum="$218.4B" d="M 130 148 L 130 180 L 195 178 L 218 160 L 210 142 L 162 138 Z"/>
+            <path id="WV" data-name="West Virginia" data-firms="62" data-aum="$38.4B" d="M 648 308 L 645 340 L 678 345 L 680 315 L 660 295 Z"/>
+            <path id="WI" data-name="Wisconsin" data-firms="248" data-aum="$198.4B" d="M 524 212 L 518 265 L 545 265 L 553 240 L 555 210 Z"/>
+            <path id="WY" data-name="Wyoming" data-firms="48" data-aum="$28.9B" d="M 248 230 L 248 285 L 362 285 L 362 232 Z"/>
+
+            <!-- State labels for major states -->
+            <text x="584" y="460" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">AL</text>
+            <text x="200" y="548" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">AK</text>
+            <text x="230" y="395" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">AZ</text>
+            <text x="545" y="402" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">AR</text>
+            <text x="138" y="330" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">CA</text>
+            <text x="345" y="338" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">CO</text>
+            <text x="614" y="460" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">FL</text>
+            <text x="624" y="460" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">GA</text>
+            <text x="219" y="210" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">ID</text>
+            <text x="551" y="320" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">IL</text>
+            <text x="580" y="312" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">IN</text>
+            <text x="518" y="283" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">IA</text>
+            <text x="444" y="348" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">KS</text>
+            <text x="600" y="354" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">KY</text>
+            <text x="545" y="452" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">LA</text>
+            <text x="733" y="306" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MD</text>
+            <text x="593" y="248" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MI</text>
+            <text x="471" y="210" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MN</text>
+            <text x="552" y="425" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MS</text>
+            <text x="509" y="340" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MO</text>
+            <text x="304" y="198" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">MT</text>
+            <text x="444" y="292" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NE</text>
+            <text x="186" y="275" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NV</text>
+            <text x="728" y="280" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NJ</text>
+            <text x="325" y="402" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NM</text>
+            <text x="730" y="240" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NY</text>
+            <text x="686" y="380" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">NC</text>
+            <text x="408" y="193" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">ND</text>
+            <text x="617" y="308" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">OH</text>
+            <text x="461" y="397" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">OK</text>
+            <text x="172" y="212" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">OR</text>
+            <text x="698" y="275" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">PA</text>
+            <text x="673" y="408" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">SC</text>
+            <text x="408" y="240" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">SD</text>
+            <text x="603" y="378" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">TN</text>
+            <text x="435" y="455" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">TX</text>
+            <text x="268" y="330" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">UT</text>
+            <text x="700" y="330" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">VA</text>
+            <text x="168" y="162" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">WA</text>
+            <text x="662" y="323" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">WV</text>
+            <text x="534" y="238" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">WI</text>
+            <text x="305" y="258" font-family="DM Mono,monospace" font-size="8" fill="rgba(10,28,42,.5)" text-anchor="middle">WY</text>
+          </svg>
+
+          <div class="map-legend">
+            <div class="ml-item"><div class="ml-swatch" style="background:#c8dfd5"></div>Has firms</div>
+            <div class="ml-item"><div class="ml-swatch" style="background:var(--green)"></div>Selected</div>
+            <div class="ml-item"><div class="ml-swatch" style="background:#e8f0ed"></div>No data</div>
+          </div>
+        </div>
+
+        <!-- Stats bar (updates on state hover/select) -->
+        <div class="state-stats-bar" id="statsBar">
+          <div class="ssb-cell"><div class="ssb-label">Selected State</div><div class="ssb-val" id="sbState">—</div><div class="ssb-sub">Click map to select</div></div>
+          <div class="ssb-cell"><div class="ssb-label">Registered Firms</div><div class="ssb-val" id="sbFirms">—</div><div class="ssb-sub">SEC-registered RIAs</div></div>
+          <div class="ssb-cell"><div class="ssb-label">Total AUM</div><div class="ssb-val" id="sbAum">—</div><div class="ssb-sub">Assets under management</div></div>
+          <div class="ssb-cell"><div class="ssb-label">Action</div>
+            <div><a href="visor-directory-state.html" id="sbLink" style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--green);text-decoration:none;opacity:.3;pointer-events:none" id="sbLink">Browse Firms →</a></div>
+            <div class="ssb-sub" id="sbAction">Select a state first</div>
+          </div>
+        </div>
+
+      </div><!-- /map-section -->
+    </div><!-- /gate-content -->
+
+    <!-- Gate floor -->
+    <div class="gate-floor"></div>
+
+    <!-- Gate card -->
+    <div class="gate-card">
+      <div class="gc-eyebrow">Members only</div>
+      <div class="gc-title">Unlock the full directory</div>
+      <div class="gc-sub">Browse every SEC-registered advisor by state — with Visor scores, fee structures, AUM data, and regulatory history.</div>
+      <div class="gc-perks">
+        <div class="gc-perk">All 14,280 registered firms across 50 states</div>
+        <div class="gc-perk">VVS scores, fee structures, and AUM for every firm</div>
+        <div class="gc-perk">Regulatory flags and disciplinary history</div>
+        <div class="gc-perk">One-click to compare or negotiate from any firm</div>
+      </div>
+      <a href="#" class="gc-cta" onclick="alert('Sign-up flow in production')">
+        Create Free Account <span class="gc-cta-arrow">→</span>
+      </a>
+      <div class="gc-login">Already have an account? <a href="#">Sign in</a></div>
+    </div>
+
+    <div class="gate-spacer"></div>
+
+  </div><!-- /gate-wrap -->
+
+</div><!-- /page -->
+
+<script>
+const stateData = {};
+document.querySelectorAll('#usMap path[data-name]').forEach(p => {
+  stateData[p.id] = {
+    name: p.dataset.name,
+    firms: p.dataset.firms,
+    aum: p.dataset.aum
+  };
+  if(p.dataset.firms) p.classList.add('has-firms');
+});
+
+const tooltip = document.getElementById('mapTooltip');
+const mapWrap = document.querySelector('.map-wrap');
+
+document.querySelectorAll('#usMap path').forEach(path => {
+  path.addEventListener('mousemove', e => {
+    const d = stateData[path.id];
+    if(!d) return;
+    const rect = mapWrap.getBoundingClientRect();
+    const x = e.clientX - rect.left + 12;
+    const y = e.clientY - rect.top - 10;
+    tooltip.style.left = Math.min(x, rect.width - 180) + 'px';
+    tooltip.style.top = Math.max(y - 60, 8) + 'px';
+    document.getElementById('ttState').textContent = d.name;
+    document.getElementById('ttCount').textContent = d.firms + ' firms';
+    document.getElementById('ttAum').textContent = d.aum + ' total AUM';
+    tooltip.classList.add('show');
+  });
+  path.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  path.addEventListener('click', () => {
+    const d = stateData[path.id];
+    if(!d) return;
+    document.querySelectorAll('#usMap path').forEach(p => p.classList.remove('selected'));
+    path.classList.add('selected');
+    document.getElementById('sbState').textContent = d.name;
+    document.getElementById('sbFirms').textContent = parseInt(d.firms).toLocaleString();
+    document.getElementById('sbAum').textContent = d.aum;
+    document.getElementById('sbAction').textContent = 'View all firms in ' + d.name;
+    const lnk = document.getElementById('sbLink');
+    lnk.style.opacity = '1';
+    lnk.style.pointerEvents = 'auto';
+    lnk.textContent = 'Browse Firms →';
+  });
+});
+</script>
+</body>
+</html>

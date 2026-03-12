@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare Firms — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;
+  --rule:#CAD8D0;--amber:#F59E0B;--red:#EF4444;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --nav-h:52px;
+  --label-w:188px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.016;
+}
+
+/* ── NAV ──────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:600;
+  height:var(--nav-h);
+  background:rgba(10,28,42,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;padding:0 48px;
+}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:24px;height:24px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:17px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a.active,.nav-links a:hover{color:rgba(255,255,255,.8)}
+.nav-cta{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--green);color:#fff;padding:7px 18px;text-decoration:none;transition:background .15s}
+.nav-cta:hover{background:var(--green-2)}
+
+/* ── PAGE ─────────────────────────────────── */
+.page{padding-top:var(--nav-h)}
+
+/* ── PAGE HEADER ──────────────────────────── */
+.page-hd{
+  background:var(--navy);
+  padding:32px 48px 0;
+}
+.pg-eyebrow{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--green-3);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.pg-eyebrow::before{content:'';width:16px;height:1px;background:var(--green-3)}
+.pg-title{font-family:var(--serif);font-size:34px;font-weight:700;color:#fff;letter-spacing:-.02em;margin-bottom:4px}
+.pg-sub{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:22px}
+
+/* Jump nav */
+.jump-nav{display:flex;border-top:1px solid rgba(255,255,255,.07);margin:0 -48px;padding:0 48px}
+.jn-link{font-size:11px;font-weight:500;color:rgba(255,255,255,.3);padding:11px 20px 11px 0;margin-right:4px;white-space:nowrap;text-decoration:none;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.04em}
+.jn-link:hover{color:rgba(255,255,255,.65)}
+.jn-link.on{color:var(--green-3);border-bottom-color:var(--green-3)}
+
+/* ── STICKY FIRM HEADER ───────────────────── */
+.firm-header{
+  position:sticky;top:var(--nav-h);z-index:500;
+  background:var(--navy);
+  border-bottom:2px solid rgba(255,255,255,.07);
+  box-shadow:0 4px 20px rgba(0,0,0,.15);
+  overflow-x:auto;
+}
+.firm-header-row{
+  display:grid;
+  grid-template-columns:var(--label-w) repeat(4,1fr);
+  max-width:1200px;margin:0 auto;
+  padding:0 48px;
+  min-width:700px;
+}
+.fh-gutter{
+  padding:14px 0;
+  display:flex;align-items:center;
+  border-right:1px solid rgba(255,255,255,.07);
+}
+.fh-gutter-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.2)}
+
+.fh-firm{
+  padding:14px 20px;
+  border-right:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;gap:10px;
+  position:relative;min-width:0;
+}
+.fh-firm:last-child{border-right:none}
+.fh-firm.is-best::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green-3)}
+
+.fh-logo{
+  width:28px;height:28px;flex-shrink:0;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  display:grid;place-items:center;
+  font-family:var(--serif);font-size:11px;font-weight:700;
+  color:rgba(255,255,255,.5);
+}
+.fh-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.fh-remove{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.2);font-size:15px;line-height:1;flex-shrink:0;padding:0 2px;transition:color .15s;margin-left:auto}
+.fh-remove:hover{color:rgba(255,255,255,.7)}
+
+.fh-firm.empty{
+  justify-content:center;gap:6px;
+  cursor:pointer;opacity:.3;transition:opacity .2s;
+  border:none;
+}
+.fh-firm.empty:hover{opacity:.65}
+.fh-add{width:22px;height:22px;border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;flex-shrink:0}
+.fh-add-label{font-size:11px;color:rgba(255,255,255,.4);white-space:nowrap}
+
+/* ── COMPARISON TABLE ─────────────────────── */
+.compare-wrap{
+  max-width:1200px;margin:0 auto;
+  padding:0 48px 48px;
+  overflow-x:auto;
+}
+.compare-table{
+  width:100%;
+  min-width:700px;
+}
+
+/* Section header row */
+.ct-section{
+  display:grid;
+  grid-template-columns:var(--label-w) repeat(4,1fr);
+  padding:28px 0 10px;
+  border-bottom:2px solid var(--ink);
+  margin-top:8px;
+}
+.ct-section-title{
+  font-family:var(--serif);font-size:19px;font-weight:700;
+  color:var(--ink);grid-column:1/-1;
+  display:flex;align-items:baseline;justify-content:space-between;
+}
+.ct-section-meta{font-family:var(--sans);font-size:10px;font-weight:400;color:var(--ink-3);letter-spacing:0}
+
+/* Data row */
+.ct-row{
+  display:grid;
+  grid-template-columns:var(--label-w) repeat(4,1fr);
+  border-bottom:1px solid var(--rule);
+  transition:background .1s;
+}
+.ct-row:hover{background:rgba(26,122,74,.028)}
+
+.ct-label{
+  padding:13px 16px 13px 0;
+  display:flex;align-items:center;gap:5px;
+  border-right:1px solid var(--rule);
+  font-size:12px;color:var(--ink-3);font-weight:500;
+}
+.ct-label.strong{font-weight:600;color:var(--ink)}
+
+.tip{font-size:10px;color:var(--rule-2);cursor:default;transition:color .15s;position:relative;flex-shrink:0}
+.tip:hover{color:var(--ink-3)}
+.tip:hover::after{
+  content:attr(data-tip);
+  position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  background:var(--ink);color:#fff;font-size:11px;line-height:1.5;
+  padding:8px 12px;width:200px;white-space:normal;
+  pointer-events:none;z-index:300;
+  border-top:2px solid var(--green-3);font-family:var(--sans);font-weight:400;
+}
+
+.ct-cell{
+  padding:13px 20px;
+  display:flex;align-items:center;
+  border-right:1px solid var(--rule);
+}
+.ct-cell:last-child{border-right:none}
+.ct-cell.best{background:rgba(45,189,116,.07)}
+.ct-cell.worst{background:rgba(239,68,68,.04)}
+.ct-cell.empty{justify-content:center;color:var(--rule);font-size:18px}
+
+/* Score */
+.score-row{display:flex;align-items:center;gap:9px;width:100%}
+.score-n{font-family:var(--serif);font-size:19px;font-weight:700;width:26px;flex-shrink:0;line-height:1}
+.score-bar{flex:1;height:3px;background:var(--rule);border-radius:2px;overflow:hidden}
+.score-fill{height:100%;border-radius:2px}
+
+/* Badges */
+.badge{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1px solid;display:inline-flex}
+.badge.yes{color:var(--green);border-color:rgba(26,122,74,.25);background:var(--green-pale)}
+.badge.no{color:var(--red);border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.04)}
+.badge.warn{color:var(--amber);border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.05)}
+
+.v-serif{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--ink)}
+.v-mono{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.v-delta{font-family:var(--mono);font-size:10px;margin-left:4px}
+.v-delta.up{color:var(--green)}.v-delta.dn{color:var(--red)}
+
+/* ── FEE CALCULATOR SECTION ───────────────── */
+.fee-section{
+  max-width:1200px;margin:0 auto 80px;
+  padding:0 48px;
+}
+.fee-section-hd{
+  padding:28px 0 10px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:24px;
+  display:flex;align-items:baseline;justify-content:space-between;
+}
+.fee-section-title{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--ink)}
+.fee-section-meta{font-size:10px;color:var(--ink-3)}
+
+/* Full-width input row */
+.fee-input-row{
+  background:#fff;border:1px solid var(--rule);
+  border-top:2px solid var(--green);
+  padding:20px 24px;
+  display:flex;align-items:center;gap:24px;
+  margin-bottom:1px;
+}
+.fee-input-label{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.fee-input-wrap{display:flex;align-items:center;border:1px solid var(--rule);background:var(--white);flex-shrink:0}
+.fee-dollar{padding:0 12px;font-family:var(--serif);font-size:19px;color:var(--ink-3);border-right:1px solid var(--rule);line-height:44px}
+.fee-input{border:none;background:none;outline:none;font-family:var(--mono);font-size:14px;color:var(--ink);padding:10px 14px;width:180px}
+.fee-slider-wrap{flex:1;display:flex;flex-direction:column;gap:4px}
+.fee-slider{width:100%;-webkit-appearance:none;appearance:none;height:2px;background:var(--rule);outline:none}
+.fee-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--green);border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--green);cursor:pointer}
+.fee-slider-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--ink-3)}
+.fee-aum-display{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);white-space:nowrap;min-width:80px}
+
+/* Two-column bottom: bars left, tables right */
+.fee-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--rule);
+  border:1px solid var(--rule);
+}
+.fee-col{background:#fff;padding:24px}
+
+.fee-col-title{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.fee-col-title::after{content:'';flex:1;height:1px;background:var(--rule)}
+
+/* Per-firm bars */
+.fee-firm{margin-bottom:18px}
+.fee-firm:last-child{margin-bottom:0}
+.fee-firm-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.fee-firm-name{font-size:12px;font-weight:600;color:var(--ink)}
+.fee-firm-amt{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink)}
+.fee-firm-rate{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-left:4px}
+.fee-bar-track{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:3px}
+.fee-bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.16,1,.3,1)}
+.fee-bar-note{font-size:10px;height:14px}
+.fee-legend{display:flex;gap:14px;font-size:10px;color:var(--ink-3);padding-top:16px;border-top:1px solid var(--rule);margin-top:16px}
+.fee-legend span{display:flex;align-items:center;gap:5px}
+.fee-legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Portfolio tables */
+.fee-table-block{margin-bottom:24px}
+.fee-table-block:last-child{margin-bottom:0}
+.fee-table-label{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+.fee-table-sub{font-size:10px;color:var(--ink-3);font-weight:400;margin-left:6px}
+
+.fee-table{width:100%;border-collapse:collapse}
+.fee-table th{font-size:9px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);padding:6px 8px;border-bottom:1px solid var(--rule);text-align:left}
+.fee-table th:not(:first-child){text-align:right}
+.fee-table td{padding:10px 8px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.fee-table td:first-child{font-family:var(--sans);font-size:12px;color:var(--ink);font-weight:500}
+.fee-table td:not(:first-child){text-align:right}
+.fee-table tr:last-child td{border-bottom:none}
+.fee-table .best td{color:var(--green)}
+.fee-table .best td:first-child{font-weight:600}
+.fee-col-red{color:#DC2626!important}
+
+.fee-disclaimer{font-size:9px;color:var(--ink-3);line-height:1.6;font-style:italic;padding-top:14px;border-top:1px solid var(--rule);margin-top:14px}
+
+/* ── GATE ──────────────────────────────────── */
+.gate-wrap{position:relative}
+.gate-content{
+  pointer-events:none;user-select:none;
+  position:relative;
+}
+/* Blur overlay sits ON TOP of content as a pseudo-element, not applied to the element itself */
+.gate-content::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 12%,rgba(0,0,0,1) 28%,rgba(0,0,0,1) 100%);
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 12%,rgba(0,0,0,1) 28%,rgba(0,0,0,1) 100%);
+  pointer-events:none;
+  z-index:2;
+}
+/* Fade content opacity gently at top so first rows are readable */
+.gate-content{
+  -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 22%,rgba(0,0,0,.4) 45%,rgba(0,0,0,0) 65%);
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 22%,rgba(0,0,0,.4) 45%,rgba(0,0,0,0) 65%);
+}
+.gate-floor{position:absolute;bottom:0;left:0;right:0;height:54%;background:var(--white);pointer-events:none;z-index:5}
+.gate-card{
+  position:absolute;top:220px;left:50%;transform:translateX(-50%);
+  width:100%;max-width:520px;
+  background:#fff;border:1px solid var(--rule);border-top:2px solid var(--navy);
+  box-shadow:0 32px 80px rgba(10,28,42,.13),0 4px 20px rgba(10,28,42,.07);
+  padding:40px 44px;text-align:center;z-index:50;
+}
+.gc-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--green-3);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:7px}
+.gc-eyebrow::before,.gc-eyebrow::after{content:'';width:20px;height:1px;background:var(--green-3)}
+.gc-title{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1;margin-bottom:10px}
+.gc-sub{font-size:13px;color:var(--ink-3);line-height:1.75;max-width:380px;margin:0 auto 24px}
+.gc-firms{display:flex;border:1px solid var(--rule);margin-bottom:24px}
+.gc-firm{flex:1;padding:12px 14px;border-right:1px solid var(--rule);text-align:center}
+.gc-firm:last-child{border-right:none}
+.gc-firm-logo{width:26px;height:26px;background:var(--navy);display:grid;place-items:center;font-family:var(--serif);font-size:10px;font-weight:700;color:rgba(255,255,255,.45);margin:0 auto 5px}
+.gc-firm-name{font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-firm-score{font-family:var(--mono);font-size:10px;color:var(--green-3)}
+.gc-perks{display:flex;flex-direction:column;gap:7px;text-align:left;margin-bottom:24px;padding:14px 18px;background:var(--white);border:1px solid var(--rule)}
+.gc-perk{font-size:12px;color:var(--ink-3);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.gc-perk::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.gc-cta{
+  display:flex;width:100%;align-items:center;justify-content:center;gap:10px;
+  background:var(--green);color:#fff;border:none;cursor:pointer;
+  padding:15px;font-family:var(--sans);font-size:13px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
+  transition:background .15s;margin-bottom:12px;
+}
+.gc-cta:hover{background:var(--green-2)}
+.gc-cta-arrow{font-size:16px;transition:transform .2s}
+.gc-cta:hover .gc-cta-arrow{transform:translateX(4px)}
+.gc-login{font-size:11px;color:var(--ink-3)}
+.gc-login a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--rule)}
+.gc-login a:hover{border-bottom-color:var(--ink)}
+.gate-spacer{height:580px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1"><polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/></svg></div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="#" class="active">Compare</a></li>
+      <li><a href="#">Negotiate</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <a href="#" class="nav-cta">Get Access</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-hd">
+    <div class="pg-eyebrow">Side-by-Side Comparison</div>
+    <div class="pg-title">Compare Firms</div>
+    <div class="pg-sub">Up to 4 firms · Scores, fees, growth, and client profile</div>
+    <div class="jump-nav">
+      <a href="#vvs"        class="jn-link on">Visor Score™</a>
+      <a href="#aum"        class="jn-link">AUM & Growth</a>
+      <a href="#clients"    class="jn-link">Client Profile</a>
+      <a href="#regulatory" class="jn-link">Regulatory</a>
+      <a href="#fees"       class="jn-link">Fee Calculator</a>
+    </div>
+  </div>
+
+  <!-- GATE WRAP: everything below page header is gated -->
+  <div class="gate-wrap">
+
+    <!-- Blurred content underneath -->
+    <div class="gate-content">
+
+  <!-- STICKY FIRM HEADER -->
+  <div class="firm-header">
+    <div class="firm-header-row">
+
+      <div class="fh-gutter">
+        <div class="fh-gutter-label">3 firms</div>
+      </div>
+
+      <!-- Firm 1 -->
+      <div class="fh-firm is-best">
+        <div class="fh-logo">RF</div>
+        <div class="fh-name">Rockbridge Family Partners</div>
+        <button class="fh-remove" onclick="removeFirm(0)">×</button>
+      </div>
+
+      <!-- Firm 2 -->
+      <div class="fh-firm">
+        <div class="fh-logo">MV</div>
+        <div class="fh-name">Meridian Vantage Advisors</div>
+        <button class="fh-remove" onclick="removeFirm(1)">×</button>
+      </div>
+
+      <!-- Firm 3 -->
+      <div class="fh-firm">
+        <div class="fh-logo">AP</div>
+        <div class="fh-name">Ashford Private Wealth</div>
+        <button class="fh-remove" onclick="removeFirm(2)">×</button>
+      </div>
+
+      <!-- Empty slot -->
+      <div class="fh-firm empty" onclick="addFirm()">
+        <div class="fh-add"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+        <div class="fh-add-label">Add a firm</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="compare-wrap">
+    <div class="compare-table">
+
+      <!-- ── VISOR SCORE ────────────────────── -->
+      <div class="ct-section" id="vvs">
+        <div class="ct-section-title">Visor Value Score™ <span class="ct-section-meta">Based on SEC ADV · Updated Feb 2025</span></div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label strong">Overall Score</div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74">91</div><div class="score-bar"><div class="score-fill" style="width:91%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74">87</div><div class="score-bar"><div class="score-fill" style="width:87%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74">84</div><div class="score-bar"><div class="score-fill" style="width:84%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Disclosure Quality <span class="tip" data-tip="Completeness and clarity of ADV filings including brochure quality and update frequency.">ⓘ</span></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">94</div><div class="score-bar"><div class="score-fill" style="width:94%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">88</div><div class="score-bar"><div class="score-fill" style="width:88%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">82</div><div class="score-bar"><div class="score-fill" style="width:82%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Fee Transparency <span class="tip" data-tip="How explicitly the firm discloses its fee structure, tiers, and billing practices.">ⓘ</span></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">96</div><div class="score-bar"><div class="score-fill" style="width:96%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">91</div><div class="score-bar"><div class="score-fill" style="width:91%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell worst"><div class="score-row"><div class="score-n" style="color:#F59E0B;font-size:15px">79</div><div class="score-bar"><div class="score-fill" style="width:79%;background:#F59E0B"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Fee Competitiveness <span class="tip" data-tip="Fees benchmarked against peers of similar AUM and client profile.">ⓘ</span></div>
+        <div class="ct-cell worst"><div class="score-row"><div class="score-n" style="color:#F59E0B;font-size:15px">78</div><div class="score-bar"><div class="score-fill" style="width:78%;background:#F59E0B"></div></div></div></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">85</div><div class="score-bar"><div class="score-fill" style="width:85%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">81</div><div class="score-bar"><div class="score-fill" style="width:81%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Conflict-Free <span class="tip" data-tip="Conflicts of interest including referral arrangements and third-party compensation.">ⓘ</span></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">84</div><div class="score-bar"><div class="score-fill" style="width:84%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">90</div><div class="score-bar"><div class="score-fill" style="width:90%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">87</div><div class="score-bar"><div class="score-fill" style="width:87%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">AUM Growth <span class="tip" data-tip="AUM growth rate over 3 and 5 years vs. peer median.">ⓘ</span></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">88</div><div class="score-bar"><div class="score-fill" style="width:88%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">82</div><div class="score-bar"><div class="score-fill" style="width:82%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell worst"><div class="score-row"><div class="score-n" style="color:#F59E0B;font-size:15px">74</div><div class="score-bar"><div class="score-fill" style="width:74%;background:#F59E0B"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Advisor Bandwidth <span class="tip" data-tip="Ratio of clients to advisory staff — lower is better for client attention.">ⓘ</span></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">91</div><div class="score-bar"><div class="score-fill" style="width:91%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell worst"><div class="score-row"><div class="score-n" style="color:#F59E0B;font-size:15px">76</div><div class="score-bar"><div class="score-fill" style="width:76%;background:#F59E0B"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">83</div><div class="score-bar"><div class="score-fill" style="width:83%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Derivatives Risk <span class="tip" data-tip="Use of complex instruments such as options or leveraged products in client portfolios.">ⓘ</span></div>
+        <div class="ct-cell worst"><div class="score-row"><div class="score-n" style="color:#F59E0B;font-size:15px">73</div><div class="score-bar"><div class="score-fill" style="width:73%;background:#F59E0B"></div></div></div></div>
+        <div class="ct-cell best"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">88</div><div class="score-bar"><div class="score-fill" style="width:88%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell"><div class="score-row"><div class="score-n" style="color:#2DBD74;font-size:15px">84</div><div class="score-bar"><div class="score-fill" style="width:84%;background:#2DBD74"></div></div></div></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <!-- ── AUM & GROWTH ─────────────────── -->
+      <div class="ct-section" id="aum">
+        <div class="ct-section-title">AUM & Growth <span class="ct-section-meta">SEC ADV · Annual filings</span></div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label strong">Current AUM</div>
+        <div class="ct-cell best"><span class="v-serif">$2.1B</span></div>
+        <div class="ct-cell"><span class="v-serif">$890M</span></div>
+        <div class="ct-cell"><span class="v-serif">$1.2B</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">1-Year Growth</div>
+        <div class="ct-cell best"><span class="v-mono">+14.2%</span><span class="v-delta up">↑</span></div>
+        <div class="ct-cell"><span class="v-mono">+9.8%</span><span class="v-delta up">↑</span></div>
+        <div class="ct-cell"><span class="v-mono">+6.1%</span><span class="v-delta up">↑</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">5-Year Growth</div>
+        <div class="ct-cell best"><span class="v-mono">+73%</span></div>
+        <div class="ct-cell"><span class="v-mono">+51%</span></div>
+        <div class="ct-cell"><span class="v-mono">+38%</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">AUM per Advisor</div>
+        <div class="ct-cell best"><span class="v-mono">$175M</span></div>
+        <div class="ct-cell"><span class="v-mono">$148M</span></div>
+        <div class="ct-cell"><span class="v-mono">$120M</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Employees</div>
+        <div class="ct-cell"><span class="v-mono">38</span></div>
+        <div class="ct-cell"><span class="v-mono">22</span></div>
+        <div class="ct-cell best"><span class="v-mono">44</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <!-- ── CLIENT PROFILE ──────────────── -->
+      <div class="ct-section" id="clients">
+        <div class="ct-section-title">Client Profile <span class="ct-section-meta">ADV Part 1 · Schedule D</span></div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Total Clients</div>
+        <div class="ct-cell"><span class="v-mono">214</span></div>
+        <div class="ct-cell best"><span class="v-mono">312</span></div>
+        <div class="ct-cell"><span class="v-mono">186</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Avg. Client Size</div>
+        <div class="ct-cell best"><span class="v-serif">$9.8M</span></div>
+        <div class="ct-cell"><span class="v-serif">$2.9M</span></div>
+        <div class="ct-cell"><span class="v-serif">$6.5M</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Avg. Account Size</div>
+        <div class="ct-cell best"><span class="v-serif">$4.2M</span></div>
+        <div class="ct-cell"><span class="v-serif">$1.8M</span></div>
+        <div class="ct-cell"><span class="v-serif">$3.1M</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Minimum Account</div>
+        <div class="ct-cell"><span class="v-serif">$5M</span></div>
+        <div class="ct-cell best"><span class="v-serif">$500K</span></div>
+        <div class="ct-cell"><span class="v-serif">$2M</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Est. Retention</div>
+        <div class="ct-cell best"><span class="v-mono">~96%</span></div>
+        <div class="ct-cell"><span class="v-mono">~91%</span></div>
+        <div class="ct-cell"><span class="v-mono">~93%</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Avg. Relationship</div>
+        <div class="ct-cell best"><span class="v-mono">8.4 yrs</span></div>
+        <div class="ct-cell"><span class="v-mono">5.2 yrs</span></div>
+        <div class="ct-cell"><span class="v-mono">6.8 yrs</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+      <!-- ── REGULATORY ───────────────────── -->
+      <div class="ct-section" id="regulatory">
+        <div class="ct-section-title">Regulatory & Conflicts <span class="ct-section-meta">IAPD · SEC EDGAR · ADV Part 2A</span></div>
+      </div>
+
+      <div class="ct-row">
+        <div class="ct-label">Disciplinary History</div>
+        <div class="ct-cell best"><span class="badge yes">Clean</span></div>
+        <div class="ct-cell best"><span class="badge yes">Clean</span></div>
+        <div class="ct-cell best"><span class="badge yes">Clean</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Fee Structure</div>
+        <div class="ct-cell"><span class="badge yes">Fee-only</span></div>
+        <div class="ct-cell"><span class="badge yes">Fee-only</span></div>
+        <div class="ct-cell"><span class="badge yes">Fee-only</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Affiliated Businesses</div>
+        <div class="ct-cell worst"><span class="badge warn">1 disclosed</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">PE / Inst. Ownership</div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell worst"><span class="badge no">Partial</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">Proprietary Products</div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell worst"><span class="badge warn">Limited</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+      <div class="ct-row">
+        <div class="ct-label">12b-1 / Trail Fees</div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell best"><span class="badge yes">None</span></div>
+        <div class="ct-cell empty">—</div>
+      </div>
+
+    </div>
+  </div><!-- /compare-wrap -->
+
+  <!-- ── FEE CALCULATOR ─────────────────────── -->
+  <div class="fee-section" id="fees">
+
+    <div class="fee-section-hd">
+      <div class="fee-section-title">Fee Calculator</div>
+      <div class="fee-section-meta">Enter your portfolio value to compare estimated fees across all firms</div>
+    </div>
+
+    <!-- Full-width input -->
+    <div class="fee-input-row">
+      <div class="fee-input-label">Portfolio Value</div>
+      <div class="fee-input-wrap">
+        <span class="fee-dollar">$</span>
+        <input type="text" class="fee-input" id="feeInput" value="10,000,000" oninput="updateFees()">
+      </div>
+      <div class="fee-slider-wrap">
+        <input type="range" class="fee-slider" id="feeSlider" min="5000000" max="50000000" step="500000" value="10000000" oninput="syncSlider()">
+        <div class="fee-slider-labels"><span>$5M</span><span>$15M</span><span>$25M</span><span>$35M</span><span>$50M+</span></div>
+      </div>
+      <div class="fee-aum-display" id="feeDisplay">$10M</div>
+    </div>
+
+    <!-- Two-column: bars left, tables right -->
+    <div class="fee-body">
+
+      <!-- Left: fee bars -->
+      <div class="fee-col">
+        <div class="fee-col-title">Annual Fee by Firm</div>
+        <div id="fee-bars"></div>
+        <div class="fee-legend">
+          <span>Peer median (1.00%)</span>
+          <span><span class="fee-legend-dot" style="background:var(--green)"></span>Below median</span>
+          <span><span class="fee-legend-dot" style="background:var(--amber)"></span>Above median</span>
+        </div>
+      </div>
+
+      <!-- Right: tables -->
+      <div class="fee-col">
+        <div class="fee-col-title">Portfolio Impact Over Time <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:9px;color:var(--ink-3)">(7% annual return)</span></div>
+
+        <div class="fee-table-block">
+          <div class="fee-table-label">10-Year Projection <span class="fee-table-sub"></span></div>
+          <table class="fee-table">
+            <thead><tr><th>Firm</th><th>Annual Fee</th><th>Portfolio Value</th><th>Fees Paid</th></tr></thead>
+            <tbody id="tbl-10"></tbody>
+          </table>
+        </div>
+
+        <div class="fee-table-block">
+          <div class="fee-table-label">20-Year Projection</div>
+          <table class="fee-table">
+            <thead><tr><th>Firm</th><th>Annual Fee</th><th>Portfolio Value</th><th>Fees Paid</th></tr></thead>
+            <tbody id="tbl-20"></tbody>
+          </table>
+        </div>
+
+        <div class="fee-disclaimer">
+          Estimates based on disclosed fee schedules. Actual fees may be negotiated and will vary. Peer comparison uses national median for fee-only advisors at equivalent AUM. Projections assume a constant blended fee rate and 7% gross annual return.
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /gate-content -->
+
+    <!-- White floor beneath the fade -->
+    <div class="gate-floor"></div>
+
+    <!-- Gate card -->
+    <div class="gate-card">
+      <div class="gc-eyebrow">Free to join</div>
+      <div class="gc-title">Unlock the full comparison</div>
+      <div class="gc-sub">See scores, fees, AUM growth, client profile, regulatory history, and fee impact across all firms — side by side.</div>
+
+      <!-- Firm teaser row -->
+      <div class="gc-firms">
+        <div class="gc-firm">
+          <div class="gc-firm-logo">RF</div>
+          <div class="gc-firm-name">Rockbridge</div>
+          <div class="gc-firm-score">VVS 91</div>
+        </div>
+        <div class="gc-firm">
+          <div class="gc-firm-logo">MV</div>
+          <div class="gc-firm-name">Meridian</div>
+          <div class="gc-firm-score">VVS 87</div>
+        </div>
+        <div class="gc-firm">
+          <div class="gc-firm-logo">AP</div>
+          <div class="gc-firm-name">Ashford</div>
+          <div class="gc-firm-score">VVS 84</div>
+        </div>
+      </div>
+
+      <!-- What they unlock -->
+      <div class="gc-perks">
+        <div class="gc-perk">Full Visor Value Score™ breakdown across 8 sub-metrics</div>
+        <div class="gc-perk">AUM growth, client profile, and advisor bandwidth data</div>
+        <div class="gc-perk">Regulatory history, conflict flags, and ownership structure</div>
+        <div class="gc-perk">Fee Calculator — 10 & 20-year compounding impact side by side</div>
+      </div>
+
+      <a href="#" class="gc-cta" onclick="alert('Sign-up flow in production')">
+        Create Free Account <span class="gc-cta-arrow">→</span>
+      </a>
+      <div class="gc-login">Already have an account? <a href="#">Sign in</a></div>
+    </div>
+
+    <!-- Spacer so page has height for card -->
+    <div class="gate-spacer"></div>
+
+  </div><!-- /gate-wrap -->
+
+</div><!-- /page -->
+
+<script>
+const FIRMS = [
+  {name:'Rockbridge', tiers:[{max:5e6,rate:.015},{max:10e6,rate:.0125},{max:25e6,rate:.01},{max:50e6,rate:.0075},{max:Infinity,rate:.0075}]},
+  {name:'Meridian',   tiers:[{max:5e6,rate:.0125},{max:10e6,rate:.01},{max:25e6,rate:.009},{max:50e6,rate:.007},{max:Infinity,rate:.007}]},
+  {name:'Ashford',    tiers:[{max:5e6,rate:.014},{max:10e6,rate:.0115},{max:25e6,rate:.0095},{max:50e6,rate:.0072},{max:Infinity,rate:.0072}]},
+];
+const PEER=0.0102, GROSS=0.07, MAXBAR=1.6;
+
+function calcFee(firm,aum){
+  let f=0,r=aum,p=0;
+  for(const t of firm.tiers){const s=Math.min(r,t.max-p);if(s<=0)break;f+=s*t.rate;r-=s;p=t.max;if(r<=0)break;}
+  return f;
+}
+function grow(a,r,y){return a*Math.pow(1+r,y)}
+function growNet(a,g,fr,y){return a*Math.pow(1+g-fr,y)}
+function fmt(n){
+  if(n>=1e9)return'$'+(n/1e9).toFixed(2).replace(/\.?0+$/,'')+'B';
+  if(n>=1e6)return'$'+(n/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';
+  if(n>=1e3)return'$'+(n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+  return'$'+Math.round(n).toLocaleString();
+}
+
+function buildBars(){
+  const c=document.getElementById('fee-bars');c.innerHTML='';
+  FIRMS.forEach((f,i)=>{
+    c.insertAdjacentHTML('beforeend',`
+      <div class="fee-firm">
+        <div class="fee-firm-hd">
+          <div class="fee-firm-name">${f.name}</div>
+          <div><span class="fee-firm-amt" id="b-amt-${i}">—</span><span class="fee-firm-rate" id="b-rate-${i}"></span></div>
+        </div>
+        <div class="fee-bar-track"><div class="fee-bar-fill" id="b-bar-${i}" style="width:0%"></div></div>
+        <div class="fee-bar-note" id="b-note-${i}"></div>
+      </div>`);
+  });
+}
+
+function updateFees(){
+  const raw=document.getElementById('feeInput').value.replace(/[^0-9]/g,'');
+  const aum=parseInt(raw)||10e6;
+  document.getElementById('feeSlider').value=Math.min(Math.max(aum,5e6),50e6);
+  document.getElementById('feeDisplay').textContent=fmt(aum);
+
+  const fees=FIRMS.map(f=>calcFee(f,aum));
+  const blds=fees.map(f=>f/aum);
+  const minFee=Math.min(...fees);
+  const nf10=grow(aum,GROSS,10),nf20=grow(aum,GROSS,20);
+
+  FIRMS.forEach((f,i)=>{
+    const annual=fees[i],bld=blds[i];
+    const pct=(bld*100).toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+    const barW=Math.min((bld*100)/MAXBAR*100,100);
+    const above=bld>PEER;
+    const col=annual===minFee?'var(--green)':above?'var(--amber)':'var(--green)';
+    document.getElementById(`b-amt-${i}`).textContent=fmt(annual);
+    document.getElementById(`b-rate-${i}`).textContent=`(${pct}%)`;
+    document.getElementById(`b-bar-${i}`).style.cssText=`width:${barW}%;background:${col}`;
+    const n=document.getElementById(`b-note-${i}`);
+    const diff=(Math.abs(bld-PEER)*100).toFixed(2);
+    n.textContent=above?`${diff}% above peer median`:`${diff}% below peer median`;
+    n.style.color=above?'var(--amber)':'var(--green)';
+  });
+
+  const v10=FIRMS.map((f,i)=>growNet(aum,GROSS,blds[i],10));
+  const v20=FIRMS.map((f,i)=>growNet(aum,GROSS,blds[i],20));
+  const best10=Math.max(...v10),best20=Math.max(...v20);
+
+  [10,20].forEach(yr=>{
+    const vals=yr===10?v10:v20;
+    const nf=yr===10?nf10:nf20;
+    const best=yr===10?best10:best20;
+    const tbody=document.getElementById(`tbl-${yr}`);
+    tbody.innerHTML='';
+    FIRMS.forEach((f,i)=>{
+      tbody.insertAdjacentHTML('beforeend',`
+        <tr class="${vals[i]===best?'best':''}">
+          <td>${f.name}</td>
+          <td>${fmt(fees[i])}</td>
+          <td>${fmt(vals[i])}</td>
+          <td class="fee-col-red">−${fmt(nf-vals[i])}</td>
+        </tr>`);
+    });
+  });
+
+  if(raw)document.getElementById('feeInput').value=parseInt(raw).toLocaleString();
+}
+
+function syncSlider(){
+  const aum=parseInt(document.getElementById('feeSlider').value);
+  document.getElementById('feeInput').value=aum.toLocaleString();
+  updateFees();
+}
+
+// Jump nav
+const jls=document.querySelectorAll('.jn-link');
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      jls.forEach(l=>l.classList.remove('on'));
+      const a=document.querySelector(`.jn-link[href="#${e.target.id}"]`);
+      if(a)a.classList.add('on');
+    }
+  });
+},{threshold:.1,rootMargin:'-100px 0px -60% 0px'});
+['vvs','aum','clients','regulatory','fees'].forEach(id=>{const el=document.getElementById(id);if(el)io.observe(el);});
+
+function removeFirm(i){alert('Would remove firm in production.')}
+function addFirm(){alert('Opens firm search in production.')}
+
+buildBars();
+updateFees();
+</script>
+</body>
+</html>

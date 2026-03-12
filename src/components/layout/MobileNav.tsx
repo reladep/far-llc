@@ -41,7 +41,7 @@ export function MobileNav() {
       {/* Hamburger Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-text-primary hover:bg-bg-secondary transition-colors"
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/10"
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
       >
@@ -73,15 +73,15 @@ export function MobileNav() {
       {/* Drawer */}
       <div
         className={cn(
-          'fixed top-0 right-0 z-50 h-full w-72 bg-bg-primary shadow-xl transition-transform duration-300 ease-out',
+          'fixed top-0 right-0 z-50 h-full w-72 bg-[#0a1c2a] text-white shadow-xl transition-transform duration-300 ease-out',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b border-border px-4">
-          <span className="text-lg font-bold text-primary">Visor Index</span>
+        <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
+          <span className="font-serif text-xl font-semibold text-white">Visor Index</span>
           <button
             onClick={() => setOpen(false)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-text-primary hover:bg-bg-secondary"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-white hover:bg-white/10"
             aria-label="Close menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -96,27 +96,27 @@ export function MobileNav() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-3 text-base font-medium text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-colors"
+              className="rounded-xl px-3 py-3 text-base font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="border-t border-border p-4 mt-auto">
+        <div className="mt-auto border-t border-white/10 p-4">
           <Link
             href="/auth/login"
             onClick={() => setOpen(false)}
-            className="block w-full rounded-lg border border-border px-4 py-3 text-center text-sm font-medium text-text-primary hover:bg-bg-secondary transition-colors"
+            className="block w-full rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-medium text-white hover:bg-white/10 transition-colors"
           >
             Sign In
           </Link>
           <Link
             href="/auth/signup"
             onClick={() => setOpen(false)}
-            className="mt-2 block w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
+            className="mt-2 block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
           >
-            Get Started
+            Get Access
           </Link>
         </div>
       </div>

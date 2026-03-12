@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negotiate Fees — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;
+  --rule:#CAD8D0;--amber:#F59E0B;--red:#EF4444;
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --nav-h:52px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);overflow-x:hidden}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.016;
+}
+
+/* ── NAV ───────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:600;
+  height:var(--nav-h);
+  background:rgba(10,28,42,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;padding:0 48px;
+}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:24px;height:24px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:17px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a.active,.nav-links a:hover{color:rgba(255,255,255,.8)}
+.nav-cta{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;background:var(--green);color:#fff;padding:7px 18px;text-decoration:none;transition:background .15s}
+.nav-cta:hover{background:var(--green-2)}
+
+/* ── PAGE ──────────────────────────────────── */
+.page{padding-top:var(--nav-h)}
+
+/* ── HERO ──────────────────────────────────── */
+.hero{
+  background:var(--navy);
+  padding:44px 0 52px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;right:-100px;top:-100px;
+  width:480px;height:480px;border-radius:50%;
+  background:radial-gradient(circle,rgba(26,122,74,.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-i{max-width:800px;margin:0 auto;padding:0 48px}
+.hero-eyebrow{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--green-3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';width:16px;height:1px;background:var(--green-3)}
+.hero-title{font-family:var(--serif);font-size:42px;font-weight:700;color:#fff;letter-spacing:-.025em;line-height:1.06;margin-bottom:12px}
+.hero-title em{font-style:italic;color:var(--green-3)}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.38);line-height:1.75;max-width:500px}
+
+/* ── MAIN ──────────────────────────────────── */
+.main{max-width:800px;margin:0 auto;padding:40px 48px 100px}
+
+/* ── SECTION HEADER ────────────────────────── */
+.sec-hd{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.sec-num{
+  width:26px;height:26px;flex-shrink:0;
+  background:var(--navy);display:grid;place-items:center;
+  font-size:11px;font-weight:700;color:var(--green-3);font-family:var(--mono);
+}
+.sec-title{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.sec-tag{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--rule);padding:3px 9px;display:flex;align-items:center;gap:5px}
+.sec-tag.enriched{color:var(--green);background:var(--green-pale)}
+
+/* ── CARD ──────────────────────────────────── */
+.card{background:#fff;border:1px solid var(--rule)}
+.card.top-ink{border-top:2px solid var(--ink)}
+.card.top-green{border-top:2px solid var(--green)}
+.card.top-amber{border-top:2px solid var(--amber)}
+.card-body{padding:28px 32px}
+
+/* ── STEP 1: FEE INPUTS ────────────────────── */
+.inputs-block{margin-bottom:0}
+
+/* AUM row */
+.input-row{margin-bottom:20px}
+.input-label{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.input-note{font-size:10px;color:var(--ink-3);font-weight:400;text-transform:none;letter-spacing:0}
+
+.money-input{display:flex;align-items:center;border:1px solid var(--rule);background:var(--white);transition:border-color .15s}
+.money-input:focus-within{border-color:var(--ink-3)}
+.money-prefix{padding:0 14px;font-family:var(--serif);font-size:19px;color:var(--ink-3);border-right:1px solid var(--rule);line-height:46px;flex-shrink:0;background:var(--white)}
+.money-field{flex:1;border:none;background:none;outline:none;font-family:var(--mono);font-size:14px;color:var(--ink);padding:11px 14px}
+.money-suffix{padding:0 14px;font-family:var(--mono);font-size:11px;color:var(--ink-3);border-left:1px solid var(--rule);background:var(--white);height:46px;display:flex;align-items:center;white-space:nowrap}
+
+/* Fee type tabs + input */
+.fee-tabs{display:flex;border:1px solid var(--rule);margin-bottom:8px}
+.fee-tab{flex:1;text-align:center;padding:8px 6px;font-size:11px;font-weight:500;color:var(--ink-3);cursor:pointer;border-right:1px solid var(--rule);background:var(--white);transition:all .15s;user-select:none}
+.fee-tab:last-child{border-right:none}
+.fee-tab.on{background:var(--navy);color:#fff;font-weight:600}
+.fee-tab-hint{font-size:10px;color:var(--ink-3);margin-bottom:8px;line-height:1.5}
+
+/* Client toggle */
+.toggle-row{display:flex;border:1px solid var(--rule)}
+.tog{flex:1;text-align:center;padding:10px 8px;font-size:12px;font-weight:500;color:var(--ink-3);cursor:pointer;border-right:1px solid var(--rule);background:var(--white);transition:all .15s;user-select:none}
+.tog:last-child{border-right:none}
+.tog.on{background:var(--navy);color:#fff}
+
+/* Two-col grid */
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+
+/* Analyze button */
+.analyze-btn{
+  width:100%;background:var(--green);color:#fff;border:none;cursor:pointer;
+  padding:15px;font-family:var(--sans);font-size:13px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  transition:background .15s;display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.analyze-btn:hover{background:var(--green-2)}
+.analyze-btn span{font-size:16px;transition:transform .2s}
+.analyze-btn:hover span{transform:translateX(4px)}
+
+/* ── FIRM UPGRADE CARD ─────────────────────── */
+.firm-upgrade{
+  margin-top:24px;
+  border:1px solid var(--rule);
+  border-left:3px solid var(--green-3);
+  background:#fff;
+  overflow:hidden;
+}
+.firm-upgrade-hd{
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+  user-select:none;
+}
+.firm-upgrade-hd:hover .fu-toggle{color:var(--ink)}
+.fu-left{display:flex;align-items:center;gap:10px}
+.fu-icon{
+  width:28px;height:28px;flex-shrink:0;
+  background:var(--green-pale);
+  display:grid;place-items:center;
+  font-size:13px;
+}
+.fu-label{font-size:12px;font-weight:600;color:var(--ink)}
+.fu-sub{font-size:11px;color:var(--ink-3)}
+.fu-badge{
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--green-pale);color:var(--green);padding:3px 8px;margin-left:8px;
+}
+.fu-toggle{font-size:18px;color:var(--ink-3);transition:color .15s;line-height:1}
+
+.firm-upgrade-body{
+  padding:0 20px;
+  max-height:0;overflow:hidden;
+  transition:max-height .35s cubic-bezier(.16,1,.3,1),padding .3s;
+}
+.firm-upgrade-body.open{max-height:300px;padding:4px 20px 20px}
+
+/* Firm selector */
+.firm-selector{
+  display:flex;align-items:center;
+  border:1px solid var(--rule);background:var(--white);
+  cursor:pointer;transition:border-color .15s;margin-bottom:10px;
+}
+.firm-selector:hover{border-color:var(--ink-3)}
+.fs-logo{
+  width:40px;height:40px;flex-shrink:0;
+  background:var(--navy);display:grid;place-items:center;
+  font-family:var(--serif);font-size:12px;font-weight:700;color:rgba(255,255,255,.45);
+}
+.fs-name{flex:1;padding:0 14px;font-size:13px;color:var(--ink-3)}
+.fs-name.selected{font-weight:600;color:var(--ink)}
+.fs-arrow{padding:0 14px;color:var(--ink-3);font-size:12px}
+
+.firm-upgrade-perks{
+  display:flex;flex-wrap:wrap;gap:8px;
+  margin-top:4px;
+}
+.perk{
+  font-size:11px;color:var(--ink-3);
+  display:flex;align-items:center;gap:5px;
+}
+.perk::before{content:'✓';color:var(--green);font-weight:700}
+
+/* ── RESULTS ───────────────────────────────── */
+.results{display:none;flex-direction:column;gap:36px;margin-top:40px}
+.results.show{display:flex}
+
+/* Benchmark track */
+.bm-track-wrap{margin:20px 0 8px}
+.bm-track{
+  position:relative;height:8px;border-radius:4px;
+  background:linear-gradient(to right,#d4edde,#fef3c7,#fde8e8);
+  margin-bottom:32px;
+}
+.bm-dot{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid #fff;
+  transition:left .6s cubic-bezier(.16,1,.3,1);
+}
+.bm-dot-label{
+  position:absolute;top:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  white-space:nowrap;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;
+}
+.bm-dot-label strong{display:block;font-size:10px;font-weight:600;color:var(--ink-2)}
+.bm-dot.you{background:var(--green);box-shadow:0 0 0 3px rgba(45,189,116,.2)}
+.bm-dot.you .bm-dot-label strong{color:var(--green)}
+.bm-dot.peer{background:var(--rule)}
+
+/* Stat row */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.stat{background:#fff;padding:16px 20px;text-align:center}
+.stat-label{font-size:10px;color:var(--ink-3);margin-bottom:5px;font-weight:500}
+.stat-val{font-family:var(--serif);font-size:22px;font-weight:700;line-height:1}
+.stat-sub{font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-top:3px}
+.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}
+
+/* Dollar impact */
+.impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.impact-cell{padding:18px 20px;border:1px solid var(--rule)}
+.impact-cell.hl{border-top:2px solid var(--green);background:var(--green-pale)}
+.impact-cell.hl-amber{border-top:2px solid var(--amber);background:rgba(245,158,11,.04)}
+.ic-label{font-size:10px;font-weight:500;color:var(--ink-3);margin-bottom:6px}
+.ic-val{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:2px}
+.ic-sub{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.ic-badge{
+  display:inline-flex;margin-top:6px;
+  font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;
+}
+.ic-badge.over{color:var(--red);background:rgba(239,68,68,.08)}
+.ic-badge.under{color:var(--green);background:var(--green-pale)}
+
+/* Compound bars */
+.cmp-section-label{
+  font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.cmp-section-label::after{content:'';flex:1;height:1px;background:var(--rule)}
+.cmp-rows{display:flex;flex-direction:column;gap:11px}
+.cmp-row{display:flex;align-items:center;gap:12px}
+.cmp-lbl{font-size:11px;color:var(--ink-3);width:172px;flex-shrink:0;white-space:nowrap}
+.cmp-bar-wrap{flex:1;height:7px;background:var(--rule);border-radius:4px;overflow:hidden}
+.cmp-bar{height:100%;border-radius:4px;transition:width .9s cubic-bezier(.16,1,.3,1)}
+.cmp-val{font-family:var(--mono);font-size:11px;width:68px;text-align:right;flex-shrink:0;font-weight:500;color:var(--ink-2)}
+.cmp-val.best{color:var(--green);font-weight:700}
+.cmp-delta{font-family:var(--mono);font-size:10px;width:76px;text-align:right;flex-shrink:0;color:var(--red)}
+.cmp-delta.neutral{color:var(--ink-3)}
+.cmp-delta.positive{color:var(--green)}
+
+/* ── ASK BANNER ────────────────────────────── */
+.ask-banner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 28px;
+  background:var(--navy);
+  margin-bottom:20px;
+}
+.ask-left .ask-eyebrow{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:4px}
+.ask-rate{font-family:var(--serif);font-size:32px;font-weight:700;color:var(--green-3);line-height:1}
+.ask-context{font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;max-width:340px}
+.ask-right{text-align:right}
+.ask-savings-label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:4px}
+.ask-savings{font-family:var(--serif);font-size:24px;font-weight:700;color:#fff}
+.ask-savings-sub{font-size:10px;color:rgba(255,255,255,.3)}
+
+/* ── PLAYBOOK ITEMS ────────────────────────── */
+.playbook-items{display:flex;flex-direction:column;gap:18px}
+.pb-item{
+  display:flex;gap:18px;padding:20px 24px;
+  border-left:3px solid var(--green);
+  background:#fff;
+  border-top:1px solid var(--rule);border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.pb-item.rebuttal{border-left-color:var(--amber)}
+.pb-icon{width:32px;height:32px;flex-shrink:0;background:var(--green-pale);display:grid;place-items:center;font-size:14px;margin-top:1px}
+.pb-item.rebuttal .pb-icon{background:rgba(245,158,11,.09)}
+.pb-tag{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:4px}
+.pb-item.rebuttal .pb-tag{color:var(--amber)}
+.pb-head{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:5px}
+.pb-text{font-size:13px;color:var(--ink-3);line-height:1.65}
+.pb-quote{
+  margin-top:10px;padding:10px 14px;
+  background:var(--white);border-left:2px solid var(--green-3);
+  font-size:12px;color:var(--ink-2);line-height:1.65;font-style:italic;
+}
+.pb-item.rebuttal .pb-quote{border-left-color:var(--amber)}
+
+/* Firm-enriched playbook nudge */
+.enrich-nudge{
+  padding:16px 20px;
+  background:var(--navy);
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:18px;
+}
+.en-text{font-size:12px;color:rgba(255,255,255,.5);max-width:400px;line-height:1.55}
+.en-text strong{color:#fff}
+.en-btn{
+  flex-shrink:0;margin-left:20px;
+  font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--green);color:#fff;padding:9px 18px;border:none;cursor:pointer;
+  transition:background .15s;white-space:nowrap;
+}
+.en-btn:hover{background:var(--green-2)}
+
+/* ── CTA ───────────────────────────────────── */
+.cta-card{
+  padding:24px 28px;background:#fff;
+  border:1px solid var(--rule);border-top:2px solid var(--ink);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.cta-left{font-size:13px;color:var(--ink-3);line-height:1.6}
+.cta-left strong{color:var(--ink);display:block;font-size:15px;margin-bottom:3px;font-family:var(--serif);font-weight:700}
+.cta-btns{display:flex;gap:10px;flex-shrink:0}
+.cta-primary{
+  background:var(--green);color:#fff;border:none;cursor:pointer;
+  padding:12px 22px;font-family:var(--sans);font-size:12px;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;text-decoration:none;
+  transition:background .15s;display:flex;align-items:center;gap:7px;white-space:nowrap;
+}
+.cta-primary:hover{background:var(--green-2)}
+.cta-sec{
+  background:transparent;color:var(--ink);border:1px solid var(--rule);cursor:pointer;
+  padding:12px 18px;font-family:var(--sans);font-size:12px;font-weight:500;
+  transition:border-color .15s;text-decoration:none;display:flex;align-items:center;gap:7px;white-space:nowrap;
+}
+.cta-sec:hover{border-color:var(--ink-3)}
+
+/* Firm context chip (shown when firm selected) */
+.firm-chip{
+  display:none;align-items:center;gap:10px;
+  padding:10px 16px;background:rgba(45,189,116,.07);
+  border:1px solid rgba(45,189,116,.2);margin-bottom:16px;
+}
+.firm-chip.show{display:flex}
+.fc-logo{width:28px;height:28px;background:var(--navy);display:grid;place-items:center;font-family:var(--serif);font-size:11px;font-weight:700;color:rgba(255,255,255,.45);flex-shrink:0}
+.fc-name{font-size:12px;font-weight:600;color:var(--ink);flex:1}
+.fc-tag{font-size:10px;color:var(--green);font-family:var(--mono)}
+.fc-remove{background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:16px;padding:0 2px;transition:color .15s}
+.fc-remove:hover{color:var(--ink)}
+
+/* Results section separator */
+.results > .result-block{display:contents}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1"><polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/></svg></div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="visor-compare-v4.html">Compare</a></li>
+      <li><a href="#" class="active">Negotiate</a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+    <a href="#" class="nav-cta">Get Access</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-i">
+      <div class="hero-eyebrow">Fee Negotiation Tool</div>
+      <div class="hero-title">Are you paying<br><em>too much?</em></div>
+      <div class="hero-sub">Enter your portfolio value and what you pay — we'll benchmark it against real SEC filing data from thousands of registered advisors and build your negotiation playbook.</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ── STEP 1: INPUTS ──────────────────── -->
+    <div style="margin-bottom:40px">
+      <div class="sec-hd">
+        <div class="sec-num">01</div>
+        <div class="sec-title">Your portfolio & fee</div>
+      </div>
+
+      <div class="card top-ink">
+        <div class="card-body">
+
+          <div class="input-grid">
+            <!-- AUM -->
+            <div class="input-row" style="margin-bottom:0">
+              <div class="input-label">Portfolio Value (AUM)</div>
+              <div class="money-input">
+                <span class="money-prefix">$</span>
+                <input type="text" class="money-field" id="aumInput" placeholder="e.g. 10,000,000" oninput="formatAUM(this)">
+              </div>
+            </div>
+
+            <!-- Client status -->
+            <div class="input-row" style="margin-bottom:0">
+              <div class="input-label">Your Status <span class="input-note">— affects talking points</span></div>
+              <div class="toggle-row">
+                <div class="tog on" onclick="setTog(this,'.tog','existing')">Existing client</div>
+                <div class="tog" onclick="setTog(this,'.tog','prospective')">Prospective</div>
+                <div class="tog" onclick="setTog(this,'.tog','evaluating')">Just exploring</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fee type -->
+          <div class="input-row">
+            <div class="input-label">How is your fee structured?</div>
+            <div class="fee-tabs">
+              <div class="fee-tab on" onclick="setFeeType('flat',this)">Flat %<br><span style="font-size:9px;font-weight:400;opacity:.6">e.g. 1.00% annually</span></div>
+              <div class="fee-tab" onclick="setFeeType('tiered',this)">Tiered %<br><span style="font-size:9px;font-weight:400;opacity:.6">Different % per bracket</span></div>
+              <div class="fee-tab" onclick="setFeeType('dollar',this)">Dollar amount<br><span style="font-size:9px;font-weight:400;opacity:.6">I know what I pay in $</span></div>
+              <div class="fee-tab" onclick="setFeeType('unknown',this)">Not sure<br><span style="font-size:9px;font-weight:400;opacity:.6">Help me find it</span></div>
+            </div>
+
+            <!-- Fee input area — swaps per type -->
+            <div id="feeInputArea">
+              <div class="money-input">
+                <span class="money-prefix">%</span>
+                <input type="text" class="money-field" id="feeField" placeholder="e.g. 1.00" oninput="onFeeChange()">
+                <span class="money-suffix">per year</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="analyze-btn" onclick="runAnalysis()">
+            Analyze My Fee <span>→</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- FIRM UPGRADE (collapsed by default) -->
+      <div class="firm-upgrade" id="firmUpgrade">
+        <div class="firm-upgrade-hd" onclick="toggleFirmPanel()">
+          <div class="fu-left">
+            <div class="fu-icon">✦</div>
+            <div>
+              <div class="fu-label">Add your advisor firm <span class="fu-badge">Enriches results</span></div>
+              <div class="fu-sub">Get firm-specific talking points, ADV-sourced fee tier data, and peer group matching</div>
+            </div>
+          </div>
+          <div class="fu-toggle" id="fuToggle">+</div>
+        </div>
+        <div class="firm-upgrade-body" id="firmUpgradeBody">
+          <div class="firm-selector" onclick="selectFirm()">
+            <div class="fs-logo" id="fsLogo">+</div>
+            <div class="fs-name" id="fsName">Search for your advisor firm…</div>
+            <div class="fs-arrow">↓</div>
+          </div>
+          <div class="firm-upgrade-perks">
+            <div class="perk">Peer group matched to firm type & AUM</div>
+            <div class="perk">Firm's own ADV fee tiers used in playbook</div>
+            <div class="perk">Conflict & ownership flags surfaced</div>
+            <div class="perk">Verbatim talking points citing their filings</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── RESULTS ─────────────────────────── -->
+    <div class="results" id="results">
+
+      <!-- Firm chip (visible when firm is selected) -->
+      <div class="firm-chip" id="firmChip">
+        <div class="fc-logo" id="fcLogo">RF</div>
+        <div class="fc-name" id="fcName">Rockbridge Family Partners</div>
+        <div class="fc-tag" id="fcTag">VVS 91 · Fee-only MFO</div>
+        <button class="fc-remove" onclick="removeFirm()" title="Remove firm">×</button>
+      </div>
+
+      <!-- ── STEP 2: BENCHMARK ──────────── -->
+      <div>
+        <div class="sec-hd">
+          <div class="sec-num">02</div>
+          <div class="sec-title">How your fee compares</div>
+          <div class="sec-tag" id="benchmarkTag">National peers · <span id="aumTierLabel">$5M–$25M</span></div>
+        </div>
+        <div class="card top-green">
+          <div class="card-body">
+
+            <div class="bm-track-wrap">
+              <div class="bm-track" id="bmTrack">
+                <div class="bm-dot peer" id="dotP25" style="left:3%">
+                  <div class="bm-dot-label"><strong id="lblP25">0.72%</strong>P25</div>
+                </div>
+                <div class="bm-dot peer" id="dotMed" style="left:50%">
+                  <div class="bm-dot-label"><strong id="lblMed">1.00%</strong>Median</div>
+                </div>
+                <div class="bm-dot peer" id="dotP75" style="left:97%">
+                  <div class="bm-dot-label"><strong id="lblP75">1.30%</strong>P75</div>
+                </div>
+                <div class="bm-dot you" id="dotYou" style="left:70%">
+                  <div class="bm-dot-label" style="color:var(--green)"><strong style="color:var(--green)" id="lblYou">You</strong>Your fee</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-row">
+              <div class="stat">
+                <div class="stat-label">P25 — Best quartile</div>
+                <div class="stat-val green" id="svP25">0.72%</div>
+                <div class="stat-sub">Fee-only advisors</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Peer Median</div>
+                <div class="stat-val" id="svMed">1.00%</div>
+                <div class="stat-sub" id="svMedSub">Comparable advisors</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Your Fee</div>
+                <div class="stat-val" id="svYou">—</div>
+                <div class="stat-sub" id="svYouPos">—</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: DOLLAR IMPACT ──────── -->
+      <div>
+        <div class="sec-hd">
+          <div class="sec-num">03</div>
+          <div class="sec-title">What this costs you</div>
+        </div>
+        <div class="card top-ink">
+          <div class="card-body">
+
+            <div class="impact-grid">
+              <div class="impact-cell">
+                <div class="ic-label">You pay annually</div>
+                <div class="ic-val" id="icYou">—</div>
+                <div class="ic-sub" id="icYouSub">—</div>
+              </div>
+              <div class="impact-cell">
+                <div class="ic-label">Peer median pays</div>
+                <div class="ic-val" id="icMed">—</div>
+                <div class="ic-sub" id="icMedSub">—</div>
+              </div>
+              <div class="impact-cell hl-amber" id="icDeltaCell">
+                <div class="ic-label">Annual difference</div>
+                <div class="ic-val" id="icDelta">—</div>
+                <div class="ic-sub" id="icDeltaSub">vs. peer median</div>
+                <div class="ic-badge" id="icBadge">—</div>
+              </div>
+            </div>
+
+            <div class="cmp-section-label">
+              20-Year compounding impact
+              <span style="font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;font-size:9px">(7% gross return)</span>
+            </div>
+            <div class="cmp-rows">
+              <div class="cmp-row">
+                <div class="cmp-lbl" style="color:var(--green);font-weight:500">At P25 fee <span id="cmpP25Rate" style="font-family:var(--mono);font-size:10px;font-weight:400;color:var(--ink-3)"></span></div>
+                <div class="cmp-bar-wrap"><div class="cmp-bar" id="cmpBarP25" style="background:var(--green);width:100%"></div></div>
+                <div class="cmp-val best" id="cmpValP25">—</div>
+                <div class="cmp-delta positive" id="cmpDeltaP25"></div>
+              </div>
+              <div class="cmp-row">
+                <div class="cmp-lbl">At peer median <span id="cmpMedRate" style="font-family:var(--mono);font-size:10px;color:var(--ink-3)"></span></div>
+                <div class="cmp-bar-wrap"><div class="cmp-bar" id="cmpBarMed" style="background:#b0d4c2"></div></div>
+                <div class="cmp-val" id="cmpValMed">—</div>
+                <div class="cmp-delta" id="cmpDeltaMed"></div>
+              </div>
+              <div class="cmp-row">
+                <div class="cmp-lbl" id="cmpYouLbl" style="color:var(--amber)">At your fee <span id="cmpYouRate" style="font-family:var(--mono);font-size:10px;font-weight:400"></span></div>
+                <div class="cmp-bar-wrap"><div class="cmp-bar" id="cmpBarYou" style="background:rgba(245,158,11,.4)"></div></div>
+                <div class="cmp-val" id="cmpValYou" style="color:var(--amber)">—</div>
+                <div class="cmp-delta" id="cmpDeltaYou"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: PLAYBOOK ───────────── -->
+      <div>
+        <div class="sec-hd">
+          <div class="sec-num">04</div>
+          <div class="sec-title">Your negotiation playbook</div>
+          <div class="sec-tag" id="playbookTag">Generic</div>
+        </div>
+
+        <!-- Ask banner -->
+        <div class="ask-banner">
+          <div class="ask-left">
+            <div class="ask-eyebrow">Recommended ask</div>
+            <div class="ask-rate" id="askRate">—</div>
+            <div class="ask-context" id="askContext">Peer P25 for your AUM tier — a credible, data-backed opening</div>
+          </div>
+          <div class="ask-right">
+            <div class="ask-savings-label">Est. annual savings</div>
+            <div class="ask-savings" id="askSavings">—</div>
+            <div class="ask-savings-sub">if ask is met in full</div>
+          </div>
+        </div>
+
+        <div class="card top-amber">
+          <div class="card-body">
+            <div class="playbook-items" id="playbookItems">
+              <!-- Populated by JS -->
+            </div>
+
+            <!-- Nudge to add firm (shown when no firm selected) -->
+            <div class="enrich-nudge" id="enrichNudge">
+              <div class="en-text"><strong>Add your advisor firm for a sharper playbook.</strong> We'll pull their actual ADV fee tiers, cite their own filings, and tailor every talking point to their specific situation.</div>
+              <button class="en-btn" onclick="toggleFirmPanel();document.getElementById('firmUpgrade').scrollIntoView({behavior:'smooth'})">Add firm →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CTA ───────────────────────── -->
+      <div class="cta-card">
+        <div class="cta-left">
+          <strong>See which advisors charge less for your portfolio size</strong>
+          Search and compare fee-only advisors matched to your AUM tier — filtered by score, location, and fee structure.
+        </div>
+        <div class="cta-btns">
+          <a href="visor-search.html" class="cta-primary">Find Alternatives →</a>
+          <a href="#" class="cta-sec" onclick="alert('Exports PDF in production')">↓ Save Playbook</a>
+        </div>
+      </div>
+
+    </div><!-- /results -->
+  </div><!-- /main -->
+</div><!-- /page -->
+
+<script>
+// ── Constants ─────────────────────────────────────
+const PEER = { p25: 0.0072, med: 0.0100, p75: 0.0130 };
+const GROSS = 0.07;
+const YEARS = 20;
+
+// ── State ─────────────────────────────────────────
+let state = {
+  aum: null,
+  fee: null,       // as decimal (0.01 = 1%)
+  feeType: 'flat',
+  status: 'existing',
+  firm: null,      // null or { name, initials, score, type }
+  firmPanelOpen: false,
+};
+
+// ── Formatters ────────────────────────────────────
+function fmt(n){
+  if(n>=1e9) return '$'+(n/1e9).toFixed(2).replace(/\.?0+$/,'')+'B';
+  if(n>=1e6) return '$'+(n/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';
+  if(n>=1e3) return '$'+Math.round(n/1000)+'K';
+  return '$'+Math.round(n).toLocaleString();
+}
+function fmtPct(r){ return (r*100).toFixed(2).replace(/\.?0+$/,'')+'%'; }
+function growNet(a,g,f,y){ return a*Math.pow(1+g-f,y); }
+
+// ── Input helpers ─────────────────────────────────
+function formatAUM(el){
+  const raw = el.value.replace(/[^0-9]/g,'');
+  state.aum = parseInt(raw)||null;
+  if(raw) el.value = parseInt(raw).toLocaleString();
+}
+function onFeeChange(){
+  const el = document.getElementById('feeField');
+  if(!el) return;
+  const raw = el.value.replace(/[^0-9.]/g,'');
+  if(state.feeType==='dollar'){
+    state.fee = state.aum ? (parseFloat(raw)||0)/state.aum : null;
+  } else {
+    state.fee = (parseFloat(raw)||0)/100;
+  }
+}
+function setTog(el, sel, val){
+  document.querySelectorAll(sel).forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  state.status = val;
+}
+function setFeeType(type, el){
+  state.feeType = type;
+  document.querySelectorAll('.fee-tab').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  const area = document.getElementById('feeInputArea');
+  if(type==='flat'){
+    area.innerHTML=`<div class="money-input"><span class="money-prefix">%</span><input type="text" class="money-field" id="feeField" placeholder="e.g. 1.00" oninput="onFeeChange()"><span class="money-suffix">per year</span></div>`;
+  } else if(type==='tiered'){
+    area.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px">
+      <div class="money-input"><span class="money-prefix" style="font-size:11px;font-family:var(--sans);line-height:46px;width:80px">First $5M</span><input type="text" class="money-field" id="tier1" placeholder="1.25"><span class="money-suffix">%</span></div>
+      <div class="money-input"><span class="money-prefix" style="font-size:11px;font-family:var(--sans);line-height:46px;width:80px">Next $5M</span><input type="text" class="money-field" id="tier2" placeholder="1.00"><span class="money-suffix">%</span></div>
+      <div class="money-input"><span class="money-prefix" style="font-size:11px;font-family:var(--sans);line-height:46px;width:80px">Above $10M</span><input type="text" class="money-field" id="tier3" placeholder="0.75"><span class="money-suffix">%</span></div>
+      <div style="font-size:10px;color:var(--ink-3);margin-top:2px">We'll compute your blended effective rate automatically.</div>
+    </div>`;
+    // set up blended calc
+    ['tier1','tier2','tier3'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',calcBlended); });
+  } else if(type==='dollar'){
+    area.innerHTML=`<div class="money-input"><span class="money-prefix">$</span><input type="text" class="money-field" id="feeField" placeholder="e.g. 125,000" oninput="onFeeChange()"><span class="money-suffix">per year</span></div>`;
+  } else {
+    area.innerHTML=`<div style="padding:14px 16px;background:var(--green-pale);border:1px solid rgba(26,122,74,.2);font-size:13px;color:var(--ink-2);line-height:1.65">
+      Your fee is typically on your quarterly statement, labeled <strong>"Advisory Fee"</strong> or <strong>"Management Fee."</strong> It may be billed quarterly — multiply by 4 for your annual rate. You can also find it in your advisor's <strong>Form ADV Part 2A</strong>, available on <a href="https://adviserinfo.sec.gov" target="_blank" style="color:var(--green)">IAPD.sec.gov</a>.
+      <div style="margin-top:10px"><input type="text" class="money-field" id="feeField" placeholder="Enter % once you find it (e.g. 1.00)" oninput="onFeeChange()" style="border:1px solid var(--rule);padding:10px 14px;width:100%;font-family:var(--mono);font-size:13px;background:#fff"></div>
+    </div>`;
+  }
+}
+
+function calcBlended(){
+  const aum = state.aum||10e6;
+  const r1=(parseFloat(document.getElementById('tier1')?.value)||0)/100;
+  const r2=(parseFloat(document.getElementById('tier2')?.value)||0)/100;
+  const r3=(parseFloat(document.getElementById('tier3')?.value)||0)/100;
+  const b1=Math.min(aum,5e6)*r1;
+  const b2=Math.min(Math.max(aum-5e6,0),5e6)*r2;
+  const b3=Math.max(aum-10e6,0)*r3;
+  state.fee = (b1+b2+b3)/aum;
+}
+
+// ── Firm panel ────────────────────────────────────
+function toggleFirmPanel(){
+  state.firmPanelOpen = !state.firmPanelOpen;
+  document.getElementById('firmUpgradeBody').classList.toggle('open', state.firmPanelOpen);
+  document.getElementById('fuToggle').textContent = state.firmPanelOpen ? '−' : '+';
+}
+
+function selectFirm(){
+  // Simulate firm selection (production: opens search modal)
+  const firm = { name:'Rockbridge Family Partners', initials:'RF', score:91, type:'Fee-only MFO' };
+  state.firm = firm;
+  document.getElementById('fsLogo').textContent = firm.initials;
+  document.getElementById('fsLogo').style.background = 'var(--navy)';
+  document.getElementById('fsName').textContent = firm.name;
+  document.getElementById('fsName').classList.add('selected');
+  // If results already showing, refresh
+  if(document.getElementById('results').classList.contains('show')) populateResults();
+}
+
+function removeFirm(){
+  state.firm = null;
+  document.getElementById('fsLogo').textContent = '+';
+  document.getElementById('fsName').textContent = 'Search for your advisor firm…';
+  document.getElementById('fsName').classList.remove('selected');
+  document.getElementById('firmChip').classList.remove('show');
+  if(document.getElementById('results').classList.contains('show')) populateResults();
+}
+
+// ── Analysis ──────────────────────────────────────
+function runAnalysis(){
+  // Read AUM
+  const aumRaw = document.getElementById('aumInput').value.replace(/[^0-9]/g,'');
+  state.aum = parseInt(aumRaw)||null;
+  if(!state.aum){ alert('Please enter your portfolio value.'); return; }
+
+  // Read fee
+  if(state.feeType==='tiered'){ calcBlended(); }
+  else { onFeeChange(); }
+  if(!state.fee){ alert('Please enter your fee.'); return; }
+
+  const results = document.getElementById('results');
+  results.classList.add('show');
+  populateResults();
+  results.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function populateResults(){
+  const { aum, fee, firm } = state;
+  const p25=PEER.p25, med=PEER.med, p75=PEER.p75;
+
+  // Firm chip
+  const chip = document.getElementById('firmChip');
+  if(firm){
+    chip.classList.add('show');
+    document.getElementById('fcLogo').textContent = firm.initials;
+    document.getElementById('fcName').textContent = firm.name;
+    document.getElementById('fcTag').textContent  = `VVS ${firm.score} · ${firm.type}`;
+    document.getElementById('benchmarkTag').innerHTML = `<span class="sec-tag enriched">${firm.type} peers · ${fmt(aum)} tier</span>`;
+    document.getElementById('playbookTag').className = 'sec-tag enriched';
+    document.getElementById('playbookTag').textContent = 'Firm-specific';
+    document.getElementById('enrichNudge').style.display = 'none';
+  } else {
+    chip.classList.remove('show');
+    document.getElementById('benchmarkTag').innerHTML = `National peers · <span id="aumTierLabel">${fmt(aum)} tier</span>`;
+    document.getElementById('playbookTag').className = 'sec-tag';
+    document.getElementById('playbookTag').textContent = 'Generic';
+    document.getElementById('enrichNudge').style.display = 'flex';
+  }
+
+  // ── Benchmark track ──
+  // Map fees onto track: p25=3%, med=50%, p75=97%
+  function trackPos(f){
+    const span = p75-p25;
+    const rel = (f-p25)/span;
+    return Math.min(Math.max(rel*94+3,1),99);
+  }
+  document.getElementById('dotYou').style.left = trackPos(fee)+'%';
+  document.getElementById('lblYou').textContent = fmtPct(fee);
+  document.getElementById('lblP25').textContent = fmtPct(p25);
+  document.getElementById('lblMed').textContent = fmtPct(med);
+  document.getElementById('lblP75').textContent = fmtPct(p75);
+
+  // Stats
+  document.getElementById('svP25').textContent = fmtPct(p25);
+  document.getElementById('svMed').textContent = fmtPct(med);
+  document.getElementById('svYou').textContent = fmtPct(fee);
+  document.getElementById('svYou').className   = 'stat-val '+(fee<=p25?'green':fee<=med?'':'amber');
+  const pos = fee<p25?'Below P25 — excellent rate':fee<=med?'Below median — competitive':fee<=p75?'Above median — room to negotiate':'Well above peers — strong case to negotiate';
+  document.getElementById('svYouPos').textContent = pos;
+
+  // ── Dollar impact ──
+  const annYou  = aum*fee;
+  const annMed  = aum*med;
+  const delta   = annYou - annMed;
+  document.getElementById('icYou').textContent     = fmt(annYou);
+  document.getElementById('icYouSub').textContent  = `${fmtPct(fee)} on ${fmt(aum)}`;
+  document.getElementById('icMed').textContent     = fmt(annMed);
+  document.getElementById('icMedSub').textContent  = `${fmtPct(med)} on ${fmt(aum)}`;
+  document.getElementById('icDelta').textContent   = delta>=0 ? fmt(delta) : '−'+fmt(-delta);
+  document.getElementById('icDeltaSub').textContent = delta>=0?'above peer median':'below peer median — you\'re competitive';
+  const bps = Math.round((fee-med)*10000);
+  const badge = document.getElementById('icBadge');
+  badge.textContent = (bps>=0?'+':'')+bps+' bps vs. median';
+  badge.className   = 'ic-badge '+(bps>0?'over':'under');
+
+  // Delta cell highlight
+  const cell = document.getElementById('icDeltaCell');
+  cell.className = delta>0 ? 'impact-cell hl-amber' : 'impact-cell hl';
+
+  // ── Compounding ──
+  const vP25 = growNet(aum,GROSS,p25,YEARS);
+  const vMed = growNet(aum,GROSS,med,YEARS);
+  const vYou = growNet(aum,GROSS,fee,YEARS);
+
+  document.getElementById('cmpP25Rate').textContent = `(${fmtPct(p25)})`;
+  document.getElementById('cmpMedRate').textContent = `(${fmtPct(med)})`;
+  document.getElementById('cmpYouRate').textContent = `(${fmtPct(fee)})`;
+  document.getElementById('cmpYouLbl').style.color  = fee<=med?'var(--green)':'var(--amber)';
+  document.getElementById('cmpValYou').style.color  = fee<=med?'var(--green)':'var(--amber)';
+  document.getElementById('cmpBarYou').style.background = fee<=med?'var(--green-3)':'rgba(245,158,11,.4)';
+
+  document.getElementById('cmpBarP25').style.width = '100%';
+  document.getElementById('cmpBarMed').style.width = (vMed/vP25*100)+'%';
+  document.getElementById('cmpBarYou').style.width = (vYou/vP25*100)+'%';
+
+  document.getElementById('cmpValP25').textContent = fmt(vP25);
+  document.getElementById('cmpValMed').textContent = fmt(vMed);
+  document.getElementById('cmpValYou').textContent = fmt(vYou);
+
+  document.getElementById('cmpDeltaP25').textContent = 'best outcome';
+  document.getElementById('cmpDeltaP25').className   = 'cmp-delta positive';
+  document.getElementById('cmpDeltaMed').textContent = '−'+fmt(vP25-vMed);
+  document.getElementById('cmpDeltaMed').className   = 'cmp-delta';
+  const youDelta = vP25-vYou;
+  document.getElementById('cmpDeltaYou').textContent = youDelta>0 ? '−'+fmt(youDelta) : '+'+fmt(-youDelta);
+  document.getElementById('cmpDeltaYou').className   = 'cmp-delta '+(youDelta>0?'':'positive');
+
+  // ── Playbook ──
+  const askRate   = Math.max(p25, fee - 0.003);
+  const askSavings = aum*(fee - askRate);
+  document.getElementById('askRate').textContent   = fmtPct(askRate);
+  document.getElementById('askSavings').textContent = fmt(askSavings)+' / yr';
+
+  if(firm){
+    document.getElementById('askContext').textContent = `${firm.type} peer P25 for ${fmt(aum)} — sourced from SEC ADV filings`;
+  } else {
+    document.getElementById('askContext').textContent = `Peer P25 for your AUM tier — a credible, data-backed opening`;
+  }
+
+  buildPlaybook(aum, fee, askRate, p25, med, firm);
+}
+
+function buildPlaybook(aum, fee, askRate, p25, med, firm){
+  const bps = Math.round((fee-med)*10000);
+  const el   = document.getElementById('playbookItems');
+
+  const tp1text = firm
+    ? `${firm.name}'s own ADV filing discloses a fee schedule that drops to a lower tier at higher AUM. You're at ${fmt(aum)} — ask if they'll honor an early tier reduction as a commitment to a long-term or growing relationship.`
+    : `Reference public SEC data showing the peer median for fee-only advisors managing ${fmt(aum)} portfolios is <strong>${fmtPct(med)}</strong>, with the best-quartile advisors charging as low as <strong>${fmtPct(p25)}</strong>. Data-backed requests are harder to dismiss.`;
+  const tp1quote = firm
+    ? `"I've reviewed your ADV filing and noticed your fee schedule has lower tiers at higher AUM levels. I'd like to discuss whether we can move toward that now, given our relationship trajectory."`
+    : `"I've been reviewing fee benchmarks from SEC-registered advisors comparable to yours. The median for my AUM tier is ${fmtPct(med)}, with the most competitive advisors at ${fmtPct(p25)}. I'd like to discuss aligning closer to that."`;
+
+  const tp2text = `Make a specific ask — vague fee conversations rarely produce results. Requesting <strong>${fmtPct(askRate)}</strong> is a reasonable opening that's well within what peer advisors charge at your AUM level and gives the advisor room to counter.`;
+  const tp2quote = `"I'd like to propose moving to ${fmtPct(askRate)} annually. That's consistent with what comparable advisors charge at my portfolio size, and I think it reflects a fair value for the services provided."`;
+
+  const tp3text = `If you're planning to add assets or consolidate accounts, use that as leverage. Advisors are often willing to grant a better rate in exchange for a commitment to grow the relationship.`;
+  const tp3quote = `"I'm considering consolidating additional assets here — potentially bringing my total to ${fmt(aum*1.3)}. Would a rate of ${fmtPct(askRate)} make sense at that level? I'd like to plan around that."`;
+
+  el.innerHTML = `
+    ${pb('📊','Talking Point','Lead with the data',tp1text,tp1quote,false)}
+    ${pb('🎯','Talking Point','Make a specific ask',tp2text,tp2quote,false)}
+    ${pb('📈','Talking Point','Use growth as leverage',tp3text,tp3quote,false)}
+    ${pb('↩','If they say: "Our fees are non-negotiable"','Rebuttal: Fees are always negotiable',
+      `Advisors say this to close the conversation quickly. Calmly redirect: you're not asking them to break policy — you're asking whether their policy has flexibility for long-standing or higher-value clients. Most do.`,
+      `"I understand that's your standard position. I'm not asking you to make an exception — I'm asking whether your policy has flexibility for clients at my level or with my tenure. I'd like to understand that before we continue."`,
+      true)}
+    ${pb('↩','If they say: "We provide more value than other advisors"','Rebuttal: Scope the comparison',
+      `A fair point — but the peer comparison already filters for fee-only advisors of comparable type and AUM. You're not comparing to discount brokers or robo-advisors. The service scope is already baked in.`,
+      `"I appreciate that — the data I'm referencing specifically filters for fee-only advisors at my AUM tier, so we're comparing like with like. The fee gap is still meaningful even within that peer group."`,
+      true)}
+  `;
+}
+
+function pb(icon, tag, head, text, quote, isRebuttal){
+  return `<div class="pb-item${isRebuttal?' rebuttal':''}">
+    <div class="pb-icon" ${isRebuttal?'style="background:rgba(245,158,11,.09)"':''}>${icon}</div>
+    <div>
+      <div class="pb-tag">${tag}</div>
+      <div class="pb-head">${head}</div>
+      <div class="pb-text">${text}</div>
+      <div class="pb-quote">${quote}</div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>

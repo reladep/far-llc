@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insights — Visor Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1C2A;--navy-2:#0F2538;--navy-3:#162F45;
+  --green:#1A7A4A;--green-2:#22995E;--green-3:#2DBD74;--green-pale:#E6F4ED;
+  --white:#F6F8F7;--ink:#0C1810;--ink-2:#2E4438;--ink-3:#5A7568;--rule:#CAD8D0;
+  --amber:#B45309;--red:#DC2626;
+  --serif:'Cormorant Garamond',serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --nav-h:52px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);margin:0;-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.018}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:600;height:var(--nav-h);
+  background:rgba(10,28,42,.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex;align-items:center;padding:0 48px}
+.nav-i{width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-mark{width:22px;height:22px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:rgba(26,122,74,.2);border:1px solid rgba(45,189,116,.35);display:grid;place-items:center}
+.logo-name{font-family:var(--serif);font-size:17px;font-weight:700;color:#fff}
+.logo-name em{font-style:normal;color:var(--green-3)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:11px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.35);text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:rgba(255,255,255,.8)}
+.nav-links a.active{color:rgba(255,255,255,.8)}
+.nav-cta{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--green);color:#fff;padding:7px 18px;text-decoration:none;transition:background .15s}
+.nav-cta:hover{background:var(--green-2)}
+
+
+.hero-h em{font-style:italic;color:var(--green-3)}
+.hero-sub{font-size:15px;color:rgba(255,255,255,.4);line-height:1.7;max-width:480px;margin-bottom:40px}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-btn{
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 14px;cursor:pointer;font-family:var(--sans);
+  background:#fff;border:1px solid var(--rule);
+  color:var(--ink-3);transition:all .15s;
+}
+.filter-btn:hover{background:var(--white);color:var(--ink);border-color:var(--ink-3)}
+.filter-btn.on{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* ── MAIN ── */
+.page{max-width:1100px;margin:0 auto;padding:48px 48px 100px;padding-top:calc(var(--nav-h) + 48px)}
+
+/* ── FEATURED POST ── */
+.featured{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border:1px solid var(--rule);margin-bottom:1px;
+  cursor:pointer;transition:all .15s;
+  text-decoration:none;
+}
+.featured:hover{border-color:var(--ink-3)}
+.featured:hover .feat-title{color:var(--green)}
+.feat-visual{
+  background:var(--navy);
+  min-height:320px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:36px;position:relative;overflow:hidden;
+}
+.feat-visual::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 80% at 20% 80%, rgba(45,189,116,.15) 0%, transparent 60%)}
+.feat-visual-pattern{
+  position:absolute;inset:0;
+  background-image:repeating-linear-gradient(
+    0deg, transparent, transparent 40px,
+    rgba(255,255,255,.02) 40px, rgba(255,255,255,.02) 41px
+  ),
+  repeating-linear-gradient(
+    90deg, transparent, transparent 40px,
+    rgba(255,255,255,.02) 40px, rgba(255,255,255,.02) 41px
+  );
+}
+.feat-type-tag{
+  position:relative;z-index:1;
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--green-3);background:rgba(45,189,116,.1);border:1px solid rgba(45,189,116,.2);
+  padding:4px 10px;margin-bottom:16px;width:fit-content;
+}
+.feat-visual-title{
+  position:relative;z-index:1;
+  font-family:var(--serif);font-size:28px;font-weight:700;color:#fff;
+  line-height:1.15;letter-spacing:-.02em;
+}
+.feat-body{
+  background:#fff;padding:36px;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.feat-meta{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.feat-date{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.feat-read{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.feat-meta-sep{color:var(--rule)}
+.feat-title{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);
+  line-height:1.2;letter-spacing:-.02em;margin-bottom:14px;transition:color .15s}
+.feat-excerpt{font-size:13px;color:var(--ink-3);line-height:1.75;margin-bottom:24px;flex:1}
+.feat-footer{display:flex;align-items:center;justify-content:space-between}
+.feat-author{display:flex;align-items:center;gap:8px}
+.author-avatar{width:28px;height:28px;background:var(--navy);border-radius:50%;
+  display:grid;place-items:center;font-family:var(--serif);font-size:11px;font-weight:700;color:rgba(255,255,255,.7)}
+.author-name{font-size:11px;font-weight:500;color:var(--ink-3)}
+.feat-arrow{font-size:14px;color:var(--ink-3);transition:all .15s}
+.featured:hover .feat-arrow{color:var(--green);transform:translateX(3px)}
+
+/* ── POST GRID ── */
+.post-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.post-card{
+  background:#fff;padding:28px 26px;
+  display:flex;flex-direction:column;
+  cursor:pointer;transition:background .12s;
+  text-decoration:none;
+}
+.post-card:hover{background:#f7faf8}
+.post-card:hover .post-title{color:var(--green)}
+
+.post-type{display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 8px;margin-bottom:14px;width:fit-content;border:1px solid transparent}
+.post-type.blog{color:var(--green);background:var(--green-pale);border-color:rgba(26,122,74,.2)}
+.post-type.guide{color:#1d4ed8;background:#eff6ff;border-color:rgba(29,78,216,.2)}
+.post-type.report{color:var(--amber);background:var(--amber-pale);border-color:rgba(180,83,9,.2)}
+.post-type-dot{width:4px;height:4px;border-radius:50%;background:currentColor}
+
+.post-title{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink);
+  line-height:1.25;letter-spacing:-.01em;margin-bottom:10px;transition:color .15s}
+.post-excerpt{font-size:12px;color:var(--ink-3);line-height:1.7;margin-bottom:20px;flex:1}
+.post-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.post-date{font-family:var(--mono);font-size:9px;color:var(--ink-3)}
+.post-read{font-family:var(--mono);font-size:9px;color:var(--ink-3)}
+.post-arrow{font-size:12px;color:var(--rule);transition:all .15s}
+.post-card:hover .post-arrow{color:var(--green);transform:translateX(2px)}
+
+/* Wide card (spans 2 cols occasionally) */
+.post-card.wide{grid-column:span 2;flex-direction:row;gap:28px;align-items:center}
+.post-card.wide .post-title{font-size:22px}
+.post-card.wide .post-excerpt{margin-bottom:0}
+.post-card.wide .post-content{flex:1}
+.post-card.wide .post-visual{
+  width:160px;height:160px;flex-shrink:0;
+  background:var(--navy);
+  display:grid;place-items:center;
+  position:relative;overflow:hidden;
+}
+.post-card.wide .post-visual-inner{
+  font-family:var(--serif);font-size:52px;font-weight:700;
+  color:rgba(255,255,255,.07);line-height:1;
+  position:absolute;
+}
+
+/* ── LOAD MORE ── */
+.load-more-wrap{text-align:center;margin-top:40px}
+.load-more{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  background:none;border:1px solid var(--rule);color:var(--ink-3);
+  padding:12px 32px;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.load-more:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ── NEWSLETTER STRIP ── */
+.newsletter{
+  background:var(--navy);padding:48px;
+  display:flex;align-items:center;justify-content:space-between;gap:48px;
+  margin-top:56px;position:relative;overflow:hidden;
+}
+.newsletter::before{content:'';position:absolute;left:-60px;bottom:-60px;
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(26,122,74,.15) 0%,transparent 70%)}
+.nl-left{position:relative;z-index:1}
+.nl-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:10px}
+.nl-title{font-family:var(--serif);font-size:26px;font-weight:700;color:#fff;
+  letter-spacing:-.02em;line-height:1.15;margin-bottom:6px}
+.nl-sub{font-size:13px;color:rgba(255,255,255,.35);line-height:1.6;max-width:380px}
+.nl-form{display:flex;gap:0;z-index:1;flex-shrink:0}
+.nl-input{font-family:var(--mono);font-size:12px;color:var(--ink);
+  background:#fff;border:none;padding:12px 18px;outline:none;width:240px;
+  border-right:none}
+.nl-input::placeholder{color:var(--ink-3)}
+.nl-submit{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--green-3);color:var(--navy);border:none;
+  padding:12px 22px;cursor:pointer;font-family:var(--sans);transition:background .15s;white-space:nowrap}
+.nl-submit:hover{background:#38d98a}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.anim{opacity:0;animation:fadeUp .55s ease forwards}
+.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-i">
+    <a href="visor-index-v13.html" class="logo">
+      <div class="logo-mark">
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="rgba(45,189,116,.8)" stroke-width="1.1">
+          <polygon points="5,0.5 9.5,3 9.5,7 5,9.5 0.5,7 0.5,3"/>
+        </svg>
+      </div>
+      <span class="logo-name">Visor <em>Index</em></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="visor-search.html">Search</a></li>
+      <li><a href="visor-compare-v4.html">Compare</a></li>
+      <li><a href="visor-negotiate.html">Negotiate</a></li>
+      <li><a href="visor-directory-open.html">Directory</a></li>
+      <li><a href="visor-pricing.html">Pricing</a></li>
+      <li><a href="#" class="active">Insights</a></li>
+    </ul>
+    <a href="visor-pricing.html" class="nav-cta">Get Access</a>
+  </div>
+</nav>
+
+
+<!-- MAIN -->
+<div class="page">
+
+
+  <!-- FILTER BAR -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px">
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="width:16px;height:1px;background:var(--rule);display:inline-block"></span>Insights</div>
+      <h1 style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1">Research, guides &amp; data.</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <button class="filter-btn on" onclick="filterPosts('all',this)">All</button>
+      <button class="filter-btn" onclick="filterPosts('blog',this)">Editorial</button>
+      <button class="filter-btn" onclick="filterPosts('guide',this)">Guides</button>
+      <button class="filter-btn" onclick="filterPosts('report',this)">Data Reports</button>
+    </div>
+  </div>
+
+  <!-- FEATURED -->
+  <a href="#" class="featured" id="featuredPost">
+    <div class="feat-visual">
+      <div class="feat-visual-pattern"></div>
+      <div class="feat-type-tag">
+        <span style="width:4px;height:4px;border-radius:50%;background:var(--green-3)"></span>
+        Data Report
+      </div>
+      <div class="feat-visual-title">The Hidden Cost<br>of a 1% Fee</div>
+    </div>
+    <div class="feat-body">
+      <div>
+        <div class="feat-meta">
+          <span class="feat-date">March 3, 2026</span>
+          <span class="feat-meta-sep">·</span>
+          <span class="feat-read">8 min read</span>
+        </div>
+        <div class="feat-title">We analyzed 14,280 RIA fee schedules. Here's what the average investor is actually paying.</div>
+        <div class="feat-excerpt">The headline AUM percentage rarely tells the whole story. Breakpoints, minimums, and blended rates mean two investors with identical portfolios can pay radically different amounts — often at the same firm. We ran the numbers across every SEC-registered advisor in our database.</div>
+      </div>
+      <div class="feat-footer">
+        <div class="feat-author">
+          <div class="author-avatar">VI</div>
+          <span class="author-name">Visor Research</span>
+        </div>
+        <span class="feat-arrow">→</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- POST GRID -->
+  <div class="post-grid" id="postGrid">
+
+    <!-- Guide -->
+    <a href="#" class="post-card">
+      <div class="post-type guide"><span class="post-type-dot"></span>Guide</div>
+      <div class="post-title">How to Read a Form ADV in 10 Minutes</div>
+      <div class="post-excerpt">The ADV is 20+ pages of regulatory legalese. This is the only section that actually matters for most investors — and the three things to flag immediately.</div>
+      <div class="post-footer">
+        <span class="post-date">Feb 24, 2026</span>
+        <span class="post-read">6 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Blog -->
+    <a href="#" class="post-card">
+      <div class="post-type blog"><span class="post-type-dot"></span>Editorial</div>
+      <div class="post-title">Why "Fee-Only" Doesn't Mean What You Think</div>
+      <div class="post-excerpt">The term sounds reassuring. But the SEC definition allows arrangements that most investors would consider a conflict. We explain the gap between the label and the reality.</div>
+      <div class="post-footer">
+        <span class="post-date">Feb 18, 2026</span>
+        <span class="post-read">5 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Report -->
+    <a href="#" class="post-card">
+      <div class="post-type report"><span class="post-type-dot"></span>Data Report</div>
+      <div class="post-title">Private Equity Acquisitions of RIAs: 2024 in Review</div>
+      <div class="post-excerpt">212 RIA acquisitions closed last year. We mapped the buyers, the targets, and what ownership changes actually mean for the clients left behind.</div>
+      <div class="post-footer">
+        <span class="post-date">Feb 12, 2026</span>
+        <span class="post-read">11 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Wide card -->
+    <a href="#" class="post-card wide">
+      <div class="post-visual">
+        <div class="post-visual-inner">83×</div>
+      </div>
+      <div class="post-content">
+        <div class="post-type blog"><span class="post-type-dot"></span>Editorial</div>
+        <div class="post-title">The Return on Knowing: Why $199 Is the Cheapest Investment You'll Make This Year</div>
+        <div class="post-excerpt">The average investor overpays their advisor by $8,400 a year. We do the compounding math — and it's not subtle.</div>
+        <div class="post-footer" style="margin-top:16px">
+          <span class="post-date">Feb 6, 2026</span>
+          <span class="post-read">4 min</span>
+          <span class="post-arrow">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Guide -->
+    <a href="#" class="post-card">
+      <div class="post-type guide"><span class="post-type-dot"></span>Guide</div>
+      <div class="post-title">How to Negotiate Your Advisory Fee (With Scripts)</div>
+      <div class="post-excerpt">Most advisors will negotiate. Most clients never ask. Here's the exact framing that works — benchmarks, timing, and the three sentences that get results.</div>
+      <div class="post-footer">
+        <span class="post-date">Jan 29, 2026</span>
+        <span class="post-read">7 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Report -->
+    <a href="#" class="post-card">
+      <div class="post-type report"><span class="post-type-dot"></span>Data Report</div>
+      <div class="post-title">Which States Have the Most Conflicted Advisors?</div>
+      <div class="post-excerpt">A state-by-state breakdown of conflict disclosure rates, commission arrangements, and affiliated broker-dealer relationships across 14,280 SEC filings.</div>
+      <div class="post-footer">
+        <span class="post-date">Jan 21, 2026</span>
+        <span class="post-read">9 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Blog -->
+    <a href="#" class="post-card">
+      <div class="post-type blog"><span class="post-type-dot"></span>Editorial</div>
+      <div class="post-title">The AUM Model Is Broken. Here's Why It Persists.</div>
+      <div class="post-excerpt">Charging a percentage of assets under management made sense in 1990. It makes considerably less sense today — yet 87% of advisors still use it. We look at who benefits.</div>
+      <div class="post-footer">
+        <span class="post-date">Jan 14, 2026</span>
+        <span class="post-read">6 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Guide -->
+    <a href="#" class="post-card">
+      <div class="post-type guide"><span class="post-type-dot"></span>Guide</div>
+      <div class="post-title">What Is a Visor Value Score™ and How Is It Calculated?</div>
+      <div class="post-excerpt">A plain-English breakdown of the six sub-metrics behind the VVS — what we weight, why, and how a firm can improve or lose points over time.</div>
+      <div class="post-footer">
+        <span class="post-date">Jan 8, 2026</span>
+        <span class="post-read">5 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Report -->
+    <a href="#" class="post-card">
+      <div class="post-type report"><span class="post-type-dot"></span>Data Report</div>
+      <div class="post-title">AUM Growth Benchmarks by Firm Size: 2024</div>
+      <div class="post-excerpt">How fast should a $500M firm grow? We calculated median and top-quartile AUM growth rates across five firm size tiers — so you can put your advisor's trajectory in context.</div>
+      <div class="post-footer">
+        <span class="post-date">Dec 30, 2025</span>
+        <span class="post-read">7 min</span>
+        <span class="post-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="load-more-wrap anim d3">
+    <button class="load-more">Load More Articles</button>
+  </div>
+
+  <!-- NEWSLETTER -->
+  <div class="newsletter anim d4">
+    <div class="nl-left">
+      <div class="nl-eyebrow">Stay current</div>
+      <div class="nl-title">New research, every two weeks.</div>
+      <div class="nl-sub">Data reports, advisor intelligence, and guides delivered to your inbox. No fluff — just what's useful.</div>
+    </div>
+    <div class="nl-form">
+      <input class="nl-input" type="email" placeholder="your@email.com">
+      <button class="nl-submit">Subscribe</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── FILTER ────────────────────────────────────────────────────
+function filterPosts(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+
+  const cards = document.querySelectorAll('.post-card, .featured');
+  cards.forEach(card => {
+    if (type === 'all') {
+      card.style.display = '';
+      return;
+    }
+    const tag = card.querySelector('.post-type, .feat-type-tag');
+    if (!tag) { card.style.display = ''; return; }
+    const text = tag.textContent.trim().toLowerCase();
+    const match =
+      (type === 'blog'   && (text.includes('editorial'))) ||
+      (type === 'guide'  && text.includes('guide')) ||
+      (type === 'report' && text.includes('report'));
+    card.style.display = match ? '' : 'none';
+  });
+
+  // Reflow grid gaps
+  const grid = document.getElementById('postGrid');
+  grid.style.background = type === 'all' ? 'var(--rule)' : 'transparent';
+}
+</script>
+</body>
+</html>
