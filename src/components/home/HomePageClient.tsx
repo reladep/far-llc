@@ -189,117 +189,122 @@ function HeroScoreCard() {
     };
   }, [prefersReducedMotion]);
 
+  // Wrapper is overflow-visible so floating badges can peek outside the card
   return (
-    <div
-      className={cn(
-        'group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_30px_120px_-40px_rgba(0,0,0,0.85)] backdrop-blur-sm transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        phase === 'intro' ? 'scale-[1.015]' : 'scale-100',
-        phase === 'settled' && 'hover:-translate-y-1'
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(45,189,116,0.16),transparent_45%)]" />
-      <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
-        <p className="font-serif text-2xl text-white">Meridian Wealth Advisors</p>
-        <p className="mt-1 text-xs uppercase tracking-[0.22em] text-white/35">
-          SEC RIA · New York, NY · $2.4B AUM
-        </p>
-      </div>
-
-      <div className="grid gap-6 border-b border-white/10 px-6 py-6 sm:grid-cols-[140px_1fr] sm:items-center">
-        <div
-          className={cn(
-            'relative mx-auto flex h-32 w-32 items-center justify-center transition-all duration-[900ms] ease-[cubic-bezier(0.76,0,0.24,1)]',
-            phase === 'intro' ? 'scale-110' : 'scale-100'
-          )}
-        >
-          <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-            <circle cx="60" cy="60" r="52" className="fill-none stroke-white/10" strokeWidth="6" />
-            <circle
-              cx="60"
-              cy="60"
-              r="52"
-              className="fill-none transition-[stroke-dashoffset,stroke] duration-700 ease-out"
-              stroke={ringColor}
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          </svg>
-          <div className="text-center">
-            <div className="font-serif text-5xl leading-none tracking-[-0.04em] text-white transition-colors duration-300" style={{ color: ringColor }}>
-              {displayedScore}
-            </div>
-            <div className="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/35">Score</div>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-white/35">Percentile Rank</p>
-          <p
-            className={cn(
-              'mt-1 font-mono text-sm text-emerald-300 transition-all duration-700',
-              phase === 'settled' ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-            )}
-          >
-            Top 8% nationally
-          </p>
-          <div className="mt-4 space-y-3">
-            {heroBreakdown.map((item, index) => (
-              <div key={item.label} className="grid grid-cols-[1fr_88px_28px] items-center gap-3 text-[11px]">
-                <span className="truncate text-white/55">{item.label}</span>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-                      item.tone === 'warn' ? 'bg-amber-400' : 'bg-emerald-400'
-                    )}
-                    style={{
-                      width: phase === 'settled' ? `${item.value}%` : '0%',
-                      transitionDelay: `${index * 120 + 120}ms`,
-                    }}
-                  />
-                </div>
-                <span
-                  className={cn(
-                    'text-right font-mono transition-opacity duration-500',
-                    item.tone === 'warn' ? 'text-amber-300' : 'text-emerald-300',
-                    phase === 'settled' ? 'opacity-100' : 'opacity-0'
-                  )}
-                  style={{ transitionDelay: `${index * 120 + 180}ms` }}
-                >
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 px-6 py-4">
-        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/50">
-          Full profile requires access
-        </span>
-        <Link href="#pricing" className="text-sm font-medium text-white transition duration-300 hover:translate-x-1 hover:text-emerald-300">
-          Unlock
-        </Link>
-      </div>
-
+    <div className="relative">
+      {/* Floating badge — Conflict Flag, peeks out right */}
       <div
         className={cn(
-          'pointer-events-none absolute -right-10 top-8 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-amber-200 transition-all duration-700',
+          'pointer-events-none absolute -right-3 top-10 z-10 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-amber-200 transition-all duration-700',
           phase === 'settled' ? 'translate-x-0 opacity-100' : 'translate-x-6 opacity-0'
         )}
       >
         Conflict Flag
       </div>
+      {/* Floating badge — Top 8%, peeks out left */}
       <div
         className={cn(
-          'pointer-events-none absolute -left-8 bottom-10 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-emerald-200 transition-all duration-700',
+          'pointer-events-none absolute -left-3 bottom-14 z-10 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-emerald-200 transition-all duration-700',
           phase === 'settled' ? 'translate-x-0 opacity-100' : '-translate-x-6 opacity-0'
         )}
       >
         Top 8%
+      </div>
+
+      <div
+        className={cn(
+          'group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_30px_120px_-40px_rgba(0,0,0,0.85)] backdrop-blur-sm transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]',
+          phase === 'intro' ? 'scale-[1.015]' : 'scale-100',
+          phase === 'settled' && 'hover:-translate-y-1'
+        )}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(45,189,116,0.16),transparent_45%)]" />
+        <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+          <p className="font-serif text-2xl text-white">Meridian Wealth Advisors</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-white/35">
+            SEC RIA · New York, NY · $2.4B AUM
+          </p>
+        </div>
+
+        <div className="grid gap-6 border-b border-white/10 px-6 py-6 sm:grid-cols-[140px_1fr] sm:items-center">
+          <div
+            className={cn(
+              'relative mx-auto flex h-32 w-32 items-center justify-center transition-all duration-[900ms] ease-[cubic-bezier(0.76,0,0.24,1)]',
+              phase === 'intro' ? 'scale-110' : 'scale-100'
+            )}
+          >
+            <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" className="fill-none stroke-white/10" strokeWidth="6" />
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                className="fill-none transition-[stroke-dashoffset,stroke] duration-700 ease-out"
+                stroke={ringColor}
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+              />
+            </svg>
+            <div className="text-center">
+              <div className="font-serif text-5xl leading-none tracking-[-0.04em] text-white transition-colors duration-300" style={{ color: ringColor }}>
+                {displayedScore}
+              </div>
+              <div className="mt-1 text-[10px] uppercase tracking-[0.3em] text-white/35">Score</div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-white/35">Percentile Rank</p>
+            <p
+              className={cn(
+                'mt-1 font-mono text-sm text-emerald-300 transition-all duration-700',
+                phase === 'settled' ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+              )}
+            >
+              Top 8% nationally
+            </p>
+            <div className="mt-4 space-y-3">
+              {heroBreakdown.map((item, index) => (
+                <div key={item.label} className="grid grid-cols-[1fr_88px_28px] items-center gap-3 text-[11px]">
+                  <span className="truncate text-white/55">{item.label}</span>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
+                        item.tone === 'warn' ? 'bg-amber-400' : 'bg-emerald-400'
+                      )}
+                      style={{
+                        width: phase === 'settled' ? `${item.value}%` : '0%',
+                        transitionDelay: `${index * 120 + 120}ms`,
+                      }}
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      'text-right font-mono transition-opacity duration-500',
+                      item.tone === 'warn' ? 'text-amber-300' : 'text-emerald-300',
+                      phase === 'settled' ? 'opacity-100' : 'opacity-0'
+                    )}
+                    style={{ transitionDelay: `${index * 120 + 180}ms` }}
+                  >
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-6 py-4">
+          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/50">
+            Full profile requires access
+          </span>
+          <Link href="#pricing" className="text-sm font-medium text-white transition duration-300 hover:translate-x-1 hover:text-emerald-300">
+            Unlock
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -437,33 +442,48 @@ function ReviewedFirmsStrip() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden border-y border-white/[0.05] bg-[#0F2538] py-[22px]" aria-label="Firms reviewed">
-      {/* Left/right fade gradients */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[120px] bg-gradient-to-r from-[#0F2538] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[120px] bg-gradient-to-l from-[#0F2538] to-transparent" />
+    <>
+      {/* Keyframes defined here so they're global (not scoped by styled-jsx) */}
+      <style>{`
+        @keyframes logo-marquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .logo-marquee-track {
+          animation: logo-marquee 32s linear infinite;
+        }
+        .logo-marquee-track:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
 
-      <p className="mb-5 text-center text-[9px] font-semibold uppercase tracking-[0.22em] text-white/20">
-        Firms We Review
-      </p>
+      <section className="relative overflow-hidden border-y border-white/[0.05] bg-[#0F2538] py-[22px]" aria-label="Firms reviewed">
+        {/* Left/right fade gradients */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[120px] bg-gradient-to-r from-[#0F2538] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[120px] bg-gradient-to-l from-[#0F2538] to-transparent" />
 
-      {logos.length > 0 ? (
-        <div className="overflow-hidden">
-          <div className="flex animate-homepage-scroll items-center gap-14">
-            {logos.map((logo, index) => (
-              <Link
-                key={`${logo.crd}-${index}`}
-                href={`/firm/${logo.crd}`}
-                className="flex shrink-0 items-center opacity-55 transition-opacity hover:opacity-100"
-              >
-                <img
-                  src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
-                  alt="Reviewed firm logo"
-                  className="h-7 max-w-[90px] object-contain"
-                />
-              </Link>
-            ))}
+        <p className="mb-5 text-center text-[9px] font-semibold uppercase tracking-[0.22em] text-white/20">
+          Firms We Review
+        </p>
+
+        {logos.length > 0 ? (
+          <div className="overflow-hidden">
+            <div className="logo-marquee-track flex items-center gap-14">
+              {logos.map((logo, index) => (
+                <Link
+                  key={`${logo.crd}-${index}`}
+                  href={`/firm/${logo.crd}`}
+                  className="flex shrink-0 items-center opacity-40 grayscale transition hover:opacity-80 hover:grayscale-0"
+                >
+                  <img
+                    src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
+                    alt="Reviewed firm logo"
+                    className="h-7 max-w-[90px] object-contain brightness-0 invert"
+                  />
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-3 px-4">
           {(loaded ? reviewedFirmFallback : Array.from({ length: 4 }, (_, index) => `loading-${index}`)).map((item) => (
@@ -482,6 +502,7 @@ function ReviewedFirmsStrip() {
         </div>
       )}
     </section>
+    </>
   );
 }
 
@@ -934,99 +955,6 @@ function MethodologySection() {
   );
 }
 
-function ComparisonSection() {
-  return (
-    <section className="border-t border-white/[0.05] bg-[#162F45] py-[108px] text-white">
-      <div className="container-page">
-        <Reveal>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">The Difference</span>
-          <h2 className="mt-4 font-serif text-[clamp(30px,4vw,48px)] font-bold leading-[1.04] tracking-[-0.02em] text-white">
-            Free research vs. full diligence.
-          </h2>
-        </Reveal>
-
-        <Reveal delay={80} className="mt-16">
-          <div className="grid gap-px bg-white/[0.06] lg:grid-cols-2">
-            {/* Free panel */}
-            <div className="bg-[#162F45]">
-              <div className="flex items-center gap-[10px] border-b border-white/[0.07] px-[24px] py-[13px]">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">Free Research Path</span>
-                <span className="bg-white/[0.05] px-[8px] py-[3px] text-[9px] font-semibold uppercase tracking-[0.08em] text-white/30">Limited</span>
-              </div>
-              <div className="p-[24px]">
-                {[
-                  { label: 'Firm Name', val: 'Meridian Wealth Advisors' },
-                  { label: 'Location', val: 'New York, NY' },
-                  { label: 'AUM', val: '$2.4B' },
-                ].map((f) => (
-                  <div key={f.label} className="mb-[14px]">
-                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">{f.label}</div>
-                    <div className="text-[13px] text-white/60">{f.val}</div>
-                  </div>
-                ))}
-                {[
-                  { label: 'Visor Value Score™' },
-                  { label: 'Fee Transparency' },
-                  { label: 'Conflict Exposure' },
-                ].map((f) => (
-                  <div key={f.label} className="mb-[14px]">
-                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">{f.label}</div>
-                    <div className="select-none text-[13px] text-white/60 blur-[5px]">— / 100</div>
-                  </div>
-                ))}
-                <div className="mt-[24px] border border-white/[0.07] bg-white/[0.03] p-[14px] text-center text-[11px] text-white/25">
-                  Full VVS and sub-scores require a subscription.{' '}
-                  <Link href="#pricing" className="ml-1.5 font-semibold text-[#2DBD74]">See plans →</Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Paid panel */}
-            <div className="bg-[#162F45]">
-              <div className="flex items-center gap-[10px] border-b border-white/[0.07] px-[24px] py-[13px]">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#2DBD74]">Full Diligence Path</span>
-                <span className="bg-[rgba(45,189,116,0.12)] px-[8px] py-[3px] text-[9px] font-semibold uppercase tracking-[0.08em] text-[#2DBD74]">Paid Access</span>
-              </div>
-              <div className="p-[24px]">
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="font-serif text-[56px] font-bold leading-none tracking-[-0.04em] text-[#2DBD74]">84</div>
-                  <div className="text-right">
-                    <div className="text-[9px] uppercase tracking-[0.1em] text-white/30">Visor Value Score™</div>
-                    <div className="mt-1 text-[13px] font-semibold text-[#2DBD74]">Top 8% nationally</div>
-                  </div>
-                </div>
-                <div className="mb-4 h-[3px] overflow-hidden bg-white/[0.08]">
-                  <div className="h-full w-[84%] bg-[#2DBD74]" />
-                </div>
-                <div className="border border-white/[0.07]">
-                  {[
-                    { name: 'Regulatory Compliance', val: 96, color: '#2DBD74' },
-                    { name: 'Fee Transparency', val: 91, color: '#2DBD74' },
-                    { name: 'Conflict of Interest', val: 67, color: '#F59E0B' },
-                    { name: 'Ownership Stability', val: 82, color: '#2DBD74' },
-                  ].map((m) => (
-                    <div key={m.name} className="flex items-center justify-between border-b border-white/[0.05] px-[14px] py-[9px] text-[11.5px] last:border-b-0">
-                      <span className="text-white/40">{m.name}</span>
-                      <span className="flex items-center gap-[6px] font-semibold text-white/80">
-                        <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: m.color }} />
-                        {m.val}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.07)] p-[10px_14px]">
-                  <div className="mb-[3px] text-[9px] font-bold uppercase tracking-[0.14em] text-[#F87171]">⚑ Conflict Flag</div>
-                  <div className="text-[11px] text-white/40">Multiple referral compensation arrangements disclosed. Requires deeper review before engagement.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
 function PricingSection() {
   return (
     <section id="pricing" className="border-t border-white/[0.05] bg-[#0a1c2a] py-[108px] text-white">
@@ -1244,70 +1172,6 @@ function PersonaSection() {
             </div>
           </div>
         </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function TrustSection() {
-  const items = [
-    {
-      title: 'Independent by Design',
-      body: 'Revenue from subscribers only — never from advisors or intermediaries. No paid rankings, no sponsored content, no conflicts.',
-      href: '/how-it-works',
-      label: 'Learn our model →',
-      icon: (
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
-          <path d="M8 2L10 6.5L15 7L11.5 10.5L12.5 15L8 12.5L3.5 15L4.5 10.5L1 7L6 6.5Z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Data-Driven',
-      body: '500+ data points per firm. Derived exclusively from SEC EDGAR filings. Transparent methodology. No opinions, just facts.',
-      href: '/how-it-works',
-      label: 'See the methodology →',
-      icon: (
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
-          <rect x="2" y="10" width="3" height="4" /><rect x="6.5" y="6" width="3" height="8" /><rect x="11" y="2" width="3" height="12" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Built for Transparency',
-      body: 'Created by former compliance and diligence professionals who understand what matters. Designed for real decision-making.',
-      href: '/about',
-      label: 'Meet the team →',
-      icon: (
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
-          <circle cx="8" cy="6" r="3" /><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <section className="border-y border-[#CAD8D0] bg-[#E6F4ED]">
-      <div className="container-page">
-        <div className="grid border-l border-[rgba(26,122,74,0.12)] md:grid-cols-3">
-          {items.map((item, index) => (
-            <Reveal key={item.title} delay={index * 90}>
-            <article className="border-r border-[rgba(26,122,74,0.12)] p-[36px_32px]">
-              <div className="mb-4 grid h-8 w-8 place-items-center border border-[rgba(26,122,74,0.25)]">
-                {item.icon}
-              </div>
-              <h3 className="mb-2 font-serif text-[17px] font-bold text-[#0C1810]">{item.title}</h3>
-              <p className="text-[12.5px] leading-[1.65] text-[#2E4438]">{item.body}</p>
-              <Link
-                href={item.href}
-                className="mt-[14px] inline-block border-b border-[rgba(26,122,74,0.3)] pb-px text-[12px] font-semibold text-[#1A7A4A] transition hover:border-[#1A7A4A]"
-              >
-                {item.label}
-              </Link>
-            </article>
-            </Reveal>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -1538,14 +1402,12 @@ export function HomePageClient() {
       </section>
 
       <ReviewedFirmsStrip />
-      <ProofStrip />
       <StakesCalculator />
       <HowItWorks />
+      <ProofStrip />
       <MethodologySection />
-      <ComparisonSection />
       <PricingSection />
       <PersonaSection />
-      <TrustSection />
       <FinalCtaSection />
 
       <style jsx>{`
