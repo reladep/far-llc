@@ -1,14 +1,34 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import BillingClient from './BillingClient';
 
 export const metadata: Metadata = {
-  title: 'Billing',
+  title: 'Account & Billing - Visor Index',
 };
 
-export default function BillingPage() {
+export default async function BillingPage() {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/auth/login');
+  }
+
+  const email = user.email ?? '';
+  const memberSince = new Date(user.created_at).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
+  const nameFallback = email
+    .split('@')[0]
+    .replace(/[._-]/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+
   return (
-    <div className="container-page py-8">
-      <h1 className="text-2xl font-bold text-text-primary">Billing</h1>
-      <p className="mt-2 text-text-muted">This page is under construction.</p>
-    </div>
+    <BillingClient
+      email={email}
+      memberSince={memberSince}
+      nameFallback={nameFallback}
+    />
   );
 }
