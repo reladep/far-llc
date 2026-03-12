@@ -62,23 +62,25 @@ _Last updated: 2026-03-07_
   - **Resolved (3/1):** RIA M&A cron job removed — worker file didn't exist
 - **Directory page updated** (2/21): Now displays `display_name` from firm_names table alongside primary business name
 - **RegulatoryDisclosures.tsx deployed** (2/22): New disclosure badge + accordion component on firm profiles with severity-coded sections
-- **Firm scores worker created** (2/22): Calculates composite scores (fee competitiveness, AUM growth, client growth, advisor bandwidth, etc.) - pending table creation
-  - **Scoring methodology issues discovered (2/27):**
-    - Derivatives component is backwards (rewards high usage, but most RIAs use minimal → mass 0s)
-    - Missing data = 0 (harsh penalty for data-sparse firms)
-    - Growth scores have dead zones (below 50th percentile = 0, only top 25% get credit)
-    - Viability is pure AUM bias ($500M minimum to score any points)
-    - Needs revision before production use
+- **Firm scores worker created** (2/22): Calculates composite scores (fee competitiveness, AUM growth, client growth, advisor bandwidth, etc.) — pending table creation
+  - ⚠️ **Methodology needs revision:** Derivatives backwards, missing data = 0 penalty too harsh, growth dead zones, pure AUM bias. Needs rewrite before production.
 - **/match and /match/results pages built** (2/25): 8-step questionnaire for user-to-firm matching with ranked results, match %, reason badges, Visor Score, and estimated fees
 - **Visor Index static landing page** (3/4): Added `visor-index-homepage-live.html` and `visor_logo.png` to far/ repo — static HTML landing page for Visor Index product
 - Logo scraping in test phase (45% hit rate)
 - Dev server running at localhost:3001
+- **Visor Index React/Vite Frontend (3/10):** New separate frontend created in `far/visor-index/` with:
+  - Vite + React setup with multiple pages: Home, Dashboard, Search, Directory, Firm Profile, Compare, Negotiate, Pricing, Blog
+  - Components: ScoreRing, Nav, Footer, useReveal hook
+  - Running in parallel to Next.js frontend (dual frontend strategy)
 - **Issues:**
   - Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
   - ADV Diff Checker generating ~554 false positives per run (55% of firms showing "fee schedule changed" - unrealistic, needs threshold tuning)
-  - **Issue (resolved):** Industry News Poller cron job failing — `workers/industry-news.js` doesn't exist. Cron job removed (2/26).
-  - **Issue (resolved):** SEC Enforcement Poller cron job failing — `workers/sec-enforcement.js` doesn't exist. Cron job removed (2/27).
-  - **Issue:** RIA M&A Poller cron job failing — `workers/ria-ma.js` doesn't exist. Cron job still active, needs removal or worker creation.
+  - RIA M&A Poller cron job failing — `workers/ria-ma.js` doesn't exist. Needs removal or worker creation.
+
+- **Resolved Issues:**
+  - Industry News Poller (2/26): `workers/industry-news.js` didn't exist, cron job removed
+  - SEC Enforcement Poller (2/27): `workers/sec-enforcement.js` didn't exist, cron job removed
+  - RIA M&A (3/1): Worker didn't exist, cron job removed
 
 ## Daily Self Review Rules (as of 2/23/2026)
 

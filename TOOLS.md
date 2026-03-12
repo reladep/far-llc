@@ -2,38 +2,31 @@
 
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
-## What Goes Here
+## Dev Servers
 
-Things like:
+- **Visor Index (FAR):** http://localhost:3001
+- **Command Center:** http://localhost:3333
 
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
+## Project Paths
 
-## Examples
+- **Visor Index / FAR:** `/Users/alex/.openclaw/workspace/far`
+- **Landing page:** `far/visor-index-homepage-live.html`
+- **Logo:** `far/visor_logo.png`
 
-```markdown
-### Cameras
+## Database
 
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
+- **Supabase:** Connected to Visor Index frontend
+- **Tables:** firms, firm_names, firm_fees, firm_snapshots, news_articles, firm_alerts, alert_subscriptions, user_notifications
 
-### SSH
+## Cron Workers (Active)
 
-- home-server → 192.168.1.100, user: admin
+- EDGAR RSS poller (15min)
+- ADV Diff Checker (6hr)
+- News Scraper (hourly)
 
-### TTS
+## TTS
 
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
+- No preference set yet — let me know if you want a specific voice
 
 ---
 
