@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardTitle, Badge } from '@/components/ui';
 
 interface FirmAlert {
   id: string;
@@ -24,19 +23,19 @@ interface NewsArticle {
 }
 
 const ALERT_TYPE_LABELS: Record<string, string> = {
-  fee_change: '💰 Fee Change',
-  aum_change: '📊 AUM Change',
-  client_count_change: '👥 Client Change',
-  employee_change: '🏢 Employee Change',
-  disclosure: '📋 Disclosure',
-  news: '📰 News',
-  asset_allocation_change: '📈 Allocation Change',
+  fee_change: 'Fee Change',
+  aum_change: 'AUM Change',
+  client_count_change: 'Client Change',
+  employee_change: 'Employee Change',
+  disclosure: 'Disclosure',
+  news: 'News',
+  asset_allocation_change: 'Allocation Change',
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  high: 'bg-red-100 text-red-800',
-  medium: 'bg-amber-100 text-amber-800',
-  low: 'bg-blue-100 text-blue-800',
+  high: '#EF4444',
+  medium: '#F59E0B',
+  low: '#1A7A4A',
 };
 
 function timeAgo(dateStr: string): string {
@@ -50,11 +49,71 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
+const CSS = `
+  .fa-wrap {
+    --green:#1A7A4A; --green-3:#2DBD74; --green-pale:#E6F4ED;
+    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
+    --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
+    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+  }
+  .fa-tabs {
+    display:flex; gap:4px; margin-bottom:20px;
+    border-bottom:1px solid var(--rule); padding-bottom:0;
+  }
+  .fa-tab {
+    font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:.04em;
+    padding:8px 14px; border:none; background:none; cursor:pointer; color:var(--ink-3);
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:color .15s, border-color .15s;
+  }
+  .fa-tab:hover { color:var(--ink-2); }
+  .fa-tab.active { color:var(--ink); border-bottom-color:var(--green); }
+  .fa-empty {
+    padding:32px 0; text-align:center;
+    font-family:var(--mono); font-size:12px; color:var(--ink-3);
+  }
+  .fa-item {
+    display:grid; grid-template-columns:1fr auto;
+    gap:12px; align-items:start;
+    padding:14px 0; border-bottom:1px solid var(--rule);
+  }
+  .fa-item:last-child { border-bottom:none; }
+  .fa-item-meta { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .fa-badge {
+    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; padding:2px 7px; border:1px solid currentColor;
+    border-radius:0;
+  }
+  .fa-severity {
+    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.10em;
+    text-transform:uppercase; padding:2px 7px;
+    border-radius:2px;
+  }
+  .fa-title { font-size:13px; color:var(--ink); font-weight:500; line-height:1.4; }
+  .fa-summary { font-size:11px; color:var(--ink-3); margin-top:3px; line-height:1.6; }
+  .fa-date { font-family:var(--mono); font-size:10px; color:var(--ink-3); white-space:nowrap; margin-top:2px; }
+  .fa-news-item {
+    display:grid; grid-template-columns:1fr auto;
+    gap:12px; align-items:start;
+    padding:14px 0; border-bottom:1px solid var(--rule);
+    text-decoration:none; transition:opacity .15s;
+  }
+  .fa-news-item:last-child { border-bottom:none; }
+  .fa-news-item:hover { opacity:.7; }
+  .fa-news-title { font-size:13px; color:var(--ink); font-weight:500; line-height:1.45; margin-bottom:4px; }
+  .fa-news-snippet { font-size:11px; color:var(--ink-3); line-height:1.6; margin-bottom:4px; }
+  .fa-news-source { font-family:var(--mono); font-size:10px; color:var(--ink-3); }
+  .fa-arrow { font-size:12px; color:var(--ink-3); margin-top:2px; }
+  .fa-spinner {
+    padding:32px 0; text-align:center; font-family:var(--mono); font-size:11px; color:var(--ink-3);
+  }
+`;
+
 export default function FirmAlerts({ crd }: { crd: number }) {
   const [alerts, setAlerts] = useState<FirmAlert[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'alerts' | 'news'>('alerts');
+  const [tab, setTab] = useState<'all' | 'filings' | 'news' | 'ownership'>('all');
 
   useEffect(() => {
     async function load() {
@@ -81,103 +140,104 @@ export default function FirmAlerts({ crd }: { crd: number }) {
 
   if (loading) {
     return (
-      <Card padding="md" className="mt-6">
-        <div className="h-32 animate-pulse rounded-lg bg-secondary-100" />
-      </Card>
+      <div className="fa-wrap">
+        <style dangerouslySetInnerHTML={{ __html: CSS }} />
+        <div className="fa-spinner">Loading activity…</div>
+      </div>
     );
   }
 
   if (!hasContent) return null;
 
+  const filteredAlerts = tab === 'all'
+    ? alerts
+    : tab === 'filings'
+    ? alerts.filter(a => ['disclosure', 'fee_change', 'aum_change'].includes(a.alert_type))
+    : tab === 'ownership'
+    ? alerts.filter(a => ['employee_change', 'client_count_change'].includes(a.alert_type))
+    : [];
+
+  const showNews = tab === 'all' || tab === 'news';
+  const newsItems = showNews ? news : [];
+  const alertsToShow = tab === 'news' ? [] : filteredAlerts;
+
   return (
-    <Card padding="md" className="mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <CardTitle>Activity & News</CardTitle>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setTab('alerts')}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-              tab === 'alerts'
-                ? 'bg-brand-primary text-white'
-                : 'text-text-muted hover:bg-secondary-100'
-            }`}
-          >
-            Alerts {alerts.length > 0 && `(${alerts.length})`}
-          </button>
-          <button
-            onClick={() => setTab('news')}
-            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-              tab === 'news'
-                ? 'bg-brand-primary text-white'
-                : 'text-text-muted hover:bg-secondary-100'
-            }`}
-          >
-            News {news.length > 0 && `(${news.length})`}
-          </button>
-        </div>
+    <div className="fa-wrap">
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+
+      {/* Tab row */}
+      <div className="fa-tabs">
+        {(['all', 'filings', 'news', 'ownership'] as const).map(t => {
+          const labels: Record<string, string> = {
+            all: `All${alerts.length + news.length > 0 ? ` (${alerts.length + news.length})` : ''}`,
+            filings: 'SEC Filings',
+            news: `News${news.length > 0 ? ` (${news.length})` : ''}`,
+            ownership: 'Ownership',
+          };
+          return (
+            <button key={t} className={`fa-tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
+              {labels[t]}
+            </button>
+          );
+        })}
       </div>
 
-      {tab === 'alerts' && (
-        <div className="space-y-3">
-          {alerts.length === 0 ? (
-            <p className="text-sm text-text-muted py-4 text-center">No alerts yet for this firm.</p>
-          ) : (
-            alerts.map((alert) => (
-              <div key={alert.id} className="flex items-start gap-3 pb-3 border-b border-border-subtle last:border-0 last:pb-0">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-medium">
+      {/* Alert items */}
+      {alertsToShow.length === 0 && newsItems.length === 0 ? (
+        <div className="fa-empty">No activity in this category.</div>
+      ) : (
+        <>
+          {alertsToShow.map((alert) => {
+            const sevColor = SEVERITY_COLORS[alert.severity] || '#5A7568';
+            return (
+              <div key={alert.id} className="fa-item">
+                <div>
+                  <div className="fa-item-meta">
+                    <span className="fa-badge" style={{ color: 'var(--ink-3)', borderColor: 'var(--rule)' }}>
                       {ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type}
                     </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${SEVERITY_COLORS[alert.severity]}`}>
-                      {alert.severity}
-                    </span>
-                  </div>
-                  <p className="text-sm text-text-primary">{alert.title}</p>
-                  {alert.summary && (
-                    <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{alert.summary}</p>
-                  )}
-                </div>
-                <span className="text-[10px] text-text-tertiary whitespace-nowrap mt-1">
-                  {timeAgo(alert.detected_at)}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {tab === 'news' && (
-        <div className="space-y-3">
-          {news.length === 0 ? (
-            <p className="text-sm text-text-muted py-4 text-center">No news articles found.</p>
-          ) : (
-            news.map((article) => (
-              <a
-                key={article.id}
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block pb-3 border-b border-border-subtle last:border-0 last:pb-0 hover:bg-secondary-50 -mx-2 px-2 py-1 rounded transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text-primary line-clamp-2">{article.title}</p>
-                    {article.snippet && (
-                      <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{article.snippet}</p>
+                    {alert.severity && (
+                      <span
+                        className="fa-severity"
+                        style={{
+                          background: sevColor + '18',
+                          color: sevColor,
+                        }}
+                      >
+                        {alert.severity}
+                      </span>
                     )}
-                    <p className="text-[10px] text-text-tertiary mt-1">
-                      {article.source && <span>{article.source} · </span>}
-                      {article.published_at && timeAgo(article.published_at)}
-                    </p>
                   </div>
-                  <span className="text-text-muted text-xs mt-0.5">↗</span>
+                  <div className="fa-title">{alert.title}</div>
+                  {alert.summary && <div className="fa-summary">{alert.summary}</div>}
                 </div>
-              </a>
-            ))
-          )}
-        </div>
+                <div className="fa-date">{timeAgo(alert.detected_at)}</div>
+              </div>
+            );
+          })}
+
+          {/* News items */}
+          {newsItems.map((article) => (
+            <a
+              key={article.id}
+              href={article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="fa-news-item"
+            >
+              <div>
+                <div className="fa-news-title">{article.title}</div>
+                {article.snippet && <div className="fa-news-snippet">{article.snippet}</div>}
+                <div className="fa-news-source">
+                  {article.source && <span>{article.source} · </span>}
+                  {article.published_at && timeAgo(article.published_at)}
+                </div>
+              </div>
+              <span className="fa-arrow">↗</span>
+            </a>
+          ))}
+        </>
       )}
-    </Card>
+    </div>
   );
 }

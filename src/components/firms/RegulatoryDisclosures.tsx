@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, Badge } from '@/components/ui';
 
 interface FirmDisclosureData {
   [key: string]: string | number | null | undefined;
@@ -35,12 +34,12 @@ const CATEGORIES: DisclosureCategory[] = [
     severity: 'serious',
     items: [
       { key: 'disclosure_firm_federal_violations', label: 'Federal Violations', description: 'A federal regulatory agency has found the firm in violation of investment-related regulations.' },
-      { key: 'disclosure_firm_federal_revoke', label: 'Registration Revoked', description: 'A federal regulatory agency has revoked the firm\'s registration or license.' },
+      { key: 'disclosure_firm_federal_revoke', label: 'Registration Revoked', description: "A federal regulatory agency has revoked the firm's registration or license." },
       { key: 'disclosure_firm_federal_suspension_restrictions', label: 'Suspension or Restrictions', description: 'The firm has been suspended or had restrictions placed on its activities by a federal regulator.' },
       { key: 'disclosure_firm_federal_false_statement', label: 'False Statement', description: 'The firm has been found to have made false statements to a federal regulatory agency.' },
       { key: 'disclosure_firm_federal_investment_order_10_years', label: 'Investment Order (10 yr)', description: 'A federal regulator issued an order against the firm related to investment activities in the last 10 years.' },
       { key: 'disclosure_firm_current_regulatory_proceedings', label: 'Current Regulatory Proceedings', description: 'The firm is currently subject to pending regulatory proceedings.' },
-      { key: 'disclosure_firm_suspension_revoked', label: 'Suspension / Revocation', description: 'The firm\'s authorization to act as an investment advisor has been suspended or revoked.' },
+      { key: 'disclosure_firm_suspension_revoked', label: 'Suspension / Revocation', description: "The firm's authorization to act as an investment advisor has been suspended or revoked." },
     ],
   },
   {
@@ -49,7 +48,7 @@ const CATEGORIES: DisclosureCategory[] = [
     items: [
       { key: 'disclosure_firm_sec_cftc_violations', label: 'SEC/CFTC Violations', description: 'The SEC or CFTC has found the firm in violation of securities or commodities regulations.' },
       { key: 'disclosure_firm_sec_cftc_monetary_penalty', label: 'Monetary Penalty', description: 'The firm has been ordered to pay a monetary penalty by the SEC or CFTC.' },
-      { key: 'disclosure_firm_sec_cftc_suspension_restrictions', label: 'Suspension or Restrictions', description: 'The SEC or CFTC has suspended or restricted the firm\'s activities.' },
+      { key: 'disclosure_firm_sec_cftc_suspension_restrictions', label: 'Suspension or Restrictions', description: "The SEC or CFTC has suspended or restricted the firm's activities." },
       { key: 'disclosure_firm_sec_cftc_false_statement', label: 'False Statement', description: 'The firm has been found to have made false statements to the SEC or CFTC.' },
       { key: 'disclosure_firm_sec_cftc_investment_order', label: 'Investment Order', description: 'The SEC or CFTC has issued an order against the firm related to investment activities.' },
     ],
@@ -60,7 +59,7 @@ const CATEGORIES: DisclosureCategory[] = [
     items: [
       { key: 'disclosure_firm_self_regulatory_violation', label: 'SRO Violation', description: 'A self-regulatory organization (e.g. FINRA) has found the firm in violation of its rules.' },
       { key: 'disclosure_firm_self_regulatory_discipline', label: 'SRO Discipline', description: 'The firm has been disciplined by a self-regulatory organization.' },
-      { key: 'disclosure_firm_self_regulatory_suspension_restrictions', label: 'SRO Suspension/Restrictions', description: 'A self-regulatory organization has suspended or restricted the firm\'s activities.' },
+      { key: 'disclosure_firm_self_regulatory_suspension_restrictions', label: 'SRO Suspension/Restrictions', description: "A self-regulatory organization has suspended or restricted the firm's activities." },
       { key: 'disclosure_firm_self_regulatory_false_statement', label: 'SRO False Statement', description: 'The firm has been found to have made false statements to a self-regulatory organization.' },
     ],
   },
@@ -76,16 +75,84 @@ const CATEGORIES: DisclosureCategory[] = [
   },
 ];
 
-const SEVERITY_DOT = {
-  critical: 'bg-red-500',
-  serious: 'bg-orange-400',
-  moderate: 'bg-yellow-400',
-  minor: 'bg-slate-300',
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: '#EF4444',
+  serious: '#F97316',
+  moderate: '#F59E0B',
+  minor: '#CAD8D0',
 };
 
 interface RegulatoryDisclosuresProps {
   firmData: FirmDisclosureData;
 }
+
+const CSS = `
+  .rd-wrap {
+    --green:#1A7A4A; --green-3:#2DBD74; --green-pale:#E6F4ED;
+    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
+    --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
+    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+  }
+  .rd-clean {
+    display:flex; align-items:center; gap:16px;
+    padding:18px 22px; border-left:3px solid var(--green-3);
+    background:rgba(45,189,116,.04); border:1px solid rgba(45,189,116,.15);
+    border-left-width:3px;
+  }
+  .rd-clean-icon {
+    width:32px; height:32px; flex-shrink:0;
+    border-radius:50%; background:rgba(45,189,116,.12);
+    display:grid; place-items:center;
+  }
+  .rd-clean-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
+  .rd-clean-sub { font-size:11px; color:var(--ink-3); }
+  .rd-source { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:14px; }
+  .rd-table { }
+  .rd-row {
+    display:grid; grid-template-columns:1fr 140px 100px;
+    align-items:center; border-bottom:1px solid var(--rule);
+  }
+  .rd-row:last-child { border-bottom:none; }
+  .rd-row-btn {
+    all:unset; width:100%; cursor:pointer; display:contents;
+  }
+  .rd-row-inner {
+    display:contents;
+  }
+  .rd-cat {
+    display:flex; align-items:center; gap:10px; padding:14px 0;
+  }
+  .rd-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  }
+  .rd-cat-label { font-size:12px; color:var(--ink-2); font-weight:500; }
+  .rd-cat-count { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-left:4px; }
+  .rd-status {
+    padding:14px 0;
+  }
+  .rd-chip {
+    display:inline-block; font-family:var(--mono); font-size:9px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; padding:3px 9px;
+    border-radius:2px;
+  }
+  .rd-chip.none { background:var(--green-pale); color:var(--green); }
+  .rd-chip.flag { background:rgba(239,68,68,.08); color:var(--red); }
+  .rd-chevron {
+    padding:14px 0; text-align:right;
+    font-size:10px; color:var(--ink-3); transition:transform .2s;
+    display:flex; align-items:center; justify-content:flex-end;
+  }
+  .rd-detail {
+    grid-column:1/-1;
+    border-top:1px solid var(--rule);
+    padding:14px 0 14px 28px;
+    background:var(--white);
+  }
+  .rd-detail-item { margin-bottom:10px; }
+  .rd-detail-item:last-child { margin-bottom:0; }
+  .rd-detail-label { font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:2px; }
+  .rd-detail-desc { font-size:11px; color:var(--ink-3); line-height:1.6; }
+`;
 
 export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosuresProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -101,80 +168,82 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
   const totalFlags = flaggedCategories.reduce((sum, c) => sum + c.flaggedItems.length, 0);
   const hasCleanRecord = totalFlags === 0;
 
-  const hasCritical = flaggedCategories.some(c => c.severity === 'critical');
-  const hasSerious = flaggedCategories.some(c => c.severity === 'serious');
-  const cardBg = hasCleanRecord
-    ? 'bg-green-50/60 border-green-200'
-    : 'bg-red-50/40 border-red-200';
-
   return (
-    <Card className={cardBg}>
-      <CardContent className="px-4 py-3">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">Regulatory Disclosures</h2>
-          {hasCleanRecord ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              Clean
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
-              <span className="h-2 w-2 rounded-full bg-red-500" />
-              {totalFlags} flagged
-            </span>
-          )}
+    <div className="rd-wrap">
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+
+      {hasCleanRecord ? (
+        <div className="rd-clean">
+          <div className="rd-clean-icon">
+            <svg width="14" height="14" fill="none" stroke="#2DBD74" strokeWidth="2" viewBox="0 0 14 14">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 7l3 3 6-6" />
+            </svg>
+          </div>
+          <div>
+            <div className="rd-clean-title">No disciplinary events on record</div>
+            <div className="rd-clean-sub">
+              No criminal, regulatory, SEC/CFTC, SRO, or court disclosures found in this firm&apos;s ADV filing.
+            </div>
+          </div>
         </div>
+      ) : (
+        <div className="rd-table">
+          {CATEGORIES.map((category) => {
+            const flagged = flaggedCategories.find(c => c.label === category.label);
+            const hasFlagged = !!flagged && flagged.flaggedItems.length > 0;
+            const isExpanded = expandedCategory === category.label;
+            const dotColor = SEVERITY_COLOR[category.severity] || '#CAD8D0';
 
-        {hasCleanRecord ? (
-          <p className="text-xs text-slate-400 mt-0.5">No disclosures on file.</p>
-        ) : (
-          <>
-            <p className="text-xs text-slate-400 mt-0.5 mb-2">Click to expand details.</p>
-
-            <div className="divide-y divide-slate-100">
-              {flaggedCategories.map((category) => {
-                const isExpanded = expandedCategory === category.label;
-                const dotColor = SEVERITY_DOT[category.severity];
-
-                return (
-                  <div key={category.label}>
-                    <button
-                      onClick={() => setExpandedCategory(isExpanded ? null : category.label)}
-                      className="w-full flex items-center justify-between py-1.5 text-left hover:bg-slate-50 -mx-2 px-2 rounded transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${dotColor}`} />
-                        <span className="text-xs font-medium text-slate-800">{category.label}</span>
-                        <span className="text-xs text-slate-400">{category.flaggedItems.length}</span>
-                      </div>
-                      <svg
-                        className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="pb-2 pl-7 space-y-1">
-                        {category.flaggedItems.map((item) => (
-                          <div key={item.key}>
-                            <p className="text-xs font-medium text-slate-700">{item.label}</p>
-                            <p className="text-xs text-slate-400 leading-snug">{item.description}</p>
-                          </div>
-                        ))}
-                      </div>
+            return (
+              <div key={category.label} className="rd-row" style={{ flexWrap: 'wrap' }}>
+                <button
+                  style={{ all: 'unset', display: 'contents', cursor: hasFlagged ? 'pointer' : 'default' }}
+                  onClick={() => hasFlagged && setExpandedCategory(isExpanded ? null : category.label)}
+                >
+                  <div className="rd-cat">
+                    <div className="rd-dot" style={{ background: dotColor }} />
+                    <span className="rd-cat-label">{category.label}</span>
+                    {hasFlagged && (
+                      <span className="rd-cat-count">{flagged.flaggedItems.length}</span>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                  <div className="rd-status">
+                    {hasFlagged ? (
+                      <span className="rd-chip flag">Flagged</span>
+                    ) : (
+                      <span className="rd-chip none">None found</span>
+                    )}
+                  </div>
+                  <div className="rd-chevron">
+                    {hasFlagged && (
+                      <svg
+                        width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
+                        viewBox="0 0 12 12"
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}
+                      >
+                        <path d="M2 4l4 4 4-4" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
 
-        <p className="text-xs text-slate-300 mt-2">Source: SEC Form ADV</p>
-      </CardContent>
-    </Card>
+                {isExpanded && flagged && (
+                  <div className="rd-detail">
+                    {flagged.flaggedItems.map((item) => (
+                      <div key={item.key} className="rd-detail-item">
+                        <div className="rd-detail-label">{item.label}</div>
+                        <div className="rd-detail-desc">{item.description}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="rd-source">Source: SEC Form ADV · Reported by registrant</div>
+    </div>
   );
 }

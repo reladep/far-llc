@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui';
 
 interface FeeTier {
   min_aum: string | null;
@@ -130,6 +129,116 @@ function projectNoFee(principal: number, years: number, returnRate: number = 0.0
   return principal * Math.pow(1 + returnRate, years);
 }
 
+const CSS = `
+  .fc-wrap {
+    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
+    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
+    --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
+    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+  }
+  .fc-wrap { background:#fff; border:1px solid var(--rule); overflow:hidden; }
+  .fc-head {
+    padding:18px 24px 0; display:flex; align-items:baseline; justify-content:space-between;
+  }
+  .fc-head-title {
+    font-family:var(--serif); font-size:18px; font-weight:700; color:var(--ink);
+    letter-spacing:-.01em;
+  }
+  .fc-head-sub { font-size:11px; color:var(--ink-3); font-family:var(--mono); }
+  .fc-body { padding:20px 24px 24px; }
+  .fc-input-wrap {
+    display:flex; align-items:center; gap:0;
+    border:1px solid var(--rule); background:var(--white); max-width:320px; margin-bottom:4px;
+  }
+  .fc-prefix {
+    padding:10px 12px; font-family:var(--mono); font-size:13px; color:var(--ink-3);
+    border-right:1px solid var(--rule); background:#fff; flex-shrink:0;
+  }
+  .fc-input {
+    flex:1; border:none; background:transparent; outline:none;
+    font-family:var(--mono); font-size:13px; color:var(--ink);
+    padding:10px 12px;
+  }
+  .fc-input::placeholder { color:var(--ink-3); }
+  .fc-industry-note {
+    font-size:11px; color:var(--amber); margin-bottom:16px; padding:10px 14px;
+    border:1px solid rgba(245,158,11,.2); background:rgba(245,158,11,.04);
+    font-family:var(--sans); line-height:1.6;
+  }
+  .fc-output-grid {
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
+    border:1px solid var(--rule); margin-top:20px; margin-bottom:20px;
+  }
+  .fc-out-cell { padding:16px 18px; border-right:1px solid var(--rule); }
+  .fc-out-cell:last-child { border-right:none; }
+  .fc-out-label { font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+  .fc-out-val { font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
+  .fc-out-sub { font-size:10px; color:var(--ink-3); margin-top:4px; font-family:var(--mono); }
+  .fc-out-verdict { font-size:11px; font-weight:600; margin-top:4px; }
+  .fc-compare-section { margin-bottom:20px; }
+  .fc-compare-label {
+    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:10px;
+  }
+  .fc-compare-track {
+    height:6px; background:var(--green-pale); position:relative; margin-bottom:6px;
+    border-radius:0;
+  }
+  .fc-compare-median {
+    position:absolute; top:-4px; height:14px; width:2px;
+    background:var(--ink-3);
+  }
+  .fc-compare-dot {
+    position:absolute; top:50%; transform:translate(-50%,-50%);
+    width:10px; height:10px; border-radius:50%; border:2px solid #fff;
+  }
+  .fc-compare-labels {
+    display:flex; justify-content:space-between;
+    font-family:var(--mono); font-size:9px; color:var(--ink-3);
+  }
+  .fc-seg-note { font-size:11px; color:var(--ink-3); margin-top:6px; }
+  .fc-proj-section { }
+  .fc-proj-label {
+    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:10px;
+  }
+  .fc-proj-table { border:1px solid var(--rule); }
+  .fc-proj-head {
+    display:grid; grid-template-columns:80px 1fr 1fr 1fr;
+    padding:8px 16px; border-bottom:1px solid var(--rule);
+    background:var(--white);
+  }
+  .fc-proj-head span { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); }
+  .fc-proj-head span:not(:first-child) { text-align:right; }
+  .fc-proj-row {
+    display:grid; grid-template-columns:80px 1fr 1fr 1fr;
+    padding:12px 16px; border-bottom:1px solid var(--rule); align-items:center;
+  }
+  .fc-proj-row:last-child { border-bottom:none; }
+  .fc-proj-year { font-size:12px; font-weight:600; color:var(--ink-2); font-family:var(--mono); }
+  .fc-proj-cell { font-family:var(--mono); font-size:12px; color:var(--ink-2); text-align:right; }
+  .fc-proj-cell.fees { color:var(--red); }
+  .fc-10bp {
+    margin-top:16px; padding:16px 18px;
+    border:1px solid rgba(26,122,74,.15); background:rgba(26,122,74,.03);
+  }
+  .fc-10bp-title { font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:4px; }
+  .fc-10bp-sub { font-size:11px; color:var(--ink-3); margin-bottom:12px; }
+  .fc-10bp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .fc-10bp-cell { padding:10px 12px; border:1px solid var(--rule); background:#fff; }
+  .fc-10bp-cell-label { font-size:9px; color:var(--ink-3); margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
+  .fc-10bp-cell-val { font-family:var(--serif); font-size:16px; font-weight:700; color:var(--green); }
+  .fc-cta {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; margin-top:20px;
+    background:var(--green); color:#fff;
+    font-family:var(--sans); font-size:12px; font-weight:600;
+    padding:11px; text-decoration:none; border:none; cursor:pointer;
+    transition:background .2s; letter-spacing:.04em;
+  }
+  .fc-cta:hover { background:var(--green-2); }
+`;
+
 export default function FeeCalculator({ feeTiers, crd, firmAum, industryOnly = false }: FeeCalculatorProps) {
   const [rawInput, setRawInput] = useState('');
 
@@ -165,187 +274,164 @@ export default function FeeCalculator({ feeTiers, crd, firmAum, industryOnly = f
   const lowerRate = Math.max(effectiveRate - 0.10, 0);
   const lowerFee = amount * (lowerRate / 100);
 
-  // Color for comparison
-  const getCompColor = (firmRate: number, median: number) => {
-    if (firmRate < median - 0.005) return 'text-green-700';
-    if (firmRate > median + 0.005) return 'text-red-600';
-    return 'text-yellow-600';
-  };
-
-  const getBgColor = (firmRate: number, median: number) => {
-    if (firmRate < median - 0.005) return 'bg-green-500';
-    if (firmRate > median + 0.005) return 'bg-red-500';
-    return 'bg-yellow-500';
+  // Comparison color logic
+  const verdictColor = (firmRate: number, median: number) => {
+    if (firmRate < median - 0.005) return '#1A7A4A';
+    if (firmRate > median + 0.005) return '#EF4444';
+    return '#F59E0B';
   };
 
   return (
-    <Card>
-      <CardContent>
-        <h2 className="text-lg font-semibold text-slate-900 mb-1">Fee Calculator</h2>
-        <p className="text-xs text-slate-500 mb-4">
-          {hasFirmFees
-            ? 'Enter your investable assets to see fees, projections, and industry comparison'
-            : 'Enter your investable assets to see estimated fees based on industry averages'}
-        </p>
-        
-        <div className="relative max-w-md">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+    <div className="fc-wrap">
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+
+      <div className="fc-head">
+        <span className="fc-head-title">Fee Calculator</span>
+        <span className="fc-head-sub">
+          {hasFirmFees ? 'Firm schedule' : 'Industry estimate'}
+        </span>
+      </div>
+
+      <div className="fc-body">
+        {/* Input */}
+        <div className="fc-input-wrap">
+          <span className="fc-prefix">$</span>
           <input
             type="text"
             inputMode="numeric"
             placeholder="Enter investable assets"
             value={rawInput}
             onChange={handleChange}
-            className="w-full rounded-lg border border-slate-300 py-2.5 pl-7 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            className="fc-input"
           />
         </div>
 
+        {!hasFirmFees && (
+          <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: "'DM Mono', monospace", marginBottom: 0 }}>
+            Estimates based on industry averages — firm fees not disclosed
+          </div>
+        )}
+
         {amount > 0 && (
-          <div className="mt-6 space-y-6">
+          <>
             {/* Industry averages disclaimer */}
             {!hasFirmFees && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                <p className="text-sm font-medium text-amber-800">⚠️ Industry Averages</p>
-                <p className="text-xs text-amber-700 mt-0.5">
-                  This firm does not disclose a standard fee schedule. The estimates below are based on industry averages for comparable firms and may not reflect actual fees.
-                </p>
+              <div className="fc-industry-note">
+                ⚠ This firm does not disclose a standard fee schedule. Estimates below are based on industry averages for comparable firms.
               </div>
             )}
-            {/* Top-level result */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-lg bg-green-50 p-4 overflow-hidden">
-                <p className="text-xs text-slate-500">{hasFirmFees ? 'Estimated Annual Fee' : 'Est. Annual Fee (Industry Median)'}</p>
-                <p className="text-xl font-bold text-green-700 truncate">{formatCompact(annualFee)}</p>
-                <p className="text-xs text-slate-500">{effectiveRate.toFixed(2)}% effective rate</p>
+
+            {/* Output grid */}
+            <div className="fc-output-grid">
+              <div className="fc-out-cell">
+                <div className="fc-out-label">{hasFirmFees ? 'Est. Annual Fee' : 'Est. Fee (Median)'}</div>
+                <div className="fc-out-val">{formatCompact(annualFee)}</div>
+                <div className="fc-out-sub">{effectiveRate.toFixed(2)}% effective</div>
               </div>
-              <div className="rounded-lg bg-slate-50 p-4 overflow-hidden">
-                <p className="text-xs text-slate-500">Quarterly Cost</p>
-                <p className="text-xl font-bold text-slate-700 truncate">{formatCompact(annualFee / 4)}</p>
-                <p className="text-xs text-slate-500">per quarter</p>
+              <div className="fc-out-cell">
+                <div className="fc-out-label">Quarterly Cost</div>
+                <div className="fc-out-val">{formatCompact(annualFee / 4)}</div>
+                <div className="fc-out-sub">per quarter</div>
               </div>
-            </div>
-
-            {/* Industry Comparison */}
-            {industryBp && (
-              <div className="rounded-lg border border-slate-200 p-4">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                  Industry Comparison <span className="text-xs font-normal text-slate-400">(closest to {industryBp.label} • 207 firms)</span>
-                </h3>
-                
-                {/* Visual bar comparison */}
-                <div className="space-y-3">
-                  {/* This firm */}
-                  {hasFirmFees && (
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className={`font-semibold ${getCompColor(effectiveRate, industryBp.median)}`}>This Firm</span>
-                      <span className={`font-semibold ${getCompColor(effectiveRate, industryBp.median)}`}>{effectiveRate.toFixed(2)}%</span>
-                    </div>
-                    <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${getBgColor(effectiveRate, industryBp.median)}`} style={{ width: `${Math.min((effectiveRate / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1)) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                  )}
-
-                  {/* P25 / Median / P75 range */}
-                  <div className="relative h-8 bg-slate-100 rounded-full overflow-hidden mt-2">
-                    {/* P25-P75 range */}
-                    <div
-                      className="absolute top-0 h-full bg-slate-200 rounded-full"
-                      style={{
-                        left: `${(industryBp.p25 / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1)) * 100}%`,
-                        width: `${((industryBp.p75 - industryBp.p25) / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1)) * 100}%`,
-                      }}
-                    />
-                    {/* Median line */}
-                    <div
-                      className="absolute top-0 h-full w-0.5 bg-slate-500"
-                      style={{ left: `${(industryBp.median / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1)) * 100}%` }}
-                    />
-                    {/* Firm marker */}
-                    <div
-                      className={`absolute top-0.5 w-3 h-3 rounded-full border-2 border-white shadow ${getBgColor(effectiveRate, industryBp.median)}`}
-                      style={{ left: `${Math.min((effectiveRate / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1)) * 100, 98)}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 -mt-1">
-                    <span>P25: {industryBp.p25.toFixed(2)}%</span>
-                    <span>Median: {industryBp.median.toFixed(2)}%</span>
-                    <span>P75: {industryBp.p75.toFixed(2)}%</span>
-                  </div>
-
-                  {/* Verdict */}
-                  {hasFirmFees ? (
-                    <p className={`text-sm font-medium mt-1 ${getCompColor(effectiveRate, industryBp.median)}`}>
-                      {effectiveRate < industryBp.median - 0.005
-                        ? `✓ ${(industryBp.median - effectiveRate).toFixed(2)}% below median — below average cost`
+              {industryBp && (
+                <div className="fc-out-cell">
+                  <div className="fc-out-label">vs. Peer Median</div>
+                  <div className="fc-out-val" style={{ color: verdictColor(effectiveRate, industryBp.median) }}>
+                    {hasFirmFees
+                      ? effectiveRate < industryBp.median - 0.005
+                        ? `−${(industryBp.median - effectiveRate).toFixed(2)}%`
                         : effectiveRate > industryBp.median + 0.005
-                        ? `⚠ ${(effectiveRate - industryBp.median).toFixed(2)}% above median — above average cost`
-                        : '— At the industry median'}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Showing industry median fee for this asset level. Actual fees at this firm may differ.
-                    </p>
-                  )}
-
-                  {segmentMedian !== null && (
-                    <p className="text-xs text-slate-500">
-                      {getSegmentLabel(firmAum)} median: {segmentMedian.toFixed(2)}%
-                    </p>
-                  )}
+                        ? `+${(effectiveRate - industryBp.median).toFixed(2)}%`
+                        : 'At median'
+                      : `${industryBp.median.toFixed(2)}%`}
+                  </div>
+                  <div className="fc-out-sub">{industryBp.label} peer group</div>
                 </div>
+              )}
+            </div>
+
+            {/* Comparison track */}
+            {industryBp && (
+              <div className="fc-compare-section">
+                <div className="fc-compare-label">Industry Comparison · {industryBp.label} peer group</div>
+                <div className="fc-compare-track">
+                  {/* median line */}
+                  <div
+                    className="fc-compare-median"
+                    style={{ left: `${Math.min((industryBp.median / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1, 0.01)) * 100, 98)}%` }}
+                  />
+                  {/* firm dot */}
+                  <div
+                    className="fc-compare-dot"
+                    style={{
+                      left: `${Math.min((effectiveRate / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1, 0.01)) * 100, 98)}%`,
+                      background: verdictColor(effectiveRate, industryBp.median),
+                    }}
+                  />
+                </div>
+                <div className="fc-compare-labels">
+                  <span>P25: {industryBp.p25.toFixed(2)}%</span>
+                  <span>Median: {industryBp.median.toFixed(2)}%</span>
+                  <span>P75: {industryBp.p75.toFixed(2)}%</span>
+                </div>
+                {hasFirmFees && (
+                  <div style={{ fontSize: 11, fontWeight: 600, marginTop: 8, color: verdictColor(effectiveRate, industryBp.median) }}>
+                    {effectiveRate < industryBp.median - 0.005
+                      ? `✓ ${(industryBp.median - effectiveRate).toFixed(2)}% below median — competitive`
+                      : effectiveRate > industryBp.median + 0.005
+                      ? `⚠ ${(effectiveRate - industryBp.median).toFixed(2)}% above median`
+                      : '— At the industry median'}
+                  </div>
+                )}
+                {segmentMedian !== null && (
+                  <div className="fc-seg-note">
+                    {getSegmentLabel(firmAum)} median: {segmentMedian.toFixed(2)}%
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Portfolio Value Projections */}
-            <div className="rounded-lg border border-slate-200 p-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Portfolio Value Net of Fees</h3>
-              <p className="text-[10px] text-slate-400 mb-3">Assumes 7% annual return</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-left">
-                      <th className="py-2 text-xs text-slate-500 font-medium">Horizon</th>
-                      <th className="py-2 text-xs text-slate-500 font-medium text-right">No Fees</th>
-                      <th className="py-2 text-xs text-slate-500 font-medium text-right">With Fees</th>
-                      <th className="py-2 text-xs text-slate-500 font-medium text-right">Total Fees Paid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[5, 10, 20].map((y) => {
-                      const noFee = projectNoFee(amount, y);
-                      const withFee = projectGrowth(amount, effectiveRate / 100, y);
-                      return (
-                        <tr key={y} className="border-b border-slate-100">
-                          <td className="py-2 font-medium text-slate-700">{y} years</td>
-                          <td className="py-2 text-right text-slate-600 truncate">{formatCompact(noFee)}</td>
-                          <td className="py-2 text-right text-slate-900 font-medium truncate">{formatCompact(withFee.value)}</td>
-                          <td className="py-2 text-right text-red-600 truncate">{formatCompact(withFee.totalFees)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {/* Projections */}
+            <div className="fc-proj-section">
+              <div className="fc-proj-label">Portfolio Projection · 7% annual return assumed</div>
+              <div className="fc-proj-table">
+                <div className="fc-proj-head">
+                  <span>Horizon</span>
+                  <span>No Fees</span>
+                  <span>With Fees</span>
+                  <span>Fees Paid</span>
+                </div>
+                {[5, 10, 20].map((y) => {
+                  const noFee = projectNoFee(amount, y);
+                  const withFee = projectGrowth(amount, effectiveRate / 100, y);
+                  return (
+                    <div key={y} className="fc-proj-row">
+                      <span className="fc-proj-year">{y}yr</span>
+                      <span className="fc-proj-cell">{formatCompact(noFee)}</span>
+                      <span className="fc-proj-cell">{formatCompact(withFee.value)}</span>
+                      <span className="fc-proj-cell fees">{formatCompact(withFee.totalFees)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* 10bp Lower Scenario */}
+            {/* 10bp savings scenario */}
             {effectiveRate > 0.10 && (
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-1">💡 What if fees were 10bp lower?</h3>
-                <p className="text-xs text-blue-700 mb-3">
+              <div className="fc-10bp">
+                <div className="fc-10bp-title">What if fees were 10bp lower?</div>
+                <div className="fc-10bp-sub">
                   {effectiveRate.toFixed(2)}% → {lowerRate.toFixed(2)}% ({formatCompact(annualFee)} → {formatCompact(lowerFee)}/yr)
-                </p>
-                <div className="grid grid-cols-3 gap-3 text-center">
+                </div>
+                <div className="fc-10bp-grid">
                   {[5, 10, 20].map((y) => {
                     const current = projectGrowth(amount, effectiveRate / 100, y);
                     const lower = projectGrowth(amount, lowerRate / 100, y);
                     const savings = lower.value - current.value;
                     return (
-                      <div key={y} className="rounded-lg bg-white/70 p-2">
-                        <p className="text-xs text-blue-500">{y}yr savings</p>
-                        <p className="text-sm font-bold text-blue-800 truncate">{formatCompact(savings)}</p>
+                      <div key={y} className="fc-10bp-cell">
+                        <div className="fc-10bp-cell-label">{y}yr savings</div>
+                        <div className="fc-10bp-cell-val">{formatCompact(savings)}</div>
                       </div>
                     );
                   })}
@@ -353,15 +439,15 @@ export default function FeeCalculator({ feeTiers, crd, firmAum, industryOnly = f
               </div>
             )}
 
-            <Link
-              href={`/compare?add=${crd}`}
-              className="block w-full text-center rounded-lg bg-green-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-            >
+            <Link href={`/compare?add=${crd}`} className="fc-cta">
               Compare This Firm
+              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                <path d="M2 5.5h7M6 2.5l3 3-3 3" />
+              </svg>
             </Link>
-          </div>
+          </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

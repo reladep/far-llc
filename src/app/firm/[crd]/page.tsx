@@ -10,7 +10,7 @@ import FirmLogo from '@/components/firms/FirmLogo';
 import ScoreRing from '@/components/firms/ScoreRing';
 import AnimatedBarChart, { type BarData } from '@/components/firms/AnimatedBarChart';
 import SectionNav from '@/components/firms/SectionNav';
-import { getFirmScore } from '@/lib/scores';
+import { getFirmScore, getFirmScores } from '@/lib/scores';
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -210,6 +210,57 @@ async function getFirmData(crd: string) {
   };
 }
 
+// ─── New types ────────────────────────────────────────────────────────────────
+interface SimilarFirm {
+  crd: number;
+  name: string;
+  city: string | null;
+  state: string;
+  aum: number | null;
+  score: number | null;
+}
+
+// ─── New: Similar Firms query ─────────────────────────────────────────────────
+async function getSimilarFirms(crd: number, state: string, aum: number | null): Promise<SimilarFirm[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q: any = supabase.from('firmdata_current')
+    .select('crd, primary_business_name, main_office_city, aum')
+    .eq('main_office_state', state)
+    .neq('crd', crd)
+    .not('aum', 'is', null)
+    .order('aum', { ascending: false })
+    .limit(8);
+  if (aum) q = q.gte('aum', aum * 0.2).lte('aum', aum * 5);
+  const { data } = await q;
+  if (!data?.length) return [];
+  const crds = data.map((f: { crd: number }) => f.crd);
+  const { data: names } = await supabase.from('firm_names').select('crd, display_name').in('crd', crds);
+  const nameMap = new Map(
+    names?.map((n: { crd: number; display_name: string | null }) => [n.crd, n.display_name]) ?? []
+  );
+  const scoreMap = await getFirmScores(crds);
+  return data.slice(0, 4).map((f: {
+    crd: number; primary_business_name: string | null; main_office_city: string | null; aum: number | null;
+  }) => ({
+    crd: f.crd,
+    name: (nameMap.get(f.crd) as string | null) || f.primary_business_name || 'Unknown',
+    city: f.main_office_city,
+    state,
+    aum: f.aum,
+    score: (scoreMap.get(f.crd) as { final_score?: number } | undefined)?.final_score ?? null,
+  }));
+}
+
+// ─── New: Score percentile query ──────────────────────────────────────────────
+async function getScorePercentile(score: number): Promise<{ rank: number; total: number } | null> {
+  const [{ count: above }, { count: total }] = await Promise.all([
+    supabase.from('firm_scores').select('*', { count: 'exact', head: true }).gt('final_score', score),
+    supabase.from('firm_scores').select('*', { count: 'exact', head: true }).not('final_score', 'is', null),
+  ]);
+  if (!total) return null;
+  return { rank: (above ?? 0) + 1, total };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -260,16 +311,19 @@ const FEE_TYPE_LABELS: Record<string, string> = {
 };
 
 const SECTION_NAV = [
-  { id: 'vvs', label: 'Visor Score™' },
-  { id: 'fees', label: 'Fee Schedule' },
-  { id: 'aum', label: 'AUM & Growth' },
-  { id: 'clients', label: 'Clients' },
+  { id: 'about',      label: 'About' },
+  { id: 'vvs',        label: 'Visor Score™' },
+  { id: 'fees',       label: 'Fee Schedule' },
+  { id: 'aum',        label: 'AUM & Growth' },
+  { id: 'clients',    label: 'Clients' },
   { id: 'regulatory', label: 'Regulatory' },
-  { id: 'news', label: 'News' },
+  { id: 'news',       label: 'News' },
+  { id: 'personnel',  label: 'Key Personnel' },
 ];
 
 const PAGE_CSS = `
   .vfp-breadcrumb, .vfp-page {
+    --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --rule-2:#B0C4BA;
@@ -575,7 +629,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   if (error || !firmData) {
     return (
       <>
-        <style>{PAGE_CSS}</style>
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>
             Firm Not Found
@@ -616,7 +670,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   if (!user) {
     return (
       <>
-        <style>{PAGE_CSS}</style>
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 40, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
             {firmDisplayName}
@@ -786,6 +840,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── Score ──
   const finalScore: number = (firmScore as unknown as Record<string, number>)?.final_score ?? 0;
 
+  // ── New: Similar firms + score percentile (parallel) ──
+  const [similarFirms, scoreRank] = await Promise.all([
+    firm.main_office_state
+      ? getSimilarFirms(firm.crd, firm.main_office_state, firm.aum)
+      : Promise.resolve([]),
+    finalScore > 0 ? getScorePercentile(finalScore) : Promise.resolve(null),
+  ]);
+
   // ── VVS bars data ──
   const fs = firmScore as unknown as Record<string, number> | null;
   const vvsBars = fs ? [
@@ -803,6 +865,12 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   const sortedFeeTiers = feeTiers
     ? [...feeTiers].sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'))
     : [];
+
+  // ── Active sections for nav (filter out unavailable sections) ──
+  const activeSections = SECTION_NAV.filter(s =>
+    !(s.id === 'about' && !profileText?.business_profile && !profileText?.investment_philosophy) &&
+    !(s.id === 'aum' && !showGrowthSection)
+  );
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
@@ -961,13 +1029,57 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         </div>
 
         {/* ── SECTION NAV ── */}
-        <SectionNav sections={SECTION_NAV} />
+        <SectionNav sections={activeSections} />
 
         {/* ── BODY ── */}
         <div className="vfp-body">
 
           {/* ══ MAIN COLUMN ══ */}
           <main>
+
+            {/* ── ABOUT ── */}
+            {(profileText?.business_profile || profileText?.investment_philosophy) && (
+              <div className="vfp-section" id="about">
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">About</span>
+                  <span className="vfp-section-meta">Derived from ADV Part 2A</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  {profileText.business_profile && (
+                    <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                      {profileText.business_profile}
+                    </p>
+                  )}
+                  {profileText.investment_philosophy && (
+                    <>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
+                        color: 'var(--ink-3)', marginBottom: 8,
+                        marginTop: profileText.business_profile ? 16 : 0,
+                        paddingTop: profileText.business_profile ? 16 : 0,
+                        borderTop: profileText.business_profile ? '1px solid var(--rule)' : 'none',
+                      }}>
+                        Investment Philosophy
+                      </div>
+                      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                        {profileText.investment_philosophy}
+                      </p>
+                    </>
+                  )}
+                </div>
+                {(profileText.specialty_strategies || profileText.client_base) && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
+                      .filter(Boolean)
+                      .flatMap(s => s!.split(',').map(t => t.trim()))
+                      .slice(0, 6)
+                      .map((tag, i) => (
+                        <span key={i} className="vfp-badge">{tag}</span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── VISOR VALUE SCORE ── */}
             <div className="vfp-section" id="vvs">
@@ -986,9 +1098,20 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                       <div className="vfp-vvs-big-label">out of 100</div>
                     </div>
                     <div className="vfp-vvs-rank">
-                      Score is derived from <strong>8 weighted metrics</strong> across fee transparency,
-                      conflict-of-interest disclosures, AUM growth, and client service capacity —
-                      all sourced from SEC Form ADV filings.
+                      {scoreRank ? (
+                        <>
+                          Ranked <strong>#{scoreRank.rank.toLocaleString()}</strong> of{' '}
+                          <strong>{scoreRank.total.toLocaleString()}</strong> scored firms nationally ·{' '}
+                          <strong>Top {Math.ceil((scoreRank.rank / scoreRank.total) * 100)}%</strong>{' '}
+                          of all SEC-registered advisors. Score derived from 8 weighted metrics across fee transparency, conflict disclosures, AUM growth, and service capacity.
+                        </>
+                      ) : (
+                        <>
+                          Score is derived from <strong>8 weighted metrics</strong> across fee transparency,
+                          conflict-of-interest disclosures, AUM growth, and client service capacity —
+                          all sourced from SEC Form ADV filings.
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -1211,6 +1334,44 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               <FirmAlerts crd={firm.crd} />
             </div>
 
+            {/* ── KEY PERSONNEL ── */}
+            <div className="vfp-section" id="personnel">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Key Personnel</span>
+                <span className="vfp-section-meta">ADV Part 1 · Schedule A</span>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                  <div>
+                    <div className="vfp-fee-card-label">Total Employees</div>
+                    <div className="vfp-fee-card-val">{firm.employee_total ?? '—'}</div>
+                  </div>
+                  <div>
+                    <div className="vfp-fee-card-label">Investment Staff</div>
+                    <div className="vfp-fee-card-val">{firm.employee_investment ?? '—'}</div>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 16, display: 'flex', gap: 12 }}>
+                  <div style={{
+                    width: 32, height: 32, background: 'var(--white)', border: '1px solid var(--rule)',
+                    display: 'grid', placeItems: 'center', flexShrink: 0,
+                  }}>
+                    <svg width="12" height="12" fill="none" stroke="var(--ink-3)" strokeWidth="1.4" viewBox="0 0 12 12">
+                      <circle cx="6" cy="6" r="5" /><path d="M6 4v2.5L7.5 8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>
+                      Ownership &amp; principal data coming soon
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                      Individual principal names, roles, and ownership percentages from ADV Schedule A will be available in an upcoming release.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </main>
 
           {/* ══ SIDEBAR ══ */}
@@ -1288,25 +1449,39 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* Similar firms (placeholder) */}
+            {/* Similar firms */}
             <div className="vfp-scard">
               <div className="vfp-scard-head">Similar Firms</div>
               <div className="vfp-scard-body" style={{ padding: '12px 20px' }}>
-                {[
-                  { label: 'Explore by state', meta: `${firm.main_office_state} · Similar AUM`, href: `/search?state=${firm.main_office_state}` },
-                  { label: 'Explore by size', meta: `AUM range · ${feeTypeDisplay}`, href: `/search` },
-                ].map((item, i) => (
-                  <Link key={i} href={item.href} className="vfp-similar">
-                    <div className="vfp-similar-initials">→</div>
+                {similarFirms.length > 0 ? similarFirms.map((sf) => (
+                  <Link key={sf.crd} href={`/firm/${sf.crd}`} className="vfp-similar">
+                    <div className="vfp-similar-initials">{sf.name.slice(0, 2).toUpperCase()}</div>
                     <div className="vfp-similar-info">
-                      <div className="vfp-similar-name">{item.label}</div>
-                      <div className="vfp-similar-meta">{item.meta}</div>
+                      <div className="vfp-similar-name">{sf.name}</div>
+                      <div className="vfp-similar-meta">{sf.city}, {sf.state} · {formatAUM(sf.aum)}</div>
                     </div>
+                    {sf.score != null && (
+                      <div className="vfp-similar-score" style={{ color: scoreColor(sf.score) }}>
+                        {Math.round(sf.score)}
+                      </div>
+                    )}
                   </Link>
-                ))}
-                <div style={{ paddingTop: 12, paddingBottom: 4, fontSize: 10, color: 'var(--ink-3)', fontStyle: 'italic', fontFamily: 'var(--mono)' }}>
-                  Curated similar firms coming soon
-                </div>
+                )) : (
+                  <>
+                    {[
+                      { label: 'Explore by state', meta: `${firm.main_office_state} · Similar AUM`, href: `/search?state=${firm.main_office_state}` },
+                      { label: 'Explore by size', meta: `AUM range · ${feeTypeDisplay}`, href: `/search` },
+                    ].map((item, i) => (
+                      <Link key={i} href={item.href} className="vfp-similar">
+                        <div className="vfp-similar-initials">→</div>
+                        <div className="vfp-similar-info">
+                          <div className="vfp-similar-name">{item.label}</div>
+                          <div className="vfp-similar-meta">{item.meta}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
 
