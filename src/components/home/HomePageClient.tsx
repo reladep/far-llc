@@ -523,147 +523,217 @@ function ProofStrip() {
 }
 
 function formatCompactMoney(value: number) {
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
   if (value >= 1000) return `$${Math.round(value / 1000)}K`;
   return formatCurrency(value);
+}
+
+const CHART_W = 960, CHART_H = 220, CHART_PL = 64, CHART_PR = 16, CHART_PT = 10, CHART_PB = 28;
+
+function growthSeries(principal: number, years: number, rate: number): number[] {
+  return Array.from({ length: years + 1 }, (_, i) => principal * Math.pow(1 + rate, i));
+}
+
+function buildChartPaths(gs: number[], as_: number[], rs: number[], years: number, portfolio: number) {
+  const cW = CHART_W - CHART_PL - CHART_PR;
+  const cH = CHART_H - CHART_PT - CHART_PB;
+  const minV = portfolio * 0.95;
+  const maxV = Math.max(gs[years], as_[years], rs[years]) * 1.04;
+  const xP = (i: number) => CHART_PL + (i / years) * cW;
+  const yP = (v: number) => CHART_PT + cH - ((v - minV) / (maxV - minV)) * cH;
+  const linePath = (s: number[]) =>
+    s.map((v, i) => `${i === 0 ? 'M' : 'L'}${xP(i).toFixed(1)},${yP(v).toFixed(1)}`).join(' ');
+  const areaPath = (s: number[]) =>
+    `${linePath(s)} L${xP(years).toFixed(1)},${(CHART_PT + cH).toFixed(1)} L${CHART_PL},${(CHART_PT + cH).toFixed(1)} Z`;
+  const gridLines = Array.from({ length: 5 }, (_, i) => {
+    const v = minV + (maxV - minV) * (i / 4);
+    return { y: yP(v), label: formatCompactMoney(v) };
+  });
+  const xStep = Math.max(1, Math.floor(years / 5));
+  const xLabels: { x: number; label: string }[] = [];
+  for (let i = 0; i <= years; i += xStep) xLabels.push({ x: xP(i), label: `Yr ${i}` });
+  return {
+    lineG: linePath(gs), lineA: linePath(as_), lineR: linePath(rs),
+    areaG: areaPath(gs), areaA: areaPath(as_), areaR: areaPath(rs),
+    dotG: { cx: xP(years), cy: yP(gs[years]) },
+    dotA: { cx: xP(years), cy: yP(as_[years]) },
+    dotR: { cx: xP(years), cy: yP(rs[years]) },
+    gridLines, xLabels,
+  };
 }
 
 function StakesCalculator() {
   const [portfolio, setPortfolio] = useState(500000);
   const [years, setYears] = useState(20);
-  const { ref, inView } = useInView<HTMLElement>(0.18);
+  const { ref } = useInView<HTMLElement>(0.18);
 
   const strongOutcome = portfolio * Math.pow(1.072, years);
   const midOutcome = portfolio * Math.pow(1.058, years);
   const weakOutcome = portfolio * Math.pow(1.041, years);
   const spread = strongOutcome - weakOutcome;
-  const maxOutcome = Math.max(strongOutcome, midOutcome, weakOutcome);
-  const chartHeights = useMemo(
-    () => [
-      Math.max((strongOutcome / maxOutcome) * 100, 18),
-      Math.max((midOutcome / maxOutcome) * 100, 18),
-      Math.max((weakOutcome / maxOutcome) * 100, 18),
-    ],
-    [maxOutcome, midOutcome, strongOutcome, weakOutcome]
-  );
+
+  const chartPaths = useMemo(() => {
+    const gs = growthSeries(portfolio, years, 0.072);
+    const as_ = growthSeries(portfolio, years, 0.058);
+    const rs = growthSeries(portfolio, years, 0.041);
+    return buildChartPaths(gs, as_, rs, years, portfolio);
+  }, [portfolio, years]);
+
+  const outcomes = [
+    { label: 'Stronger Outcome', val: strongOutcome, color: '#2DBD74' },
+    { label: 'Mid Case', val: midOutcome, color: '#D97706' },
+    { label: 'Weaker Outcome', val: weakOutcome, color: '#EF4444' },
+  ];
 
   return (
-    <section ref={ref} className="bg-[#f6f8f5] py-20 text-slate-900 md:py-28">
+    <section ref={ref} className="bg-[#F6F8F7] py-20 text-[#0C1810] md:py-28">
       <div className="container-page">
-        <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-start">
+
+        {/* Top: headline left, callout card right */}
+        <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-start lg:gap-20">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Why this decision matters</p>
-            <h2 className="mt-4 max-w-3xl font-serif text-4xl leading-tight text-slate-900 md:text-5xl">
-              Choose the wrong advisor and it <span className="italic text-emerald-700">compounds</span> for decades.
+            <p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#5A7568]">
+              <span className="inline-block h-px w-5 bg-current" />
+              Why This Decision Matters
+            </p>
+            <h2 className="mt-4 font-serif text-4xl font-bold leading-[1.05] tracking-[-0.02em] text-[#0C1810] md:text-[clamp(34px,4vw,54px)]">
+              Choose the wrong advisor<br />
+              and it <em className="italic text-[#1A7A4A]">compounds</em><br />
+              for decades.
             </h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600">
-              Small differences in fees, taxes, behavior, and portfolio discipline can create very large outcome gaps over time.
+            <p className="mt-5 text-[15px] leading-7 text-[#5A7568]">
+              Research suggests investor outcomes vary meaningfully based on advice quality, fees, taxes, and behavioral discipline. Over time, even small annual gaps can compound into millions.
             </p>
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-36px_rgba(15,23,42,0.28)] transition-transform duration-500 hover:-translate-y-1">
-            <div className="font-serif text-5xl tracking-[-0.04em] text-slate-900">{formatCompactMoney(spread)}</div>
-            <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+          {/* Callout card — green-pale */}
+          <div className="mt-9 border border-[rgba(26,122,74,0.18)] bg-[#E6F4ED] p-6">
+            <div className="font-serif text-[52px] font-bold leading-none tracking-[-0.03em] text-[#1A7A4A]">
+              {formatCompactMoney(spread)}
+            </div>
+            <p className="mt-1.5 text-[11px] tracking-[0.04em] text-[#5A7568]">
               Estimated difference · {formatCompactMoney(portfolio)} portfolio · {years} years
             </p>
-            <p className="mt-4 text-sm leading-6 text-slate-600">
-              Between a top-quartile (Visor 80–100) and low-score advisor (Visor 0–49). Adjust below.
+            <p className="mt-3 border-t border-[#CAD8D0] pt-3 text-xs leading-relaxed text-[#5A7568]">
+              Illustrative estimated outcome gap between stronger and weaker advisor-led investor results. Adjust assumptions below.
             </p>
           </div>
         </div>
 
-        <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.22)] md:p-8">
-          <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-            <div className="space-y-6">
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Starting portfolio</span>
-                <div className="mt-2 font-mono text-lg text-slate-900">{formatCurrency(portfolio)}</div>
-                <input
-                  type="range"
-                  min={100000}
-                  max={5000000}
-                  step={50000}
-                  value={portfolio}
-                  onChange={(event) => setPortfolio(Number(event.target.value))}
-                  className="mt-4 w-full accent-emerald-600"
-                />
-                <div className="mt-2 flex justify-between text-xs text-slate-400">
-                  <span>$100K</span>
-                  <span>$5M</span>
-                </div>
-              </label>
+        {/* Calc box */}
+        <div className="mt-16 overflow-hidden border border-[#CAD8D0] bg-white">
 
-              <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Time horizon</span>
-                <div className="mt-2 font-mono text-lg text-slate-900">{years} years</div>
-                <input
-                  type="range"
-                  min={5}
-                  max={30}
-                  step={1}
-                  value={years}
-                  onChange={(event) => setYears(Number(event.target.value))}
-                  className="mt-4 w-full accent-emerald-600"
-                />
-                <div className="mt-2 flex justify-between text-xs text-slate-400">
-                  <span>5 years</span>
-                  <span>30 years</span>
-                </div>
-              </label>
-            </div>
-
-            <div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-5 transition-transform duration-500 hover:-translate-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Stronger outcome</p>
-                  <p className="mt-3 font-serif text-4xl text-emerald-800">{formatCompactMoney(strongOutcome)}</p>
-                  <p className="mt-2 text-sm text-emerald-900/70">Illustrative ~7.2% net</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-amber-100 bg-amber-50 p-5 transition-transform duration-500 hover:-translate-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Mid case</p>
-                  <p className="mt-3 font-serif text-4xl text-amber-800">{formatCompactMoney(midOutcome)}</p>
-                  <p className="mt-2 text-sm text-amber-900/70">Illustrative ~5.8% net</p>
-                </div>
-                <div className="rounded-[1.5rem] border border-rose-100 bg-rose-50 p-5 transition-transform duration-500 hover:-translate-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">Weaker outcome</p>
-                  <p className="mt-3 font-serif text-4xl text-rose-800">{formatCompactMoney(weakOutcome)}</p>
-                  <p className="mt-2 text-sm text-rose-900/70">Illustrative ~4.1% net</p>
-                </div>
+          {/* Sliders — side by side */}
+          <div className="grid grid-cols-2 border-b border-[#CAD8D0]">
+            <div className="border-r border-[#CAD8D0] p-[22px_24px]">
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#5A7568]">Starting Portfolio</span>
+              <div className="mt-2 font-serif text-[28px] font-bold text-[#0C1810]">{formatCurrency(portfolio)}</div>
+              <input
+                type="range" min={100000} max={5000000} step={50000} value={portfolio}
+                onChange={(e) => setPortfolio(Number(e.target.value))}
+                className="mt-2.5 w-full accent-[#1A7A4A]"
+              />
+              <div className="mt-1.5 flex justify-between text-[9px] text-[#5A7568]">
+                <span>$100K</span><span>$5M</span>
               </div>
-
-              <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-950 px-5 py-6 text-white">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Outcome gap over {years} years</p>
-                    <p className="mt-2 font-serif text-4xl text-white">{formatCompactMoney(spread)}</p>
-                  </div>
-                  <div className="text-right text-xs leading-5 text-white/50">
-                    Small annual differences become large wealth gaps over long periods.
-                  </div>
-                </div>
-                <div className="mt-5 grid h-40 grid-cols-3 items-end gap-4">
-                  {[
-                    { color: 'bg-emerald-400/85', height: chartHeights[0] },
-                    { color: 'bg-amber-400/85', height: chartHeights[1] },
-                    { color: 'bg-rose-400/85', height: chartHeights[2] },
-                  ].map((bar, index) => (
-                    <div
-                      key={bar.color}
-                      className={cn('rounded-t-[1rem] transition-[height,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]', bar.color)}
-                      style={{
-                        height: inView ? `${bar.height}%` : '16%',
-                        transitionDelay: `${index * 120}ms`,
-                      }}
-                    />
-                  ))}
-                </div>
+            </div>
+            <div className="p-[22px_24px]">
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#5A7568]">Time Horizon</span>
+              <div className="mt-2 font-serif text-[28px] font-bold text-[#0C1810]">{years} years</div>
+              <input
+                type="range" min={5} max={30} step={1} value={years}
+                onChange={(e) => setYears(Number(e.target.value))}
+                className="mt-2.5 w-full accent-[#1A7A4A]"
+              />
+              <div className="mt-1.5 flex justify-between text-[9px] text-[#5A7568]">
+                <span>5 yrs</span><span>30 yrs</span>
               </div>
             </div>
           </div>
-          <p className="mt-6 text-xs leading-6 text-slate-500">
-            Illustrative model only. Actual results vary with markets, taxes, fees, asset allocation, and investor behavior.
+
+          {/* SVG line chart */}
+          <div className="h-[260px] px-8 pb-4 pt-7">
+            <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none" className="h-full w-full overflow-visible" aria-hidden="true">
+              <defs>
+                <linearGradient id="stakes-sg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2DBD74" stopOpacity="0.12" /><stop offset="100%" stopColor="#2DBD74" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="stakes-ag" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.08" /><stop offset="100%" stopColor="#D97706" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="stakes-rg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#EF4444" stopOpacity="0.06" /><stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {chartPaths.gridLines.map(({ y, label }) => (
+                <g key={label}>
+                  <line x1={CHART_PL} y1={y.toFixed(1)} x2={CHART_W - CHART_PR} y2={y.toFixed(1)} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />
+                  <text x={CHART_PL - 6} y={(y + 4).toFixed(1)} textAnchor="end" fontSize="9.5" fill="#5A7568" fontFamily="DM Mono,monospace">{label}</text>
+                </g>
+              ))}
+              {chartPaths.xLabels.map(({ x, label }) => (
+                <text key={label} x={x.toFixed(1)} y={CHART_H - 6} textAnchor="middle" fontSize="9.5" fill="#5A7568" fontFamily="DM Mono,monospace">{label}</text>
+              ))}
+              <path d={chartPaths.areaR} fill="url(#stakes-rg)" />
+              <path d={chartPaths.areaA} fill="url(#stakes-ag)" />
+              <path d={chartPaths.areaG} fill="url(#stakes-sg)" />
+              <path d={chartPaths.lineR} fill="none" stroke="#EF4444" strokeWidth="1.5" strokeDasharray="5,3" />
+              <path d={chartPaths.lineA} fill="none" stroke="#D97706" strokeWidth="1.5" strokeDasharray="5,3" />
+              <path d={chartPaths.lineG} fill="none" stroke="#2DBD74" strokeWidth="2" />
+              <circle cx={chartPaths.dotG.cx.toFixed(1)} cy={chartPaths.dotG.cy.toFixed(1)} r="4" fill="#2DBD74" stroke="rgba(246,248,247,0.9)" strokeWidth="2" />
+              <circle cx={chartPaths.dotA.cx.toFixed(1)} cy={chartPaths.dotA.cy.toFixed(1)} r="4" fill="#D97706" stroke="rgba(246,248,247,0.9)" strokeWidth="2" />
+              <circle cx={chartPaths.dotR.cx.toFixed(1)} cy={chartPaths.dotR.cy.toFixed(1)} r="4" fill="#EF4444" stroke="rgba(246,248,247,0.9)" strokeWidth="2" />
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-5 border-b border-[#CAD8D0] px-8 pb-4">
+            {[
+              { color: '#2DBD74', label: 'Stronger outcome scenario · ~7.2% net' },
+              { color: '#D97706', label: 'Mid outcome scenario · ~5.8% net' },
+              { color: '#EF4444', label: 'Weaker outcome scenario · ~4.1% net' },
+            ].map((l) => (
+              <div key={l.label} className="flex items-center gap-1.5 text-[11px] text-[#5A7568]">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: l.color }} />
+                {l.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Gap callout bar */}
+          <div className="flex items-center justify-between border-b border-[#CAD8D0] bg-[rgba(26,122,74,0.06)] px-6 py-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#5A7568]">
+              Outcome gap over {years} years
+            </span>
+            <span className="font-serif text-[22px] font-bold tracking-[-0.02em] text-[#1A7A4A]">
+              {formatCompactMoney(spread)}
+            </span>
+          </div>
+
+          {/* Helper */}
+          <p className="border-b border-[#CAD8D0] px-6 py-2.5 text-[11px] italic text-[#5A7568]">
+            Small annual differences become large wealth gaps over long periods.
           </p>
+
+          {/* Outcomes row */}
+          <div className="grid grid-cols-3">
+            {outcomes.map((o, i) => (
+              <div key={o.label} className={cn('px-6 py-[18px] text-center', i < 2 && 'border-r border-[#CAD8D0]')}>
+                <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5A7568]">{o.label}</p>
+                <p className="font-serif text-2xl font-bold leading-none" style={{ color: o.color }}>
+                  {formatCompactMoney(o.val)}
+                </p>
+                <p className="mt-0.5 text-[10px] text-[#5A7568]">+{formatCompactMoney(o.val - portfolio)}</p>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Disclaimer */}
+        <p className="mt-3.5 text-[10px] leading-7 text-[#5A7568]">
+          * Illustrative model only. Assumptions are informed by industry research on investor behavior, fee drag, tax efficiency, and portfolio discipline. Not a guarantee of performance or investment advice.{' '}
+          <span className="opacity-70">Actual results vary based on market conditions, taxes, fees, asset allocation, and investor behavior.</span>
+        </p>
       </div>
     </section>
   );
