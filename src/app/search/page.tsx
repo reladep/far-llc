@@ -105,27 +105,63 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
 
           {/* Visor Score Range */}
           <FilterGroup label="Visor Score™">
+            <style>{`
+              .score-range-input {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 3px;
+                border-radius: 2px;
+                outline: none;
+                cursor: pointer;
+                background: transparent;
+              }
+              .score-range-input::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #2DBD74;
+                cursor: pointer;
+                border: 2px solid #0A1C2A;
+                box-shadow: 0 0 0 1px rgba(45,189,116,0.4);
+                margin-top: -5.5px;
+              }
+              .score-range-input::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #2DBD74;
+                cursor: pointer;
+                border: 2px solid #0A1C2A;
+                box-shadow: 0 0 0 1px rgba(45,189,116,0.4);
+              }
+            `}</style>
             <div className="mt-1">
-              <div className="flex justify-between mb-2">
-                <span className="font-mono text-[11px] text-white/40">{minScore}</span>
+              <div className="flex justify-between mb-2.5">
+                <span className="font-mono text-[11px] text-white/40">{minScore === 0 ? 'Any' : minScore}</span>
                 <span className="font-mono text-[11px] text-white/40">100</span>
               </div>
-              <div className="relative h-[3px] bg-white/[0.08] mb-1">
+              <div className="relative h-[3px] bg-white/[0.08] rounded-full mb-3">
                 <div
-                  className="absolute top-0 bottom-0 bg-[#1A7A4A]"
+                  className="absolute top-0 bottom-0 bg-[#1A7A4A] rounded-full"
                   style={{ left: `${minScore}%`, right: 0 }}
                 />
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={minScore}
-                  onChange={e => onMinScoreChange(Number(e.target.value))}
-                  className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-                />
               </div>
-              <p className="text-[10px] text-white/25 mt-1.5">Minimum score: {minScore === 0 ? 'Any' : minScore}</p>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={minScore}
+                onChange={e => onMinScoreChange(Number(e.target.value))}
+                className="score-range-input"
+                style={{ marginTop: '-16px' }}
+              />
+              <p className="text-[10px] text-white/25 mt-2">
+                {minScore === 0 ? 'Showing all scores' : `Minimum score: ${minScore}`}
+              </p>
             </div>
           </FilterGroup>
 
@@ -464,7 +500,8 @@ export default function SearchPage() {
   const [sortBy, setSortBy] = useState('score');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [minScore, setMinScore] = useState(0);
-  const [displayCount, setDisplayCount] = useState(25);
+  const [perPage, setPerPage] = useState<25 | 50 | 100>(25);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Auth session check
   useEffect(() => {
@@ -636,10 +673,11 @@ export default function SearchPage() {
     return copy;
   }, [firms, sortBy]);
 
-  const visibleFirms = useMemo(() =>
-    sortedFirms.filter(f => minScore === 0 || (f.final_score != null && f.final_score >= minScore)),
-    [sortedFirms, minScore]
-  );
+  const visibleFirms = useMemo(() => {
+    setCurrentPage(1);
+    return sortedFirms.filter(f => minScore === 0 || (f.final_score != null && f.final_score >= minScore));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedFirms, minScore]);
 
   // ── Active filter chips (derived) ──
   const activeChips = Object.entries(filters).filter(([, v]) => v && String(v).length > 0);
@@ -663,8 +701,9 @@ export default function SearchPage() {
 
       {/* ── Sticky search strip ── */}
       <div className="sticky top-14 z-30 bg-[#0A1C2A] border-b border-white/[0.06]">
+        <div className="mx-auto max-w-[1280px]">
         {/* Search row */}
-        <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-3">
+        <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-3">
           {/* Mobile filter toggle */}
           <button
             className="lg:hidden h-10 w-10 shrink-0 flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
@@ -724,7 +763,7 @@ export default function SearchPage() {
         </div>
 
         {/* Quick filter tags */}
-        <div className="flex items-center gap-2 px-4 py-2.5 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-2 px-6 py-2.5 overflow-x-auto scrollbar-none">
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/25 shrink-0">
             Quick:
           </span>
@@ -737,6 +776,7 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
+        </div>{/* end max-w inner */}
       </div>
 
       {/* ── Two-column layout ── */}
@@ -882,52 +922,113 @@ export default function SearchPage() {
                 <LoadingSkeleton />
               ) : (
                 <>
-                  <div className={cn(viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-[1px]')}>
-                    {visibleFirms.slice(0, displayCount).map((firm, idx) => (
-                      <FirmCard
-                        key={firm.crd}
-                        firm={firm}
-                        isSelected={idx === selectedIndex}
-                        cardRef={idx === selectedIndex ? selectedRef : undefined}
-                      />
-                    ))}
-                  </div>
+                  {(() => {
+                    const totalPages = Math.max(1, Math.ceil(visibleFirms.length / perPage));
+                    const safePage = Math.min(currentPage, totalPages);
+                    const startIdx = (safePage - 1) * perPage;
+                    const pageSlice = visibleFirms.slice(startIdx, startIdx + perPage);
 
-                  {/* Empty state */}
-                  {visibleFirms.length === 0 && (
-                    <div className="py-20 text-center">
-                      <div className="h-12 w-12 border border-white/[0.08] grid place-items-center mx-auto mb-5 opacity-40">
-                        <svg className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                      </div>
-                      <p className="font-serif text-[22px] text-white/50 mb-2">No results found</p>
-                      <p className="text-[13px] text-white/25 leading-[1.6] mb-6">
-                        Try adjusting your filters or broadening your search.
-                      </p>
-                      <button
-                        onClick={() => { handleClearFilters(); setMinScore(0); }}
-                        className="text-[13px] border border-white/10 text-white/50 px-6 py-2.5 hover:border-white/30 hover:text-white transition-all"
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  )}
+                    return (
+                      <>
+                        <div className={cn(viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-[1px]')}>
+                          {pageSlice.map((firm, idx) => (
+                            <FirmCard
+                              key={firm.crd}
+                              firm={firm}
+                              isSelected={startIdx + idx === selectedIndex}
+                              cardRef={startIdx + idx === selectedIndex ? selectedRef : undefined}
+                            />
+                          ))}
+                        </div>
 
-                  {/* Load more */}
-                  {visibleFirms.length > displayCount && (
-                    <div className="flex flex-col items-center pt-8 gap-4">
-                      <button
-                        onClick={() => setDisplayCount(n => n + 25)}
-                        className="text-[13px] font-medium text-white/50 border border-white/10 px-8 py-3 hover:border-white/30 hover:text-white transition-all"
-                      >
-                        Load 25 more
-                      </button>
-                      <p className="font-mono text-[11px] text-white/20">
-                        Showing {Math.min(displayCount, visibleFirms.length)} of {visibleFirms.length}
-                      </p>
-                    </div>
-                  )}
+                        {/* Empty state */}
+                        {visibleFirms.length === 0 && (
+                          <div className="py-20 text-center">
+                            <div className="h-12 w-12 border border-white/[0.08] grid place-items-center mx-auto mb-5 opacity-40">
+                              <svg className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                              </svg>
+                            </div>
+                            <p className="font-serif text-[22px] text-white/50 mb-2">No results found</p>
+                            <p className="text-[13px] text-white/25 leading-[1.6] mb-6">
+                              Try adjusting your filters or broadening your search.
+                            </p>
+                            <button
+                              onClick={() => { handleClearFilters(); setMinScore(0); }}
+                              className="text-[13px] border border-white/10 text-white/50 px-6 py-2.5 hover:border-white/30 hover:text-white transition-all"
+                            >
+                              Clear filters
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Pagination footer */}
+                        {visibleFirms.length > 0 && (
+                          <div className="flex flex-col items-center gap-4 pt-8 mt-4 border-t border-white/[0.06]">
+                            {/* Page numbers */}
+                            {totalPages > 1 && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                  disabled={safePage === 1}
+                                  className="h-8 w-8 flex items-center justify-center border border-white/10 text-white/40 hover:border-white/30 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
+                                >
+                                  ←
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                  <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={cn(
+                                      'h-8 w-8 flex items-center justify-center border text-[12px] transition-all',
+                                      page === safePage
+                                        ? 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.08)] text-[#2DBD74]'
+                                        : 'border-white/10 text-white/40 hover:border-white/30 hover:text-white'
+                                    )}
+                                  >
+                                    {page}
+                                  </button>
+                                ))}
+                                <button
+                                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                  disabled={safePage === totalPages}
+                                  className="h-8 w-8 flex items-center justify-center border border-white/10 text-white/40 hover:border-white/30 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
+                                >
+                                  →
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Per-page + count row */}
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/20">Per page</span>
+                                <div className="flex gap-0.5">
+                                  {([25, 50, 100] as const).map(n => (
+                                    <button
+                                      key={n}
+                                      onClick={() => { setPerPage(n); setCurrentPage(1); }}
+                                      className={cn(
+                                        'h-7 px-2.5 text-[11px] border transition-all',
+                                        perPage === n
+                                          ? 'border-[rgba(45,189,116,0.4)] bg-[rgba(45,189,116,0.07)] text-[#2DBD74]'
+                                          : 'border-white/10 text-white/35 hover:border-white/25 hover:text-white/70'
+                                      )}
+                                    >
+                                      {n}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <span className="font-mono text-[11px] text-white/20">
+                                {startIdx + 1}–{Math.min(startIdx + perPage, visibleFirms.length)} of {visibleFirms.length}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </>
