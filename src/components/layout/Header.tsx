@@ -50,17 +50,12 @@ export function Header() {
         )}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 text-decoration-none">
-          {/* Hex icon */}
-          <span
-            className="grid h-[26px] w-[26px] shrink-0 place-items-center border border-emerald-400/40 bg-emerald-900/15"
-            style={{ clipPath: 'polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)' }}
-            aria-hidden="true"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-              <circle cx="5" cy="5" r="3" stroke="rgba(45,189,116,0.7)" strokeWidth="1.2" fill="none"/>
-            </svg>
-          </span>
+        <Link href="/" className="flex items-center gap-2.5">
+          <img
+            src="/visor_logo.png"
+            alt="Visor Index"
+            className="h-7 w-auto"
+          />
           <span className="font-serif text-[18px] font-bold tracking-[0.01em] text-white">
             Visor <em className="not-italic text-emerald-400">Index</em>
           </span>
