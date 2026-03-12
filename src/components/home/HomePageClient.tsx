@@ -710,12 +710,12 @@ function MethodologySection() {
         <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <Reveal>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">The intelligence layer</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">The Intelligence Layer</p>
             <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
-              The <span className="italic text-emerald-300">Visor Value Score</span> is the homepage’s scoring spine.
+              The <span className="italic text-emerald-300">Visor Value Score™</span> — our proprietary edge.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/70">
-              The existing app already contains score APIs and score-display logic. This section presents that methodology visually without changing the backend contract.
+              500+ SEC ADV data points. One score, 0–100. Every advisor in the country. Built entirely on public regulatory data — not influenced by the industry we evaluate.
             </p>
           </div>
           </Reveal>
@@ -789,7 +789,7 @@ function ComparisonSection() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Paid diligence path</p>
             <h3 className="mt-4 font-serif text-3xl text-white">Unlock deeper scoring, comparison, and monitoring.</h3>
             <p className="mt-4 text-sm leading-7 text-white/65">
-              This mirrors the wireframe’s proof/comparison panel while staying aligned with the current pricing and auth flows.
+              Full scores, sub-metric breakdowns, filing alerts, and the advisor matching tool. Everything you need to make a confident, well-researched decision.
             </p>
           </div>
           </Reveal>
@@ -1172,7 +1172,7 @@ export function HomePageClient() {
           <Reveal className="text-center">
             <p className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-300">
               <span className="h-px w-8 bg-emerald-300" />
-              SEC ADV Data · 40,000+ Advisors · Updated Quarterly
+              Wealth Intelligence · No Paid Placement · Just the Data · Personalized
               <span className="h-px w-8 bg-emerald-300" />
             </p>
           </Reveal>
@@ -1180,102 +1180,34 @@ export function HomePageClient() {
           <div className="mt-14 grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <Reveal>
             <div>
-              <h1 className="max-w-3xl font-serif text-5xl leading-[1.0] tracking-[-0.03em] text-white md:text-[72px]">
-                Before you trust someone with your life savings —{' '}
-                <span className="italic text-emerald-300">see the score.</span>
+              <h1 className="max-w-3xl font-serif text-5xl leading-[1.08] tracking-[-0.02em] text-white md:text-[clamp(36px,4.5vw,62px)]">
+                Your advisor knows everything about your money.{' '}
+                <em className="italic text-emerald-300">Shouldn&apos;t you know everything about them?</em>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-white/55">
-                Every registered advisor in America files disclosures with the SEC. We turn those filings into a single, unbiased score. No paid placements. No conflicts. Just the record.
+              <p className="mt-6 max-w-[480px] text-base font-light leading-7 text-white/50">
+                Search, compare, track, and negotiate — across thousands of firms managing trillions in assets.
               </p>
 
-              {/* Inline hero search */}
-              <div className="relative mt-8">
-                <form
-                  onSubmit={handleSearch}
-                  className="flex items-center gap-0 rounded-[6px] border border-white/12 bg-white/[0.04] backdrop-blur-sm transition-all duration-200 focus-within:border-emerald-400/50 focus-within:bg-white/[0.06]"
+              {/* Hero CTAs */}
+              <div className="mt-10 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/search"
+                  className="inline-flex items-center gap-2 border border-white/20 px-7 py-3.5 text-sm font-medium text-white/75 transition-all duration-200 hover:border-white/50 hover:text-white"
                 >
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-                    placeholder="Search any advisor or firm…"
-                    className="flex-1 bg-transparent px-5 py-4 text-sm text-white outline-none placeholder:text-white/30"
-                    autoComplete="off"
-                    role="combobox"
-                    aria-expanded={showDropdown}
-                    aria-controls={listboxId}
-                    aria-autocomplete="list"
-                    aria-activedescendant={selectedIndex >= 0 ? `${listboxId}-option-${selectedIndex}` : undefined}
-                  />
-                  <button
-                    type="submit"
-                    className="m-1.5 rounded-[4px] bg-emerald-600 px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-500 active:bg-emerald-700"
-                  >
-                    {searching ? 'Searching…' : 'Search Free'}
-                  </button>
-                </form>
-
-                {/* Autocomplete dropdown */}
-                {showDropdown && (suggestionsLoading || suggestions.length > 0) && (
-                  <div
-                    id={listboxId}
-                    role="listbox"
-                    className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-[6px] border border-white/10 bg-[#0f2538] shadow-2xl"
-                  >
-                    {suggestionsLoading
-                      ? Array.from({ length: 4 }, (_, i) => (
-                          <div key={`sk-${i}`} className="flex items-center justify-between px-4 py-3">
-                            <div className="space-y-1.5">
-                              <div className="h-3 w-40 animate-pulse rounded-full bg-white/10" />
-                              <div className="h-2.5 w-24 animate-pulse rounded-full bg-white/[0.06]" />
-                            </div>
-                          </div>
-                        ))
-                      : suggestions.map((firm, index) => (
-                          <button
-                            id={`${listboxId}-option-${index}`}
-                            key={firm.crd}
-                            type="button"
-                            role="option"
-                            aria-selected={index === selectedIndex}
-                            onClick={() => router.push(`/firm/${firm.crd}`)}
-                            className={cn(
-                              'flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors duration-150',
-                              index === selectedIndex ? 'bg-emerald-900/40' : 'hover:bg-white/[0.04]'
-                            )}
-                          >
-                            <span>
-                              <span className="block text-white/90">{firm.display_name || firm.primary_business_name}</span>
-                              {firm.main_office_city && firm.main_office_state && (
-                                <span className="text-xs text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
-                              )}
-                            </span>
-                            <span className="text-[10px] uppercase tracking-[0.16em] text-white/25">CRD {firm.crd}</span>
-                          </button>
-                        ))}
-                  </div>
-                )}
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4"/><line x1="9.5" y1="9.5" x2="13" y2="13"/></svg>
+                  Search Advisors
+                </Link>
+                <Link
+                  href="#pricing"
+                  className="inline-flex items-center gap-2 bg-[#1A7A4A] px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#22995E]"
+                >
+                  Get Access
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14" aria-hidden="true"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+                </Link>
               </div>
 
-              {/* Quick-search tags */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-white/30">Try:</span>
-                {['Vanguard Personal', 'Fee-only, New York', 'Under $500K minimum'].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => runQuickSearch(tag)}
-                    className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/45 transition hover:border-emerald-400/40 hover:text-emerald-300"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-8 flex items-center gap-3 border-t border-white/10 pt-6 text-sm text-white/40">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <div className="mt-8 flex items-center gap-2.5 border-t border-white/7 pt-7 text-xs text-white/35">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
                 No advisor has ever paid to appear here or influence their score.
               </div>
             </div>
