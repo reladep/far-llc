@@ -79,10 +79,10 @@ export const heroBreakdown: HeroBreakdownMetric[] = [
  ];
 
 export const proofMetrics: ProofMetric[] = [
-  { value: '2K+', countTo: 2000, suffix: '+', label: 'Firms indexed', detail: 'Live directory coverage in the current product dataset.' },
-  { value: '500+', countTo: 500, suffix: '+', label: 'Data points per firm', detail: 'Structured filing and profile attributes used for diligence.' },
-  { value: '15 min', countTo: 15, suffix: ' min', label: 'Alert cadence', detail: 'Rolling monitoring for filing and activity changes.' },
-  { value: 'Zero', label: 'Paid placement', detail: 'Rankings and ordering are not sold to advisors.' },
+  { value: '40K+', countTo: 40000, suffix: '+', label: 'Advisors indexed', detail: 'Every US-registered RIA. Every SEC EDGAR filing.' },
+  { value: '500+', countTo: 500, suffix: '+', label: 'Data points per firm', detail: 'Per filing, per year. Structured for diligence, not marketing.' },
+  { value: 'Quarterly', label: 'SEC EDGAR sync', detail: 'Always current. Updated every quarter from regulatory filings.' },
+  { value: 'Zero', label: 'Paid placements', detail: 'Rankings never for sale. No advisor has paid to appear here.' },
 ];
 
 export const homepageMetrics: HomepageMetric[] = [

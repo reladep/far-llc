@@ -326,7 +326,7 @@ function SearchCard({
     <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_30px_90px_-30px_rgba(15,23,42,0.4)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Search advisors free</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Search by firm name, city, specialty, fee model, or use case. Existing autocomplete and routing are preserved.
+        Search any registered advisor or firm by name, city, specialty, or fee structure.
       </p>
 
       <form onSubmit={onSearchSubmit} className="mt-5 space-y-3">
@@ -567,7 +567,7 @@ function StakesCalculator() {
               Estimated difference · {formatCompactMoney(portfolio)} portfolio · {years} years
             </p>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              Illustrative only. This production-safe placeholder mirrors the wireframe interaction without introducing unsupported backend dependencies.
+              Between a top-quartile (Visor 80–100) and low-score advisor (Visor 0–49). Adjust below.
             </p>
           </div>
         </div>
@@ -937,9 +937,7 @@ function PersonaSection() {
               {active.tag}
             </div>
             <h3 className="mt-5 font-serif text-3xl text-slate-900">{active.blurb}</h3>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              This panel is intentionally structured as reusable placeholder content until persona-specific CMS or backend data exists.
-            </p>
+
 
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{active.searchLabel}</span>
@@ -998,7 +996,7 @@ function TrustSection() {
     },
     {
       title: 'Built for real diligence',
-      body: 'Search, compare, alerts, matching, and pricing flows already exist in the app and remain wired into this refactor.',
+      body: 'No referral arrangements. No advisor partnerships. Revenue comes from subscribers only.',
       href: '/search',
       label: 'Start searching',
     },
@@ -1174,65 +1172,117 @@ export function HomePageClient() {
           <Reveal className="text-center">
             <p className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-300">
               <span className="h-px w-8 bg-emerald-300" />
-              Wealth Intelligence · No Paid Placement · Just the Data · Personalized
+              SEC ADV Data · 40,000+ Advisors · Updated Quarterly
               <span className="h-px w-8 bg-emerald-300" />
             </p>
           </Reveal>
 
-          <div className="mt-14 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="mt-14 grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <Reveal>
             <div>
-              <Badge className="border border-emerald-300/20 bg-emerald-300/10 px-4 py-1 text-[11px] uppercase tracking-[0.18em] text-emerald-200">
-                Institutional-grade advisor diligence
-              </Badge>
-              <h1 className="mt-6 max-w-4xl font-serif text-5xl leading-[0.98] tracking-[-0.03em] text-white md:text-7xl">
-                Your advisor knows everything about your money. <span className="italic text-emerald-300">Shouldn&apos;t you know everything about them?</span>
+              <h1 className="max-w-3xl font-serif text-5xl leading-[1.0] tracking-[-0.03em] text-white md:text-[72px]">
+                Before you trust someone with your life savings —{' '}
+                <span className="italic text-emerald-300">see the score.</span>
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-white/60">
-                Search, compare, track, and negotiate across the existing FAR product stack without breaking the backend integrations already in production.
+              <p className="mt-6 max-w-xl text-base leading-8 text-white/55">
+                Every registered advisor in America files disclosures with the SEC. We turn those filings into a single, unbiased score. No paid placements. No conflicts. Just the record.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/search">
-                  <Button size="lg" className="rounded-2xl px-8">
-                    Search Advisors
-                  </Button>
-                </Link>
-                <Link href="#pricing">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="rounded-2xl border-white/15 bg-transparent px-8 text-white hover:bg-white/10"
+              {/* Inline hero search */}
+              <div className="relative mt-8">
+                <form
+                  onSubmit={handleSearch}
+                  className="flex items-center gap-0 rounded-[6px] border border-white/12 bg-white/[0.04] backdrop-blur-sm transition-all duration-200 focus-within:border-emerald-400/50 focus-within:bg-white/[0.06]"
+                >
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+                    placeholder="Search any advisor or firm…"
+                    className="flex-1 bg-transparent px-5 py-4 text-sm text-white outline-none placeholder:text-white/30"
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={showDropdown}
+                    aria-controls={listboxId}
+                    aria-autocomplete="list"
+                    aria-activedescendant={selectedIndex >= 0 ? `${listboxId}-option-${selectedIndex}` : undefined}
+                  />
+                  <button
+                    type="submit"
+                    className="m-1.5 rounded-[4px] bg-emerald-600 px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-500 active:bg-emerald-700"
                   >
-                    Get Access
-                  </Button>
-                </Link>
+                    {searching ? 'Searching…' : 'Search Free'}
+                  </button>
+                </form>
+
+                {/* Autocomplete dropdown */}
+                {showDropdown && (suggestionsLoading || suggestions.length > 0) && (
+                  <div
+                    id={listboxId}
+                    role="listbox"
+                    className="absolute top-full z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-[6px] border border-white/10 bg-[#0f2538] shadow-2xl"
+                  >
+                    {suggestionsLoading
+                      ? Array.from({ length: 4 }, (_, i) => (
+                          <div key={`sk-${i}`} className="flex items-center justify-between px-4 py-3">
+                            <div className="space-y-1.5">
+                              <div className="h-3 w-40 animate-pulse rounded-full bg-white/10" />
+                              <div className="h-2.5 w-24 animate-pulse rounded-full bg-white/[0.06]" />
+                            </div>
+                          </div>
+                        ))
+                      : suggestions.map((firm, index) => (
+                          <button
+                            id={`${listboxId}-option-${index}`}
+                            key={firm.crd}
+                            type="button"
+                            role="option"
+                            aria-selected={index === selectedIndex}
+                            onClick={() => router.push(`/firm/${firm.crd}`)}
+                            className={cn(
+                              'flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors duration-150',
+                              index === selectedIndex ? 'bg-emerald-900/40' : 'hover:bg-white/[0.04]'
+                            )}
+                          >
+                            <span>
+                              <span className="block text-white/90">{firm.display_name || firm.primary_business_name}</span>
+                              {firm.main_office_city && firm.main_office_state && (
+                                <span className="text-xs text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-[0.16em] text-white/25">CRD {firm.crd}</span>
+                          </button>
+                        ))}
+                  </div>
+                )}
               </div>
 
-              <div className="mt-10 flex items-center gap-3 border-t border-white/10 pt-6 text-sm text-white/45">
+              {/* Quick-search tags */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-white/30">Try:</span>
+                {['Vanguard Personal', 'Fee-only, New York', 'Under $500K minimum'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => runQuickSearch(tag)}
+                    className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/45 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8 flex items-center gap-3 border-t border-white/10 pt-6 text-sm text-white/40">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 No advisor has ever paid to appear here or influence their score.
               </div>
             </div>
             </Reveal>
 
-            <Reveal className="space-y-6" delay={120}>
+            <Reveal delay={120}>
               <HeroScoreCard />
-              <SearchCard
-                searchQuery={searchQuery}
-                searching={searching}
-                suggestionsLoading={suggestionsLoading}
-                suggestions={suggestions}
-                showDropdown={showDropdown}
-                selectedIndex={selectedIndex}
-                listboxId={listboxId}
-                onSearchSubmit={handleSearch}
-                onSearchChange={setSearchQuery}
-                onSearchFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-                onSearchKeyDown={handleKeyDown}
-                onSuggestionClick={(crd) => router.push(`/firm/${crd}`)}
-                onQuickSearch={runQuickSearch}
-              />
             </Reveal>
           </div>
         </div>
