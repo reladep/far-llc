@@ -3,13 +3,11 @@
 import { FormEvent, ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Badge, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
-  comparisonPoints,
   heroBreakdown,
-  homepageMetrics,
   howSteps,
   methodologyPillars,
   personas,
@@ -439,47 +437,50 @@ function ReviewedFirmsStrip() {
   }, []);
 
   return (
-    <section className="border-y border-white/6 bg-[#11283b]" aria-label="Firms reviewed">
-      <div className="container-page py-5">
-        <div className="mb-4 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
-          Firms we review
-        </div>
-        {logos.length > 0 ? (
-          <div className="relative overflow-hidden">
-            <div className="flex animate-homepage-scroll gap-12">
-              {logos.map((logo, index) => (
-                <Link
-                  key={`${logo.crd}-${index}`}
-                  href={`/firm/${logo.crd}`}
-                  className="flex h-10 w-28 shrink-0 items-center justify-center opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
-                >
-                  <img
-                    src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
-                    alt="Reviewed firm logo"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {(loaded ? reviewedFirmFallback : Array.from({ length: 4 }, (_, index) => `loading-${index}`)).map((item) => (
-              <div
-                key={item}
-                className={cn(
-                  'rounded-full border px-4 py-2 text-xs uppercase tracking-[0.18em]',
-                  loaded
-                    ? 'border-white/10 bg-white/[0.04] text-white/55'
-                    : 'h-9 w-32 animate-pulse border-white/5 bg-white/[0.04] text-transparent'
-                )}
+    <section className="relative overflow-hidden border-y border-white/[0.05] bg-[#0F2538] py-[22px]" aria-label="Firms reviewed">
+      {/* Left/right fade gradients */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[120px] bg-gradient-to-r from-[#0F2538] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[120px] bg-gradient-to-l from-[#0F2538] to-transparent" />
+
+      <p className="mb-5 text-center text-[9px] font-semibold uppercase tracking-[0.22em] text-white/20">
+        Firms We Review
+      </p>
+
+      {logos.length > 0 ? (
+        <div className="overflow-hidden">
+          <div className="flex animate-homepage-scroll items-center gap-14">
+            {logos.map((logo, index) => (
+              <Link
+                key={`${logo.crd}-${index}`}
+                href={`/firm/${logo.crd}`}
+                className="flex shrink-0 items-center opacity-55 transition-opacity hover:opacity-100"
               >
-                {loaded ? item : 'Loading'}
-              </div>
+                <img
+                  src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
+                  alt="Reviewed firm logo"
+                  className="h-7 max-w-[90px] object-contain"
+                />
+              </Link>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4">
+          {(loaded ? reviewedFirmFallback : Array.from({ length: 4 }, (_, index) => `loading-${index}`)).map((item) => (
+            <div
+              key={item}
+              className={cn(
+                'border px-4 py-2 text-xs uppercase tracking-[0.18em]',
+                loaded
+                  ? 'border-white/10 text-white/55'
+                  : 'h-9 w-32 animate-pulse border-white/5 bg-white/[0.04] text-transparent'
+              )}
+            >
+              {loaded ? item : ''}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -494,16 +495,46 @@ function ProofMetricCard({
   start: boolean;
 }) {
   const count = useCountUp(metric.countTo || 0, { start: start && !!metric.countTo, duration: 1200, delay: index * 120 });
-  const displayValue =
-    metric.countTo && start
-      ? `${metric.prefix || ''}${metric.decimals ? count.toFixed(metric.decimals) : Math.round(count)}${metric.suffix || ''}`
-      : metric.value;
+
+  // Determine display parts: main number/text + optional green suffix em
+  let valMain: string;
+  let valEm: string | null = null;
+  const isText = !metric.countTo; // "Quarterly", "Zero"
+
+  if (metric.countTo && start) {
+    const num = Math.round(count);
+    if (metric.value === '40K+') {
+      valMain = num >= 1000 ? `${Math.round(num / 1000)}` : String(num);
+      valEm = num >= 1000 ? 'K+' : null;
+    } else if (metric.suffix) {
+      valMain = String(num);
+      valEm = metric.suffix;
+    } else {
+      valMain = String(num);
+    }
+  } else {
+    const match = metric.value.match(/^(\d+)(.+)$/);
+    if (match) {
+      valMain = match[1];
+      valEm = match[2];
+    } else {
+      valMain = metric.value;
+    }
+  }
+
+  const detail = metric.detail.split('.')[0];
 
   return (
-    <div className="bg-[#0c1d2b] px-6 py-8 transition-colors duration-500 hover:bg-white/[0.03]">
-      <p className="font-serif text-4xl text-white">{displayValue}</p>
-      <p className="mt-2 text-sm font-medium text-white/85">{metric.label}</p>
-      <p className="mt-2 text-xs leading-5 text-white/45">{metric.detail}</p>
+    <div className="flex flex-1 items-center gap-[14px] border-r border-[rgba(255,255,255,0.06)] px-7 py-[18px]">
+      <div>
+        <div className={cn('font-serif font-bold text-white', isText ? 'pt-1 text-[20px]' : 'text-[26px]')}>
+          {valMain}
+          {valEm && <em className="not-italic text-[#2DBD74]">{valEm}</em>}
+        </div>
+        <div className="mt-1 text-[11px] leading-[1.5] text-white/30">
+          {metric.label}<br />{detail}
+        </div>
+      </div>
     </div>
   );
 }
@@ -512,11 +543,13 @@ function ProofStrip() {
   const { ref, inView } = useInView<HTMLElement>(0.2);
 
   return (
-    <section ref={ref} className="bg-[#0c1d2b]">
-      <div className="container-page grid gap-px bg-white/5 py-0 md:grid-cols-4">
-        {proofMetrics.map((metric, index) => (
-          <ProofMetricCard key={metric.label} metric={metric} index={index} start={inView} />
-        ))}
+    <section ref={ref} className="border-y border-[rgba(255,255,255,0.06)] bg-[#0a1c2a]">
+      <div className="container-page px-0">
+        <div className="flex items-stretch border-l border-[rgba(255,255,255,0.06)]">
+          {proofMetrics.map((metric, index) => (
+            <ProofMetricCard key={metric.label} metric={metric} index={index} start={inView} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -741,31 +774,53 @@ function StakesCalculator() {
 
 function HowItWorks() {
   return (
-    <section className="bg-white py-20 md:py-28">
+    <section className="border-t border-white/[0.05] bg-[#0a1c2a] py-[108px] text-white">
       <div className="container-page">
-        <Reveal className="mx-auto max-w-3xl text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">How it works</p>
-          <h2 className="mt-4 font-serif text-4xl text-slate-900 md:text-5xl">Institutional-grade diligence, end to end.</h2>
-          <p className="mt-5 text-base leading-8 text-slate-600">
-            Search, score, compare, and monitor across the major steps that drive a serious advisor selection process.
+        <Reveal className="mx-auto max-w-[680px] text-center">
+          <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">
+            How It Works
+          </span>
+          <h2 className="mt-5 font-serif text-[clamp(36px,5vw,62px)] font-bold leading-[1.04] tracking-[-0.025em] text-white">
+            Institutional-grade diligence — end to end.
+          </h2>
+          <p className="mt-4 text-[15px] leading-7 text-white/45">
+            Search, score, compare, and monitor — everything you need to make the most important financial decision of your life.
           </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-px overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-200 md:grid-cols-2 xl:grid-cols-3">
-          {howSteps.map((step, index) => (
-            <Reveal key={step.title} delay={index * 80}>
-            <article className="bg-white p-6 transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-xl md:p-8">
-              <p className="font-mono text-sm text-emerald-700">{String(index + 1).padStart(2, '0')}</p>
-              <h3 className="mt-5 text-xl font-semibold text-slate-900">{step.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
-            </article>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal delay={80} className="mt-16">
+          <div className="grid border border-white/[0.07] md:grid-cols-3">
+            {howSteps.map((step, index) => (
+              <article
+                key={step.title}
+                className={cn(
+                  'border-b border-white/[0.07] p-[36px_32px]',
+                  'md:border-r md:border-white/[0.07]',
+                  [2, 5].includes(index) && 'md:border-r-0',
+                  [3, 4, 5].includes(index) && 'md:border-b-0',
+                  index === 5 && 'border-b-0',
+                )}
+              >
+                <span className="block font-mono text-[11px] font-medium tracking-[0.08em] text-[#2DBD74]">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <h3 className="mt-[18px] font-serif text-[20px] font-bold leading-[1.2] text-white">
+                  {step.title}
+                </h3>
+                <p className="mt-[10px] text-[13px] leading-7 text-white/40">
+                  {step.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </Reveal>
 
-        <Reveal className="mt-8 text-center" delay={150}>
-          <Link href="#pricing" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
-            See plans and access tiers
+        <Reveal className="mt-10 text-center" delay={150}>
+          <Link
+            href="#pricing"
+            className="border-b border-[rgba(45,189,116,0.3)] pb-0.5 text-[13px] font-semibold text-[#2DBD74] transition hover:border-[#2DBD74]"
+          >
+            See plans &amp; access tiers →
           </Link>
         </Reveal>
       </div>
@@ -775,66 +830,105 @@ function HowItWorks() {
 
 function MethodologySection() {
   return (
-    <section className="bg-[#122b3f] py-20 text-white md:py-28">
+    <section className="bg-[#F6F8F7] py-[108px] text-[#0C1810]">
       <div className="container-page">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <Reveal>
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">The Intelligence Layer</p>
-            <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
-              The <span className="italic text-emerald-300">Visor Value Score™</span> — our proprietary edge.
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/70">
-              500+ SEC ADV data points. One score, 0–100. Every advisor in the country. Built entirely on public regulatory data — not influenced by the industry we evaluate.
-            </p>
-          </div>
-          </Reveal>
+        <Reveal>
+          <span className="inline-flex items-center gap-[10px] text-[10px] font-semibold uppercase tracking-[0.22em] text-[#1A7A4A]">
+            <span className="h-px w-6 bg-current" />
+            The Intelligence Layer
+          </span>
+          <h2 className="mt-4 font-serif text-[clamp(34px,4.5vw,58px)] font-bold leading-[1.04] tracking-[-0.025em] text-[#0C1810]">
+            The <em className="italic text-[#1A7A4A]">Visor Value Score™</em><br />— our proprietary edge.
+          </h2>
+        </Reveal>
 
-          <Reveal delay={120}>
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.05] p-6 backdrop-blur-sm transition-transform duration-500 hover:-translate-y-1">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-serif text-2xl text-white">Meridian Wealth Advisors</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.22em] text-white/35">SEC RIA · New York, NY · $2.4B AUM</p>
-              </div>
-              <div className="text-right">
-                <p className="font-serif text-5xl leading-none text-emerald-300">84</p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/35">/ 100</p>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] bg-white px-5 py-4 text-slate-900">
-              <div className="flex items-center justify-between text-sm">
-                <span>Visor Value Score</span>
-                <span className="font-semibold text-emerald-700">84 / 100</span>
-              </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full w-[84%] rounded-full bg-emerald-600 transition-[width] duration-1000 ease-out" />
-              </div>
-              <div className="mt-3 flex justify-between text-xs text-slate-500">
-                <span>Percentile rank</span>
-                <span className="font-medium text-slate-800">Top 8% of indexed firms</span>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {methodologyPillars.map((pillar) => (
-                <div key={pillar.label} className="flex items-center justify-between gap-3 border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
-                  <div className="flex items-center gap-3">
-                    <span className={cn('h-2.5 w-2.5 rounded-full', pillar.tone)} />
-                    <span className="text-sm text-white/75">{pillar.label}</span>
-                  </div>
-                  <span className="font-mono text-sm text-white/85">{pillar.weight}</span>
+        <Reveal delay={80} className="mt-16">
+          <div className="grid border border-[#CAD8D0] lg:grid-cols-2">
+            {/* Left: dark score card */}
+            <div className="flex flex-col border-b border-[#CAD8D0] lg:border-b-0 lg:border-r">
+              {/* Card header — dark navy */}
+              <div className="flex items-start justify-between bg-[#0A1C2A] p-[28px_32px]">
+                <div>
+                  <p className="font-serif text-[17px] font-bold text-white">Meridian Wealth Advisors</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-white/35">SEC RIA · New York, NY · $2.4B AUM</p>
                 </div>
-              ))}
+                <div>
+                  <p className="font-serif text-[56px] font-bold leading-none tracking-[-0.04em] text-[#2DBD74]">84</p>
+                  <p className="mt-0.5 text-right text-[9px] uppercase tracking-[0.12em] text-white/30">/ 100</p>
+                </div>
+              </div>
+
+              {/* Score bar */}
+              <div className="border-b border-[#CAD8D0] bg-white p-[18px_32px]">
+                <div className="flex justify-between text-[10px] text-[#5A7568]">
+                  <span>Visor Value Score™</span>
+                  <span className="font-semibold text-[#1A7A4A]">84 / 100</span>
+                </div>
+                <div className="mt-[7px] h-[5px] overflow-hidden bg-[#E6F4ED]">
+                  <div className="h-full w-[84%] bg-[#1A7A4A]" />
+                </div>
+                <div className="mt-[6px] flex justify-between text-[10px] text-[#5A7568]">
+                  <span>Percentile rank</span>
+                  <span className="font-semibold text-[#0C1810]">Top 8% of 40,000+ firms</span>
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div className="flex-1 bg-white">
+                {[
+                  { name: 'Regulatory Compliance', val: 96, color: '#1A7A4A' },
+                  { name: 'Fee Transparency', val: 91, color: '#1A7A4A' },
+                  { name: 'AUM Growth Trajectory', val: 88, color: '#1A7A4A' },
+                  { name: 'Conflict of Interest Exposure', val: 67, color: '#F59E0B' },
+                  { name: 'Ownership Stability', val: 82, color: '#1A7A4A' },
+                  { name: 'Client Retention Proxy', val: 79, color: '#1A7A4A' },
+                ].map((m) => (
+                  <div key={m.name} className="flex items-center justify-between border-b border-[#CAD8D0] px-[32px] py-[12px] text-[12.5px] last:border-b-0">
+                    <span className="text-[#2E4438]">{m.name}</span>
+                    <span className="flex items-center gap-[7px] font-semibold">
+                      <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: m.color }} />
+                      {m.val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-[#CAD8D0] bg-[#E6F4ED] p-[12px_32px] text-[10px] leading-[1.5] text-[#5A7568]">
+                Derived exclusively from SEC EDGAR filings · Updated quarterly · Not investment advice
+              </div>
             </div>
 
-            <Link href="/how-it-works" className="mt-6 inline-flex text-sm font-medium text-emerald-300 transition hover:text-emerald-200">
-              Read the full methodology
-            </Link>
+            {/* Right: intro + pillars */}
+            <div className="bg-white p-[40px]">
+              <p className="mb-8 max-w-[380px] text-[15px] leading-7 text-[#2E4438]">
+                500+ SEC ADV data points. One score, 0–100. Every advisor in the country. Built entirely on public regulatory data — not influenced by the industry we evaluate.
+              </p>
+
+              {/* Exclusive badge */}
+              <div className="mb-8 flex items-center gap-[10px] border border-[rgba(26,122,74,0.18)] bg-[#E6F4ED] p-[12px_16px] text-[11.5px] font-semibold text-[#1A7A4A]">
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.3" viewBox="0 0 13 13">
+                  <polygon points="6.5,1 8,5 12,5.4 9.2,8 10.1,12 6.5,10 2.9,12 3.8,8 1,5.4 5,5" />
+                </svg>
+                Exclusive to Visor Index — not on BrokerCheck, Morningstar, or anywhere else.
+              </div>
+
+              {/* Pillars */}
+              <div className="border border-[#CAD8D0]">
+                {methodologyPillars.map((pillar) => (
+                  <div key={pillar.label} className="flex items-center gap-[14px] border-b border-[#CAD8D0] p-[12px_18px] text-[12.5px] last:border-b-0">
+                    <span className={cn('h-[7px] w-[7px] shrink-0 rounded-full', pillar.tone)} />
+                    <span className="flex-1 text-[#2E4438]">{pillar.label}</span>
+                    <span className="font-mono text-[10px] text-[#5A7568]">{pillar.weight}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Link href="/how-it-works" className="mt-5 inline-block border-b border-[rgba(26,122,74,0.3)] pb-0.5 text-[12px] font-semibold text-[#1A7A4A] transition hover:border-[#1A7A4A]">
+                Read the full methodology →
+              </Link>
+            </div>
           </div>
-          </Reveal>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -842,54 +936,92 @@ function MethodologySection() {
 
 function ComparisonSection() {
   return (
-    <section className="bg-[#0c1d2b] py-20 text-white md:py-24">
+    <section className="border-t border-white/[0.05] bg-[#162F45] py-[108px] text-white">
       <div className="container-page">
-        <div className="grid gap-px overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 lg:grid-cols-2">
-          <Reveal>
-          <div className="bg-[#0c1d2b] p-6 md:p-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">Free research path</p>
-            <h3 className="mt-4 font-serif text-3xl text-white">Search and screen on your own.</h3>
-            <p className="mt-4 text-sm leading-7 text-white/65">
-              The free path gets you into the dataset and current routing without requiring an account for basic discovery.
-            </p>
-          </div>
-          </Reveal>
-          <Reveal delay={100}>
-          <div className="bg-[#10263a] p-6 md:p-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300">Paid diligence path</p>
-            <h3 className="mt-4 font-serif text-3xl text-white">Unlock deeper scoring, comparison, and monitoring.</h3>
-            <p className="mt-4 text-sm leading-7 text-white/65">
-              Full scores, sub-metric breakdowns, filing alerts, and the advisor matching tool. Everything you need to make a confident, well-researched decision.
-            </p>
-          </div>
-          </Reveal>
+        <Reveal>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">The Difference</span>
+          <h2 className="mt-4 font-serif text-[clamp(30px,4vw,48px)] font-bold leading-[1.04] tracking-[-0.02em] text-white">
+            Free research vs. full diligence.
+          </h2>
+        </Reveal>
 
-          <Reveal className="lg:col-span-2" delay={160}>
-          <div className="bg-[#0c1d2b] p-6 md:p-8">
-            <div className="grid gap-4 md:grid-cols-2">
-              {comparisonPoints.map((point) => (
-                <div key={point.label} className="grid gap-px overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/10 transition-transform duration-500 hover:-translate-y-1 md:grid-cols-[180px_1fr_1fr]">
-                  <div className="bg-[#091824] px-4 py-5 text-sm font-medium text-white/80">{point.label}</div>
-                  <div className="bg-[#0c1d2b] px-4 py-5 text-sm leading-6 text-white/60">{point.free}</div>
-                  <div className="bg-[#10263a] px-4 py-5 text-sm leading-6 text-white/80">{point.paid}</div>
+        <Reveal delay={80} className="mt-16">
+          <div className="grid gap-px bg-white/[0.06] lg:grid-cols-2">
+            {/* Free panel */}
+            <div className="bg-[#162F45]">
+              <div className="flex items-center gap-[10px] border-b border-white/[0.07] px-[24px] py-[13px]">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">Free Research Path</span>
+                <span className="bg-white/[0.05] px-[8px] py-[3px] text-[9px] font-semibold uppercase tracking-[0.08em] text-white/30">Limited</span>
+              </div>
+              <div className="p-[24px]">
+                {[
+                  { label: 'Firm Name', val: 'Meridian Wealth Advisors' },
+                  { label: 'Location', val: 'New York, NY' },
+                  { label: 'AUM', val: '$2.4B' },
+                ].map((f) => (
+                  <div key={f.label} className="mb-[14px]">
+                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">{f.label}</div>
+                    <div className="text-[13px] text-white/60">{f.val}</div>
+                  </div>
+                ))}
+                {[
+                  { label: 'Visor Value Score™' },
+                  { label: 'Fee Transparency' },
+                  { label: 'Conflict Exposure' },
+                ].map((f) => (
+                  <div key={f.label} className="mb-[14px]">
+                    <div className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">{f.label}</div>
+                    <div className="select-none text-[13px] text-white/60 blur-[5px]">— / 100</div>
+                  </div>
+                ))}
+                <div className="mt-[24px] border border-white/[0.07] bg-white/[0.03] p-[14px] text-center text-[11px] text-white/25">
+                  Full VVS and sub-scores require a subscription.{' '}
+                  <Link href="#pricing" className="ml-1.5 font-semibold text-[#2DBD74]">See plans →</Link>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* Paid panel */}
+            <div className="bg-[#162F45]">
+              <div className="flex items-center gap-[10px] border-b border-white/[0.07] px-[24px] py-[13px]">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#2DBD74]">Full Diligence Path</span>
+                <span className="bg-[rgba(45,189,116,0.12)] px-[8px] py-[3px] text-[9px] font-semibold uppercase tracking-[0.08em] text-[#2DBD74]">Paid Access</span>
+              </div>
+              <div className="p-[24px]">
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="font-serif text-[56px] font-bold leading-none tracking-[-0.04em] text-[#2DBD74]">84</div>
+                  <div className="text-right">
+                    <div className="text-[9px] uppercase tracking-[0.1em] text-white/30">Visor Value Score™</div>
+                    <div className="mt-1 text-[13px] font-semibold text-[#2DBD74]">Top 8% nationally</div>
+                  </div>
+                </div>
+                <div className="mb-4 h-[3px] overflow-hidden bg-white/[0.08]">
+                  <div className="h-full w-[84%] bg-[#2DBD74]" />
+                </div>
+                <div className="border border-white/[0.07]">
+                  {[
+                    { name: 'Regulatory Compliance', val: 96, color: '#2DBD74' },
+                    { name: 'Fee Transparency', val: 91, color: '#2DBD74' },
+                    { name: 'Conflict of Interest', val: 67, color: '#F59E0B' },
+                    { name: 'Ownership Stability', val: 82, color: '#2DBD74' },
+                  ].map((m) => (
+                    <div key={m.name} className="flex items-center justify-between border-b border-white/[0.05] px-[14px] py-[9px] text-[11.5px] last:border-b-0">
+                      <span className="text-white/40">{m.name}</span>
+                      <span className="flex items-center gap-[6px] font-semibold text-white/80">
+                        <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: m.color }} />
+                        {m.val}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-[10px] border border-[rgba(220,38,38,0.18)] bg-[rgba(220,38,38,0.07)] p-[10px_14px]">
+                  <div className="mb-[3px] text-[9px] font-bold uppercase tracking-[0.14em] text-[#F87171]">⚑ Conflict Flag</div>
+                  <div className="text-[11px] text-white/40">Multiple referral compensation arrangements disclosed. Requires deeper review before engagement.</div>
+                </div>
+              </div>
             </div>
           </div>
-          </Reveal>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {homepageMetrics.map((metric, index) => (
-            <Reveal key={metric.label} delay={index * 90}>
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 transition-transform duration-500 hover:-translate-y-1 hover:bg-white/[0.06]">
-              <p className="font-serif text-3xl text-white">{metric.value}</p>
-              <p className="mt-2 text-sm font-medium text-white/85">{metric.label}</p>
-              <p className="mt-2 text-xs leading-6 text-white/50">{metric.detail}</p>
-            </div>
-            </Reveal>
-          ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -897,61 +1029,87 @@ function ComparisonSection() {
 
 function PricingSection() {
   return (
-    <section id="pricing" className="bg-[#0a1c2a] py-20 text-white md:py-28">
+    <section id="pricing" className="border-t border-white/[0.05] bg-[#0a1c2a] py-[108px] text-white">
       <div className="container-page">
         <Reveal className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">Access</p>
-          <h2 className="mt-4 font-serif text-4xl text-white md:text-5xl">Three ways to find the right advisor.</h2>
+          <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">
+            <span className="h-px w-5 bg-current" />
+            Access
+          </span>
+          <h2 className="mt-4 font-serif text-[clamp(30px,4vw,48px)] font-bold leading-[1.04] tracking-[-0.02em] text-white">
+            Three ways to find the right advisor.
+          </h2>
         </Reveal>
 
-        <div className="mt-12 grid gap-6 xl:grid-cols-3">
-          {pricingTiers.map((tier, index) => (
-            <Reveal key={tier.name} delay={index * 100}>
-            <article
-              key={tier.name}
-              className={cn(
-                'flex h-full flex-col rounded-[2rem] border p-7 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.7)] transition-[transform,box-shadow,background-color] duration-500 hover:-translate-y-1 hover:shadow-[0_28px_90px_-40px_rgba(0,0,0,0.85)]',
-                tier.featured ? 'border-emerald-400 bg-[#10263a]' : 'border-white/10 bg-white/[0.04]'
-              )}
-            >
-              {tier.featured && (
-                <Badge className="mb-5 w-fit border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-emerald-200">
-                  Most Popular
-                </Badge>
-              )}
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">{tier.name}</p>
-              <div className="mt-4 flex items-end gap-2">
-                <span className="font-serif text-5xl leading-none text-white">{tier.price}</span>
-                <span className="pb-1 text-sm text-white/55">{tier.note}</span>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-white/65">{tier.description}</p>
-              <ul className="mt-6 flex-1 space-y-3">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3 text-sm text-white/75">
-                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link href={tier.href} className="mt-8">
-                <Button
-                  size="lg"
-                  variant={tier.featured ? 'primary' : 'outline'}
+        <Reveal delay={80} className="mt-14">
+          <div className="grid gap-px bg-white/[0.06] lg:grid-cols-3">
+            {pricingTiers.map((tier, index) => (
+              <article
+                key={tier.name}
+                className={cn(
+                  'relative flex flex-col bg-[#0F2538] p-[36px_32px]',
+                  tier.featured && 'border-t-2 border-[#2DBD74]',
+                  !tier.featured && index === 2 && 'border-t-2 border-white/25 bg-white/[0.04]',
+                )}
+              >
+                {tier.featured && (
+                  <div className="absolute -top-px left-8 bg-[#1A7A4A] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white">
+                    Most Popular
+                  </div>
+                )}
+                <div className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">{tier.name}</div>
+                <div className="mb-1.5">
+                  <span className="font-serif text-[52px] font-bold leading-none tracking-[-0.03em] text-white">
+                    <sup className="align-super text-[24px] font-semibold">$</sup>
+                    {tier.price.replace('$', '')}
+                  </span>
+                  <span className="ml-1 text-[13px] text-white/35">{tier.note}</span>
+                </div>
+                <p className="mb-6 text-[13px] leading-[1.6] text-white/40">{tier.description}</p>
+
+                {index === 2 && (
+                  <div className="mb-5 flex items-center gap-[9px] border border-white/[0.1] bg-white/[0.05] p-[10px_14px]">
+                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/[0.08]">
+                      <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 13 13">
+                        <path d="M2 2.5C2 2 2.5 1.5 3 1.5h1.5l1 2.5L4 5.5s.5 2 2 3.5 3.5 2 3.5 2l1.5-1.5 2.5 1V12c0 .5-.5 1-1 1C5 13 2 7.5 2 2.5z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <strong className="block text-[12px] text-white/85">1-on-1 Strategy Call</strong>
+                      <span className="text-[12px] text-white/50">60-minute session with our team</span>
+                    </div>
+                  </div>
+                )}
+
+                <ul className="mb-7 flex flex-1 flex-col gap-[9px]">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-[9px] text-[13px] text-white/55">
+                      <span className="mt-0.5 shrink-0 font-semibold text-[#2DBD74]">✓</span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={tier.href}
                   className={cn(
-                    'w-full rounded-2xl justify-center',
-                    !tier.featured && 'border-white/15 text-white hover:bg-white/10'
+                    'mt-auto block py-[13px] text-center text-[13px] font-semibold tracking-[0.04em] transition-colors',
+                    tier.featured
+                      ? 'bg-[#1A7A4A] text-white hover:bg-[#22995E]'
+                      : index === 2
+                      ? 'border border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.15]'
+                      : 'border border-white/[0.15] text-white/60 hover:border-white/40 hover:text-white'
                   )}
                 >
                   {tier.ctaLabel}
-                </Button>
-              </Link>
-            </article>
-            </Reveal>
-          ))}
-        </div>
+                </Link>
+              </article>
+            ))}
+          </div>
+        </Reveal>
 
-        <Reveal className="mt-6 text-center text-sm text-white/40" delay={120}>
-          Search any advisor free. Full profile and premium diligence tools unlock when you are ready.
+        <Reveal className="mt-6 text-center text-[12px] text-white/30" delay={120}>
+          Search any advisor free — no account required. Full profile unlocks when you&apos;re ready.
         </Reveal>
       </div>
     </section>
@@ -962,89 +1120,130 @@ function PersonaSection() {
   const [activePersona, setActivePersona] = useState(0);
   const active = personas[activePersona];
 
+  const scoreColor = (tone: 'good' | 'warn' | 'risk') => {
+    if (tone === 'risk') return '#EF4444';
+    if (tone === 'warn') return '#F59E0B';
+    return '#2DBD74';
+  };
+
   return (
-    <section className="bg-[#f6f8f5] py-20 text-slate-900 md:py-28">
+    <section className="border-t border-[#CAD8D0] bg-[#F6F8F7] py-[108px] text-[#0C1810]">
       <div className="container-page">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Who it&apos;s for</p>
-          <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
-            Built for every investor. <span className="italic text-emerald-700">Calibrated to your situation.</span>
+        <Reveal>
+          <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#5A7568]">
+            <span className="h-px w-5 bg-current" />
+            Who It&apos;s For
+          </span>
+          <h2 className="mt-4 font-serif text-[clamp(32px,4vw,52px)] font-bold leading-[1.05] tracking-[-0.02em] text-[#0C1810]">
+            Built for every investor.<br />
+            <em className="italic text-[#1A7A4A]">Calibrated to your situation.</em>
           </h2>
-        </div>
+        </Reveal>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-3">
-            {personas.map((persona, index) => (
-              <button
-                key={persona.persona}
-                type="button"
-                onClick={() => setActivePersona(index)}
-                className={cn(
-                  'w-full rounded-[1.5rem] border px-5 py-4 text-left transition-all duration-300',
-                  index === activePersona
-                    ? 'border-emerald-300 bg-emerald-50 shadow-sm'
-                    : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300'
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
+        <Reveal delay={80} className="mt-14">
+          <div className="grid items-stretch lg:grid-cols-[340px_1fr]">
+            {/* Tabs */}
+            <div className="flex flex-col border border-[#CAD8D0] bg-[#E6F4ED] lg:border-r-0">
+              {personas.map((persona, index) => (
+                <button
+                  key={persona.persona}
+                  type="button"
+                  onClick={() => setActivePersona(index)}
+                  className={cn(
+                    'relative border-b border-[#CAD8D0] px-[28px] py-[22px] text-left transition-colors last:border-b-0',
+                    index === activePersona ? 'bg-white' : 'hover:bg-white/50'
+                  )}
+                >
+                  {/* Left accent bar */}
+                  <span
+                    className={cn(
+                      'absolute inset-y-0 left-0 w-0.5 origin-center bg-[#1A7A4A] transition-transform duration-200',
+                      index === activePersona ? 'scale-y-100' : 'scale-y-0'
+                    )}
+                  />
+                  <span className={cn(
+                    'block text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors',
+                    index === activePersona ? 'text-[#1A7A4A]' : 'text-[#5A7568]'
+                  )}>
+                    {persona.persona}
+                  </span>
+                  <span className={cn(
+                    'block font-serif text-[16px] font-semibold leading-[1.25] transition-colors',
+                    index === activePersona ? 'text-[#0C1810]' : 'text-[#5A7568]'
+                  )}>
+                    {persona.situation}
+                  </span>
+                  {index === activePersona && (
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[16px] text-[#1A7A4A]">→</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Panel */}
+            <div key={active.persona} className="border border-[#CAD8D0] bg-white p-[36px_44px]">
+              <div className="mb-5">
+                <span className="mb-[14px] inline-flex items-center gap-[7px] text-[9px] font-bold uppercase tracking-[0.2em] text-[#1A7A4A]">
+                  <span className="h-px w-4 bg-current" />
+                  {active.tag}
+                </span>
+                <h3 className="font-serif text-[22px] font-semibold leading-[1.3] text-[#0C1810]">{active.blurb}</h3>
+              </div>
+
+              {/* Search simulation */}
+              <div className="mb-4 flex items-center gap-[10px] border border-[#CAD8D0] bg-[#E6F4ED] p-[9px_16px]">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#5A7568]">
+                  {active.searchLabel}
+                </span>
+                <span className="flex-1 text-[13px] italic text-[#2E4438]">{active.searchQuery}</span>
+                <span className="shrink-0 bg-[rgba(26,122,74,0.1)] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#1A7A4A]">
+                  {active.searchResultLabel}
+                </span>
+              </div>
+
+              {/* Firm card */}
+              <div className="border border-[#CAD8D0] bg-[#F6F8F7]">
+                <div className="flex items-start justify-between border-b border-[#CAD8D0] p-[14px_18px]">
                   <div>
-                    <p className={cn('text-sm font-semibold', index === activePersona ? 'text-emerald-800' : 'text-slate-900')}>
-                      {persona.persona}
+                    <p className="font-serif text-[15px] font-semibold leading-snug text-[#0C1810]">{active.firmName}</p>
+                    <p className="mt-0.5 text-[10px] tracking-[0.04em] text-[#5A7568]">{active.firmMeta}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-serif text-[36px] font-bold leading-none tracking-[-0.03em]" style={{ color: scoreColor(active.scoreTone) }}>
+                      {active.score}
                     </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{persona.situation}</p>
+                    <p className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
                   </div>
-                  <span className={cn('text-lg', index === activePersona ? 'text-emerald-700' : 'text-slate-300')}>→</span>
                 </div>
-              </button>
-            ))}
-          </div>
-
-          <div
-            key={active.persona}
-            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.2)] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] animate-fade-up md:p-8"
-          >
-            <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              {active.tag}
-            </div>
-            <h3 className="mt-5 font-serif text-3xl text-slate-900">{active.blurb}</h3>
-
-
-            <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{active.searchLabel}</span>
-              <span className="text-sm text-slate-700">{active.searchQuery}</span>
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                {active.searchResultLabel}
-              </span>
-            </div>
-
-            <div className="mt-6 rounded-[1.75rem] border border-slate-200 bg-slate-950 p-6 text-white transition-transform duration-500 hover:-translate-y-1">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-serif text-2xl text-white">{active.firmName}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/35">{active.firmMeta}</p>
-                </div>
-                <div className="text-right">
-                  <p className={cn('font-serif text-5xl leading-none', scoreToneClass(active.scoreTone))}>{active.score}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/35">Visor Score</p>
+                <div className="grid grid-cols-2 gap-2 p-[14px_18px]">
+                  {active.metrics.map((metric) => (
+                    <div key={metric.label} className="flex items-center gap-[7px] text-[11px]">
+                      <span className="h-[6px] w-[6px] shrink-0 rounded-full" style={{ background: scoreColor(metric.tone) }} />
+                      <span className="flex-1 text-[#5A7568]">{metric.label}</span>
+                      <span className="font-mono text-[10px] font-medium text-[#2E4438]">{metric.value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {active.metrics.map((metric) => (
-                  <div key={metric.label} className="flex items-center justify-between rounded-[1rem] border border-white/8 bg-white/[0.04] px-4 py-3 transition-colors duration-300 hover:bg-white/[0.07]">
-                    <span className="text-sm text-white/70">{metric.label}</span>
-                    <span className={cn('font-mono text-sm', scoreToneClass(metric.tone))}>{metric.value}</span>
-                  </div>
-                ))}
+              {/* Finding */}
+              <div className={cn(
+                'mt-[14px] border-l-2 p-[12px_16px]',
+                active.scoreTone === 'risk'
+                  ? 'border-[#DC2626] bg-[rgba(220,38,38,0.05)]'
+                  : 'border-[#1A7A4A] bg-[#E6F4ED]'
+              )}>
+                <p className={cn(
+                  'mb-[5px] text-[9px] font-bold uppercase tracking-[0.18em]',
+                  active.scoreTone === 'risk' ? 'text-[#DC2626]' : 'text-[#1A7A4A]'
+                )}>
+                  {active.findingLabel}
+                </p>
+                <p className="text-[12px] leading-[1.6] text-[#5A7568]">{active.finding}</p>
               </div>
             </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{active.findingLabel}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-700">{active.finding}</p>
-            </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -1053,42 +1252,62 @@ function PersonaSection() {
 function TrustSection() {
   const items = [
     {
-      title: 'SEC-grounded data',
-      body: 'Core diligence fields are pulled from public regulatory filings rather than advisor marketing copy.',
+      title: 'Independent by Design',
+      body: 'Revenue from subscribers only — never from advisors or intermediaries. No paid rankings, no sponsored content, no conflicts.',
       href: '/how-it-works',
-      label: 'Review methodology',
+      label: 'Learn our model →',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
+          <path d="M8 2L10 6.5L15 7L11.5 10.5L12.5 15L8 12.5L3.5 15L4.5 10.5L1 7L6 6.5Z" />
+        </svg>
+      ),
     },
     {
-      title: 'No paid placement',
-      body: 'The product is designed so advisors do not buy their way into rankings, ordering, or homepage proof claims.',
-      href: '/pricing',
-      label: 'See access model',
+      title: 'Data-Driven',
+      body: '500+ data points per firm. Derived exclusively from SEC EDGAR filings. Transparent methodology. No opinions, just facts.',
+      href: '/how-it-works',
+      label: 'See the methodology →',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
+          <rect x="2" y="10" width="3" height="4" /><rect x="6.5" y="6" width="3" height="8" /><rect x="11" y="2" width="3" height="12" />
+        </svg>
+      ),
     },
     {
-      title: 'Built for real diligence',
-      body: 'No referral arrangements. No advisor partnerships. Revenue comes from subscribers only.',
-      href: '/search',
-      label: 'Start searching',
+      title: 'Built for Transparency',
+      body: 'Created by former compliance and diligence professionals who understand what matters. Designed for real decision-making.',
+      href: '/about',
+      label: 'Meet the team →',
+      icon: (
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 16 16" className="text-[#1A7A4A]">
+          <circle cx="8" cy="6" r="3" /><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+        </svg>
+      ),
     },
   ];
 
   return (
-    <section className="border-y border-emerald-900/10 bg-emerald-50">
-      <div className="container-page grid gap-px bg-emerald-900/10 py-0 md:grid-cols-3">
-        {items.map((item, index) => (
-          <Reveal key={item.title} delay={index * 90}>
-          <article className="bg-emerald-50 px-6 py-10 transition-transform duration-500 hover:-translate-y-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-900/15 text-emerald-800">
-              <span className="font-serif text-lg">V</span>
-            </div>
-            <h3 className="mt-5 font-serif text-2xl text-slate-900">{item.title}</h3>
-            <p className="mt-3 text-sm leading-7 text-slate-700">{item.body}</p>
-            <Link href={item.href} className="mt-5 inline-flex text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
-              {item.label}
-            </Link>
-          </article>
-          </Reveal>
-        ))}
+    <section className="border-y border-[#CAD8D0] bg-[#E6F4ED]">
+      <div className="container-page">
+        <div className="grid border-l border-[rgba(26,122,74,0.12)] md:grid-cols-3">
+          {items.map((item, index) => (
+            <Reveal key={item.title} delay={index * 90}>
+            <article className="border-r border-[rgba(26,122,74,0.12)] p-[36px_32px]">
+              <div className="mb-4 grid h-8 w-8 place-items-center border border-[rgba(26,122,74,0.25)]">
+                {item.icon}
+              </div>
+              <h3 className="mb-2 font-serif text-[17px] font-bold text-[#0C1810]">{item.title}</h3>
+              <p className="text-[12.5px] leading-[1.65] text-[#2E4438]">{item.body}</p>
+              <Link
+                href={item.href}
+                className="mt-[14px] inline-block border-b border-[rgba(26,122,74,0.3)] pb-px text-[12px] font-semibold text-[#1A7A4A] transition hover:border-[#1A7A4A]"
+              >
+                {item.label}
+              </Link>
+            </article>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -1096,30 +1315,58 @@ function TrustSection() {
 
 function FinalCtaSection() {
   return (
-    <section className="relative overflow-hidden bg-[#0a1c2a] py-24 text-white md:py-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_45%)]" />
-      <Reveal className="container-page relative text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">Make the decision</p>
-        <h2 className="mt-5 font-serif text-4xl leading-tight md:text-6xl">
-          You&apos;re about to hand someone your <span className="italic text-emerald-300">life savings.</span> Know the score first.
-        </h2>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="#pricing">
-            <Button size="lg" className="rounded-2xl px-8 transition-transform duration-300 hover:-translate-y-0.5">
+    <section className="relative overflow-hidden bg-[#0a1c2a] pb-0 pt-[120px] text-center text-white">
+      {/* Radial glow */}
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 bg-[radial-gradient(ellipse,rgba(26,122,74,0.15)_0%,transparent_70%)]" />
+
+      <div className="container-page relative z-[2]">
+        <Reveal>
+          <p className="inline-flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#2DBD74]">
+            <span className="h-px w-5 bg-[#2DBD74]" />
+            Make the Decision
+            <span className="h-px w-5 bg-[#2DBD74]" />
+          </p>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <h2 className="mx-auto mt-6 max-w-3xl font-serif text-[clamp(40px,6vw,76px)] font-bold leading-[1.02] tracking-[-0.03em] text-white">
+            You&apos;re about to hand<br />
+            someone your <em className="italic text-[#2DBD74]">life savings.</em><br />
+            Know the score first.
+          </h2>
+        </Reveal>
+
+        <Reveal delay={140}>
+          <div className="mb-5 mt-10 flex flex-wrap items-center justify-center gap-[14px]">
+            <Link
+              href="#pricing"
+              className="inline-flex items-center gap-2 bg-[#1A7A4A] px-9 py-[15px] text-[14px] font-semibold text-white transition-colors hover:bg-[#22995E]"
+            >
               Get Full Access
-            </Button>
-          </Link>
-          <Link href="/search">
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-2xl border-white/15 bg-transparent px-8 text-white transition-transform duration-300 hover:-translate-y-0.5 hover:bg-white/10"
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
+                <line x1="2" y1="7" x2="12" y2="7" /><polyline points="8,3 12,7 8,11" />
+              </svg>
+            </Link>
+            <Link
+              href="/search"
+              className="inline-flex items-center gap-2 border border-white/[0.12] px-7 py-[15px] text-[14px] text-white/50 transition-all hover:border-white/30 hover:text-white"
             >
               Search Advisors Free
-            </Button>
-          </Link>
-        </div>
-      </Reveal>
+            </Link>
+          </div>
+          <p className="text-[11px] text-white/25">
+            No account required for basic search. No advisor has paid to appear here.
+          </p>
+        </Reveal>
+      </div>
+
+      {/* Skyline SVG */}
+      <div className="relative z-[2] mt-20 w-full">
+        <svg viewBox="0 0 1120 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 160 L0 120 L40 120 L40 80 L60 80 L60 60 L80 60 L80 80 L100 80 L100 40 L120 40 L120 80 L140 80 L140 100 L160 100 L160 70 L180 70 L180 50 L200 50 L200 70 L220 70 L220 90 L240 90 L240 55 L260 55 L260 75 L280 75 L280 45 L300 45 L300 75 L320 75 L320 95 L340 95 L340 65 L360 65 L360 85 L380 85 L380 105 L400 105 L400 70 L420 70 L420 50 L440 50 L440 70 L460 70 L460 90 L480 90 L480 60 L500 60 L500 40 L520 40 L520 60 L540 60 L540 80 L560 80 L560 55 L580 55 L580 75 L600 75 L600 95 L620 95 L620 65 L640 65 L640 45 L660 45 L660 65 L680 65 L680 85 L700 85 L700 105 L720 105 L720 75 L740 75 L740 55 L760 55 L760 75 L780 75 L780 95 L800 95 L800 65 L820 65 L820 85 L840 85 L840 105 L860 105 L860 75 L880 75 L880 55 L900 55 L900 75 L920 75 L920 95 L940 95 L940 65 L960 65 L960 85 L980 85 L980 105 L1000 105 L1000 120 L1020 120 L1020 100 L1040 100 L1040 120 L1060 120 L1060 140 L1080 140 L1080 120 L1120 120 L1120 160 Z" fill="rgba(255,255,255,0.03)" />
+          <path d="M0 160 L0 130 L40 130 L40 90 L80 90 L80 70 L120 70 L120 90 L160 90 L160 110 L200 110 L200 80 L240 80 L240 100 L280 100 L280 120 L320 120 L320 100 L360 100 L360 120 L400 120 L400 140 L440 140 L440 110 L480 110 L480 90 L520 90 L520 110 L560 110 L560 130 L600 130 L600 110 L640 110 L640 130 L680 130 L680 150 L720 150 L720 130 L760 130 L760 110 L800 110 L800 130 L840 130 L840 150 L880 150 L880 130 L920 130 L920 110 L960 110 L960 130 L1000 130 L1000 150 L1040 150 L1040 130 L1080 130 L1080 150 L1120 150 L1120 160 Z" fill="rgba(255,255,255,0.02)" />
+        </svg>
+      </div>
     </section>
   );
 }
