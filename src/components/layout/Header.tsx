@@ -76,6 +76,12 @@ export function Header() {
             Compare
           </Link>
           <Link
+            href="/match"
+            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
+          >
+            Match
+          </Link>
+          <Link
             href="/negotiate"
             className="text-sm font-medium text-white/55 hover:text-white transition-colors"
           >
