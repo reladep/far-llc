@@ -71,6 +71,7 @@ export function Header() {
             { href: '/compare', label: 'Compare' },
             { href: '/match', label: 'Match' },
             { href: '/negotiate', label: 'Negotiate' },
+            { href: '/guide', label: 'Guide' },
             { href: '/directory', label: 'Directory' },
             { href: '/pricing', label: 'Pricing' },
           ].map((link) => (
