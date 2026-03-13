@@ -37,79 +37,62 @@ export function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 w-full border-b border-white/8 backdrop-blur supports-[backdrop-filter]:bg-[#0a1c2a]/70 transition-all duration-300 ease-out',
+        'sticky top-0 z-50 w-full backdrop-blur transition-all duration-300 ease-out',
         scrolled
-          ? 'bg-[#0a1c2a]/95 shadow-[0_14px_40px_-24px_rgba(0,0,0,0.65)]'
-          : 'bg-[#0a1c2a]/82'
+          ? 'border-b border-white/[0.06] bg-[#0a1c2a]/95 shadow-[0_1px_24px_-6px_rgba(0,0,0,0.5)]'
+          : 'border-b border-transparent bg-[#0a1c2a]/60'
       )}
     >
       <div
         className={cn(
           'container-page flex items-center justify-between transition-[height] duration-300 ease-out',
-          scrolled ? 'h-14' : 'h-16'
+          scrolled ? 'h-[56px]' : 'h-[64px]'
         )}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <img
-            src="/visor_logo.png"
-            alt="Visor Index"
-            className="h-7 w-auto"
-          />
-          <span className="font-serif text-[18px] font-bold tracking-[0.01em] text-white">
-            Visor <em className="not-italic text-emerald-400">Index</em>
+        <Link href="/" className="group flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md shadow-[0_0_12px_rgba(45,189,116,0.15)] transition-shadow duration-300 group-hover:shadow-[0_0_16px_rgba(45,189,116,0.3)]">
+            <img
+              src="/visor_logo.png"
+              alt="Visor Index"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <span className="text-[17px] font-semibold tracking-[-0.01em] text-white">
+            Visor{' '}
+            <span className="text-[#2DBD74]">Index</span>
           </span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/search"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Search
-          </Link>
-          <Link
-            href="/compare"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Compare
-          </Link>
-          <Link
-            href="/match"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Match
-          </Link>
-          <Link
-            href="/negotiate"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Negotiate
-          </Link>
-          <Link
-            href="/directory"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Directory
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Pricing
-          </Link>
+        <nav className="hidden items-center gap-1.5 lg:flex">
+          {[
+            { href: '/search', label: 'Search' },
+            { href: '/compare', label: 'Compare' },
+            { href: '/match', label: 'Match' },
+            { href: '/negotiate', label: 'Negotiate' },
+            { href: '/directory', label: 'Directory' },
+            { href: '/pricing', label: 'Pricing' },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-md px-3.5 py-1.5 text-[13.5px] font-medium tracking-[0.01em] text-white/50 transition-all duration-200 hover:bg-white/[0.05] hover:text-white/90"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Auth + Mobile Menu */}
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden items-center gap-5 lg:flex">
             {user ? (
               <>
                 <Link href="/dashboard">
                   <Button variant="ghost" size="sm" className="text-white/70 hover:bg-white/10 hover:text-white">Dashboard</Button>
                 </Link>
-                <span className="max-w-[150px] truncate text-sm text-white/45">
+                <span className="max-w-[150px] truncate text-[13.5px] text-white/45">
                   {user.user_metadata?.full_name || user.email}
                 </span>
                 <Button variant="ghost" size="sm" className="text-white/70 hover:bg-white/10 hover:text-white" onClick={handleSignOut}>
@@ -118,12 +101,12 @@ export function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-xs text-white/35 transition-colors hover:text-white">
+                <Link href="/auth/login" className="text-[13.5px] font-medium text-white/45 transition-colors duration-200 hover:text-white/80">
                   Log in
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="bg-[#1A7A4A] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#22995E]"
+                  className="rounded-md bg-[#1A7A4A] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_0_12px_rgba(45,189,116,0.12)] transition-all duration-200 hover:bg-[#22995E] hover:shadow-[0_0_16px_rgba(45,189,116,0.25)]"
                 >
                   Get Access
                 </Link>
