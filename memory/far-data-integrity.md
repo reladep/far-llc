@@ -92,3 +92,6 @@
 
 ### Bank Channel Data
 - Do I need to manually add the banks? JPMorgan, Goldman Sachs, UBS, Citigroup, WellsFargo, 
+
+### For News and Research, Should I Manually Scrape Firm Websites for News, Research, Investment Color
+- e.g. Cambridge Associates releases a new report

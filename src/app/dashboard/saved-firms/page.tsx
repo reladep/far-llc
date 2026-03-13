@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import RemoveFirmButton from '@/components/firms/RemoveFirmButton';
+import { getFirmScores } from '@/lib/scores';
+import SavedFirmsPanel from './SavedFirmsPanel';
 
 export const metadata: Metadata = {
   title: 'Saved Firms - Visor Index',
@@ -25,7 +24,7 @@ export default async function SavedFirmsPage() {
     redirect('/auth/login');
   }
 
-  // First get the favorites
+  // Fetch favorites
   const { data: favorites, error: favError } = await supabaseAdmin
     .from('user_favorites')
     .select('id, crd, created_at')
@@ -36,73 +35,55 @@ export default async function SavedFirmsPage() {
     console.error('Favorites error:', favError);
   }
 
-  // Then fetch the firm data separately
   const crds = (favorites || []).map(f => f.crd);
   let firms: Record<string, any> = {};
-  
+
   if (crds.length > 0) {
     const [{ data: firmData }, { data: nameData }] = await Promise.all([
-      supabaseAdmin.from('firmdata_current').select('crd, primary_business_name, main_office_city, main_office_state, aum').in('crd', crds),
-      supabaseAdmin.from('firm_names').select('crd, display_name').in('crd', crds),
+      supabaseAdmin
+        .from('firmdata_current')
+        .select('crd, primary_business_name, main_office_city, main_office_state, aum')
+        .in('crd', crds),
+      supabaseAdmin
+        .from('firm_names')
+        .select('crd, display_name')
+        .in('crd', crds),
     ]);
     const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
-    
+
     if (firmData) {
-      firms = firmData.reduce((acc, f) => { acc[f.crd] = { ...f, display_name: nameMap.get(f.crd) || null }; return acc; }, {} as Record<string, any>);
+      firms = firmData.reduce((acc, f) => {
+        acc[f.crd] = { ...f, display_name: nameMap.get(f.crd) || null };
+        return acc;
+      }, {} as Record<string, any>);
     }
   }
 
+  // Fetch VVS scores for all saved firms
+  const scoreMap = crds.length > 0 ? await getFirmScores(crds) : new Map();
+
   const firmsList = (favorites || []).map(fav => ({
     ...fav,
-    firmdata_current: firms[fav.crd] || null
+    firmdata_current: firms[fav.crd] || null,
   }));
 
-  const firmsToDisplay = firmsList || [];
+  // Build typed array for SavedFirmsPanel
+  const firmsForPanel = firmsList.map(fav => {
+    const firm = fav.firmdata_current;
+    const scoreEntry = (scoreMap.get(fav.crd) as { final_score?: number } | undefined);
+    return {
+      crd: fav.crd,
+      name: firm?.display_name || firm?.primary_business_name || `CRD #${fav.crd}`,
+      city: (firm?.main_office_city as string | null) ?? null,
+      state: (firm?.main_office_state as string | null) ?? null,
+      aum: formatAUM(firm?.aum ?? null),
+      vvs: scoreEntry?.final_score != null ? Math.round(scoreEntry.final_score) : null,
+      savedAt: new Date(fav.created_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+      }),
+      savedTs: new Date(fav.created_at).getTime(),
+    };
+  });
 
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Saved Firms</h1>
-      <p className="mt-1 text-slate-500">Firms you&apos;ve bookmarked for later.</p>
-
-      {firmsToDisplay.length === 0 ? (
-        <div className="mt-12 text-center">
-          <p className="text-slate-500">No saved firms yet. Browse advisors to save firms you&apos;re interested in.</p>
-          <Link href="/search" className="mt-4 inline-block text-green-600 hover:underline font-medium">
-            Browse Firms →
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-6 grid gap-4">
-          {firmsToDisplay.map((fav: any) => {
-            const firm = fav.firmdata_current;
-            const name = firm?.display_name || firm?.primary_business_name || `CRD #${fav.crd}`;
-            const location = [firm?.main_office_city, firm?.main_office_state].filter(Boolean).join(', ');
-            const savedDate = new Date(fav.created_at).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', year: 'numeric',
-            });
-
-            return (
-              <Card key={fav.id}>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <Link href={`/firm/${fav.crd}`} className="text-lg font-semibold text-slate-900 hover:text-green-600 transition-colors">
-                        {name}
-                      </Link>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-                        {location && <span>{location}</span>}
-                        {firm?.aum && <span>AUM: {formatAUM(firm.aum)}</span>}
-                        <span>Saved {savedDate}</span>
-                      </div>
-                    </div>
-                    <RemoveFirmButton crd={fav.crd} />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  return <SavedFirmsPanel firms={firmsForPanel} />;
 }

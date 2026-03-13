@@ -1,25 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { Button, Badge, Card, CardContent } from '@/components/ui';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
 import FirmAlerts from '@/components/firms/FirmAlerts';
 import RegulatoryDisclosures from '@/components/firms/RegulatoryDisclosures';
 import FirmLogo from '@/components/firms/FirmLogo';
-import StateRegistrationMap from '@/components/firms/StateRegistrationMap';
-import ScoreDisplay from '@/components/firms/ScoreDisplay';
-import ScoreBreakdown from '@/components/firms/ScoreBreakdown';
-import StarRating from '@/components/ui/StarRating';
-import { getFirmScore } from '@/lib/scores';
-import { getStarRating } from '@/types';
+import ScoreRing from '@/components/firms/ScoreRing';
+import AnimatedBarChart, { type BarData } from '@/components/firms/AnimatedBarChart';
+import SectionNav from '@/components/firms/SectionNav';
+import { getFirmScore, getFirmScores } from '@/lib/scores';
 
-// Create server-side Supabase client for data queries
+// ─── Supabase client ──────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// ─── Interfaces (data layer — untouched) ─────────────────────────────────────
 interface FirmData {
   crd: number;
   primary_business_name: string | null;
@@ -119,6 +117,7 @@ interface ClientBreakdown {
   other: number | null;
 }
 
+// ─── Data fetching (untouched) ────────────────────────────────────────────────
 async function getFirmData(crd: string) {
   const { data: firmData, error: firmError } = await supabase
     .from('firmdata_current')
@@ -189,7 +188,7 @@ async function getFirmData(crd: string) {
     charitable: firmData.client_charitable_number,
     corporations: firmData.client_corporations_number,
     pooled_vehicles: firmData.client_pooled_vehicles_number,
-    other: null, // Could calculate from other fields if needed
+    other: null,
   } : null;
 
   // Get firm score
@@ -211,6 +210,57 @@ async function getFirmData(crd: string) {
   };
 }
 
+// ─── New types ────────────────────────────────────────────────────────────────
+interface SimilarFirm {
+  crd: number;
+  name: string;
+  city: string | null;
+  state: string;
+  aum: number | null;
+  score: number | null;
+}
+
+// ─── New: Similar Firms query ─────────────────────────────────────────────────
+async function getSimilarFirms(crd: number, state: string, aum: number | null): Promise<SimilarFirm[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q: any = supabase.from('firmdata_current')
+    .select('crd, primary_business_name, main_office_city, aum')
+    .eq('main_office_state', state)
+    .neq('crd', crd)
+    .not('aum', 'is', null)
+    .order('aum', { ascending: false })
+    .limit(8);
+  if (aum) q = q.gte('aum', aum * 0.2).lte('aum', aum * 5);
+  const { data } = await q;
+  if (!data?.length) return [];
+  const crds = data.map((f: { crd: number }) => f.crd);
+  const { data: names } = await supabase.from('firm_names').select('crd, display_name').in('crd', crds);
+  const nameMap = new Map(
+    names?.map((n: { crd: number; display_name: string | null }) => [n.crd, n.display_name]) ?? []
+  );
+  const scoreMap = await getFirmScores(crds);
+  return data.slice(0, 4).map((f: {
+    crd: number; primary_business_name: string | null; main_office_city: string | null; aum: number | null;
+  }) => ({
+    crd: f.crd,
+    name: (nameMap.get(f.crd) as string | null) || f.primary_business_name || 'Unknown',
+    city: f.main_office_city,
+    state,
+    aum: f.aum,
+    score: (scoreMap.get(f.crd) as { final_score?: number } | undefined)?.final_score ?? null,
+  }));
+}
+
+// ─── New: Score percentile query ──────────────────────────────────────────────
+async function getScorePercentile(score: number): Promise<{ rank: number; total: number } | null> {
+  const [{ count: above }, { count: total }] = await Promise.all([
+    supabase.from('firm_scores').select('*', { count: 'exact', head: true }).gt('final_score', score),
+    supabase.from('firm_scores').select('*', { count: 'exact', head: true }).not('final_score', 'is', null),
+  ]);
+  if (!total) return null;
+  return { rank: (above ?? 0) + 1, total };
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -218,13 +268,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { firmData, displayName } = await getFirmData(params.crd);
   const name = displayName || firmData?.primary_business_name || 'Firm';
-  
   return {
-    title: `${name} - Visor Index`,
-    description: `View detailed profile, fees, services, and reviews for ${name}. SEC-registered investment advisor.`,
+    title: `${name} — Visor Index`,
+    description: `View detailed profile, fees, services, and Visor Score™ for ${name}. SEC-registered investment advisor.`,
   };
 }
 
+// ─── Utility functions (data layer — untouched) ───────────────────────────────
 function parseAUM(value: string | null): number | null {
   if (!value) return null;
   const num = parseFloat(value);
@@ -241,69 +291,370 @@ function formatCurrency(value: number | null): string {
 
 function formatAUM(value: number | null): string {
   if (!value) return 'N/A';
-  if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(0)}M`;
+  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
   return `$${value.toLocaleString()}`;
 }
 
-function StatBox({ label, value, color }: { label: string; value: string; color?: 'green' | 'yellow' | 'red' }) {
-  const colorClasses = {
-    green: 'bg-green-50 border-green-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    red: 'bg-red-50 border-red-200',
-  };
-  const textColorClasses = {
-    green: 'text-green-700',
-    yellow: 'text-yellow-700',
-    red: 'text-red-700',
-  };
-  return (
-    <div className={`rounded-lg border p-4 text-center ${color ? colorClasses[color] : 'border-slate-200'}`}>
-      <p className={`text-xl md:text-2xl font-bold ${color ? textColorClasses[color] : 'text-slate-900'}`}>{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{label}</p>
-    </div>
-  );
+// ─── Presentational helpers ───────────────────────────────────────────────────
+function scoreColor(score: number): string {
+  return score >= 70 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
 }
 
-function TabButton({ label, active }: { label: string; active?: boolean }) {
-  return (
-    <button
-      className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-        active
-          ? 'border-green-600 text-green-700'
-          : 'border-transparent text-slate-500 hover:text-slate-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+const FEE_TYPE_LABELS: Record<string, string> = {
+  range: 'AUM-based',
+  flat_percentage: 'Flat fee',
+  maximum_only: 'AUM-based (max)',
+  minimum_only: 'AUM-based (min)',
+  capped: 'Capped',
+  not_disclosed: 'Negotiated',
+};
 
+const SECTION_NAV = [
+  { id: 'about',      label: 'About' },
+  { id: 'vvs',        label: 'Visor Score™' },
+  { id: 'fees',       label: 'Fee Schedule' },
+  { id: 'aum',        label: 'AUM & Growth' },
+  { id: 'clients',    label: 'Clients' },
+  { id: 'regulatory', label: 'Regulatory' },
+  { id: 'news',       label: 'News' },
+  { id: 'personnel',  label: 'Key Personnel' },
+];
+
+const PAGE_CSS = `
+  .vfp-breadcrumb, .vfp-page {
+    --navy:#0A1C2A; --navy-2:#0F2538;
+    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
+    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
+    --rule:#CAD8D0; --rule-2:#B0C4BA;
+    --red:#EF4444; --amber:#F59E0B;
+    --serif:'Cormorant Garamond',serif;
+    --sans:'DM Sans',sans-serif;
+    --mono:'DM Mono',monospace;
+  }
+  .vfp-breadcrumb {
+    position:fixed; top:56px; left:0; right:0; z-index:400;
+    background:rgba(10,28,42,0.88); backdrop-filter:blur(16px);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    padding:0 56px;
+  }
+  .vfp-breadcrumb-i {
+    max-width:1200px; margin:0 auto; height:40px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .vfp-bc-trail {
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; color:rgba(255,255,255,.3);
+    font-family:var(--sans);
+  }
+  .vfp-bc-trail a { color:rgba(255,255,255,.3); text-decoration:none; transition:color .15s; }
+  .vfp-bc-trail a:hover { color:rgba(255,255,255,.7); }
+  .vfp-bc-sep { opacity:.3; }
+  .vfp-bc-current { color:rgba(255,255,255,.6); }
+  .vfp-bc-actions { display:flex; align-items:center; gap:8px; }
+  .vfp-bc-compare {
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    background:var(--green); color:#fff;
+    padding:7px 16px; border:none; cursor:pointer;
+    transition:background .2s; letter-spacing:.04em; text-decoration:none;
+  }
+  .vfp-bc-compare:hover { background:var(--green-2); }
+
+  .vfp-page {
+    padding-top:96px; max-width:1200px; margin:0 auto;
+    padding-left:56px; padding-right:56px; padding-bottom:120px;
+  }
+  .vfp-hero {
+    background:var(--navy);
+    margin:0 -56px; padding:48px 56px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    position:relative; overflow:hidden;
+  }
+  .vfp-hero::before {
+    content:''; position:absolute; top:-40px; right:120px;
+    width:500px; height:400px;
+    background:radial-gradient(ellipse,rgba(26,122,74,.1) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .vfp-hero-top {
+    display:grid; grid-template-columns:auto 1fr auto;
+    gap:32px; align-items:center;
+    padding-bottom:32px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .vfp-logo-mark {
+    width:72px; height:72px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.1);
+    display:grid; place-items:center; flex-shrink:0;
+  }
+  .vfp-logo-initials {
+    font-family:var(--serif); font-size:26px; font-weight:700;
+    color:rgba(255,255,255,.3); letter-spacing:.04em;
+  }
+  .vfp-firm-name {
+    font-family:var(--serif); font-size:clamp(26px,3.2vw,40px);
+    font-weight:700; color:#fff; line-height:1.1;
+    letter-spacing:-.02em; margin-bottom:10px;
+  }
+  .vfp-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .vfp-badge {
+    font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+    padding:3px 10px; border:1px solid rgba(255,255,255,.12);
+    color:rgba(255,255,255,.45);
+  }
+  .vfp-badge.green { border-color:rgba(45,189,116,.35); color:var(--green-3); background:rgba(45,189,116,.07); }
+  .vfp-meta-row { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+  .vfp-meta-item { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,255,255,.35); }
+  .vfp-meta-item a { color:rgba(255,255,255,.35); text-decoration:none; transition:color .15s; }
+  .vfp-meta-item a:hover { color:rgba(255,255,255,.8); }
+  .vfp-score-block {
+    display:flex; flex-direction:column; align-items:center; gap:0;
+    padding-left:32px; border-left:1px solid rgba(255,255,255,.07);
+  }
+  .vfp-score-label {
+    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    color:rgba(255,255,255,.3); margin-top:8px; text-align:center;
+  }
+  .vfp-stats-row {
+    display:grid; grid-template-columns:repeat(5,1fr);
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  .vfp-stat {
+    padding:20px 24px; border-right:1px solid rgba(255,255,255,.06);
+  }
+  .vfp-stat:last-child { border-right:none; }
+  .vfp-stat-label {
+    font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
+    color:rgba(255,255,255,.25); margin-bottom:6px;
+  }
+  .vfp-stat-val {
+    font-family:var(--serif); font-size:26px; font-weight:700;
+    color:#fff; line-height:1; letter-spacing:-.02em;
+  }
+  .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
+  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.25); margin-top:4px; font-family:var(--mono); }
+
+  .vfp-body {
+    display:grid; grid-template-columns:1fr 300px;
+    gap:48px; padding-top:48px;
+  }
+  .vfp-section { margin-bottom:48px; }
+  .vfp-section-head {
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:24px; padding-bottom:14px;
+    border-bottom:1px solid var(--rule);
+  }
+  .vfp-section-title {
+    font-family:var(--serif); font-size:22px; font-weight:700;
+    color:var(--ink); letter-spacing:-.01em;
+  }
+  .vfp-section-meta { font-size:11px; color:var(--ink-3); font-family:var(--mono); }
+
+  /* VVS Score section */
+  .vfp-vvs-overall {
+    display:grid; grid-template-columns:auto 1fr;
+    gap:32px; align-items:center;
+    padding:28px 32px; background:#fff; border:1px solid var(--rule);
+    margin-bottom:20px;
+  }
+  .vfp-vvs-big { font-family:var(--serif); font-size:72px; font-weight:700; line-height:1; letter-spacing:-.04em; }
+  .vfp-vvs-big-label { font-size:11px; color:var(--ink-3); margin-top:6px; letter-spacing:.06em; }
+  .vfp-vvs-rank {
+    font-size:13px; color:var(--ink-3); line-height:1.7;
+    border-left:2px solid var(--green); padding-left:20px;
+  }
+  .vfp-vvs-rank strong { color:var(--ink); font-weight:600; }
+  .vfp-vvs-bars { display:flex; flex-direction:column; gap:0; }
+  .vfp-bar-row {
+    display:grid; grid-template-columns:160px 1fr 48px;
+    align-items:center; gap:16px;
+    padding:14px 0; border-bottom:1px solid var(--rule);
+  }
+  .vfp-bar-row:last-child { border-bottom:none; }
+  .vfp-bar-label { font-size:12px; color:var(--ink-2); font-weight:500; display:flex; align-items:center; }
+  .vfp-bar-track { height:4px; background:var(--rule); position:relative; }
+  .vfp-bar-fill { height:100%; transition:width 1s ease; }
+  .vfp-bar-val { font-family:var(--mono); font-size:13px; font-weight:500; text-align:right; }
+  .vfp-info-tip {
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:10px; color:var(--ink-3); cursor:default;
+    margin-left:5px; opacity:.5; position:relative;
+  }
+  .vfp-info-tip:hover { opacity:1; }
+  .vfp-info-tip:hover::after {
+    content:attr(title);
+    position:absolute; left:50%; bottom:calc(100% + 6px);
+    transform:translateX(-50%);
+    background:var(--ink); color:#fff;
+    font-size:11px; line-height:1.5; padding:8px 12px;
+    width:220px; white-space:normal;
+    font-family:var(--sans); font-weight:400; letter-spacing:0;
+    pointer-events:none; z-index:20;
+    border-top:2px solid var(--green-3);
+  }
+
+  /* Fees */
+  .vfp-fee-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .vfp-fee-card { background:#fff; border:1px solid var(--rule); padding:22px 26px; }
+  .vfp-fee-card-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-fee-card-val { font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:4px; letter-spacing:-.02em; }
+  .vfp-fee-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
+  .vfp-fee-table { background:#fff; border:1px solid var(--rule); margin-bottom:20px; }
+  .vfp-fee-table-head {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    padding:10px 20px; border-bottom:1px solid var(--rule); background:var(--white);
+  }
+  .vfp-fee-table-head span { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
+  .vfp-fee-row {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    padding:14px 20px; border-bottom:1px solid var(--rule); align-items:center;
+  }
+  .vfp-fee-row:last-child { border-bottom:none; }
+  .vfp-fee-row span { font-size:13px; color:var(--ink-2); }
+  .vfp-fee-rate { font-family:var(--mono); font-size:13px; color:var(--ink); font-weight:500; }
+  .vfp-fee-note { font-size:11px; color:var(--ink-3); }
+
+  /* AUM chart wrap */
+  .vfp-aum-wrap { background:#fff; border:1px solid var(--rule); overflow:hidden; }
+  .vfp-aum-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--rule); }
+  .vfp-aum-stat { padding:18px 24px; border-right:1px solid var(--rule); }
+  .vfp-aum-stat:last-child { border-right:none; }
+  .vfp-aum-stat-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
+  .vfp-aum-stat-val { font-family:var(--serif); font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
+  .vfp-aum-stat-delta { display:inline-flex; align-items:center; gap:4px; font-size:11px; margin-top:4px; font-family:var(--mono); }
+  .vfp-aum-stat-delta.up { color:var(--green); }
+  .vfp-aum-stat-delta.dn { color:var(--red); }
+  .vfp-chart-divider { border-top:1px solid var(--rule); }
+  .vfp-aum-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 24px; border-top:1px solid var(--rule);
+    font-size:10px; color:var(--ink-3);
+  }
+
+  /* Clients */
+  .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .vfp-client-card { background:#fff; border:1px solid var(--rule); padding:24px 28px; }
+  .vfp-client-card-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-client-card-val { font-family:var(--serif); font-size:32px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:6px; letter-spacing:-.02em; }
+  .vfp-client-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
+  .vfp-client-breakdown { background:#fff; border:1px solid var(--rule); margin-top:16px; }
+  .vfp-client-bd-head { padding:16px 24px; border-bottom:1px solid var(--rule); font-size:11px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; }
+  .vfp-client-type-row {
+    display:grid; grid-template-columns:1fr auto 120px;
+    align-items:center; gap:16px;
+    padding:12px 24px; border-bottom:1px solid var(--rule);
+  }
+  .vfp-client-type-row:last-child { border-bottom:none; }
+  .vfp-client-type-name { font-size:13px; color:var(--ink-2); }
+  .vfp-client-type-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); }
+  .vfp-client-type-bar { height:3px; background:var(--rule); }
+  .vfp-client-type-fill { height:100%; background:var(--green-2); border-radius:1px; }
+
+  /* Sidebar */
+  .vfp-sidebar { position:sticky; top:160px; display:flex; flex-direction:column; gap:16px; align-self:start; }
+  .vfp-scard { background:#fff; border:1px solid var(--rule); overflow:hidden; }
+  .vfp-scard-head {
+    padding:14px 20px; border-bottom:1px solid var(--rule);
+    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .vfp-scard-body { padding:20px; }
+  .vfp-sfield {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:8px 0; border-bottom:1px solid var(--rule);
+  }
+  .vfp-sfield:last-child { border-bottom:none; }
+  .vfp-sfield-label { font-size:11px; color:var(--ink-3); }
+  .vfp-sfield-val { font-family:var(--mono); font-size:11px; color:var(--ink-2); font-weight:500; text-align:right; }
+  .vfp-sfield-val a { color:var(--green); text-decoration:none; transition:color .15s; }
+  .vfp-sfield-val a:hover { color:var(--green-2); }
+
+  .vfp-similar { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule); text-decoration:none; transition:opacity .15s; }
+  .vfp-similar:last-child { border-bottom:none; }
+  .vfp-similar:hover { opacity:.7; }
+  .vfp-similar-initials {
+    width:32px; height:32px; flex-shrink:0;
+    background:var(--white); border:1px solid var(--rule);
+    display:grid; place-items:center;
+    font-family:var(--serif); font-size:12px; font-weight:700; color:var(--ink-3);
+  }
+  .vfp-similar-info { flex:1; min-width:0; }
+  .vfp-similar-name { font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vfp-similar-meta { font-size:10px; color:var(--ink-3); margin-top:1px; }
+  .vfp-similar-score { font-family:var(--serif); font-size:18px; font-weight:700; flex-shrink:0; color:var(--ink-3); }
+
+  .vfp-cta-card { background:var(--navy); border:none; border-top:2px solid var(--green-3); overflow:hidden; }
+  .vfp-cta-body { padding:24px; }
+  .vfp-cta-eyebrow {
+    font-size:9px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--green-3); margin-bottom:12px; display:flex; align-items:center; gap:6px;
+  }
+  .vfp-cta-h { font-family:var(--serif); font-size:20px; font-weight:700; color:#fff; line-height:1.25; margin-bottom:10px; }
+  .vfp-cta-sub { font-size:12px; color:rgba(255,255,255,.38); line-height:1.6; margin-bottom:20px; }
+  .vfp-cta-btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; background:var(--green); color:#fff;
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    padding:12px; text-decoration:none; border:none; cursor:pointer;
+    transition:background .2s;
+  }
+  .vfp-cta-btn:hover { background:var(--green-2); }
+  .vfp-cta-trust { font-size:10px; color:rgba(255,255,255,.2); text-align:center; margin-top:10px; line-height:1.5; }
+
+  @media (max-width:900px) {
+    .vfp-breadcrumb { padding:0 20px; }
+    .vfp-page { padding-left:20px; padding-right:20px; }
+    .vfp-hero { margin:0 -20px; padding:32px 20px 0; }
+    .vfp-hero-top { grid-template-columns:auto 1fr; }
+    .vfp-score-block { display:none; }
+    .vfp-stats-row { grid-template-columns:repeat(3,1fr); }
+    .vfp-body { grid-template-columns:1fr; gap:32px; }
+    .vfp-sidebar { position:static; }
+    .vfp-fee-grid { grid-template-columns:1fr; }
+    .vfp-client-grid { grid-template-columns:1fr; }
+  }
+`;
+
+// ─── Page Component ───────────────────────────────────────────────────────────
 export default async function FirmPage({ params }: { params: { crd: string } }) {
-  const { firmData, displayName, logoKey, feeTiers, feesAndMins, profileText, website, growth, assetAllocation, clientBreakdown, firmScore, error } = await getFirmData(params.crd);
+  const {
+    firmData, displayName, logoKey, feeTiers, feesAndMins,
+    profileText, website, growth, clientBreakdown, firmScore, error,
+  } = await getFirmData(params.crd);
+
   const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
 
+  // ── Not found ──
   if (error || !firmData) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-slate-900">Firm Not Found</h1>
-          <p className="mt-2 text-slate-500">We couldn&apos;t find a firm with CRD #{params.crd}</p>
-          <Link href="/search">
-            <Button variant="outline" className="mt-4">Back to Search</Button>
+      <>
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>
+            Firm Not Found
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24 }}>
+            We couldn&apos;t find a firm with CRD #{params.crd}
+          </p>
+          <Link href="/search" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 24px', background: 'var(--green)', color: '#fff',
+            textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600,
+          }}>
+            ← Back to Search
           </Link>
         </div>
-      </div>
+      </>
     );
   }
 
   const firm = firmData;
 
-  // Auth gating: show teaser if not authenticated
+  // ── Auth ──
   const authSupabase = createSupabaseServerClient();
   const { data: { user } } = await authSupabase.auth.getUser();
 
-  // Check if firm is saved by this user
   let isSaved = false;
   if (user) {
     const { data: fav } = await authSupabase
@@ -315,743 +666,853 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     isSaved = !!fav;
   }
 
+  // ── Not authenticated ──
   if (!user) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="text-center py-20">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+      <>
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 40, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
             {firmDisplayName}
           </h1>
-          <p className="mt-2 text-slate-500">
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 40 }}>
             {firm.main_office_city}, {firm.main_office_state}
           </p>
-          <div className="mt-8 p-6 bg-slate-50 rounded-xl max-w-md mx-auto">
-            <p className="text-slate-700 font-medium">
-              Create a free account to view the full firm profile, fee schedules, and detailed analytics.
+          <div style={{
+            maxWidth: 420, margin: '0 auto', padding: '32px',
+            background: '#fff', border: '1px solid var(--rule)',
+          }}>
+            <p style={{
+              fontFamily: 'var(--serif)', fontSize: 9, fontWeight: 600,
+              letterSpacing: '.18em', textTransform: 'uppercase',
+              color: 'var(--green-3)', marginBottom: 16,
+            }}>
+              Free access required
             </p>
-            <div className="mt-4 flex justify-center gap-3">
-              <Link href="/auth/signup">
-                <Button>Get Started Free</Button>
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 8, fontFamily: 'var(--serif)' }}>
+              Create a free account to view this firm&apos;s full profile
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 24, lineHeight: 1.6 }}>
+              Access fee schedules, Visor Score™, growth history, and regulatory disclosures — all from SEC filings.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Link href="/auth/signup" style={{
+                flex: 1, display: 'block', textAlign: 'center',
+                padding: '10px', background: 'var(--green)', color: '#fff',
+                textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600,
+              }}>
+                Get Started Free
               </Link>
-              <Link href="/auth/login">
-                <Button variant="outline">Sign In</Button>
+              <Link href="/auth/login" style={{
+                flex: 1, display: 'block', textAlign: 'center',
+                padding: '10px', background: 'none',
+                border: '1px solid var(--rule)', color: 'var(--ink-2)',
+                textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13,
+              }}>
+                Sign In
               </Link>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-slate-500 mb-4">
-        <a href="/search" className="hover:text-green-600">Search</a>
-        <span className="mx-2">/</span>
-        <span className="text-slate-900">{firmDisplayName}</span>
-      </nav>
+  // ── Computed stats (preserve data logic) ──
+  const totalClients = [
+    firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
+    firm.client_charitable_number, firm.client_corporations_number, firm.client_pooled_vehicles_number,
+    firm.client_other_number, firm.client_banks_number, firm.client_bdc_number,
+    firm.client_govt_number, firm.client_insurance_number, firm.client_investment_cos_number,
+    firm.client_other_advisors_number, firm.client_swf_number,
+  ].reduce((sum, v) => (sum || 0) + (v || 0), 0) as number;
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div className="flex items-start gap-4">
-          <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" />
-          <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-            {firmDisplayName}
-          </h1>
-          <p className="mt-1 text-slate-500">
-            {firm.main_office_city}, {firm.main_office_state} • CRD #{firm.crd}
-          </p>
+  const avgClientSize = totalClients > 0 && firm.aum
+    ? firm.aum / totalClients : null;
+  const aumPerInvPro = firm.employee_investment && firm.employee_investment > 0 && firm.aum
+    ? firm.aum / firm.employee_investment : null;
+  const minAccount = feesAndMins?.minimum_account_size
+    ? parseFloat(feesAndMins.minimum_account_size) : null;
+  const minFee = feesAndMins?.minimum_fee
+    ? parseFloat(feesAndMins.minimum_fee) : null;
+
+  const feeTypeDisplay = feesAndMins?.fee_structure_type
+    ? (FEE_TYPE_LABELS[feesAndMins.fee_structure_type] || feesAndMins.fee_structure_type)
+    : 'Not disclosed';
+
+  // ── Growth chart data (preserve data logic) ──
+  let aumBars: BarData[] = [];
+  let clientBars: BarData[] = [];
+  let aumStats = { currentAum: 0, fiveYearDeltaAbs: 0, fiveYearDeltaPct: 0, avgAnnualPct: 0 };
+  let showGrowthSection = false;
+
+  if (growth && growth.length > 0) {
+    const byYear = new Map<number, { year: number; dateObj: Date; aum: number; clients: number | null }>();
+    growth.forEach(g => {
+      const aum = parseAUM(g.aum);
+      const clients = g.client_total_or_calc ? parseInt(g.client_total_or_calc.replace(/,/g, '')) : null;
+      const parts = (g.date_submitted || '').split('/');
+      if (parts.length !== 3 || aum == null) return;
+      const dateObj = new Date(+parts[2], +parts[0] - 1, +parts[1]);
+      const year = dateObj.getFullYear();
+      if (!byYear.has(year) || dateObj.getTime() > byYear.get(year)!.dateObj.getTime()) {
+        byYear.set(year, { year, dateObj, aum, clients });
+      }
+    });
+    const years = Array.from(byYear.values())
+      .sort((a, b) => a.year - b.year)
+      .slice(-10);
+
+    if (years.length >= 3) {
+      showGrowthSection = true;
+      const maxAum = Math.max(...years.map(y => y.aum), 1);
+      const maxClients = Math.max(...years.filter(y => y.clients != null).map(y => y.clients!), 1);
+
+      aumBars = years.map((y, i) => {
+        const prev = years[i - 1];
+        const pctChange = prev ? ((y.aum - prev.aum) / prev.aum * 100) : null;
+        return {
+          label: String(y.year),
+          fraction: y.aum / maxAum,
+          topLabel: formatAUM(y.aum),
+          delta: pctChange != null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : undefined,
+          deltaPositive: pctChange != null ? pctChange >= 0 : undefined,
+          color: '#22995E',
+        };
+      });
+
+      clientBars = years.map((y, i) => {
+        const prev = years[i - 1];
+        const pctChange = (prev && y.clients != null && prev.clients != null)
+          ? ((y.clients - prev.clients) / prev.clients * 100) : null;
+        return {
+          label: String(y.year),
+          fraction: y.clients != null ? y.clients / maxClients : 0,
+          topLabel: y.clients != null ? y.clients.toLocaleString() : '—',
+          delta: pctChange != null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : undefined,
+          deltaPositive: pctChange != null ? pctChange >= 0 : undefined,
+          color: '#4B8ECC',
+        };
+      });
+
+      const latest = years[years.length - 1];
+      const oldest5 = years.length >= 6 ? years[years.length - 6] : years[0];
+      const fiveYearDeltaAbs = latest.aum - oldest5.aum;
+      const fiveYearDeltaPct = oldest5.aum > 0 ? (fiveYearDeltaAbs / oldest5.aum * 100) : 0;
+      const n = years.length - 1;
+      const avgAnnualPct = n > 0 && years[0].aum > 0
+        ? (Math.pow(latest.aum / years[0].aum, 1 / n) - 1) * 100 : 0;
+
+      aumStats = {
+        currentAum: latest.aum,
+        fiveYearDeltaAbs,
+        fiveYearDeltaPct,
+        avgAnnualPct,
+      };
+    }
+  }
+
+  // ── Client breakdown for section ──
+  const clientTypeRows: Array<{ name: string; count: number; pct: number }> = [];
+  if (clientBreakdown && totalClients > 0) {
+    const entries = [
+      { name: 'High net worth individuals', count: clientBreakdown.hnw },
+      { name: 'Families / family offices', count: clientBreakdown.non_hnw },
+      { name: 'Foundations & endowments', count: clientBreakdown.charitable },
+      { name: 'Pension plans', count: clientBreakdown.pension },
+      { name: 'Corporations', count: clientBreakdown.corporations },
+      { name: 'Pooled investment vehicles', count: clientBreakdown.pooled_vehicles },
+    ].filter(e => e.count != null && e.count > 0) as Array<{ name: string; count: number }>;
+    const entryTotal = entries.reduce((s, e) => s + e.count, 0) || 1;
+    entries.forEach(e => clientTypeRows.push({ name: e.name, count: e.count, pct: e.count / entryTotal * 100 }));
+  }
+
+  // ── Hero badges ──
+  const heroBadges: Array<{ label: string; green: boolean }> = [
+    { label: 'Fiduciary', green: true },
+  ];
+  if (feesAndMins?.fee_structure_type) heroBadges.push({ label: feeTypeDisplay, green: false });
+  if (firm.legal_structure) heroBadges.push({ label: firm.legal_structure, green: false });
+  if (profileText?.firm_character) {
+    heroBadges.push({ label: profileText.firm_character.split(',')[0].trim(), green: false });
+  }
+
+  // ── Score ──
+  const finalScore: number = (firmScore as unknown as Record<string, number>)?.final_score ?? 0;
+
+  // ── New: Similar firms + score percentile (parallel) ──
+  const [similarFirms, scoreRank] = await Promise.all([
+    firm.main_office_state
+      ? getSimilarFirms(firm.crd, firm.main_office_state, firm.aum)
+      : Promise.resolve([]),
+    finalScore > 0 ? getScorePercentile(finalScore) : Promise.resolve(null),
+  ]);
+
+  // ── VVS bars data ──
+  const fs = firmScore as unknown as Record<string, number> | null;
+  const vvsBars = fs ? [
+    { label: 'Disclosure Quality', score: fs.disclosure_score ?? 0, tip: 'Measures completeness and clarity of ADV filings, including brochure quality and update frequency.' },
+    { label: 'Fee Transparency', score: fs.fee_transparency_score ?? 0, tip: 'Assesses how explicitly the firm discloses its fee structure, tiers, and any additional costs.' },
+    { label: 'Fee Competitiveness', score: fs.fee_competitiveness_score ?? 0, tip: 'Benchmarks the firm\'s stated fees against peers of similar AUM and client type.' },
+    { label: 'Conflict-Free', score: fs.conflict_free_score ?? 0, tip: 'Evaluates disclosed conflicts of interest including referral arrangements and third-party compensation.' },
+    { label: 'AUM Growth', score: fs.aum_growth_score ?? 0, tip: 'Measures AUM growth rate over 3 and 5 years relative to peer median.' },
+    { label: 'Client Growth', score: fs.client_growth_score ?? 0, tip: 'Tracks net new client additions year-over-year as a signal of firm health.' },
+    { label: 'Advisor Bandwidth', score: fs.advisor_bandwidth_score ?? 0, tip: 'Ratio of clients to advisory staff. Lower ratios indicate more attentive service capacity.' },
+    { label: 'Derivatives Risk', score: fs.derivatives_score ?? 0, tip: 'Flags use of complex instruments like options, swaps, or leverage in client portfolios.' },
+  ] : [];
+
+  // ── Fee tier table ──
+  const sortedFeeTiers = feeTiers
+    ? [...feeTiers].sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'))
+    : [];
+
+  // ── Active sections for nav (filter out unavailable sections) ──
+  const activeSections = SECTION_NAV.filter(s =>
+    !(s.id === 'about' && !profileText?.business_profile && !profileText?.investment_philosophy) &&
+    !(s.id === 'aum' && !showGrowthSection)
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+
+      {/* Fixed breadcrumb bar */}
+      <div className="vfp-breadcrumb">
+        <div className="vfp-breadcrumb-i">
+          <div className="vfp-bc-trail">
+            <Link href="/search">Search</Link>
+            <span className="vfp-bc-sep">›</span>
+            {firm.main_office_city && firm.main_office_state && (
+              <>
+                <Link href={`/search?state=${firm.main_office_state}`}>
+                  {firm.main_office_city} · {firm.main_office_state}
+                </Link>
+                <span className="vfp-bc-sep">›</span>
+              </>
+            )}
+            <span className="vfp-bc-current">{firmDisplayName}</span>
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
+          <div className="vfp-bc-actions">
             <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
-            <Link href={`/compare?add=${firm.crd}`} className="inline-flex items-center justify-center font-medium h-10 px-4 text-sm rounded-lg gap-2 bg-primary text-primary-foreground hover:bg-primary-700 active:bg-primary-800 transition-colors">
-              Compare
+            <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
+              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
+              </svg>
+              Add to Compare
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      {(() => {
-        const totalClients = [
-          firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
-          firm.client_charitable_number, firm.client_corporations_number, firm.client_pooled_vehicles_number,
-          firm.client_other_number, firm.client_banks_number, firm.client_bdc_number,
-          firm.client_govt_number, firm.client_insurance_number, firm.client_investment_cos_number,
-          firm.client_other_advisors_number, firm.client_swf_number,
-        ].reduce((sum, v) => (sum || 0) + (v || 0), 0);
+      {/* Page shell */}
+      <div className="vfp-page">
 
-        const avgClientSize = (totalClients ?? 0) > 0 && firm.aum ? firm.aum / (totalClients ?? 1) : null;
-        const aumPerInvPro = firm.employee_investment && firm.employee_investment > 0 && firm.aum
-          ? firm.aum / firm.employee_investment : null;
-        const minAccount = feesAndMins?.minimum_account_size
-          ? parseFloat(feesAndMins.minimum_account_size) : null;
+        {/* ── HERO BAND ── */}
+        <div className="vfp-hero">
+          <div className="vfp-hero-top">
 
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
-            <div className="col-span-2 md:col-span-1 rounded-lg border border-slate-200 p-4 text-center bg-white">
-              {firmScore?.stars ? (
-                <StarRating stars={firmScore.stars} size="lg" showValue={true} />
-              ) : (
-                <p className="text-slate-400">N/A</p>
-              )}
-              <p className="mt-1 text-xs text-slate-500">Visor Rating</p>
-            </div>
-            <StatBox label="AUM" value={formatAUM(firm.aum)} />
-            <StatBox label="Avg. Client Size" value={avgClientSize ? formatCurrency(avgClientSize) : 'N/A'} />
-            <StatBox label="Min. Account Size" value={minAccount ? formatCurrency(minAccount) : 'N/A'} />
-            <StatBox label="AUM per Inv. Pro" value={aumPerInvPro ? formatCurrency(aumPerInvPro) : 'N/A'} />
-          </div>
-        );
-      })()}
-
-      {/* Firm Tags */}
-      {profileText && (profileText.firm_character || profileText.service_model || profileText.investment_philosophy) && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {[profileText.firm_character, profileText.service_model, profileText.investment_philosophy]
-            .filter(Boolean)
-            .flatMap(s => s!.split(',').map(t => t.trim()))
-            .filter(t => t.length > 0)
-            .map((tag, i) => (
-              <Badge key={i}>{tag}</Badge>
-            ))}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="border-b border-slate-200 mb-6 overflow-x-auto">
-        <div className="flex gap-0 -mb-px">
-          <TabButton label="Overview" active />
-          <TabButton label="Fees" />
-          <TabButton label="Services" />
-          <TabButton label="Disclosures" />
-        </div>
-      </div>
-
-      {/* Score Breakdown */}
-      {firmScore && (
-        <div className="mb-6">
-          <ScoreBreakdown scores={firmScore} />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Fee Calculator — primary feature (always shown; industry-only mode when no tiers) */}
-          <FeeCalculator
-            feeTiers={feeTiers}
-            crd={String(firm.crd)}
-            firmAum={firm.aum}
-            industryOnly={!feeTiers || feeTiers.length === 0}
-          />
-
-          {/* Alerts & News */}
-          <FirmAlerts crd={firm.crd} />
-
-          {/* Regulatory Disclosures */}
-          <RegulatoryDisclosures firmData={firm as any} />
-
-          {/* Firm Profile */}
-          <Card>
-            <CardContent>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">About</h2>
-              {profileText?.business_profile ? (
-                <p className="text-slate-600 leading-relaxed">{profileText.business_profile}</p>
-              ) : (
-                <p className="text-slate-500 italic">No profile available</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Investment Philosophy */}
-          {profileText?.investment_philosophy && (
-            <Card>
-              <CardContent>
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment Philosophy</h2>
-                <p className="text-slate-600 leading-relaxed">{profileText.investment_philosophy}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Client Base */}
-          {profileText?.client_base && (
-            <Card>
-              <CardContent>
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Client Base</h2>
-                <p className="text-slate-600 leading-relaxed">{profileText.client_base}</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Facts */}
-          <Card>
-            <CardContent>
-              <h3 className="font-semibold text-slate-900 mb-4">Quick Facts</h3>
-              <dl className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">Employees</dt>
-                  <dd className="text-slate-900 font-medium">{firm.employee_total?.toLocaleString() || 'N/A'}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">Investment Professionals</dt>
-                  <dd className="text-slate-900 font-medium">{firm.employee_investment?.toLocaleString() || 'N/A'}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">Legal Structure</dt>
-                  <dd className="text-slate-900 font-medium">{firm.legal_structure || 'N/A'}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">SEC File Date</dt>
-                  <dd className="text-slate-900 font-medium">{firm.latest_adv_filing || 'N/A'}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">Private Fund Advisor</dt>
-                  <dd className="text-slate-900 font-medium">{firm.private_fund_advisor === 'Y' ? 'Yes' : 'No'}</dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
-
-          {/* Services */}
-          <Card>
-            <CardContent>
-              <h3 className="font-semibold text-slate-900 mb-4">Services</h3>
-              <div className="flex flex-wrap gap-2">
-                {firm.services_financial_planning === 'Y' && <Badge variant="primary">Financial Planning</Badge>}
-                {firm.services_mgr_selection === 'Y' && <Badge>Manager Selection</Badge>}
-                {firm.services_pension_consulting === 'Y' && <Badge>Pension Consulting</Badge>}
-                {firm.services_port_management_individuals === 'Y' && <Badge>Portfolio Mgmt (Individuals)</Badge>}
-                {firm.services_port_management_institutional === 'Y' && <Badge>Portfolio Mgmt (Institutional)</Badge>}
-                {firm.services_port_management_pooled === 'Y' && <Badge>Portfolio Mgmt (Pooled)</Badge>}
+            {/* Logo mark */}
+            {logoKey ? (
+              <div className="vfp-logo-mark" style={{ padding: 8 }}>
+                <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" />
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <div className="vfp-logo-mark">
+                <span className="vfp-logo-initials">
+                  {firmDisplayName.slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
 
-          {/* Fee Schedule with Visualization */}
-          {feeTiers && feeTiers.length > 0 && (() => {
-            const sorted = [...feeTiers].sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
-            const maxFee = Math.max(...sorted.filter(t => t.fee_pct != null).map(t => t.fee_pct!), 0);
-            return (
-              <Card>
-                <CardContent>
-                  <h3 className="font-semibold text-slate-900 mb-4">Fee Schedule</h3>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200">
-                        <th className="text-left py-2 text-slate-500 font-medium">AUM Range</th>
-                        <th className="text-right py-2 text-slate-500 font-medium">Fee %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sorted.map((tier, i) => (
-                        <tr key={i} className="border-b border-slate-100">
-                          <td className="py-2 text-slate-600">
-                            {formatCurrency(parseInt(tier.min_aum || '0'))} – {tier.max_aum ? formatCurrency(tier.max_aum) : '∞'}
-                          </td>
-                          <td className="py-2 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <div className="w-20 h-3 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-green-500 rounded-full"
-                                  style={{ width: maxFee > 0 && tier.fee_pct ? `${(tier.fee_pct / maxFee) * 100}%` : '0%' }}
-                                />
-                              </div>
-                              <span className="text-slate-900 font-medium w-12 text-right">
-                                {tier.fee_pct != null ? `${tier.fee_pct}%` : 'N/A'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
-            );
-          })()}
-
-          {/* Non-tiered Fee Info (range, flat, max-only, etc.) */}
-          {(!feeTiers || feeTiers.length === 0) && feesAndMins && feesAndMins.fee_structure_type && (() => {
-            const fType = feesAndMins.fee_structure_type;
-            const rangeMin = feesAndMins.fee_range_min ? parseFloat(feesAndMins.fee_range_min) : null;
-            const rangeMax = feesAndMins.fee_range_max ? parseFloat(feesAndMins.fee_range_max) : null;
-            const minFee = feesAndMins.minimum_fee ? parseFloat(feesAndMins.minimum_fee) : null;
-            const maxFeeDollar = feesAndMins.maximum_fee_dollar ? parseFloat(feesAndMins.maximum_fee_dollar) : null;
-
-            const typeLabel: Record<string, string> = {
-              range: 'Fee Range',
-              flat_percentage: 'Flat Fee',
-              maximum_only: 'Maximum Fee',
-              minimum_only: 'Minimum Fee',
-              capped: 'Capped Fee',
-              not_disclosed: 'Custom / Negotiated',
-            };
-
-            return (
-              <Card>
-                <CardContent>
-                  <h3 className="font-semibold text-slate-900 mb-4">Fee Schedule</h3>
-                  
-                  <div className="space-y-4">
-                    {/* Fee Type Badge */}
-                    <div className="flex items-center gap-2">
-                      <Badge>{typeLabel[fType] || fType}</Badge>
-                    </div>
-
-                    {/* Range display */}
-                    {(fType === 'range') && (rangeMin != null || rangeMax != null) && (
-                      <div>
-                        <div className="flex items-baseline gap-2 mb-2">
-                          <span className="text-2xl font-bold text-slate-900">
-                            {rangeMin != null && rangeMax != null
-                              ? `${rangeMin}% – ${rangeMax}%`
-                              : rangeMax != null
-                              ? `Up to ${rangeMax}%`
-                              : `From ${rangeMin}%`}
-                          </span>
-                          <span className="text-sm text-slate-500">of AUM</span>
-                        </div>
-                        {/* Visual range bar */}
-                        {rangeMin != null && rangeMax != null && (
-                          <div className="relative h-6 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="absolute top-0 h-full bg-gradient-to-r from-green-400 to-amber-400 rounded-full"
-                              style={{
-                                left: `${(rangeMin / 2) * 100}%`,
-                                width: `${((rangeMax - rangeMin) / 2) * 100}%`,
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Flat percentage */}
-                    {fType === 'flat_percentage' && (rangeMin != null || rangeMax != null) && (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-900">
-                          {rangeMin ?? rangeMax}%
-                        </span>
-                        <span className="text-sm text-slate-500">of AUM</span>
-                      </div>
-                    )}
-
-                    {/* Maximum only */}
-                    {fType === 'maximum_only' && rangeMax != null && (
-                      <div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold text-slate-900">Up to {rangeMax}%</span>
-                          <span className="text-sm text-slate-500">of AUM</span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Maximum disclosed fee. Actual fees are typically negotiated below this rate.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Maximum dollar */}
-                    {maxFeeDollar != null && (
-                      <p className="text-sm text-slate-600">
-                        Maximum annual fee: <span className="font-medium">{formatCurrency(maxFeeDollar)}</span>
-                      </p>
-                    )}
-
-                    {/* Minimum fee */}
-                    {minFee != null && (
-                      <p className="text-sm text-slate-600">
-                        Minimum annual fee: <span className="font-medium">{formatCurrency(minFee)}</span>
-                      </p>
-                    )}
-
-                    {/* Minimum only type */}
-                    {fType === 'minimum_only' && rangeMin != null && (
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-900">From {rangeMin}%</span>
-                        <span className="text-sm text-slate-500">of AUM</span>
-                      </div>
-                    )}
-
-                    {/* Not disclosed */}
-                    {fType === 'not_disclosed' && (
-                      <p className="text-sm text-slate-600">
-                        This firm does not publicly disclose a standard fee schedule. Fees are individually negotiated. The fee calculator shows industry averages for comparable firms.
-                      </p>
-                    )}
-
-                    {/* Notes from ADV */}
-                    {feesAndMins.notes && (
-                      <div className="bg-slate-50 rounded-lg p-3 mt-2">
-                        <p className="text-xs text-slate-500 font-medium mb-1">From ADV Part 2A</p>
-                        <p className="text-sm text-slate-600 leading-relaxed">{feesAndMins.notes}</p>
-                      </div>
-                    )}
-
-                    {/* Disclaimer */}
-                    <p className="text-[11px] text-slate-400 mt-2">
-                      ⚠️ Estimated based on SEC disclosures and firm filings. Actual fees may vary and are often negotiable.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })()}
-
-          {/* Contact */}
-          <Card>
-            <CardContent>
-              <h3 className="font-semibold text-slate-900 mb-4">Contact</h3>
-              <address className="not-italic text-sm text-slate-600 space-y-2">
-                {firm.main_office_street_1 && (
-                  <p>{firm.main_office_street_1}{firm.main_office_street_2 && `, ${firm.main_office_street_2}`}</p>
-                )}
-                <p>
-                  {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
-                </p>
-                {firm.main_phone_number && (
-                  <p>
-                    <a href={`tel:${firm.main_phone_number}`} className="text-green-600 hover:underline">
-                      {firm.main_phone_number}
-                    </a>
-                  </p>
+            {/* Identity */}
+            <div>
+              <h1 className="vfp-firm-name">{firmDisplayName}</h1>
+              <div className="vfp-badges">
+                {heroBadges.map((b, i) => (
+                  <span key={i} className={`vfp-badge${b.green ? ' green' : ''}`}>{b.label}</span>
+                ))}
+              </div>
+              <div className="vfp-meta-row">
+                {firm.main_office_city && (
+                  <span className="vfp-meta-item">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                      <circle cx="5.5" cy="4.5" r="2" /><path d="M1 10c0-2.5 2-4.5 4.5-4.5S10 7.5 10 10" />
+                    </svg>
+                    {firm.main_office_city}, {firm.main_office_state}
+                  </span>
                 )}
                 {website?.website && (
-                  <p>
-                    <a 
-                      href={website.website.startsWith('http') ? website.website : `https://${website.website}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-green-600 hover:underline"
-                    >
+                  <span className="vfp-meta-item">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                      <circle cx="5.5" cy="5.5" r="4.5" /><path d="M1 5.5h9M5.5 1c-1.4 1.5-2.2 3-2.2 4.5s.8 3 2.2 4.5M5.5 1c1.4 1.5 2.2 3 2.2 4.5S6.9 8.5 5.5 10" />
+                    </svg>
+                    <a href={website.website.startsWith('http') ? website.website : `https://${website.website}`}
+                      target="_blank" rel="noopener noreferrer">
                       {website.website.replace(/^https?:\/\//, '')}
                     </a>
-                  </p>
+                  </span>
                 )}
-              </address>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Firm Growth History - Annual, last 10 years */}
-      {growth && growth.length > 0 && (() => {
-        // Parse all records and group by year, keeping the latest record for each year
-        const byYear = new Map<number, { date: string; dateObj: Date; aum: number; clients: number | null; employees: string; year: number }>();
-        
-        growth.forEach(g => {
-          const aum = parseAUM(g.aum);
-          const clients = g.client_total_or_calc ? parseInt(g.client_total_or_calc.replace(/,/g, '')) : null;
-          const parts = (g.date_submitted || '').split('/');
-          if (parts.length !== 3 || aum == null) return;
-          
-          const dateObj = new Date(+parts[2], +parts[0] - 1, +parts[1]);
-          const year = dateObj.getFullYear();
-          
-          // Keep the latest record for each year
-          if (!byYear.has(year) || dateObj.getTime() > byYear.get(year)!.dateObj.getTime()) {
-            byYear.set(year, {
-              date: g.date_submitted || '',
-              dateObj,
-              aum,
-              clients,
-              employees: g.employee_total_calc || '',
-              year
-            });
-          }
-        });
-        
-        // Convert to array, sort by year, limit to last 10 years
-        const years = Array.from(byYear.values())
-          .sort((a, b) => a.year - b.year)
-          .slice(-10);
-        
-        // Only show if we have at least 3 years of data
-        if (years.length < 3) return null;
-        
-        // Calculate derived metrics for each year
-        const dataWithMetrics = years.map(y => ({
-          year: y.year,
-          aum: y.aum,
-          clients: y.clients,
-          avgClientSize: y.clients && y.clients > 0 ? y.aum / y.clients : null
-        }));
-        
-        const maxAum = Math.max(...dataWithMetrics.map(d => d.aum), 1);
-        const maxClients = Math.max(...dataWithMetrics.filter(d => d.clients).map(d => d.clients!), 1);
-        const maxAvgSize = Math.max(...dataWithMetrics.filter(d => d.avgClientSize).map(d => d.avgClientSize!), 1);
-        
-        // Helper to format average client size
-        const formatAvgSize = (val: number | null) => {
-          if (val == null) return 'N/A';
-          if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-          if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-          if (val >= 1e3) return `$${(val / 1e3).toFixed(0)}K`;
-          return `$${val.toFixed(0)}`;
-        };
-        
-        const numYears = dataWithMetrics.length;
-        const chartHeight = 160;
-        
-        return (
-          <Card className="mt-8">
-            <CardContent>
-              {/* AUM Growth Chart */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">AUM Growth</h2>
-                <span className="text-xs text-slate-400">Annual (last {numYears} years)</span>
+                <span className="vfp-meta-item">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                    <path d="M5.5 1v1M5.5 9v1M1 5.5h1M9 5.5h1" /><circle cx="5.5" cy="5.5" r="2.5" />
+                  </svg>
+                  CRD #{firm.crd}
+                </span>
               </div>
-              
-              <div className="mb-6 border-b border-slate-200 pb-6">
-                <div className="flex justify-between items-end">
-                  {dataWithMetrics.map((d, i) => {
-                    const barHeight = Math.max((d.aum / maxAum) * chartHeight, 8);
-                    const prevAum = dataWithMetrics[i-1]?.aum;
-                    const pctChange = i > 0 && prevAum ? ((d.aum - prevAum) / prevAum * 100) : null;
-                    
-                    return (
-                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
-                        <span className="text-[10px] font-medium text-green-700 mb-1 whitespace-nowrap truncate max-w-full">
-                          {formatCurrency(d.aum)}
-                        </span>
-                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
-                          <div className="flex-1" />
+            </div>
+
+            {/* Score ring */}
+            {finalScore > 0 ? (
+              <div className="vfp-score-block">
+                <ScoreRing score={finalScore} />
+                <div className="vfp-score-label">Visor Score™</div>
+              </div>
+            ) : (
+              <div className="vfp-score-block">
+                <div style={{
+                  width: 120, height: 120,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'grid', placeItems: 'center',
+                }}>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>N/A</span>
+                </div>
+                <div className="vfp-score-label">Visor Score™</div>
+              </div>
+            )}
+          </div>
+
+          {/* Stats row */}
+          <div className="vfp-stats-row">
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">Assets Under Management</div>
+              <div className="vfp-stat-val">{formatAUM(firm.aum)}</div>
+              {aumStats.avgAnnualPct > 0 && (
+                <div className="vfp-stat-sub">↑ {aumStats.avgAnnualPct.toFixed(1)}% avg annual</div>
+              )}
+            </div>
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">Avg. Client Size</div>
+              <div className="vfp-stat-val">
+                {avgClientSize ? formatAUM(avgClientSize) : '—'}
+              </div>
+              {totalClients > 0 && (
+                <div className="vfp-stat-sub">{totalClients.toLocaleString()} total clients</div>
+              )}
+            </div>
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">AUM per Inv. Pro</div>
+              <div className="vfp-stat-val">
+                {aumPerInvPro ? formatAUM(aumPerInvPro) : '—'}
+              </div>
+              {firm.employee_investment && (
+                <div className="vfp-stat-sub">{firm.employee_investment} advisory staff</div>
+              )}
+            </div>
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">Minimum Account Size</div>
+              <div className="vfp-stat-val">
+                {minAccount ? formatAUM(minAccount) : '—'}
+              </div>
+              {minFee && (
+                <div className="vfp-stat-sub">Min fee {formatCurrency(minFee)}</div>
+              )}
+            </div>
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">Employees</div>
+              <div className="vfp-stat-val">{firm.employee_total ?? '—'}</div>
+              {firm.employee_investment && (
+                <div className="vfp-stat-sub">{firm.employee_investment} investment staff</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION NAV ── */}
+        <SectionNav sections={activeSections} />
+
+        {/* ── BODY ── */}
+        <div className="vfp-body">
+
+          {/* ══ MAIN COLUMN ══ */}
+          <main>
+
+            {/* ── ABOUT ── */}
+            {(profileText?.business_profile || profileText?.investment_philosophy) && (
+              <div className="vfp-section" id="about">
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">About</span>
+                  <span className="vfp-section-meta">Derived from ADV Part 2A</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  {profileText.business_profile && (
+                    <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                      {profileText.business_profile}
+                    </p>
+                  )}
+                  {profileText.investment_philosophy && (
+                    <>
+                      <div style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
+                        color: 'var(--ink-3)', marginBottom: 8,
+                        marginTop: profileText.business_profile ? 16 : 0,
+                        paddingTop: profileText.business_profile ? 16 : 0,
+                        borderTop: profileText.business_profile ? '1px solid var(--rule)' : 'none',
+                      }}>
+                        Investment Philosophy
+                      </div>
+                      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                        {profileText.investment_philosophy}
+                      </p>
+                    </>
+                  )}
+                </div>
+                {(profileText.specialty_strategies || profileText.client_base) && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
+                      .filter(Boolean)
+                      .flatMap(s => s!.split(',').map(t => t.trim()))
+                      .slice(0, 6)
+                      .map((tag, i) => (
+                        <span key={i} className="vfp-badge">{tag}</span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── VISOR VALUE SCORE ── */}
+            <div className="vfp-section" id="vvs">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Visor Value Score™</span>
+                <span className="vfp-section-meta">Based on Form ADV filing · SEC data</span>
+              </div>
+
+              {finalScore > 0 && fs ? (
+                <>
+                  <div className="vfp-vvs-overall">
+                    <div>
+                      <div className="vfp-vvs-big" style={{ color: scoreColor(finalScore) }}>
+                        {Math.round(finalScore)}
+                      </div>
+                      <div className="vfp-vvs-big-label">out of 100</div>
+                    </div>
+                    <div className="vfp-vvs-rank">
+                      {scoreRank ? (
+                        <>
+                          Ranked <strong>#{scoreRank.rank.toLocaleString()}</strong> of{' '}
+                          <strong>{scoreRank.total.toLocaleString()}</strong> scored firms nationally ·{' '}
+                          <strong>Top {Math.ceil((scoreRank.rank / scoreRank.total) * 100)}%</strong>{' '}
+                          of all SEC-registered advisors. Score derived from 8 weighted metrics across fee transparency, conflict disclosures, AUM growth, and service capacity.
+                        </>
+                      ) : (
+                        <>
+                          Score is derived from <strong>8 weighted metrics</strong> across fee transparency,
+                          conflict-of-interest disclosures, AUM growth, and client service capacity —
+                          all sourced from SEC Form ADV filings.
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="vfp-vvs-bars">
+                    {vvsBars.map((b) => (
+                      <div key={b.label} className="vfp-bar-row">
+                        <div className="vfp-bar-label">
+                          {b.label}
+                          <span className="vfp-info-tip" title={b.tip}>ⓘ</span>
+                        </div>
+                        <div className="vfp-bar-track">
                           <div
-                            className="w-6 sm:w-8 md:w-10 bg-green-500 rounded-t shadow-sm hover:bg-green-600 transition-colors cursor-default"
-                            style={{ height: barHeight }}
-                            title={`${d.year}: ${formatCurrency(d.aum)}`}
+                            className="vfp-bar-fill"
+                            style={{ width: `${b.score}%`, background: scoreColor(b.score) }}
                           />
                         </div>
-                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
-                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
-                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {/* Client Growth Chart */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Client Growth</h2>
-              </div>
-              
-              <div className="mb-6 border-b border-slate-200 pb-6">
-                <div className="flex justify-between items-end">
-                  {dataWithMetrics.map((d, i) => {
-                    const barHeight = d.clients ? Math.max((d.clients / maxClients) * chartHeight, 8) : 0;
-                    const prevClients = dataWithMetrics[i-1]?.clients;
-                    const pctChange = i > 0 && d.clients && prevClients 
-                      ? ((d.clients - prevClients) / prevClients * 100) 
-                      : null;
-                    
-                    return (
-                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
-                        <span className="text-[10px] font-medium text-blue-700 mb-1 whitespace-nowrap truncate max-w-full">
-                          {d.clients ? d.clients.toLocaleString() : '—'}
-                        </span>
-                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
-                          <div className="flex-1" />
-                          {d.clients && (
-                            <div
-                              className="w-6 sm:w-8 md:w-10 bg-blue-500 rounded-t shadow-sm hover:bg-blue-600 transition-colors cursor-default"
-                              style={{ height: barHeight }}
-                              title={`${d.year}: ${d.clients?.toLocaleString()} clients`}
-                            />
-                          )}
+                        <div className="vfp-bar-val" style={{ color: scoreColor(b.score) }}>
+                          {Math.round(b.score)}
                         </div>
-                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
-                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
-                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
-                        </span>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{
+                  padding: '40px 32px', background: '#fff', border: '1px solid var(--rule)',
+                  textAlign: 'center', color: 'var(--ink-3)', fontFamily: 'var(--mono)', fontSize: 13,
+                }}>
+                  Score not yet available for this firm
                 </div>
-              </div>
-              
-              {/* Average Client Size Chart */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Avg Client Size</h2>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-end">
-                  {dataWithMetrics.map((d, i) => {
-                    const barHeight = d.avgClientSize ? Math.max((d.avgClientSize / maxAvgSize) * chartHeight, 8) : 0;
-                    const prevAvg = dataWithMetrics[i-1]?.avgClientSize;
-                    const pctChange = i > 0 && d.avgClientSize && prevAvg
-                      ? ((d.avgClientSize - prevAvg) / prevAvg * 100)
-                      : null;
-                    
-                    return (
-                      <div key={d.year} className="flex flex-col items-center flex-1 min-w-0">
-                        <span className="text-[10px] font-medium text-purple-700 mb-1 whitespace-nowrap truncate max-w-full">
-                          {d.avgClientSize ? formatAvgSize(d.avgClientSize) : '—'}
-                        </span>
-                        <div className="w-full flex flex-col items-center" style={{ height: chartHeight }}>
-                          <div className="flex-1" />
-                          {d.avgClientSize && (
-                            <div
-                              className="w-6 sm:w-8 md:w-10 bg-purple-500 rounded-t shadow-sm hover:bg-purple-600 transition-colors cursor-default"
-                              style={{ height: barHeight }}
-                              title={`${d.year}: ${formatAvgSize(d.avgClientSize)} avg per client`}
-                            />
-                          )}
-                        </div>
-                        <span className="text-xs font-semibold text-slate-700 mt-2">{d.year}</span>
-                        <span className={`text-[9px] h-[12px] ${pctChange !== null ? (pctChange >= 0 ? 'text-green-600' : 'text-red-500') : 'text-transparent'}`}>
-                          {pctChange !== null ? `${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(0)}%` : '—'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
+              )}
+            </div>
 
-      {/* Asset Allocation */}
-      {assetAllocation && (() => {
-        const categories = [
-          { key: 'public_equity', label: 'Public Equity', value: assetAllocation.public_equity, color: 'bg-blue-500' },
-          { key: 'private_equity', label: 'Private Equity', value: assetAllocation.private_equity, color: 'bg-indigo-500' },
-          { key: 'ig_corp_bonds', label: 'Inv. Grade Bonds', value: assetAllocation.ig_corp_bonds, color: 'bg-green-500' },
-          { key: 'non_ig_corp_bonds', label: 'High Yield Bonds', value: assetAllocation.non_ig_corp_bonds, color: 'bg-yellow-500' },
-          { key: 'us_govt_bonds', label: 'US Gov\'t Bonds', value: assetAllocation.us_govt_bonds, color: 'bg-emerald-500' },
-          { key: 'us_muni_bonds', label: 'Municipal Bonds', value: assetAllocation.us_muni_bonds, color: 'bg-teal-500' },
-          { key: 'cash', label: 'Cash', value: assetAllocation.cash, color: 'bg-slate-400' },
-          { key: 'derivatives', label: 'Derivatives', value: assetAllocation.derivatives, color: 'bg-purple-500' },
-          { key: 'other', label: 'Other', value: assetAllocation.other, color: 'bg-gray-500' },
-        ].filter(c => c.value !== null && c.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0));
-        
-        if (categories.length === 0) return null;
-        
-        const total = categories.reduce((sum, c) => sum + (c.value || 0), 0);
-        const maxValue = Math.max(...categories.map(c => c.value || 0));
-        
-        return (
-          <Card className="mt-8">
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Asset Allocation</h2>
-                <span className="text-xs text-slate-400">{categories.length} categories</span>
+            {/* ── FEE SCHEDULE ── */}
+            <div className="vfp-section" id="fees">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Fee Schedule</span>
+                <span className="vfp-section-meta">Disclosed in ADV Part 2A · Item 5</span>
               </div>
-              
-              <div className="space-y-3">
-                {categories.map((cat) => (
-                  <div key={cat.key} className="flex items-center gap-3">
-                    <span className="w-28 text-xs font-medium text-slate-600 shrink-0">{cat.label}</span>
-                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
-                      <div
-                        className={`h-full ${cat.color} rounded flex items-center px-2`}
-                        style={{ width: `${((cat.value || 0) / maxValue) * 100}%` }}
-                      >
-                        <span className="text-xs text-white font-medium whitespace-nowrap">
-                          {cat.value}%
-                        </span>
+
+              {/* Info cards */}
+              <div className="vfp-fee-grid">
+                <div className="vfp-fee-card">
+                  <div className="vfp-fee-card-label">Fee Structure</div>
+                  <div className="vfp-fee-card-val">{feeTypeDisplay}</div>
+                  <div className="vfp-fee-card-sub">
+                    {feesAndMins?.notes
+                      ? feesAndMins.notes.slice(0, 120) + (feesAndMins.notes.length > 120 ? '…' : '')
+                      : 'Annual percentage of assets under management. All fees are negotiable.'}
+                  </div>
+                </div>
+                <div className="vfp-fee-card">
+                  <div className="vfp-fee-card-label">Minimum Annual Fee</div>
+                  <div className="vfp-fee-card-val">
+                    {minFee ? formatCurrency(minFee) : minAccount ? `${formatAUM(minAccount)} min AUM` : '—'}
+                  </div>
+                  <div className="vfp-fee-card-sub">
+                    {minAccount ? `Effective minimum given ${formatAUM(minAccount)} account minimum` : 'Contact firm for minimum requirements'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fee tier table */}
+              {sortedFeeTiers.length > 0 && (
+                <div className="vfp-fee-table">
+                  <div className="vfp-fee-table-head">
+                    <span>AUM tier</span>
+                    <span>Annual rate</span>
+                    <span>Notes</span>
+                  </div>
+                  {sortedFeeTiers.map((tier, i) => (
+                    <div key={i} className="vfp-fee-row">
+                      <span>
+                        {formatCurrency(parseInt(tier.min_aum || '0'))} –{' '}
+                        {tier.max_aum ? formatCurrency(tier.max_aum) : '∞'}
+                      </span>
+                      <span className="vfp-fee-rate">
+                        {tier.fee_pct != null ? `${tier.fee_pct}%` : 'Negotiated'}
+                      </span>
+                      <span className="vfp-fee-note" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Fee calculator widget */}
+              <FeeCalculator
+                feeTiers={feeTiers}
+                crd={String(firm.crd)}
+                firmAum={firm.aum}
+                industryOnly={!feeTiers || feeTiers.length === 0}
+              />
+            </div>
+
+            {/* ── AUM & GROWTH ── */}
+            {showGrowthSection && (
+              <div className="vfp-section" id="aum">
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">AUM &amp; Client Growth</span>
+                  <span className="vfp-section-meta">Annual · SEC ADV filings</span>
+                </div>
+
+                <div className="vfp-aum-wrap">
+                  <div className="vfp-aum-head">
+                    <div className="vfp-aum-stat">
+                      <div className="vfp-aum-stat-label">Current AUM</div>
+                      <div className="vfp-aum-stat-val">{formatAUM(aumStats.currentAum)}</div>
+                      {aumStats.fiveYearDeltaPct !== 0 && (
+                        <div className={`vfp-aum-stat-delta ${aumStats.fiveYearDeltaPct >= 0 ? 'up' : 'dn'}`}>
+                          {aumStats.fiveYearDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(aumStats.fiveYearDeltaPct).toFixed(1)}% over period
+                        </div>
+                      )}
+                    </div>
+                    <div className="vfp-aum-stat">
+                      <div className="vfp-aum-stat-label">Total Growth (Period)</div>
+                      <div className="vfp-aum-stat-val">
+                        {aumStats.fiveYearDeltaAbs >= 0 ? '+' : ''}{formatAUM(Math.abs(aumStats.fiveYearDeltaAbs))}
+                      </div>
+                      <div className={`vfp-aum-stat-delta ${aumStats.fiveYearDeltaPct >= 0 ? 'up' : 'dn'}`}>
+                        {aumStats.fiveYearDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(aumStats.fiveYearDeltaPct).toFixed(0)}% since start
                       </div>
                     </div>
-                    <span className="w-12 text-xs text-slate-500 text-right shrink-0">
-                      {((cat.value || 0) / total * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
-      {/* State Registration Map */}
-      {(() => {
-        const stateKeys = [
-          'al','ak','az','ar','ca','co','ct','de','fl','ga','hi','id','il','in','ia',
-          'ks','ky','la','me','md','ma','mi','mn','ms','mo','mt','ne','nv','nh','nj',
-          'nm','ny','nc','nd','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','vt',
-          'va','wa','wv','wi','wy','dc'
-        ];
-        const regs: Record<string, string> = {};
-        for (const key of stateKeys) {
-          const col = `state_${key}`;
-          const val = (firm as unknown as Record<string, unknown>)[col];
-          regs[key] = val === 'Y' ? 'Y' : 'N';
-        }
-        const hasAny = Object.values(regs).some(v => v === 'Y');
-        if (!hasAny) return null;
-        return (
-          <Card className="mt-8">
-            <CardContent>
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">State Registrations</h2>
-              <StateRegistrationMap stateRegistrations={regs} />
-            </CardContent>
-          </Card>
-        );
-      })()}
-
-      {/* Client Breakdown */}
-      {clientBreakdown && (() => {
-        const totalClients = (clientBreakdown.hnw || 0) + (clientBreakdown.non_hnw || 0) + 
-          (clientBreakdown.pension || 0) + (clientBreakdown.charitable || 0) + 
-          (clientBreakdown.corporations || 0) + (clientBreakdown.pooled_vehicles || 0);
-        
-        if (totalClients === 0) return null;
-        
-        const categories = [
-          { key: 'hnw', label: 'High Net Worth', value: clientBreakdown.hnw, color: 'bg-blue-500' },
-          { key: 'non_hnw', label: 'Non-HNW Individuals', value: clientBreakdown.non_hnw, color: 'bg-sky-400' },
-          { key: 'pension', label: 'Pension Plans', value: clientBreakdown.pension, color: 'bg-green-500' },
-          { key: 'corporations', label: 'Corporations', value: clientBreakdown.corporations, color: 'bg-purple-500' },
-          { key: 'charitable', label: 'Charitable Orgs', value: clientBreakdown.charitable, color: 'bg-pink-500' },
-          { key: 'pooled_vehicles', label: 'Pooled Vehicles', value: clientBreakdown.pooled_vehicles, color: 'bg-orange-500' },
-        ].filter(c => c.value !== null && c.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0));
-        
-        if (categories.length === 0) return null;
-        
-        const maxValue = Math.max(...categories.map(c => c.value || 0));
-        
-        return (
-          <Card className="mt-8">
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Client Breakdown</h2>
-                <span className="text-xs text-slate-400">{totalClients.toLocaleString()} total clients</span>
-              </div>
-              
-              <div className="space-y-3">
-                {categories.map((cat) => (
-                  <div key={cat.key} className="flex items-center gap-3">
-                    <span className="w-28 text-xs font-medium text-slate-600 shrink-0">{cat.label}</span>
-                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
-                      <div
-                        className={`h-full ${cat.color} rounded flex items-center px-2`}
-                        style={{ width: `${((cat.value || 0) / maxValue) * 100}%` }}
-                      >
-                        <span className="text-xs text-white font-medium whitespace-nowrap">
-                          {cat.value?.toLocaleString()}
-                        </span>
+                    <div className="vfp-aum-stat">
+                      <div className="vfp-aum-stat-label">Avg. Annual Growth</div>
+                      <div className="vfp-aum-stat-val">{aumStats.avgAnnualPct.toFixed(1)}%</div>
+                      <div className={`vfp-aum-stat-delta ${aumStats.avgAnnualPct >= 0 ? 'up' : 'dn'}`}>
+                        CAGR over filing period
                       </div>
                     </div>
-                    <span className="w-12 text-xs text-slate-500 text-right shrink-0">
-                      {((cat.value || 0) / totalClients * 100).toFixed(1)}%
+                  </div>
+
+                  {/* AUM bar chart */}
+                  <AnimatedBarChart
+                    bars={aumBars}
+                    title="AUM Growth"
+                    subtitle={`Annual (last ${aumBars.length} years)`}
+                  />
+
+                  {/* Client growth bar chart */}
+                  {clientBars.some(b => b.fraction > 0) && (
+                    <div className="vfp-chart-divider">
+                      <AnimatedBarChart
+                        bars={clientBars}
+                        title="Client Growth"
+                        subtitle={`Annual (last ${clientBars.length} years)`}
+                      />
+                    </div>
+                  )}
+
+                  <div className="vfp-aum-footer">
+                    <span>Source: SEC Form ADV filings · Reported annually</span>
+                    <span>Discretionary AUM</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── CLIENTS ── */}
+            {totalClients > 0 && (
+              <div className="vfp-section" id="clients">
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">Client Count &amp; Composition</span>
+                  <span className="vfp-section-meta">As of latest ADV filing</span>
+                </div>
+
+                <div className="vfp-client-grid">
+                  <div className="vfp-client-card">
+                    <div className="vfp-client-card-label">Total Clients</div>
+                    <div className="vfp-client-card-val">{totalClients.toLocaleString()}</div>
+                    <div className="vfp-client-card-sub">
+                      {avgClientSize
+                        ? `Avg. ${formatAUM(avgClientSize)} per client`
+                        : 'Based on SEC ADV filing'}
+                    </div>
+                  </div>
+                  <div className="vfp-client-card">
+                    <div className="vfp-client-card-label">AUM per Client</div>
+                    <div className="vfp-client-card-val">
+                      {avgClientSize ? formatAUM(avgClientSize) : '—'}
+                    </div>
+                    <div className="vfp-client-card-sub">
+                      Total AUM divided by reported client count
+                    </div>
+                  </div>
+                </div>
+
+                {clientTypeRows.length > 0 && (
+                  <div className="vfp-client-breakdown">
+                    <div className="vfp-client-bd-head">Client Type Breakdown</div>
+                    {clientTypeRows.map((row, i) => (
+                      <div key={i} className="vfp-client-type-row">
+                        <div className="vfp-client-type-name">{row.name}</div>
+                        <div className="vfp-client-type-pct">{row.pct.toFixed(0)}%</div>
+                        <div className="vfp-client-type-bar">
+                          <div className="vfp-client-type-fill" style={{ width: `${row.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── REGULATORY ── */}
+            <div className="vfp-section" id="regulatory">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Regulatory History</span>
+                <span className="vfp-section-meta">IAPD · SEC EDGAR · FINRA BrokerCheck</span>
+              </div>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <RegulatoryDisclosures firmData={firm as any} />
+            </div>
+
+            {/* ── NEWS & ALERTS ── */}
+            <div className="vfp-section" id="news">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Activity &amp; News</span>
+                <span className="vfp-section-meta">SEC filings · Industry news</span>
+              </div>
+              <FirmAlerts crd={firm.crd} />
+            </div>
+
+            {/* ── KEY PERSONNEL ── */}
+            <div className="vfp-section" id="personnel">
+              <div className="vfp-section-head">
+                <span className="vfp-section-title">Key Personnel</span>
+                <span className="vfp-section-meta">ADV Part 1 · Schedule A</span>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                  <div>
+                    <div className="vfp-fee-card-label">Total Employees</div>
+                    <div className="vfp-fee-card-val">{firm.employee_total ?? '—'}</div>
+                  </div>
+                  <div>
+                    <div className="vfp-fee-card-label">Investment Staff</div>
+                    <div className="vfp-fee-card-val">{firm.employee_investment ?? '—'}</div>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 16, display: 'flex', gap: 12 }}>
+                  <div style={{
+                    width: 32, height: 32, background: 'var(--white)', border: '1px solid var(--rule)',
+                    display: 'grid', placeItems: 'center', flexShrink: 0,
+                  }}>
+                    <svg width="12" height="12" fill="none" stroke="var(--ink-3)" strokeWidth="1.4" viewBox="0 0 12 12">
+                      <circle cx="6" cy="6" r="5" /><path d="M6 4v2.5L7.5 8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>
+                      Ownership &amp; principal data coming soon
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                      Individual principal names, roles, and ownership percentages from ADV Schedule A will be available in an upcoming release.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </main>
+
+          {/* ══ SIDEBAR ══ */}
+          <aside className="vfp-sidebar">
+
+            {/* Contact */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">Contact</div>
+              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
+                {(firm.main_office_street_1 || firm.main_office_city) && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Address</span>
+                    <span className="vfp-sfield-val" style={{ lineHeight: 1.6 }}>
+                      {firm.main_office_street_1 && <>{firm.main_office_street_1}<br /></>}
+                      {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
                     </span>
                   </div>
-                ))}
+                )}
+                {firm.main_phone_number && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Phone</span>
+                    <span className="vfp-sfield-val">
+                      <a href={`tel:${firm.main_phone_number}`}>{firm.main_phone_number}</a>
+                    </span>
+                  </div>
+                )}
+                {website?.website && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Website</span>
+                    <span className="vfp-sfield-val">
+                      <a
+                        href={website.website.startsWith('http') ? website.website : `https://${website.website}`}
+                        target="_blank" rel="noopener noreferrer"
+                      >
+                        {website.website.replace(/^https?:\/\//, '')} ↗
+                      </a>
+                    </span>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
-    </div>
+            </div>
+
+            {/* Filing details */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">Filing Details</div>
+              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">CRD Number</span>
+                  <span className="vfp-sfield-val">{firm.crd}</span>
+                </div>
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Filing type</span>
+                  <span className="vfp-sfield-val">Form ADV</span>
+                </div>
+                {firm.latest_adv_filing && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Last amended</span>
+                    <span className="vfp-sfield-val">{firm.latest_adv_filing}</span>
+                  </div>
+                )}
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Registration</span>
+                  <span className="vfp-sfield-val">SEC (federal)</span>
+                </div>
+                {firm.legal_structure && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Legal structure</span>
+                    <span className="vfp-sfield-val">{firm.legal_structure}</span>
+                  </div>
+                )}
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Private fund advisor</span>
+                  <span className="vfp-sfield-val">{firm.private_fund_advisor === 'Y' ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Similar firms */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">Similar Firms</div>
+              <div className="vfp-scard-body" style={{ padding: '12px 20px' }}>
+                {similarFirms.length > 0 ? similarFirms.map((sf) => (
+                  <Link key={sf.crd} href={`/firm/${sf.crd}`} className="vfp-similar">
+                    <div className="vfp-similar-initials">{sf.name.slice(0, 2).toUpperCase()}</div>
+                    <div className="vfp-similar-info">
+                      <div className="vfp-similar-name">{sf.name}</div>
+                      <div className="vfp-similar-meta">{sf.city}, {sf.state} · {formatAUM(sf.aum)}</div>
+                    </div>
+                    {sf.score != null && (
+                      <div className="vfp-similar-score" style={{ color: scoreColor(sf.score) }}>
+                        {Math.round(sf.score)}
+                      </div>
+                    )}
+                  </Link>
+                )) : (
+                  <>
+                    {[
+                      { label: 'Explore by state', meta: `${firm.main_office_state} · Similar AUM`, href: `/search?state=${firm.main_office_state}` },
+                      { label: 'Explore by size', meta: `AUM range · ${feeTypeDisplay}`, href: `/search` },
+                    ].map((item, i) => (
+                      <Link key={i} href={item.href} className="vfp-similar">
+                        <div className="vfp-similar-initials">→</div>
+                        <div className="vfp-similar-info">
+                          <div className="vfp-similar-name">{item.label}</div>
+                          <div className="vfp-similar-meta">{item.meta}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* CTA — Negotiate */}
+            <div className="vfp-scard vfp-cta-card">
+              <div className="vfp-cta-body">
+                <div className="vfp-cta-eyebrow">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <polygon points="5,1 9,3 9,7 5,9 1,7 1,3" stroke="#2DBD74" strokeWidth="1" fill="none" />
+                  </svg>
+                  Visor Negotiate
+                </div>
+                <div className="vfp-cta-h">
+                  See how much you could save
+                </div>
+                <div className="vfp-cta-sub">
+                  Fees are negotiable. Our guide shows you exactly what to say — and what to ask for.
+                </div>
+                <Link href={`/negotiate`} className="vfp-cta-btn">
+                  Start Negotiating
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 12 12">
+                    <path d="M2 6h8M7 3l3 3-3 3" />
+                  </svg>
+                </Link>
+                <div className="vfp-cta-trust">Free · No account upgrade required</div>
+              </div>
+            </div>
+
+          </aside>
+        </div>
+      </div>
+    </>
   );
 }

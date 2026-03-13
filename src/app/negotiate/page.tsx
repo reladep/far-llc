@@ -1,26 +1,25 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from '@/components/ui';
+import { Session } from '@supabase/supabase-js';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
-// ── Industry data (copied from FeeCalculator.tsx) ────────────────────
+// ── Protected constants / helpers ────────────────────────────────────────────
 const INDUSTRY_ALL = [
-  { breakpoint: 500_000, label: '$500K', avg: 1.205, p25: 1.00, median: 1.00, p75: 1.49 },
-  { breakpoint: 1_000_000, label: '$1M', avg: 1.058, p25: 0.90, median: 1.00, p75: 1.25 },
-  { breakpoint: 5_000_000, label: '$5M', avg: 0.717, p25: 0.50, median: 0.70, p75: 0.90 },
-  { breakpoint: 10_000_000, label: '$10M', avg: 0.581, p25: 0.40, median: 0.55, p75: 0.75 },
-  { breakpoint: 25_000_000, label: '$25M', avg: 0.528, p25: 0.35, median: 0.50, p75: 0.75 },
-  { breakpoint: 50_000_000, label: '$50M', avg: 0.505, p25: 0.30, median: 0.50, p75: 0.70 },
-  { breakpoint: 100_000_000, label: '$100M', avg: 0.489, p25: 0.25, median: 0.50, p75: 0.65 },
+  { breakpoint: 500_000,     label: '$500K',  avg: 1.205, p25: 1.00, median: 1.00, p75: 1.49 },
+  { breakpoint: 1_000_000,   label: '$1M',    avg: 1.058, p25: 0.90, median: 1.00, p75: 1.25 },
+  { breakpoint: 5_000_000,   label: '$5M',    avg: 0.717, p25: 0.50, median: 0.70, p75: 0.90 },
+  { breakpoint: 10_000_000,  label: '$10M',   avg: 0.581, p25: 0.40, median: 0.55, p75: 0.75 },
+  { breakpoint: 25_000_000,  label: '$25M',   avg: 0.528, p25: 0.35, median: 0.50, p75: 0.75 },
+  { breakpoint: 50_000_000,  label: '$50M',   avg: 0.505, p25: 0.30, median: 0.50, p75: 0.70 },
+  { breakpoint: 100_000_000, label: '$100M',  avg: 0.489, p25: 0.25, median: 0.50, p75: 0.65 },
 ];
 
 function getClosestBreakpoint(amount: number) {
   let closest = INDUSTRY_ALL[0];
   for (const bp of INDUSTRY_ALL) {
-    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) {
-      closest = bp;
-    }
+    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) closest = bp;
   }
   return closest;
 }
@@ -47,51 +46,82 @@ function projectGrowth(principal: number, annualFeeRate: number, years: number, 
   return { value, totalFees };
 }
 
-// ── Metadata (exported for layout) ───────────────────────────────────
-// Note: metadata export doesn't work in 'use client' files.
-// We set title via <title> in the head instead.
+// ── Types ─────────────────────────────────────────────────────────────────────
+type FeeMode = 'flat' | 'tiered' | 'dollar' | 'unknown';
+type ClientStatus = 'existing' | 'prospective' | 'exploring';
 
+interface PlaybookItem {
+  type: 'primary' | 'rebuttal';
+  emoji: string;
+  tag: string;
+  head: string;
+  text: string;
+  quote?: string;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function NegotiatePage() {
+  // ── PROTECTED STATE ──────────────────────────────────────────────────────
   const [rawAum, setRawAum] = useState('');
   const [rawFee, setRawFee] = useState('');
-  const [feeMode, setFeeMode] = useState<'flat' | 'tiered' | 'dollar'>('flat');
+  const [feeMode, setFeeMode] = useState<FeeMode>('flat');
   const [showResults, setShowResults] = useState(false);
-  
-  // Tiered fee support for percentage mode - start with 2 tiers
+
   const [feeTiers, setFeeTiers] = useState<{ min: number; max: number | null; fee: number }[]>([
     { min: 0, max: 500000, fee: 1.0 },
-    { min: 500000, max: null, fee: 0.8 }
+    { min: 500000, max: null, fee: 0.8 },
   ]);
   const [tierFeeRaw, setTierFeeRaw] = useState<Record<number, string>>({});
   const [showMinAumWarning, setShowMinAumWarning] = useState(false);
   const [showDollarFeeWarning, setShowDollarFeeWarning] = useState(false);
-  
+
+  // ── PRESENTATION STATE ───────────────────────────────────────────────────
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const [clientStatus, setClientStatus] = useState<ClientStatus>('existing');
+  const [firmPanelOpen, setFirmPanelOpen] = useState(false);
+  const [showGate, setShowGate] = useState(false);
+  const [gateEmail, setGateEmail] = useState('');
+  const [gateError, setGateError] = useState(false);
+  const [animated, setAnimated] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Session detection
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+  }, []);
+
+  // Animate bars when results revealed
+  useEffect(() => {
+    if (showResults) {
+      const t = setTimeout(() => setAnimated(true), 120);
+      return () => clearTimeout(t);
+    }
+    setAnimated(false);
+  }, [showResults]);
+
+  // ── PROTECTED CALLBACKS ──────────────────────────────────────────────────
   const addFeeTier = useCallback(() => {
     if (feeTiers.length >= 7) return;
     const lastTier = feeTiers[feeTiers.length - 1];
     const newMin = lastTier.max || (lastTier.min * 2) || 500000;
-    // New tier fee must be lower than the previous tier, capped at 3%
     const newFee = Math.max(0, Math.round((lastTier.fee - 0.1) * 100) / 100);
     setFeeTiers([...feeTiers, { min: newMin, max: null, fee: newFee }]);
   }, [feeTiers]);
-  
+
   const updateFeeTier = useCallback((index: number, field: 'min' | 'max' | 'fee', value: number | null) => {
     const newTiers = [...feeTiers];
     if (field === 'fee' && typeof value === 'number') {
-      // Cap at 3%
       value = Math.min(value, 3);
-      // Enforce descending: must be less than previous tier's fee
       if (index > 0 && value >= newTiers[index - 1].fee) {
         value = Math.max(0, newTiers[index - 1].fee - 0.01);
         value = Math.round(value * 100) / 100;
       }
     }
     newTiers[index] = { ...newTiers[index], [field]: value };
-    // Auto-fill next tier's min to match this tier's max
     if (field === 'max' && index < newTiers.length - 1 && value !== null) {
       newTiers[index + 1] = { ...newTiers[index + 1], min: value };
     }
-    // If fee changed, cascade: ensure all subsequent tiers are still descending
     if (field === 'fee') {
       for (let i = index + 1; i < newTiers.length; i++) {
         if (newTiers[i].fee >= newTiers[i - 1].fee) {
@@ -101,87 +131,90 @@ export default function NegotiatePage() {
     }
     setFeeTiers(newTiers);
   }, [feeTiers]);
-  
+
   const removeFeeTier = useCallback((index: number) => {
     if (feeTiers.length <= 2) return;
-    const newTiers = feeTiers.filter((_, i) => i !== index);
-    setFeeTiers(newTiers);
+    setFeeTiers(feeTiers.filter((_, i) => i !== index));
   }, [feeTiers]);
 
+  // ── PROTECTED COMPUTED VALUES ────────────────────────────────────────────
   const aum = useMemo(() => {
     const num = parseInt(rawAum.replace(/[^0-9]/g, ''), 10);
-    // Max $30M for dollar mode, $1B for percent modes
     const maxAum = feeMode === 'dollar' ? 30_000_000 : 1_000_000_000;
     return isNaN(num) ? 0 : Math.min(num, maxAum);
   }, [rawAum, feeMode]);
 
-  // Calculate effective fee percentage based on mode
   const feePercent = useMemo(() => {
+    if (feeMode === 'unknown') {
+      if (aum <= 0) return 0;
+      return getClosestBreakpoint(aum).median;
+    }
     if (feeMode === 'dollar') {
-      // Dollar amount -> convert to percentage, capped at 3%
       const num = parseFloat(rawFee.replace(/[^0-9.]/g, ''));
       if (isNaN(num) || aum === 0) return 0;
       return Math.min((num / aum) * 100, 3);
     } else if (feeMode === 'tiered') {
-      // Blended/weighted fee across all tiers
       if (feeTiers.length > 0 && aum > 0) {
-        let totalFee = 0;
-        let remaining = aum;
+        let totalFee = 0, remaining = aum;
         for (const tier of feeTiers) {
           if (remaining <= 0) break;
           const tierMax = tier.max ?? Infinity;
           const tierSize = Math.min(remaining, tierMax - tier.min);
-          if (tierSize > 0) {
-            totalFee += tierSize * (Math.min(tier.fee, 3) / 100);
-            remaining -= tierSize;
-          }
+          if (tierSize > 0) { totalFee += tierSize * (Math.min(tier.fee, 3) / 100); remaining -= tierSize; }
         }
         return aum > 0 ? (totalFee / aum) * 100 : 0;
       }
       return 0;
     } else {
-      // Flat percentage
       const num = parseFloat(rawFee);
       return isNaN(num) ? 0 : Math.max(0, Math.min(num, 3));
     }
   }, [rawFee, feeMode, aum, feeTiers]);
 
   const hasValidInput = aum >= 10_000 && feePercent > 0;
-
   const bracket = useMemo(() => (aum > 0 ? getClosestBreakpoint(aum) : null), [aum]);
 
-  const annualFee = aum * (feePercent / 100);
-  const medianFee = bracket ? aum * (bracket.median / 100) : 0;
-  const feeDiff = annualFee - medianFee;
-  const bps = Math.round(feePercent * 100);
-  const medianBps = bracket ? Math.round(bracket.median * 100) : 0;
+  const annualFee   = aum * (feePercent / 100);
+  const medianFee   = bracket ? aum * (bracket.median / 100) : 0;
+  const p25Fee      = bracket ? aum * (bracket.p25 / 100) : 0;
+  const feeDiff     = annualFee - medianFee;
+  const bps         = Math.round(feePercent * 100);
+  const medianBps   = bracket ? Math.round(bracket.median * 100) : 0;
 
-  const isOverpaying = bracket ? feePercent > bracket.median + 0.005 : false;
+  const isOverpaying       = bracket ? feePercent > bracket.median + 0.005 : false;
   const isSignificantlyOver = bracket ? feePercent > bracket.p75 : false;
-  const isUnder = bracket ? feePercent < bracket.median - 0.005 : false;
+  const isUnder            = bracket ? feePercent < bracket.median - 0.005 : false;
 
-  // 10-year compounding impact
-  const tenYearCurrent = useMemo(() => projectGrowth(aum, feePercent / 100, 10), [aum, feePercent]);
-  const tenYearMedian = useMemo(() => bracket ? projectGrowth(aum, bracket.median / 100, 10) : null, [aum, bracket]);
+  const tenYearCurrent  = useMemo(() => projectGrowth(aum, feePercent / 100, 10), [aum, feePercent]);
+  const tenYearMedian   = useMemo(() => bracket ? projectGrowth(aum, bracket.median / 100, 10) : null, [aum, bracket]);
+  const twentyYearCurrent = useMemo(() => projectGrowth(aum, feePercent / 100, 20), [aum, feePercent]);
+  const twentyYearMedian  = useMemo(() => bracket ? projectGrowth(aum, bracket.median / 100, 20) : null, [aum, bracket]);
+  const twentyYearP25     = useMemo(() => bracket ? projectGrowth(aum, bracket.p25 / 100, 20) : null, [aum, bracket]);
+
   const compoundingCost = tenYearMedian ? tenYearMedian.value - tenYearCurrent.value : 0;
+  const gaugeMax = bracket ? Math.max(bracket.p75 * 1.5, feePercent * 1.15) : 2;
+  const pctPos = (val: number) => Math.min((val / gaugeMax) * 100, 95);
 
-  // Gauge positioning
-  const gaugeMax = bracket ? Math.max(bracket.p75 * 1.4, feePercent * 1.15) : 2;
-  const pctPos = (val: number) => Math.min((val / gaugeMax) * 100, 100);
+  // Ask rate (recommended fee to negotiate toward)
+  const askRate    = bracket ? Math.max(bracket.p25, feePercent - 0.25) : 0;
+  const askSavings = bracket && feePercent > askRate ? (feePercent - askRate) * aum / 100 : 0;
 
+  // ── PROTECTED HANDLERS ───────────────────────────────────────────────────
   const handleAumChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/[^0-9]/g, '');
-    if (!digits) { setRawAum(''); setShowResults(false); return; }
+    if (!digits) { setRawAum(''); setShowResults(false); setShowGate(false); return; }
     let num = parseInt(digits, 10);
     const maxAum = feeMode === 'dollar' ? 30_000_000 : 1_000_000_000;
     if (num > maxAum) num = maxAum;
     setRawAum(num.toLocaleString('en-US'));
+    setShowResults(false);
+    setShowGate(false);
   }, [feeMode]);
 
   const handleFeeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (feeMode === 'unknown') return;
     const val = e.target.value;
     if (feeMode === 'dollar') {
-      // Strip to digits only, parse as integer, cap at 3% of AUM
       const digits = val.replace(/[^0-9]/g, '');
       if (!digits) { setRawFee(''); return; }
       let num = parseInt(digits, 10);
@@ -196,543 +229,894 @@ export default function NegotiatePage() {
       return;
     }
     if (feeMode === 'flat') {
-      // Only allow digits, one decimal, max 2 decimal places, max 3%
       if (val !== '' && !/^\d*\.?\d{0,2}$/.test(val)) return;
       const num = parseFloat(val);
-      if (!isNaN(num) && num > 3) {
-        setRawFee('3');
-        return;
-      }
+      if (!isNaN(num) && num > 3) { setRawFee('3'); return; }
     }
     setRawFee(val);
   }, [feeMode, aum]);
 
+  // Modified: adds gate path for unauthenticated users
   const handleCalculate = useCallback(() => {
     if (aum > 0 && aum < 10_000) {
       setShowMinAumWarning(true);
       setTimeout(() => setShowMinAumWarning(false), 3000);
       return;
     }
-    if (hasValidInput) setShowResults(true);
-  }, [hasValidInput, aum]);
+    if (!hasValidInput) return;
+    if (session === null) {
+      setShowGate(true);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    } else {
+      setShowResults(true);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+  }, [hasValidInput, aum, session]);
 
-  // Negotiation talking points
-  const talkingPoints = useMemo(() => {
+  // Gate unlock (email submit)
+  const handleGateUnlock = useCallback(() => {
+    if (!gateEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(gateEmail)) {
+      setGateError(true);
+      return;
+    }
+    setGateError(false);
+    setShowGate(false);
+    setShowResults(true);
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }, [gateEmail]);
+
+  // ── PLAYBOOK ITEMS ───────────────────────────────────────────────────────
+  const playbookItems = useMemo<PlaybookItem[]>(() => {
     if (!bracket || !hasValidInput) return [];
-    const points: { icon: string; text: string; link?: string }[] = [];
+    const items: PlaybookItem[] = [];
+    const targetRate = askRate.toFixed(2);
+
+    items.push({
+      type: 'primary', emoji: '📊', tag: 'Opening Move', head: 'Lead with the data',
+      text: `Reference real benchmarks when you open the conversation — it reframes this as research, not a complaint.`,
+      quote: `"I've been reviewing fee data from SEC ADV filings for advisors managing portfolios near ${formatCompact(aum)}. The industry median for comparable clients is ${bracket.median.toFixed(2)}% — I'm currently paying ${feePercent.toFixed(2)}%."`,
+    });
+
+    items.push({
+      type: 'primary', emoji: '🎯', tag: 'The Ask', head: 'Make a specific ask',
+      text: isOverpaying
+        ? `Be direct. Advisors expect this conversation. Specificity signals confidence — "I'd like to discuss" is weaker than naming a number.`
+        : `Your fee is competitive, but locking in a confirmation is still valuable for long-term certainty.`,
+      quote: isOverpaying
+        ? `"Based on that benchmark, I'd like to move to ${targetRate}%. That brings me in line with the best-quartile rate for my asset level."`
+        : `"Given my portfolio size and the data I've reviewed, I'd like to confirm this rate remains competitive as my assets grow."`,
+    });
+
+    if (clientStatus === 'existing') {
+      items.push({
+        type: 'primary', emoji: '🤝', tag: 'Relationship Leverage', head: 'Reference your tenure',
+        text: `Long-standing clients have leverage. Loyalty has real economic value for an advisor — use that.`,
+        quote: `"I've been a client for several years. As my relationship deepens and my assets grow, I'd expect the fee structure to reflect that."`,
+      });
+    } else if (clientStatus === 'prospective') {
+      items.push({
+        type: 'primary', emoji: '📈', tag: 'Prospective Leverage', head: 'You haven\'t signed yet',
+        text: `As a prospective client you have maximum negotiating power. This is the moment to set the right terms.`,
+        quote: `"Before I commit, I'd like to confirm the fee structure. My current portfolio is ${formatCompact(aum)} — I'd expect a rate in line with the ${bracket.p25.toFixed(2)}–${bracket.median.toFixed(2)}% range I've seen from comparable firms."`,
+      });
+    } else {
+      items.push({
+        type: 'primary', emoji: '🔎', tag: 'Comparison Leverage', head: 'Use your research as a signal',
+        text: `Even exploratory conversations signal seriousness. Letting them know you're comparing firms creates urgency.`,
+        quote: `"I'm currently evaluating a few advisory relationships. Fee structure is a key variable for me — and the data I've reviewed suggests ${targetRate}% is a competitive rate for my AUM."`,
+      });
+    }
 
     if (isOverpaying) {
-      points.push({
-        icon: '💰',
-        text: `Your portfolio of ${formatCompact(aum)} qualifies for lower rates at most advisory firms. You're currently paying ${bps} bps — the industry median for your asset level is ${medianBps} bps.`,
-      });
-    }
-
-    // Breakpoint advice
-    const nextBreakpoint = INDUSTRY_ALL.find((b) => b.breakpoint > aum);
-    if (nextBreakpoint && (nextBreakpoint.breakpoint - aum) / aum < 0.5) {
-      points.push({
-        icon: '📊',
-        text: `Ask about breakpoints — many firms reduce fees above ${nextBreakpoint.label}. You're ${formatCompact(nextBreakpoint.breakpoint - aum)} away from the next tier.`,
-      });
-    }
-
-    points.push({
-      icon: '🎯',
-      text: `Reference the industry median of ${medianBps} bps (${bracket.median.toFixed(2)}%) for portfolios near ${bracket.label}. Data-backed negotiation is the most effective approach.`,
-    });
-
-    points.push({
-      icon: '📋',
-      text: `Request a formal fee schedule review. Advisors expect this conversation — it signals you're informed, not adversarial.`,
-    });
-
-    if (feeDiff > 0) {
-      points.push({
-        icon: '📈',
-        text: `Emphasize the long-term impact: the ${(feePercent - bracket.median).toFixed(2)}% difference costs you ${formatCompact(compoundingCost)} over 10 years in lost portfolio growth.`,
+      items.push({
+        type: 'rebuttal', emoji: '💬', tag: 'Handle the Pushback',
+        head: `If they say your fee covers comprehensive planning…`,
+        text: `Separate the fee components. Planning and asset management are distinct services — each can be negotiated independently.`,
+        quote: `"I understand the value of the planning services. What I'm asking is whether the asset management fee specifically can be priced closer to the ${bracket.median.toFixed(2)}% benchmark — that's what comparable firms charge for the investment management component."`,
       });
     }
 
     if (isSignificantlyOver) {
-      points.push({
-        icon: '🔍',
-        text: `Your fees are above the 75th percentile. If your advisor won't negotiate, it may be worth exploring other options.`,
-        link: '/search',
+      items.push({
+        type: 'primary', emoji: '🔍', tag: 'Nuclear Option', head: 'Name the competition',
+        text: `If they won't move, introducing a competitive alternative creates urgency. You don't need to be bluffing — advisors at the P25 rate are plentiful.`,
+        quote: `"I've spoken with other fee-only advisors managing similar portfolios — several have quoted rates near ${bracket.p25.toFixed(2)}%. I'd prefer to stay, but I need this to be competitive."`,
       });
     }
 
-    return points;
-  }, [bracket, hasValidInput, aum, bps, medianBps, feePercent, feeDiff, compoundingCost, isOverpaying, isSignificantlyOver]);
+    if (compoundingCost > 1000) {
+      items.push({
+        type: 'primary', emoji: '📅', tag: 'Long-Term Framing', head: 'Show them the 20-year cost',
+        text: `Quantifying the compounding impact of even a small fee difference makes the stakes concrete — for both of you.`,
+        quote: `"A ${(feePercent - bracket.median).toFixed(2)}% fee difference compounds to roughly ${formatCompact(compoundingCost)} in lost portfolio value over 10 years. That's not a small ask — it's a structural issue."`,
+      });
+    }
 
-  const feeColor = isSignificantlyOver
-    ? 'text-red-600'
-    : isOverpaying
-    ? 'text-amber-600'
-    : 'text-green-600';
+    return items;
+  }, [bracket, hasValidInput, aum, feePercent, clientStatus, askRate, isOverpaying, isSignificantlyOver, compoundingCost]);
 
-  const feeBgColor = isSignificantlyOver
-    ? 'bg-red-500'
-    : isOverpaying
-    ? 'bg-amber-500'
-    : 'bg-green-500';
+  // ── HELPERS FOR RENDER ───────────────────────────────────────────────────
+  const feeColor   = isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A';
+  const feeLabel   = isSignificantlyOver ? 'Above 75th Percentile' : isOverpaying ? 'Above Median' : isUnder ? 'Below Median' : 'At Median';
 
-  const feeLabel = isSignificantlyOver
-    ? 'Above 75th Percentile'
-    : isOverpaying
-    ? 'Above Median'
-    : isUnder
-    ? 'Below Median'
-    : 'At Median';
+  const max20yr = Math.max(
+    twentyYearP25?.value   ?? 0,
+    twentyYearMedian?.value ?? 0,
+    twentyYearCurrent.value,
+  );
 
+  const STATUS_OPTS: { val: ClientStatus; label: string }[] = [
+    { val: 'existing',    label: 'Existing client' },
+    { val: 'prospective', label: 'Prospective' },
+    { val: 'exploring',   label: 'Just exploring' },
+  ];
+
+  const FEE_TABS: { val: FeeMode; label: string }[] = [
+    { val: 'flat',    label: 'Flat %' },
+    { val: 'tiered',  label: 'Tiered %' },
+    { val: 'dollar',  label: 'Dollar amount' },
+    { val: 'unknown', label: 'Not sure' },
+  ];
+
+  const showContent = showGate || showResults;
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <>
-      <title>Fee Negotiator — Are You Overpaying Your Advisor? | Visor Index</title>
-      <meta name="description" content="Find out if you're overpaying your financial advisor. Compare your fees to industry benchmarks and get a personalized negotiation playbook." />
+      <title>Fee Negotiation Tool — Are You Overpaying? | Visor Index</title>
+      <meta name="description" content="Benchmark your advisory fees against SEC filing data and get a personalized negotiation playbook." />
 
-      <div className="min-h-screen">
-        {/* Hero */}
-        <section className="bg-gradient-to-b from-primary-50 to-bg-primary border-b border-border">
-          <div className="mx-auto max-w-3xl px-4 py-16 sm:py-20 text-center">
-            <Badge className="mb-4">Free Tool</Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
-              Are You Overpaying Your Advisor?
+      <style>{`
+        .ng-page { background: #F6F8F7; color: #0C1810; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+        .ng-step { border: 1px solid #CAD8D0; background: #fff; margin-bottom: 32px; }
+        .ng-step-hd { padding: 18px 24px; border-bottom: 1px solid #CAD8D0; display: flex; align-items: center; gap: 12px; }
+        .step-n { width: 20px; height: 20px; background: #0A1C2A; display: grid; place-items: center; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: #fff; flex-shrink: 0; }
+        .step-title { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #0C1810; }
+        .step-meta { font-size: 10px; color: #5A7568; margin-left: auto; }
+
+        .tog-btn { flex: 1; padding: 8px 12px; border: 1px solid #CAD8D0; border-right: none; background: #fff; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; transition: all .15s; white-space: nowrap; }
+        .tog-btn:last-child { border-right: 1px solid #CAD8D0; }
+        .tog-btn.on { background: #0A1C2A; color: #fff; border-color: #0A1C2A; z-index: 1; }
+        .tog-btn:hover:not(.on) { color: #0C1810; border-color: #5A7568; }
+
+        .fee-tab { flex: 1; padding: 8px 10px; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; border: none; background: #fff; transition: all .15s; border-right: 1px solid #CAD8D0; text-align: center; }
+        .fee-tab:last-child { border-right: none; }
+        .fee-tab.on { background: #0A1C2A; color: #fff; }
+        .fee-tab:hover:not(.on) { color: #0C1810; }
+
+        .money-input-wrap { display: flex; border: 1px solid #CAD8D0; background: #F6F8F7; transition: border-color .15s; }
+        .money-input-wrap:focus-within { border-color: #2DBD74; }
+
+        .analyze-btn { width: 100%; background: #1A7A4A; color: #fff; border: none; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
+        .analyze-btn:hover:not(:disabled) { background: #22995E; }
+        .analyze-btn:disabled { background: #CAD8D0; cursor: not-allowed; }
+        .analyze-btn-arrow { font-size: 16px; transition: transform .2s; }
+        .analyze-btn:hover:not(:disabled) .analyze-btn-arrow { transform: translateX(4px); }
+
+        .firm-upgrade { border-left: 3px solid #2DBD74; background: #fff; }
+        .firm-upgrade-hd { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .firm-upgrade-body { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.16,1,.3,1), padding .3s; padding-left: 20px; padding-right: 20px; }
+        .firm-upgrade-body.open { max-height: 300px; padding: 16px 20px; }
+
+        .bm-track { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(to right, #2DBD74 0%, #2DBD74 40%, #F59E0B 65%, #EF4444 100%); margin: 24px 0 40px; }
+        .bm-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); transform: translateY(-50%) translateX(-50%); transition: left .6s cubic-bezier(.16,1,.3,1); }
+        .bm-dot.you  { background: #2DBD74; box-shadow: 0 0 0 3px rgba(45,189,116,.25), 0 1px 4px rgba(0,0,0,.15); }
+        .bm-dot.peer { background: #5A7568; }
+        .bm-dot.p25  { background: #2DBD74; opacity: .5; }
+        .bm-dot-label { position: absolute; top: calc(100% + 8px); transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 9px; color: #5A7568; white-space: nowrap; text-align: center; line-height: 1.4; }
+        .bm-dot-label strong { display: block; font-size: 10px; color: #0C1810; }
+
+        .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #CAD8D0; border: 1px solid #CAD8D0; margin-top: 8px; }
+        .stat-cell { background: #fff; padding: 16px 20px; text-align: center; }
+        .stat-label { font-size: 10px; color: #5A7568; margin-bottom: 5px; }
+        .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: #0C1810; }
+
+        .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+        .impact-cell { padding: 18px 20px; border: 1px solid #CAD8D0; background: #fff; }
+        .impact-cell.hl-red  { border-color: rgba(239,68,68,.2); background: rgba(239,68,68,.03); }
+        .impact-cell.hl-grn  { border-color: rgba(26,122,74,.2); background: rgba(26,122,74,.03); }
+        .ic-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #5A7568; margin-bottom: 8px; }
+        .ic-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: #0C1810; line-height: 1; margin-bottom: 4px; }
+        .ic-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 8px; display: inline-flex; }
+        .ic-badge.over  { color: #EF4444; background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.2); }
+        .ic-badge.under { color: #1A7A4A; background: rgba(45,189,116,.07); border: 1px solid rgba(45,189,116,.2); }
+        .ic-badge.even  { color: #5A7568; background: rgba(90,117,104,.07); border: 1px solid rgba(90,117,104,.2); }
+
+        .cmp-section-label { font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #5A7568; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .cmp-section-label::after { content: ''; flex: 1; height: 1px; background: #CAD8D0; }
+        .cmp-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .cmp-lbl { font-size: 11px; color: #5A7568; width: 172px; flex-shrink: 0; line-height: 1.4; }
+        .cmp-bar-wrap { flex: 1; height: 7px; background: #CAD8D0; border-radius: 3px; overflow: hidden; }
+        .cmp-bar { height: 100%; border-radius: 3px; transition: width .9s cubic-bezier(.16,1,.3,1); }
+        .cmp-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #0C1810; text-align: right; width: 68px; flex-shrink: 0; }
+        .cmp-delta { font-family: 'DM Mono', monospace; font-size: 10px; text-align: right; width: 76px; flex-shrink: 0; }
+        .cmp-delta.pos { color: #1A7A4A; }
+        .cmp-delta.neg { color: #EF4444; }
+
+        .ask-banner { background: #0A1C2A; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+        .ask-eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: .2em; color: rgba(255,255,255,.3); margin-bottom: 4px; }
+        .ask-rate { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #2DBD74; line-height: 1; }
+        .ask-ctx  { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
+        .ask-savings { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700; color: #fff; line-height: 1; }
+        .ask-savings-sub { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 2px; }
+
+        .playbook-items { display: flex; flex-direction: column; gap: 18px; }
+        .pb-item { display: flex; gap: 18px; padding: 20px 24px; border: 1px solid #CAD8D0; border-left: 3px solid #1A7A4A; background: #fff; }
+        .pb-item.rebuttal { border-left-color: #F59E0B; }
+        .pb-icon { width: 32px; height: 32px; background: #E6F4ED; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+        .pb-item.rebuttal .pb-icon { background: rgba(245,158,11,.08); }
+        .pb-tag  { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #1A7A4A; margin-bottom: 4px; }
+        .pb-item.rebuttal .pb-tag { color: #F59E0B; }
+        .pb-head { font-size: 14px; font-weight: 600; color: #0C1810; margin-bottom: 6px; }
+        .pb-text { font-size: 13px; color: #5A7568; line-height: 1.65; }
+        .pb-quote { margin-top: 10px; padding: 10px 14px; border-left: 2px solid #2DBD74; font-style: italic; font-size: 12px; color: #5A7568; background: #F6F8F7; line-height: 1.65; }
+
+        .enrich-nudge { background: #0A1C2A; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .en-btn { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; background: #1A7A4A; color: #fff; border: none; padding: 9px 18px; cursor: pointer; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
+        .en-btn:hover { background: #22995E; }
+
+        .cta-card { padding: 24px 28px; background: #fff; border: 1px solid #CAD8D0; border-top: 2px solid #0C1810; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+        .cta-primary { display: inline-flex; align-items: center; gap: 8px; background: #1A7A4A; color: #fff; padding: 12px 22px; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; transition: background .15s; }
+        .cta-primary:hover { background: #22995E; }
+        .cta-sec { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #CAD8D0; color: #5A7568; padding: 12px 22px; font-size: 12px; font-weight: 500; text-decoration: none; transition: border-color .15s; background: #fff; cursor: pointer; }
+        .cta-sec:hover { border-color: #5A7568; }
+
+        .gate-preview-wrap { pointer-events: none; user-select: none; filter: blur(5px); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.4) 45%, rgba(0,0,0,0) 65%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.4) 45%, rgba(0,0,0,0) 65%); }
+        .gate-card { position: absolute; top: 180px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 560px; background: #fff; border: 1px solid #CAD8D0; border-top: 2px solid #0A1C2A; box-shadow: 0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07); padding: 36px 40px; text-align: center; z-index: 50; }
+        .gc-lock { width: 44px; height: 44px; background: #0A1C2A; display: grid; place-items: center; margin: 0 auto 16px; }
+        .gc-email-row { display: flex; border: 1px solid #CAD8D0; margin-bottom: 12px; }
+        .gc-email-row.error { border-color: #EF4444; }
+        .gc-email-input { flex: 1; border: none; background: #F6F8F7; outline: none; font-family: 'DM Mono', monospace; font-size: 13px; color: #0C1810; padding: 12px 14px; }
+        .gc-submit { background: #1A7A4A; color: #fff; border: none; padding: 12px 20px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background .15s; white-space: nowrap; }
+        .gc-submit:hover { background: #22995E; }
+        .gc-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; border: 1px solid #CAD8D0; color: #0C1810; padding: 11px; font-size: 13px; cursor: pointer; transition: border-color .15s; margin-bottom: 14px; font-family: 'DM Sans', sans-serif; }
+        .gc-google:hover { border-color: #5A7568; }
+        .firm-selector-row { display: flex; border: 1px solid #CAD8D0; cursor: pointer; transition: border-color .15s; margin-bottom: 8px; }
+        .firm-selector-row:hover { border-color: #2DBD74; }
+        .fs-logo { width: 40px; height: 40px; background: #0A1C2A; display: grid; place-items: center; font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.45); flex-shrink: 0; }
+        .firm-chip-wrap { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(45,189,116,.07); border: 1px solid rgba(45,189,116,.2); margin-bottom: 20px; }
+        .fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 16px; transition: color .15s; margin-left: auto; padding: 0 2px; }
+        .fc-remove:hover { color: #0A1C2A; }
+        @media (max-width: 640px) {
+          .impact-grid { grid-template-columns: 1fr; }
+          .cmp-lbl { width: 100px; font-size: 10px; }
+          .ask-banner { flex-direction: column; gap: 12px; }
+          .cta-card { flex-direction: column; align-items: stretch; }
+        }
+      `}</style>
+
+      <div className="ng-page">
+        {/* ── HERO ─────────────────────────────────────────────────────────── */}
+        <div style={{
+          background: '#0A1C2A',
+          padding: '44px 48px 52px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -60, right: -80, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,189,116,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
+              Fee Negotiation Tool
+            </div>
+            <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0 }}>
+              Are you paying <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>too much?</em>
             </h1>
-            <p className="mt-4 text-lg text-text-secondary max-w-2xl mx-auto">
-              Compare your advisory fees to industry benchmarks and get a personalized
-              negotiation playbook — backed by data from thousands of SEC-registered firms.
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
+              Enter your portfolio value and what you pay — we&rsquo;ll benchmark it against real SEC filing data from thousands of registered advisors and build your negotiation playbook.
             </p>
           </div>
-        </section>
+        </div>
 
-        {/* Input Section */}
-        <section className="mx-auto max-w-2xl px-4 -mt-8 relative z-10">
-          <Card>
-            <CardContent className="p-6 sm:p-8">
-              <div className="space-y-6">
-                {/* AUM Input */}
+        {/* ── MAIN ─────────────────────────────────────────────────────────── */}
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
+
+          {/* ── STEP 01: INPUT ─────────────────────────────────────────────── */}
+          <div className="ng-step">
+            <div className="ng-step-hd">
+              <div className="step-n">01</div>
+              <div className="step-title">Your portfolio &amp; fee</div>
+            </div>
+            <div style={{ padding: 24 }}>
+
+              {/* Input grid: AUM + Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                {/* AUM */}
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
-                    Your Portfolio Value (AUM)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary font-medium">$</span>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 8, fontFamily: 'DM Mono, monospace' }}>
+                    Portfolio Value (AUM)
+                  </div>
+                  <div className="money-input-wrap">
+                    <span style={{ padding: '0 12px', fontFamily: 'Cormorant Garamond, serif', fontSize: 19, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0 }}>$</span>
                     <input
                       type="text"
                       inputMode="numeric"
                       placeholder="e.g. 1,000,000"
                       value={rawAum}
                       onChange={handleAumChange}
-                      className="w-full h-12 rounded-lg border border-border bg-bg-primary pl-8 pr-4 text-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary transition-colors"
+                      style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#0C1810', padding: '11px 14px' }}
                     />
                   </div>
+                  {showMinAumWarning && (
+                    <p style={{ fontSize: 11, color: '#F59E0B', marginTop: 6 }}>Minimum portfolio value is $10,000</p>
+                  )}
                 </div>
 
-                {/* Fee Input */}
+                {/* Client status */}
                 <div>
-                  {/* Three-mode toggle */}
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-text-primary">Your Fee</label>
-                    <div className="flex rounded-lg bg-secondary-100 p-1">
-                      <button
-                        type="button"
-                        onClick={() => { setFeeMode('flat'); setRawFee(''); }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          feeMode === 'flat' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-                        }`}
-                      >
-                        Flat %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setFeeMode('tiered'); setRawFee(''); setTierFeeRaw({}); }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          feeMode === 'tiered' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-                        }`}
-                      >
-                        Tiered %
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setFeeMode('dollar'); setRawFee(''); }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          feeMode === 'dollar' ? 'bg-white text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
-                        }`}
-                      >
-                        Dollar
-                      </button>
-                    </div>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 8, fontFamily: 'DM Mono, monospace', display: 'flex', justifyContent: 'space-between' }}>
+                    Your Status
+                    <span style={{ fontSize: 10, fontWeight: 400, letterSpacing: 0, textTransform: 'none', color: '#CAD8D0' }}>affects talking points</span>
                   </div>
-                  
-                  {feeMode === 'tiered' ? (
-                    /* Tiered fee inputs */
-                    <div className="space-y-3">
-                      {feeTiers.map((tier, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="flex-1 flex items-center gap-2">
-                            <span className="text-xs text-text-tertiary w-8">From</span>
-                            <div className="relative flex-1">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">$</span>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={tier.min === 0 ? '0' : tier.min.toLocaleString()}
-                                readOnly
-                                className="w-full h-10 rounded-lg border border-border bg-secondary-100 pl-6 pr-2 text-sm text-text-secondary cursor-not-allowed"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 flex items-center gap-2">
-                            <span className="text-xs text-text-tertiary w-6">To</span>
-                            <div className="relative flex-1">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">$</span>
-                              {index === feeTiers.length - 1 ? (
-                                <input
-                                  type="text"
-                                  value="∞"
-                                  readOnly
-                                  className="w-full h-10 rounded-lg border border-border bg-secondary-100 pl-6 pr-2 text-sm text-text-secondary cursor-not-allowed"
-                                />
-                              ) : (
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  placeholder="Enter amount"
-                                  value={tier.max !== null ? tier.max.toLocaleString() : ''}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9]/g, '');
-                                    updateFeeTier(index, 'max', val === '' ? null : parseInt(val, 10));
-                                  }}
-                                  className="w-full h-10 rounded-lg border border-border bg-bg-primary pl-6 pr-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-400"
-                                />
-                              )}
-                            </div>
-                          </div>
-                          <div className="w-20 flex items-center gap-1">
+                  <div style={{ display: 'flex' }}>
+                    {STATUS_OPTS.map(opt => (
+                      <button
+                        key={opt.val}
+                        onClick={() => setClientStatus(opt.val)}
+                        className={`tog-btn${clientStatus === opt.val ? ' on' : ''}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fee type tabs */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 8, fontFamily: 'DM Mono, monospace' }}>
+                  How is your fee structured?
+                </div>
+                <div style={{ display: 'flex', border: '1px solid #CAD8D0' }}>
+                  {FEE_TABS.map(t => (
+                    <button
+                      key={t.val}
+                      onClick={() => { setFeeMode(t.val); setRawFee(''); setShowResults(false); setShowGate(false); }}
+                      className={`fee-tab${feeMode === t.val ? ' on' : ''}`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fee input area */}
+              {feeMode === 'unknown' ? (
+                <div style={{ padding: '12px 16px', background: '#F6F8F7', border: '1px solid #CAD8D0', fontSize: 13, color: '#5A7568', lineHeight: 1.6 }}>
+                  No problem — we&rsquo;ll use the industry median as your baseline. You can compare how you&rsquo;d look at each benchmark.
+                </div>
+              ) : feeMode === 'tiered' ? (
+                <div style={{ marginBottom: 4 }}>
+                  {feeTiers.map((tier, index) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#5A7568', width: 32, flexShrink: 0 }}>From</span>
+                        <div className="money-input-wrap" style={{ flex: 1 }}>
+                          <span style={{ padding: '0 8px', fontFamily: 'Cormorant Garamond, serif', fontSize: 17, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '40px', flexShrink: 0 }}>$</span>
+                          <input type="text" value={tier.min === 0 ? '0' : tier.min.toLocaleString()} readOnly style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', padding: '9px 10px', cursor: 'not-allowed' }} />
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#5A7568', width: 20, flexShrink: 0 }}>To</span>
+                        <div className="money-input-wrap" style={{ flex: 1 }}>
+                          <span style={{ padding: '0 8px', fontFamily: 'Cormorant Garamond, serif', fontSize: 17, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '40px', flexShrink: 0 }}>$</span>
+                          {index === feeTiers.length - 1 ? (
+                            <input type="text" value="∞" readOnly style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', padding: '9px 10px', cursor: 'not-allowed' }} />
+                          ) : (
                             <input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="0.00"
-                              value={tierFeeRaw[index] !== undefined ? tierFeeRaw[index] : (tier.fee > 0 ? tier.fee.toString() : '')}
-                              onFocus={() => {
-                                if (tierFeeRaw[index] === undefined) {
-                                  setTierFeeRaw(prev => ({ ...prev, [index]: tier.fee > 0 ? tier.fee.toString() : '' }));
-                                }
-                              }}
-                              onBlur={() => {
-                                // Clear raw tracking on blur so it shows the clamped value
-                                setTierFeeRaw(prev => { const n = { ...prev }; delete n[index]; return n; });
-                              }}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                if (raw === '' || /^\d*\.?\d{0,2}$/.test(raw)) {
-                                  setTierFeeRaw(prev => ({ ...prev, [index]: raw }));
-                                  const val = parseFloat(raw);
-                                  updateFeeTier(index, 'fee', isNaN(val) ? 0 : val);
-                                }
-                              }}
-                              className="w-full h-10 rounded-lg border border-border bg-bg-primary px-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-400 text-right"
+                              type="text" inputMode="numeric" placeholder="Enter max"
+                              value={tier.max !== null ? tier.max.toLocaleString() : ''}
+                              onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); updateFeeTier(index, 'max', val === '' ? null : parseInt(val, 10)); }}
+                              style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#0C1810', padding: '9px 10px' }}
                             />
-                            <span className="text-text-tertiary text-sm">%</span>
-                          </div>
-                          {feeTiers.length > 2 && (
-                            <button
-                              type="button"
-                              onClick={() => removeFeeTier(index)}
-                              className="text-red-400 hover:text-red-300 text-sm px-2"
-                            >
-                              ×
-                            </button>
                           )}
                         </div>
-                      ))}
-                      {feeTiers.length < 7 && (
-                        <button
-                          type="button"
-                          onClick={addFeeTier}
-                          className="text-sm text-primary hover:text-primary-700 font-medium"
-                        >
-                          + Add Tier
-                        </button>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: 72 }}>
+                        <input
+                          type="text" inputMode="decimal" placeholder="0.00"
+                          value={tierFeeRaw[index] !== undefined ? tierFeeRaw[index] : (tier.fee > 0 ? tier.fee.toString() : '')}
+                          onFocus={() => { if (tierFeeRaw[index] === undefined) setTierFeeRaw(p => ({ ...p, [index]: tier.fee > 0 ? tier.fee.toString() : '' })); }}
+                          onBlur={() => setTierFeeRaw(p => { const n = { ...p }; delete n[index]; return n; })}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '' || /^\d*\.?\d{0,2}$/.test(raw)) {
+                              setTierFeeRaw(p => ({ ...p, [index]: raw }));
+                              const val = parseFloat(raw);
+                              updateFeeTier(index, 'fee', isNaN(val) ? 0 : val);
+                            }
+                          }}
+                          style={{ width: '100%', border: '1px solid #CAD8D0', background: '#F6F8F7', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#0C1810', padding: '9px 8px', textAlign: 'right' }}
+                        />
+                        <span style={{ fontSize: 12, color: '#5A7568', flexShrink: 0 }}>%</span>
+                      </div>
+                      {feeTiers.length > 2 && (
+                        <button onClick={() => removeFeeTier(index)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
                       )}
                     </div>
-                  ) : (
-                    /* Flat % or Dollar input */
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary font-medium">
-                        {feeMode === 'dollar' ? '$' : '%'}
+                  ))}
+                  {feeTiers.length < 7 && (
+                    <button onClick={addFeeTier} style={{ fontSize: 12, color: '#1A7A4A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}>+ Add Tier</button>
+                  )}
+                  {aum > 0 && feePercent > 0 && (
+                    <p style={{ fontSize: 11, color: '#5A7568', marginTop: 8 }}>
+                      Blended effective rate: <strong style={{ color: '#0C1810' }}>{feePercent.toFixed(2)}%</strong> on {formatCompact(aum)}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="money-input-wrap">
+                    <span style={{ padding: '0 12px', fontFamily: 'Cormorant Garamond, serif', fontSize: 19, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0 }}>
+                      {feeMode === 'dollar' ? '$' : '%'}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode={feeMode === 'dollar' ? 'numeric' : 'decimal'}
+                      placeholder={feeMode === 'dollar' ? 'e.g. 10,000' : 'e.g. 1.00'}
+                      value={rawFee}
+                      onChange={handleFeeChange}
+                      style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#0C1810', padding: '11px 14px' }}
+                    />
+                    {feeMode === 'flat' && rawFee && (
+                      <span style={{ padding: '0 12px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', borderLeft: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0 }}>
+                        {bps > 0 ? `${bps} bps` : ''}
                       </span>
-                      <input
-                        type="text"
-                        inputMode={feeMode === 'dollar' ? 'numeric' : 'decimal'}
-                        placeholder={feeMode === 'dollar' ? 'e.g. 10,000' : 'e.g. 1.00'}
-                        value={rawFee}
-                        onChange={handleFeeChange}
-                        className="w-full h-12 rounded-lg border border-border bg-bg-primary pl-8 pr-4 text-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary transition-colors"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Warning for >3% fee in flat mode */}
-                  {feeMode === 'flat' && rawFee && (() => {
-                    const inputFee = parseFloat(rawFee);
-                    if (!isNaN(inputFee) && inputFee > 3) {
-                      return (
-                        <p className="text-xs text-red-400 mt-2">
-                          Maximum allowable fee is 3%. If you're paying more than that, contact us ASAP so we can help you fire that firm!
-                        </p>
-                      );
-                    }
-                    return null;
-                  })()}
-                  
+                    )}
+                  </div>
                   {showDollarFeeWarning && (
-                    <p className="text-xs text-red-400 mt-2">
-                      Maximum fee is 3% of your portfolio ({formatDollar(Math.floor(aum * 0.03))}). If you&apos;re paying more than that, contact us ASAP so we can help you fire that firm!
-                    </p>
+                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max fee is 3% of portfolio ({formatDollar(Math.floor(aum * 0.03))})</p>
                   )}
-                  
                   {feeMode === 'dollar' && aum > 0 && feePercent > 0 && (
-                    <p className="text-xs text-text-tertiary mt-1">
-                      = {feePercent.toFixed(2)}% of your portfolio
-                    </p>
-                  )}
-                  
-                  {(feeMode === 'flat' || feeMode === 'tiered') && aum > 0 && feePercent > 0 && (
-                    <p className="text-xs text-text-tertiary mt-2">
-                      {feeMode === 'tiered' && `Based on your AUM of ${formatCompact(aum)}, `}your effective fee is <span className="font-medium text-text-primary">{feePercent.toFixed(2)}%</span>
-                    </p>
+                    <p style={{ fontSize: 11, color: '#5A7568', marginTop: 6 }}>= {feePercent.toFixed(2)}% of your portfolio</p>
                   )}
                 </div>
+              )}
 
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full"
-                  disabled={!hasValidInput}
-                  onClick={handleCalculate}
-                >
-                  Analyze My Fees
-                </Button>
+              {/* Analyze button */}
+              <button
+                className="analyze-btn"
+                style={{ marginTop: 20 }}
+                disabled={!hasValidInput}
+                onClick={handleCalculate}
+              >
+                Analyze My Fee <span className="analyze-btn-arrow">→</span>
+              </button>
 
-                {showMinAumWarning && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center animate-in fade-in duration-300">
-                    <p className="text-sm text-amber-700 font-medium">Minimum Portfolio Value is $10,000</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Results */}
-        {showResults && hasValidInput && bracket && (
-          <section className={`mx-auto max-w-2xl px-4 mt-8 pb-16 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-
-            {/* Fee Comparison Gauge */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Fee Comparison</CardTitle>
-                  <Badge className={
-                    isSignificantlyOver
-                      ? 'bg-red-100 text-red-700 border-red-200'
-                      : isOverpaying
-                      ? 'bg-amber-100 text-amber-700 border-amber-200'
-                      : 'bg-green-100 text-green-700 border-green-200'
-                  }>
-                    {feeLabel}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-text-secondary mb-4">
-                  Your fee vs. industry benchmarks for portfolios near {bracket.label}
-                </p>
-
-                {/* Horizontal gauge */}
-                <div className="relative mb-2">
-                  <div className="h-8 bg-secondary-100 rounded-full overflow-hidden relative">
-                    {/* P25-P75 shaded range */}
-                    <div
-                      className="absolute top-0 h-full bg-secondary-200 rounded-full"
-                      style={{
-                        left: `${pctPos(bracket.p25)}%`,
-                        width: `${pctPos(bracket.p75) - pctPos(bracket.p25)}%`,
-                      }}
-                    />
-                    {/* Median line */}
-                    <div
-                      className="absolute top-0 h-full w-0.5 bg-text-tertiary z-10"
-                      style={{ left: `${pctPos(bracket.median)}%` }}
-                    />
-                    {/* User fee marker */}
-                    <div
-                      className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white shadow-md z-20 ${feeBgColor}`}
-                      style={{ left: `${pctPos(feePercent)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Gauge labels */}
-                <div className="flex justify-between text-[11px] text-text-tertiary mb-4 mt-2">
-                  <span>P25: {bracket.p25.toFixed(2)}%</span>
-                  <span className="font-medium text-text-secondary">Median: {bracket.median.toFixed(2)}%</span>
-                  <span>P75: {bracket.p75.toFixed(2)}%</span>
-                </div>
-
-                {/* Your fee callout */}
-                <div className={`text-center py-3 rounded-lg ${
-                  isSignificantlyOver ? 'bg-red-50' : isOverpaying ? 'bg-amber-50' : 'bg-green-50'
-                }`}>
-                  <span className="text-sm text-text-secondary">Your fee: </span>
-                  <span className={`text-lg font-bold ${feeColor}`}>{feePercent.toFixed(2)}%</span>
-                  <span className="text-sm text-text-secondary"> ({bps} bps)</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Dollar Impact */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Dollar Impact</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                  <div className="rounded-lg bg-secondary-50 p-4">
-                    <p className="text-xs text-text-tertiary mb-1">You Pay Annually</p>
-                    <p className="text-2xl font-bold text-text-primary">{formatCompact(annualFee)}</p>
-                  </div>
-                  <div className="rounded-lg bg-secondary-50 p-4">
-                    <p className="text-xs text-text-tertiary mb-1">Median Advisor Charges</p>
-                    <p className="text-2xl font-bold text-text-primary">{formatCompact(medianFee)}</p>
-                  </div>
-                  <div className={`rounded-lg p-4 ${feeDiff > 0 ? 'bg-red-50' : feeDiff < 0 ? 'bg-green-50' : 'bg-secondary-50'}`}>
-                    <p className="text-xs text-text-tertiary mb-1">
-                      {feeDiff > 0 ? 'You Overpay By' : feeDiff < 0 ? 'You Save' : 'Difference'}
-                    </p>
-                    <p className={`text-2xl font-bold ${feeDiff > 0 ? 'text-red-600' : feeDiff < 0 ? 'text-green-600' : 'text-text-primary'}`}>
-                      {feeDiff === 0 ? '$0' : formatCompact(Math.abs(feeDiff))}
-                    </p>
-                    <p className="text-xs text-text-tertiary">/year</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 10-Year Compounding Impact */}
-            {tenYearMedian && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">10-Year Compounding Impact</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-text-secondary mb-4">
-                    Assuming 7% annual market return, here&apos;s how fees compound over a decade.
-                  </p>
-
-                  <div className="space-y-3">
-                    {/* Median fee projection */}
+              {/* Firm upgrade panel */}
+              <div className="firm-upgrade" style={{ marginTop: 20 }}>
+                <div className="firm-upgrade-hd" onClick={() => setFirmPanelOpen(!firmPanelOpen)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 28, height: 28, background: '#E6F4ED', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                      <svg width="14" height="14" fill="none" stroke="#1A7A4A" strokeWidth="1.5" viewBox="0 0 14 14">
+                        <circle cx="7" cy="7" r="5.5" /><line x1="7" y1="4" x2="7" y2="10" /><line x1="4" y1="7" x2="10" y2="7" />
+                      </svg>
+                    </div>
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-text-secondary">At median fee ({bracket.median.toFixed(2)}%)</span>
-                        <span className="font-semibold text-green-600">{formatCompact(tenYearMedian.value)}</span>
-                      </div>
-                      <div className="h-4 bg-secondary-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500 rounded-full transition-all duration-700"
-                          style={{ width: `${(tenYearMedian.value / Math.max(tenYearMedian.value, tenYearCurrent.value) * 100)}%` }}
-                        />
-                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0C1810' }}>Add your advisor firm</div>
+                      <div style={{ fontSize: 10, color: '#5A7568' }}>Enriches results</div>
                     </div>
-
-                    {/* Current fee projection */}
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-text-secondary">At your fee ({feePercent.toFixed(2)}%)</span>
-                        <span className={`font-semibold ${feeColor}`}>{formatCompact(tenYearCurrent.value)}</span>
-                      </div>
-                      <div className="h-4 bg-secondary-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${feeBgColor}`}
-                          style={{ width: `${(tenYearCurrent.value / Math.max(tenYearMedian.value, tenYearCurrent.value) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1A7A4A', background: '#E6F4ED', padding: '3px 8px', marginLeft: 4 }}>Optional</span>
                   </div>
-
-                  {compoundingCost > 0 && (
-                    <div className="mt-4 p-4 rounded-lg bg-red-50 border border-red-100 text-center">
-                      <p className="text-sm text-text-secondary">
-                        Over 10 years, that fee difference costs you
-                      </p>
-                      <p className="text-3xl font-bold text-red-600 mt-1">
-                        {formatCompact(compoundingCost)}
-                      </p>
-                      <p className="text-xs text-text-tertiary mt-1">in lost portfolio value</p>
-                    </div>
-                  )}
-
-                  {compoundingCost <= 0 && (
-                    <div className="mt-4 p-4 rounded-lg bg-green-50 border border-green-100 text-center">
-                      <p className="text-sm text-text-secondary">
-                        Your fees are at or below the median — you&apos;re in good shape! 🎉
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Negotiation Playbook */}
-            {talkingPoints.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Your Negotiation Playbook</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-text-secondary mb-4">
-                    Use these data-backed talking points in your next fee conversation.
+                  <svg
+                    width="14" height="14" fill="none" stroke="#5A7568" strokeWidth="1.5"
+                    style={{ transition: 'transform .3s', transform: firmPanelOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
+                    viewBox="0 0 14 14"
+                  >
+                    <polyline points="2,4 7,10 12,4" />
+                  </svg>
+                </div>
+                <div className={`firm-upgrade-body${firmPanelOpen ? ' open' : ''}`}>
+                  <p style={{ fontSize: 12, color: '#5A7568', lineHeight: 1.65, marginBottom: 14 }}>
+                    Get firm-specific talking points, ADV-sourced fee tier data, and peer group matching.
                   </p>
-                  <div className="space-y-4">
-                    {talkingPoints.map((point, i) => (
-                      <div key={i} className="flex gap-3 items-start">
-                        <span className="text-xl flex-shrink-0 mt-0.5">{point.icon}</span>
-                        <div>
-                          <p className="text-sm text-text-primary leading-relaxed">{point.text}</p>
-                          {point.link && (
-                            <Link
-                              href={point.link}
-                              className="text-sm text-primary hover:text-primary-700 font-medium mt-1 inline-block"
-                            >
-                              Browse advisors →
-                            </Link>
-                          )}
-                        </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                    {[
+                      'Peer group matched to firm type & AUM',
+                      'Firm\'s own ADV fee tiers used in playbook',
+                      'Conflict & ownership flags surfaced',
+                      'Verbatim talking points citing their filings',
+                    ].map(item => (
+                      <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#5A7568' }}>
+                        <span style={{ color: '#1A7A4A', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                        {item}
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* CTA */}
-            <div className="text-center py-4">
-              <p className="text-text-secondary mb-4">
-                Want to see what other advisors charge for your portfolio size?
-              </p>
-              <Link href="/search">
-                <Button variant="primary" size="lg">
-                  Find a Lower-Cost Advisor
-                </Button>
-              </Link>
+                  <Link href="/search" style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#1A7A4A', textDecoration: 'none', borderBottom: '1px solid rgba(26,122,74,.3)' }}>
+                    Search firms on Visor Index →
+                  </Link>
+                </div>
+              </div>
             </div>
-          </section>
-        )}
+          </div>
 
-        {/* Bottom padding when no results */}
-        {!showResults && <div className="pb-16" />}
+          {/* ── RESULTS / GATE ────────────────────────────────────────────── */}
+          {showContent && hasValidInput && bracket && (
+            <div ref={resultsRef} style={{ position: 'relative' }}>
+
+              {/* Blurred gate preview */}
+              {showGate && (
+                <div className="gate-preview-wrap">
+                  <ResultsPreview
+                    bracket={bracket}
+                    aum={aum}
+                    feePercent={feePercent}
+                    annualFee={annualFee}
+                    medianFee={medianFee}
+                    p25Fee={p25Fee}
+                    feeDiff={feeDiff}
+                    feeColor={feeColor}
+                    feeLabel={feeLabel}
+                    pctPos={pctPos}
+                    bps={bps}
+                    medianBps={medianBps}
+                    isOverpaying={isOverpaying}
+                    isSignificantlyOver={isSignificantlyOver}
+                    askRate={askRate}
+                    askSavings={askSavings}
+                    playbookItems={playbookItems}
+                    twentyYearP25={twentyYearP25}
+                    twentyYearMedian={twentyYearMedian}
+                    twentyYearCurrent={twentyYearCurrent}
+                    max20yr={max20yr}
+                    animated={false}
+                  />
+                </div>
+              )}
+
+              {/* Gate card */}
+              {showGate && (
+                <>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: '#F6F8F7', pointerEvents: 'none', zIndex: 5 }} />
+                  <div className="gate-card">
+                    <div className="gc-lock">
+                      <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" viewBox="0 0 18 18">
+                        <rect x="3" y="8" width="12" height="9" rx="1.5" />
+                        <path d="M6 8V6a3 3 0 016 0v2" />
+                      </svg>
+                    </div>
+                    <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 26, fontWeight: 700, color: '#0C1810', marginBottom: 8 }}>Unlock your analysis</h2>
+                    <p style={{ fontSize: 13, color: '#5A7568', lineHeight: 1.75, maxWidth: 400, margin: '0 auto 20px' }}>
+                      Your results are ready. Create a free account to see your full benchmark, 20-year compounding impact, and personalized negotiation playbook.
+                    </p>
+
+                    {/* Blurred preview stats */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#CAD8D0', border: '1px solid #CAD8D0', marginBottom: 20 }}>
+                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Your fee</div>
+                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(annualFee)}</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Peer median</div>
+                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(medianFee)}</div>
+                      </div>
+                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Annual overage</div>
+                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#EF4444', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(Math.abs(feeDiff))}</div>
+                      </div>
+                    </div>
+
+                    {/* Email row */}
+                    <div className={`gc-email-row${gateError ? ' error' : ''}`}>
+                      <input
+                        type="email"
+                        className="gc-email-input"
+                        placeholder="your@email.com"
+                        value={gateEmail}
+                        onChange={e => { setGateEmail(e.target.value); setGateError(false); }}
+                        onKeyDown={e => { if (e.key === 'Enter') handleGateUnlock(); }}
+                      />
+                      <button className="gc-submit" onClick={handleGateUnlock}>View Results →</button>
+                    </div>
+                    {gateError && <p style={{ fontSize: 11, color: '#EF4444', marginBottom: 12 }}>Please enter a valid email address.</p>}
+
+                    <div style={{ fontSize: 11, color: '#5A7568', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ flex: 1, height: 1, background: '#CAD8D0', display: 'inline-block' }} />
+                      or
+                      <span style={{ flex: 1, height: 1, background: '#CAD8D0', display: 'inline-block' }} />
+                    </div>
+
+                    <button className="gc-google">
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.185l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
+                        <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05" />
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335" />
+                      </svg>
+                      Continue with Google
+                    </button>
+
+                    <p style={{ fontSize: 10, color: '#CAD8D0', lineHeight: 1.6 }}>
+                      Free forever. No credit card.{' '}
+                      <Link href="/terms" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Terms</Link>
+                      {' '}and{' '}
+                      <Link href="/privacy" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Privacy Policy</Link>.
+                    </p>
+                  </div>
+                  <div style={{ height: 340 }} />
+                </>
+              )}
+
+              {/* Full results */}
+              {showResults && (
+                <ResultsPreview
+                  bracket={bracket}
+                  aum={aum}
+                  feePercent={feePercent}
+                  annualFee={annualFee}
+                  medianFee={medianFee}
+                  p25Fee={p25Fee}
+                  feeDiff={feeDiff}
+                  feeColor={feeColor}
+                  feeLabel={feeLabel}
+                  pctPos={pctPos}
+                  bps={bps}
+                  medianBps={medianBps}
+                  isOverpaying={isOverpaying}
+                  isSignificantlyOver={isSignificantlyOver}
+                  askRate={askRate}
+                  askSavings={askSavings}
+                  playbookItems={playbookItems}
+                  twentyYearP25={twentyYearP25}
+                  twentyYearMedian={twentyYearMedian}
+                  twentyYearCurrent={twentyYearCurrent}
+                  max20yr={max20yr}
+                  animated={animated}
+                />
+              )}
+            </div>
+          )}
+
+        </div>
       </div>
     </>
+  );
+}
+
+// ── Results sub-component (shared between preview and full view) ───────────────
+interface ResultsProps {
+  bracket: ReturnType<typeof getClosestBreakpoint>;
+  aum: number;
+  feePercent: number;
+  annualFee: number;
+  medianFee: number;
+  p25Fee: number;
+  feeDiff: number;
+  feeColor: string;
+  feeLabel: string;
+  pctPos: (val: number) => number;
+  bps: number;
+  medianBps: number;
+  isOverpaying: boolean;
+  isSignificantlyOver: boolean;
+  askRate: number;
+  askSavings: number;
+  playbookItems: PlaybookItem[];
+  twentyYearP25: { value: number; totalFees: number } | null;
+  twentyYearMedian: { value: number; totalFees: number } | null;
+  twentyYearCurrent: { value: number; totalFees: number };
+  max20yr: number;
+  animated: boolean;
+}
+
+function ResultsPreview({
+  bracket, aum, feePercent, annualFee, medianFee, p25Fee, feeDiff,
+  feeColor, feeLabel, pctPos, bps, medianBps, isOverpaying, isSignificantlyOver,
+  askRate, askSavings, playbookItems,
+  twentyYearP25, twentyYearMedian, twentyYearCurrent, max20yr, animated,
+}: ResultsProps) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+      {/* ── STEP 02: BENCHMARK ─────────────────────────────────────────── */}
+      <div className="ng-step">
+        <div className="ng-step-hd">
+          <div className="step-n">02</div>
+          <div className="step-title">How your fee compares</div>
+          <div className="step-meta">{bracket.label} AUM bracket</div>
+        </div>
+        <div style={{ padding: '24px 24px 28px' }}>
+
+          {/* Benchmark track */}
+          <div className="bm-track">
+            {/* P25 dot */}
+            <div className="bm-dot p25" style={{ left: `${pctPos(bracket.p25)}%` }}>
+              <div className="bm-dot-label">
+                <strong>{bracket.p25.toFixed(2)}%</strong>
+                P25 — Best quartile
+              </div>
+            </div>
+            {/* Peer median dot */}
+            <div className="bm-dot peer" style={{ left: `${pctPos(bracket.median)}%` }}>
+              <div className="bm-dot-label">
+                <strong>{bracket.median.toFixed(2)}%</strong>
+                Peer Median
+              </div>
+            </div>
+            {/* Your fee dot */}
+            <div className="bm-dot you" style={{ left: `${pctPos(feePercent)}%` }}>
+              <div className="bm-dot-label" style={{ color: feeColor }}>
+                <strong style={{ color: feeColor }}>{feePercent.toFixed(2)}%</strong>
+                Your Fee
+              </div>
+            </div>
+          </div>
+
+          {/* Stat row */}
+          <div className="stat-row">
+            <div className="stat-cell">
+              <div className="stat-label">P25 — Best Quartile</div>
+              <div className="stat-val" style={{ color: '#1A7A4A' }}>{bracket.p25.toFixed(2)}%</div>
+            </div>
+            <div className="stat-cell">
+              <div className="stat-label">Peer Median</div>
+              <div className="stat-val">{bracket.median.toFixed(2)}%</div>
+            </div>
+            <div className="stat-cell">
+              <div className="stat-label">Your Fee</div>
+              <div className="stat-val" style={{ color: feeColor }}>{feePercent.toFixed(2)}%</div>
+            </div>
+          </div>
+
+          {/* Status badge */}
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              display: 'inline-flex', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+              padding: '3px 10px',
+              color: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A',
+              background: isSignificantlyOver ? 'rgba(239,68,68,.07)' : isOverpaying ? 'rgba(245,158,11,.07)' : 'rgba(26,122,74,.07)',
+              border: `1px solid ${isSignificantlyOver ? 'rgba(239,68,68,.2)' : isOverpaying ? 'rgba(245,158,11,.2)' : 'rgba(26,122,74,.2)'}`,
+            }}>
+              {feeLabel}
+            </div>
+            <span style={{ fontSize: 12, color: '#5A7568' }}>
+              {bps} bps vs. {medianBps} bps peer median
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── STEP 03: DOLLAR IMPACT ─────────────────────────────────────── */}
+      <div className="ng-step">
+        <div className="ng-step-hd">
+          <div className="step-n">03</div>
+          <div className="step-title">What this costs you</div>
+        </div>
+        <div style={{ padding: 24 }}>
+
+          {/* Impact grid */}
+          <div className="impact-grid">
+            <div className="impact-cell">
+              <div className="ic-label">You pay annually</div>
+              <div className="ic-val">{formatCompact(annualFee)}</div>
+              <div className="ic-badge even">{feePercent.toFixed(2)}% of AUM</div>
+            </div>
+            <div className="impact-cell">
+              <div className="ic-label">Peer median pays</div>
+              <div className="ic-val">{formatCompact(medianFee)}</div>
+              <div className="ic-badge even">{bracket.median.toFixed(2)}% of AUM</div>
+            </div>
+            <div className={`impact-cell${feeDiff > 0 ? ' hl-red' : feeDiff < 0 ? ' hl-grn' : ''}`}>
+              <div className="ic-label">Annual difference</div>
+              <div className="ic-val" style={{ color: feeDiff > 0 ? '#EF4444' : feeDiff < 0 ? '#1A7A4A' : '#0C1810' }}>
+                {feeDiff === 0 ? '$0' : formatCompact(Math.abs(feeDiff))}
+              </div>
+              {feeDiff > 0 && <div className="ic-badge over">You overpay by this</div>}
+              {feeDiff < 0 && <div className="ic-badge under">You save this</div>}
+              {feeDiff === 0 && <div className="ic-badge even">At median</div>}
+            </div>
+          </div>
+
+          {/* 20-Year compounding bars */}
+          {max20yr > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <div className="cmp-section-label">20-Year compounding impact (7% gross return)</div>
+              {twentyYearP25 && (
+                <div className="cmp-row">
+                  <div className="cmp-lbl">At P25 fee ({bracket.p25.toFixed(2)}%)</div>
+                  <div className="cmp-bar-wrap">
+                    <div className="cmp-bar" style={{ width: animated ? `${(twentyYearP25.value / max20yr) * 100}%` : '0%', background: '#1A7A4A' }} />
+                  </div>
+                  <div className="cmp-val">{formatCompact(twentyYearP25.value)}</div>
+                  <div className={`cmp-delta${twentyYearP25.value > twentyYearCurrent.value ? ' pos' : ''}`}>
+                    {twentyYearP25.value > twentyYearCurrent.value ? `+${formatCompact(twentyYearP25.value - twentyYearCurrent.value)}` : '—'}
+                  </div>
+                </div>
+              )}
+              {twentyYearMedian && (
+                <div className="cmp-row">
+                  <div className="cmp-lbl">At peer median ({bracket.median.toFixed(2)}%)</div>
+                  <div className="cmp-bar-wrap">
+                    <div className="cmp-bar" style={{ width: animated ? `${(twentyYearMedian.value / max20yr) * 100}%` : '0%', background: '#5A7568' }} />
+                  </div>
+                  <div className="cmp-val">{formatCompact(twentyYearMedian.value)}</div>
+                  <div className={`cmp-delta${twentyYearMedian.value > twentyYearCurrent.value ? ' pos' : ''}`}>
+                    {twentyYearMedian.value > twentyYearCurrent.value ? `+${formatCompact(twentyYearMedian.value - twentyYearCurrent.value)}` : '—'}
+                  </div>
+                </div>
+              )}
+              <div className="cmp-row">
+                <div className="cmp-lbl">At your fee ({feePercent.toFixed(2)}%)</div>
+                <div className="cmp-bar-wrap">
+                  <div className="cmp-bar" style={{ width: animated ? `${(twentyYearCurrent.value / max20yr) * 100}%` : '0%', background: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A' }} />
+                </div>
+                <div className="cmp-val">{formatCompact(twentyYearCurrent.value)}</div>
+                <div className="cmp-delta neg">{formatCompact(twentyYearCurrent.totalFees)} paid</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── STEP 04: PLAYBOOK ──────────────────────────────────────────── */}
+      <div className="ng-step">
+        <div className="ng-step-hd">
+          <div className="step-n">04</div>
+          <div className="step-title">Your negotiation playbook</div>
+        </div>
+        <div style={{ padding: 24, paddingBottom: 0 }}>
+
+          {/* Ask banner */}
+          {isOverpaying && askSavings > 0 && (
+            <div className="ask-banner" style={{ marginBottom: 24 }}>
+              <div>
+                <div className="ask-eyebrow">Recommended ask</div>
+                <div className="ask-rate">{askRate.toFixed(2)}%</div>
+                <div className="ask-ctx">P25 benchmark for your AUM</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div className="ask-eyebrow">Est. annual savings</div>
+                <div className="ask-savings">{formatCompact(askSavings)}</div>
+                <div className="ask-savings-sub">if advisor agrees</div>
+              </div>
+            </div>
+          )}
+
+          {/* Playbook items */}
+          <div className="playbook-items" style={{ marginBottom: 24 }}>
+            {playbookItems.map((item, i) => (
+              <div key={i} className={`pb-item${item.type === 'rebuttal' ? ' rebuttal' : ''}`}>
+                <div className="pb-icon">{item.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="pb-tag">{item.tag}</div>
+                  <div className="pb-head">{item.head}</div>
+                  <div className="pb-text">{item.text}</div>
+                  {item.quote && <div className="pb-quote">{item.quote}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Enrich nudge (if no firm added) */}
+          <div className="enrich-nudge" style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+              <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
+            </div>
+            <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
+          </div>
+        </div>
+
+        {/* CTA card */}
+        <div className="cta-card">
+          <div>
+            <div style={{ fontSize: 11, color: '#5A7568', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '.1em' }}>Next step</div>
+            <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', marginBottom: 4 }}>See who charges less</div>
+            <div style={{ fontSize: 13, color: '#5A7568', lineHeight: 1.6 }}>
+              Advisors serving portfolios near {formatCompact(aum)}, ranked by Visor Value Score™.
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+            <Link href="/search" className="cta-primary">
+              Find Alternatives <span style={{ fontSize: 16 }}>→</span>
+            </Link>
+            <button className="cta-sec" onClick={() => window.print()}>
+              ↓ Save Playbook
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   );
 }

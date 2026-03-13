@@ -50,10 +50,14 @@ export function Header() {
         )}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-serif text-2xl font-semibold tracking-wide text-white">Visor Index</span>
-          <span className="hidden text-xs uppercase tracking-[0.24em] text-white/40 sm:inline">
-            See Your Advisor Clearly
+        <Link href="/" className="flex items-center gap-2.5">
+          <img
+            src="/visor_logo.png"
+            alt="Visor Index"
+            className="h-7 w-auto"
+          />
+          <span className="font-serif text-[18px] font-bold tracking-[0.01em] text-white">
+            Visor <em className="not-italic text-emerald-400">Index</em>
           </span>
         </Link>
 
@@ -72,6 +76,12 @@ export function Header() {
             Compare
           </Link>
           <Link
+            href="/match"
+            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
+          >
+            Match
+          </Link>
+          <Link
             href="/negotiate"
             className="text-sm font-medium text-white/55 hover:text-white transition-colors"
           >
@@ -88,12 +98,6 @@ export function Header() {
             className="text-sm font-medium text-white/55 hover:text-white transition-colors"
           >
             Pricing
-          </Link>
-          <Link
-            href="/match"
-            className="text-sm font-medium text-emerald-300 hover:text-emerald-200 transition-colors"
-          >
-            Find a Match
           </Link>
         </nav>
 
@@ -114,11 +118,14 @@ export function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm" className="text-white/70 hover:bg-white/10 hover:text-white">Sign In</Button>
+                <Link href="/auth/login" className="text-xs text-white/35 transition-colors hover:text-white">
+                  Log in
                 </Link>
-                <Link href="/auth/signup">
-                  <Button size="sm" className="rounded-xl px-4">Get Access</Button>
+                <Link
+                  href="/auth/signup"
+                  className="bg-[#1A7A4A] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#22995E]"
+                >
+                  Get Access
                 </Link>
               </>
             )}

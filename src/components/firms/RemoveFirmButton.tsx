@@ -29,9 +29,31 @@ export default function RemoveFirmButton({ crd }: RemoveFirmButtonProps) {
     <button
       onClick={handleRemove}
       disabled={loading}
-      className="text-xs text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
+      className="f-btn remove"
+      style={{
+        fontSize: 10,
+        padding: '3px 9px',
+        background: 'none',
+        border: '1px solid var(--rule)',
+        color: loading ? 'var(--rule)' : 'var(--ink-3)',
+        cursor: loading ? 'default' : 'pointer',
+        whiteSpace: 'nowrap',
+        transition: 'all .12s',
+        fontFamily: 'var(--sans)',
+        opacity: loading ? 0.5 : 1,
+      }}
+      onMouseEnter={e => {
+        if (!loading) {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#DC2626';
+          (e.currentTarget as HTMLButtonElement).style.color = '#DC2626';
+        }
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--rule)';
+        (e.currentTarget as HTMLButtonElement).style.color = loading ? 'var(--rule)' : 'var(--ink-3)';
+      }}
     >
-      {loading ? '...' : 'Remove'}
+      {loading ? '…' : 'Remove'}
     </button>
   );
 }

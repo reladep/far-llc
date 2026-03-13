@@ -76,8 +76,16 @@ export async function GET(request: NextRequest) {
       .from('firm_scores')
       .select('*')
       .in('crd', crds);
-    
+
     const scoreMap = new Map(scores?.map(s => [s.crd, s]) || []);
+
+    // Get fee data for real estimated fees
+    const { data: feeData } = await supabase
+      .from('firmdata_feesandmins')
+      .select('crd, fee_range_min, fee_range_max')
+      .in('crd', crds);
+
+    const feeDataMap = new Map(feeData?.map(f => [f.crd, f]) ?? []);
 
     // Filter and score firms
     const scoredFirms = firms
@@ -168,7 +176,13 @@ export async function GET(request: NextRequest) {
           advisorBandwidth: score?.advisor_bandwidth_score || 50,
           matchPercent: Math.min(100, Math.max(0, Math.round(matchPercent))),
           reasons: reasons.slice(0, 4),
-          estimatedFee: '0.85%', // This would need actual fee data
+          estimatedFee: (() => {
+            const fee = feeDataMap.get(firm.crd) as { fee_range_min?: string; fee_range_max?: string } | undefined;
+            if (!fee?.fee_range_min) return 'Contact firm';
+            return fee.fee_range_max
+              ? `${fee.fee_range_min}–${fee.fee_range_max}%`
+              : `${fee.fee_range_min}%`;
+          })(),
           visorScore: score?.final_score || null,
         };
       })

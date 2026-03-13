@@ -1,67 +1,90 @@
 import Link from 'next/link';
 
-const footerLinks = {
-  Product: [
-    { label: 'Search', href: '/search' },
-    { label: 'Compare', href: '/compare' },
-    { label: 'Directory', href: '/directory' },
-    { label: 'Pricing', href: '/pricing' },
-  ],
-  Resources: [
-    { label: 'Blog', href: '/blog' },
-    { label: 'Guides', href: '/guides' },
-    { label: 'How It Works', href: '/how-it-works' },
-  ],
-  Company: [
-    { label: 'About', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-  ],
-  Legal: [
-    { label: 'Privacy', href: '/disclosures/privacy' },
-    { label: 'Terms', href: '/disclosures/terms' },
-    { label: 'Disclaimer', href: '/disclosures/disclaimer' },
-  ],
-};
-
 export function Footer() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="border-t border-white/8 bg-[#091723] text-white">
-      <div className="container-page py-14">
-        <div className="grid gap-10 md:grid-cols-[1.2fr_repeat(4,minmax(0,1fr))]">
-          <div>
-            <p className="font-serif text-3xl text-white">Visor Index</p>
-            <p className="mt-3 max-w-xs text-sm leading-7 text-white/55">
-              Search, compare, and diligence SEC-registered advisors with production-backed data, scoring, and workflow tools.
+    <footer className="border-t border-white/[0.05] bg-[#0F2538] text-white/30">
+      <div className="mx-auto max-w-[1120px]">
+        {/* Top grid */}
+        <div className="grid border-b border-white/[0.06] gap-0 px-14 py-14 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          {/* Brand */}
+          <div className="border-b border-white/[0.06] pb-8 pr-0 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-12 lg:mr-10">
+            <p className="mb-[10px] font-serif text-[20px] font-bold text-white">
+              Visor <em className="not-italic text-[#2DBD74]">Index</em>
+            </p>
+            <p className="mb-5 max-w-[200px] text-[12px] leading-7">
+              Independent intelligence for the most important financial decision of your life.
+            </p>
+            <p className="border-t border-white/[0.06] pt-4 text-[11px] leading-[1.5] text-[rgba(45,189,116,0.7)]">
+              Conflict-free by design. Revenue from subscribers only — never from advisors.
             </p>
           </div>
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">
-                {category}
-              </h3>
-              <ul className="flex flex-col gap-2">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-white/60 transition-colors hover:text-white"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+
+          {/* Platform */}
+          <div className="pt-8 lg:pl-10 lg:pt-0">
+            <h3 className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">Platform</h3>
+            <ul className="flex flex-col gap-[10px]">
+              {[
+                { label: 'Find Advisors', href: '/search' },
+                { label: 'Rankings', href: '/directory' },
+                { label: 'Compare Tool', href: '/compare' },
+                { label: 'Matching', href: '/search' },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-[13px] text-white/35 transition hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div className="pt-8 lg:pt-0">
+            <h3 className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">Company</h3>
+            <ul className="flex flex-col gap-[10px]">
+              {[
+                { label: 'About', href: '/about' },
+                { label: 'Methodology', href: '/how-it-works' },
+                { label: 'Data Sources', href: '/how-it-works' },
+                { label: 'Pricing', href: '/pricing' },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-[13px] text-white/35 transition hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div className="pt-8 lg:pt-0">
+            <h3 className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">Legal</h3>
+            <ul className="flex flex-col gap-[10px]">
+              {[
+                { label: 'Terms', href: '/disclosures/terms' },
+                { label: 'Privacy', href: '/disclosures/privacy' },
+                { label: 'Disclosures', href: '/disclosures/disclaimer' },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-[13px] text-white/35 transition hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row">
-          <p className="text-sm text-white/50">
-            © {new Date().getFullYear()} Visor Index. All rights reserved.
-          </p>
-          <p className="text-xs uppercase tracking-[0.18em] text-white/35">
-            Data sourced from SEC IAPD. Not investment advice.
-          </p>
+        {/* Bottom bar */}
+        <div className="flex items-center justify-between px-14 py-[18px] text-[11px]">
+          <span>© {year} Visor Index · Data from SEC EDGAR · Not investment advice</span>
+          <div className="flex gap-5">
+            <Link href="#" className="uppercase tracking-[0.08em] text-white/20 transition hover:text-white/60">LinkedIn</Link>
+            <Link href="#" className="uppercase tracking-[0.08em] text-white/20 transition hover:text-white/60">X</Link>
+          </div>
         </div>
       </div>
     </footer>
