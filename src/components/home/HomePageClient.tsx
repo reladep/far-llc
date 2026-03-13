@@ -166,6 +166,38 @@ function scoreToneClass(tone: 'good' | 'warn' | 'risk') {
   return 'text-emerald-400';
 }
 
+function HeroStats() {
+  const { ref, inView } = useInView<HTMLDivElement>(0.3);
+  const firmCount = useCountUp(4200, { start: inView, duration: 1400 });
+  const aumCount = useCountUp(8, { start: inView, duration: 1200, delay: 150 });
+  const metricCount = useCountUp(45, { start: inView, duration: 1000, delay: 300 });
+
+  const stats = [
+    { value: firmCount, prefix: '', suffix: '+', label: 'Firms Analyzed' },
+    { value: aumCount, prefix: '$', suffix: 'T+', label: 'AUM Covered' },
+    { value: metricCount, prefix: '', suffix: '+', label: 'Scoring Metrics' },
+  ];
+
+  return (
+    <div ref={ref} className="mt-16 border-t border-white/[0.06] pt-10 md:mt-20">
+      <div className="grid grid-cols-3 gap-6 md:gap-10">
+        {stats.map((stat) => (
+          <div key={stat.label} className="text-center">
+            <div className="font-serif text-2xl font-bold text-white md:text-3xl">
+              {stat.prefix}
+              {stat.value.toLocaleString()}
+              <span className="text-[#2DBD74]">{stat.suffix}</span>
+            </div>
+            <div className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-white/35">
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HeroScoreCard() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [phase, setPhase] = useState<'intro' | 'card' | 'settled'>('intro');
@@ -421,6 +453,7 @@ function SearchCard({
 
 function ReviewedFirmsStrip() {
   const [logos, setLogos] = useState<{ crd: number; logo_key: string }[]>([]);
+  const [validLogos, setValidLogos] = useState<{ crd: number; logo_key: string }[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -433,7 +466,7 @@ function ReviewedFirmsStrip() {
 
       if (data?.length) {
         const shuffled = [...data].sort(() => Math.random() - 0.5);
-        setLogos([...shuffled, ...shuffled]);
+        setLogos(shuffled);
       }
       setLoaded(true);
     }
@@ -441,67 +474,114 @@ function ReviewedFirmsStrip() {
     fetchLogos();
   }, []);
 
+  // Filter out logos that fail to load or are too small (render as blocks)
+  useEffect(() => {
+    if (!logos.length) return;
+    let cancelled = false;
+
+    async function validateLogos() {
+      const results = await Promise.all(
+        logos.map(
+          (logo) =>
+            new Promise<{ crd: number; logo_key: string } | null>((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                // Filter out tiny/degenerate images (likely placeholders or broken)
+                if (img.naturalWidth >= 40 && img.naturalHeight >= 12) {
+                  resolve(logo);
+                } else {
+                  resolve(null);
+                }
+              };
+              img.onerror = () => resolve(null);
+              img.src = `https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`;
+            })
+        )
+      );
+
+      if (!cancelled) {
+        const valid = results.filter(Boolean) as { crd: number; logo_key: string }[];
+        // Duplicate for seamless loop
+        setValidLogos([...valid, ...valid]);
+      }
+    }
+
+    validateLogos();
+    return () => { cancelled = true; };
+  }, [logos]);
+
   return (
     <>
-      {/* Keyframes defined here so they're global (not scoped by styled-jsx) */}
       <style>{`
         @keyframes logo-marquee {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .logo-marquee-track {
-          animation: logo-marquee 32s linear infinite;
+          animation: logo-marquee 40s linear infinite;
         }
         .logo-marquee-track:hover {
           animation-play-state: paused;
         }
       `}</style>
 
-      <section className="relative overflow-hidden border-y border-white/[0.05] bg-[#0F2538] py-[22px]" aria-label="Firms reviewed">
-        {/* Left/right fade gradients */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[120px] bg-gradient-to-r from-[#0F2538] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[120px] bg-gradient-to-l from-[#0F2538] to-transparent" />
+      <section className="relative overflow-hidden bg-[#0a1c2e] py-10 md:py-14" aria-label="Firms reviewed">
+        {/* Left green accent bar */}
+        <div className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-transparent via-[#2DBD74]/60 to-transparent" />
 
-        <p className="mb-5 text-center text-[9px] font-semibold uppercase tracking-[0.22em] text-white/20">
-          Firms We Review
-        </p>
-
-        {logos.length > 0 ? (
-          <div className="overflow-hidden">
-            <div className="logo-marquee-track flex items-center gap-14">
-              {logos.map((logo, index) => (
-                <Link
-                  key={`${logo.crd}-${index}`}
-                  href={`/firm/${logo.crd}`}
-                  className="flex shrink-0 items-center opacity-40 grayscale transition hover:opacity-80 hover:grayscale-0"
-                >
-                  <img
-                    src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
-                    alt="Reviewed firm logo"
-                    className="h-7 max-w-[90px] object-contain brightness-0 invert"
-                  />
-                </Link>
-              ))}
-            </div>
+        <div className="mx-auto max-w-7xl px-6 md:px-10">
+          {/* Header row: label + divider line */}
+          <div className="mb-7 flex items-center gap-5">
+            <p className="shrink-0 text-[12px] font-bold uppercase tracking-[0.25em] text-white/55">
+              Firms We Review
+            </p>
+            <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
           </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-center gap-3 px-4">
-          {(loaded ? reviewedFirmFallback : Array.from({ length: 4 }, (_, index) => `loading-${index}`)).map((item) => (
-            <div
-              key={item}
-              className={cn(
-                'border px-4 py-2 text-xs uppercase tracking-[0.18em]',
-                loaded
-                  ? 'border-white/10 text-white/55'
-                  : 'h-9 w-32 animate-pulse border-white/5 bg-white/[0.04] text-transparent'
-              )}
-            >
-              {loaded ? item : ''}
-            </div>
-          ))}
+
+          {/* Logo marquee */}
+          <div className="relative">
+            {/* Fade edges */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-24 bg-gradient-to-r from-[#0a1c2e] to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-24 bg-gradient-to-l from-[#0a1c2e] to-transparent" />
+
+            {validLogos.length > 0 ? (
+              <div className="overflow-hidden">
+                <div className="logo-marquee-track flex items-center gap-16">
+                  {validLogos.map((logo, index) => (
+                    <Link
+                      key={`${logo.crd}-${index}`}
+                      href={`/firm/${logo.crd}`}
+                      className="flex shrink-0 items-center opacity-50 grayscale transition-all duration-300 hover:-translate-y-0.5 hover:opacity-90 hover:grayscale-0"
+                    >
+                      <img
+                        src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
+                        alt="Reviewed firm logo"
+                        className="h-9 max-w-[120px] object-contain brightness-0 invert"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-center gap-3 px-4">
+                {(loaded ? reviewedFirmFallback : Array.from({ length: 4 }, (_, index) => `loading-${index}`)).map((item) => (
+                  <div
+                    key={item}
+                    className={cn(
+                      'border px-4 py-2 text-xs uppercase tracking-[0.18em]',
+                      loaded
+                        ? 'border-white/10 text-white/55'
+                        : 'h-9 w-32 animate-pulse border-white/5 bg-white/[0.04] text-transparent'
+                    )}
+                  >
+                    {loaded ? item : ''}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </section>
+      </section>
     </>
   );
 }
@@ -1398,6 +1478,8 @@ export function HomePageClient() {
               <HeroScoreCard />
             </Reveal>
           </div>
+          {/* Bottom stat counters */}
+          <HeroStats />
         </div>
       </section>
 
