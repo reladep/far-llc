@@ -64,8 +64,8 @@ export function Footer() {
             <h3 className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">Legal</h3>
             <ul className="flex flex-col gap-[10px]">
               {[
-                { label: 'Terms', href: '/disclosures/terms' },
-                { label: 'Privacy', href: '/disclosures/privacy' },
+                { label: 'Terms', href: '/terms' },
+                { label: 'Privacy', href: '/privacy' },
                 { label: 'Disclosures', href: '/disclosures/disclaimer' },
               ].map((link) => (
                 <li key={link.label}>
