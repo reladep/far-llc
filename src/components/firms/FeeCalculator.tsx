@@ -171,13 +171,13 @@ const CSS = `
   }
   .fc-out-cell { padding:16px 18px; border-right:1px solid var(--rule); }
   .fc-out-cell:last-child { border-right:none; }
-  .fc-out-label { font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+  .fc-out-label { font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
   .fc-out-val { font-family:var(--serif); font-size:22px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
   .fc-out-sub { font-size:10px; color:var(--ink-3); margin-top:4px; font-family:var(--mono); }
   .fc-out-verdict { font-size:11px; font-weight:600; margin-top:4px; }
   .fc-compare-section { margin-bottom:20px; }
   .fc-compare-label {
-    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
     color:var(--ink-3); margin-bottom:10px;
   }
   .fc-compare-track {
@@ -194,12 +194,12 @@ const CSS = `
   }
   .fc-compare-labels {
     display:flex; justify-content:space-between;
-    font-family:var(--mono); font-size:9px; color:var(--ink-3);
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
   }
   .fc-seg-note { font-size:11px; color:var(--ink-3); margin-top:6px; }
   .fc-proj-section { }
   .fc-proj-label {
-    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
     color:var(--ink-3); margin-bottom:10px;
   }
   .fc-proj-table { border:1px solid var(--rule); }
@@ -208,7 +208,7 @@ const CSS = `
     padding:8px 16px; border-bottom:1px solid var(--rule);
     background:var(--white);
   }
-  .fc-proj-head span { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); }
+  .fc-proj-head span { font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); }
   .fc-proj-head span:not(:first-child) { text-align:right; }
   .fc-proj-row {
     display:grid; grid-template-columns:80px 1fr 1fr 1fr;
@@ -226,7 +226,7 @@ const CSS = `
   .fc-10bp-sub { font-size:11px; color:var(--ink-3); margin-bottom:12px; }
   .fc-10bp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
   .fc-10bp-cell { padding:10px 12px; border:1px solid var(--rule); background:#fff; }
-  .fc-10bp-cell-label { font-size:9px; color:var(--ink-3); margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
+  .fc-10bp-cell-label { font-size:10px; color:var(--ink-3); margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
   .fc-10bp-cell-val { font-family:var(--serif); font-size:16px; font-weight:700; color:var(--green); }
   .fc-cta {
     display:flex; align-items:center; justify-content:center; gap:8px;

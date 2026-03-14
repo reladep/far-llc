@@ -22,6 +22,29 @@ interface NewsArticle {
   snippet: string;
 }
 
+/** Decode HTML entities, strip tags, and clean up API text */
+function sanitizeText(raw: string): string {
+  if (!raw) return '';
+  let text = raw;
+  // Decode entities first (handles double-encoded HTML like &lt;a href=...&gt;)
+  // Run twice to catch double-encoding (e.g. &amp;nbsp; → &nbsp; → ' ')
+  for (let i = 0; i < 2; i++) {
+    text = text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ');
+  }
+  // Strip HTML tags (including unclosed tags truncated at end of string)
+  text = text.replace(/<[^>]*>/g, '').replace(/<[^>]*$/g, '');
+  // Collapse multiple spaces and trim
+  text = text.replace(/\s{2,}/g, ' ').trim();
+  return text;
+}
+
 const ALERT_TYPE_LABELS: Record<string, string> = {
   fee_change: 'Fee Change',
   aum_change: 'AUM Change',
@@ -80,12 +103,12 @@ const CSS = `
   .fa-item:last-child { border-bottom:none; }
   .fa-item-meta { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
   .fa-badge {
-    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.12em;
+    font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.12em;
     text-transform:uppercase; padding:2px 7px; border:1px solid currentColor;
     border-radius:0;
   }
   .fa-severity {
-    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.10em;
+    font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.10em;
     text-transform:uppercase; padding:2px 7px;
     border-radius:2px;
   }
@@ -226,8 +249,8 @@ export default function FirmAlerts({ crd }: { crd: number }) {
               className="fa-news-item"
             >
               <div>
-                <div className="fa-news-title">{article.title}</div>
-                {article.snippet && <div className="fa-news-snippet">{article.snippet}</div>}
+                <div className="fa-news-title">{sanitizeText(article.title)}</div>
+                {article.snippet && <div className="fa-news-snippet">{sanitizeText(article.snippet)}</div>}
                 <div className="fa-news-source">
                   {article.source && <span>{article.source} · </span>}
                   {article.published_at && timeAgo(article.published_at)}

@@ -218,7 +218,7 @@ export default function StateDirectoryClient({ stateCode, stateName, firms, tota
             </div>
 
             {/* Eyebrow */}
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
               color: C.green3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 16, height: 1, background: C.green3, display: 'inline-block' }} />
               {stateCode} · State Directory
@@ -310,7 +310,7 @@ export default function StateDirectoryClient({ stateCode, stateName, firms, tota
               }}>
                 {['Firm', 'VVS', 'AUM', 'City', 'Emp.', ''].map((h, i) => (
                   <div key={i} style={{
-                    fontFamily: MONO, fontSize: 9, fontWeight: 700,
+                    fontFamily: MONO, fontSize: 10, fontWeight: 700,
                     letterSpacing: '.14em', textTransform: 'uppercase', color: C.ink3,
                     textAlign: i === 2 || i === 4 ? 'right' : 'left', paddingRight: i === 2 || i === 4 ? 8 : 0,
                     display: i === 1 ? 'flex' : 'block', justifyContent: 'center',
@@ -350,7 +350,7 @@ export default function StateDirectoryClient({ stateCode, stateName, firms, tota
                     padding: '40px 44px', textAlign: 'center',
                     marginTop: -160,
                   }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em',
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em',
                       textTransform: 'uppercase', color: C.green3, marginBottom: 12,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                       <span style={{ width: 20, height: 1, background: C.green3, display: 'inline-block' }} />

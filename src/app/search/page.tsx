@@ -105,7 +105,7 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
 
           {/* Visor Score Range */}
           <FilterGroup label="Visor Score™">
-            <style>{`
+            <style suppressHydrationWarning>{`
               .score-range-input {
                 -webkit-appearance: none;
                 appearance: none;
@@ -281,74 +281,115 @@ function FilterCheckbox({
 // ─── Gate Box ─────────────────────────────────────────────────────────────────
 
 function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
-  const [displayCount, setDisplayCount] = useState(2847);
-  const animRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const target = loading ? 2847 : Math.max(firms.length, 1);
-    const start = displayCount;
-    const startTime = performance.now();
-    const duration = 420;
-
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayCount(Math.round(start + (target - start) * eased));
-      if (progress < 1) animRef.current = requestAnimationFrame(animate);
-    };
-
-    animRef.current = requestAnimationFrame(animate);
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firms.length, loading]);
+  const previewFirms = firms.slice(0, 6);
+  const count = loading ? '—' : firms.length.toLocaleString();
 
   return (
-    <div className="flex items-start justify-center pt-12">
-      <div className="max-w-[520px] w-full border border-white/[0.09] border-t-[2px] border-t-[#1A7A4A] bg-[#0F2538] flex flex-col" style={{ padding: '44px 48px 40px' }}>
-        {/* Eyebrow */}
-        <div className="flex items-center gap-2 mb-5 text-[9px] font-bold uppercase tracking-[0.2em] text-[#2DBD74]">
-          <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
-          </svg>
-          Full Access Required
+    <div>
+      {/* Results count header */}
+      <div className="flex items-baseline gap-2.5 mb-4">
+        <span className="font-serif text-[22px] font-bold text-white">{count}</span>
+        <span className="text-[12px] text-white/30">advisors match your filters</span>
+      </div>
+
+      {/* Blurred cards + CTA overlay */}
+      <div className="relative">
+        {/* Blurred firm cards */}
+        <div className="pointer-events-none select-none" style={{ filter: 'blur(6px)' }}>
+          <div className="flex flex-col gap-[1px]">
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-[56px] bg-[#0F2538] border border-white/[0.06] animate-pulse" />
+              ))
+            ) : previewFirms.length > 0 ? (
+              previewFirms.map((firm) => {
+                const score = firm.final_score ?? null;
+                const scoreColor = score == null ? '#ffffff' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
+                return (
+                  <div key={firm.crd} className="grid grid-cols-[56px_1fr_auto_auto] border border-white/[0.06] bg-[#0F2538]">
+                    <div className="grid place-items-center border-r border-white/[0.06]" style={{ height: 56, width: 56 }}>
+                      <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
+                        {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="px-5 py-[14px] min-w-0">
+                      <p className="font-serif text-[16px] font-semibold text-white truncate mb-1">
+                        {firm.display_name || firm.primary_business_name}
+                      </p>
+                      <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+                    </div>
+                    <div className="px-5 py-[14px] text-right" style={{ minWidth: 100 }}>
+                      <p className="font-serif text-[18px] font-bold text-white leading-none mb-1">{formatAUM(firm.aum)}</p>
+                      <p className="text-[9px] uppercase tracking-[0.1em] text-white/25">AUM</p>
+                    </div>
+                    <div className="px-5 py-[14px] text-center" style={{ minWidth: 80 }}>
+                      {score != null ? (
+                        <p className="font-serif text-[28px] font-bold leading-none" style={{ color: scoreColor }}>{score}</p>
+                      ) : (
+                        <p className="text-[11px] text-white/20">N/A</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-[56px] bg-[#0F2538] border border-white/[0.06]" />
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Headline with animated count */}
-        <h2 className="font-serif text-[clamp(28px,3.2vw,40px)] font-bold leading-[1.15] tracking-[-0.02em] text-white mb-4">
-          <span className="text-[#2DBD74]">{displayCount.toLocaleString()}</span> advisors match your filters.{' '}
-          <br />
-          <em className="not-italic">You can&apos;t see any of them yet.</em>
-        </h2>
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(180deg, rgba(10,28,42,0) 0%, rgba(10,28,42,0.6) 60%, rgba(10,28,42,0.95) 100%)' }}
+        />
 
-        {/* Subtitle */}
-        <p className="text-[13px] text-white/35 leading-[1.75] border-t border-white/[0.06] pt-5 mb-7">
-          You can search and filter freely. Seeing the results — scores, conflict flags, rankings — requires a Visor Index subscription.
-        </p>
+        {/* CTA overlay card */}
+        <div className="absolute inset-x-0 top-[40px] flex justify-center" style={{ pointerEvents: 'auto' }}>
+          <div className="max-w-[480px] w-full border border-white/[0.09] border-t-[2px] border-t-[#1A7A4A] bg-[#0F2538] shadow-[0_8px_48px_rgba(0,0,0,0.5)]" style={{ padding: '36px 40px 32px' }}>
+            {/* Eyebrow */}
+            <div className="flex items-center gap-2 mb-4 text-[9px] font-bold uppercase tracking-[0.2em] text-[#2DBD74]">
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+              </svg>
+              Unlock Full Results
+            </div>
 
-        {/* CTAs */}
-        <div className="flex gap-3 flex-wrap mb-5">
-          <Link
-            href="/auth/signup"
-            className="inline-flex items-center px-7 py-3 bg-[#1A7A4A] hover:bg-[#22995E] text-white text-[13px] font-semibold transition-colors"
-          >
-            Get Full Access →
-          </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center px-7 py-3 border border-white/10 text-white/40 hover:border-white/30 hover:text-white text-[13px] transition-all"
-          >
-            View Pricing
-          </Link>
+            {/* Headline */}
+            <h2 className="font-serif text-[clamp(22px,2.5vw,30px)] font-bold leading-[1.2] tracking-[-0.02em] text-white mb-3">
+              See scores, fees, and conflicts for every advisor that matches.
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-[13px] text-white/35 leading-[1.7] border-t border-white/[0.06] pt-4 mb-6">
+              Search and filter freely. Full profiles with Visor Scores, fee breakdowns, and regulatory history require an account.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex gap-3 flex-wrap mb-4">
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center px-7 py-3 bg-[#1A7A4A] hover:bg-[#22995E] text-white text-[13px] font-semibold transition-colors"
+              >
+                Get Full Access →
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center px-7 py-3 border border-white/10 text-white/40 hover:border-white/30 hover:text-white text-[13px] transition-all"
+              >
+                View Pricing
+              </Link>
+            </div>
+
+            {/* Trust line */}
+            <p className="flex items-center gap-2 text-[11px] text-white/20">
+              <span className="h-[5px] w-[5px] rounded-full bg-[#2DBD74] shrink-0" />
+              Free forever · No credit card required
+            </p>
+          </div>
         </div>
-
-        {/* Trust line */}
-        <p className="flex items-center gap-2 text-[11px] text-white/20">
-          <span className="h-[5px] w-[5px] rounded-full bg-[#2DBD74] shrink-0" />
-          No advisor has ever paid to appear here or influence their score.
-        </p>
       </div>
     </div>
   );

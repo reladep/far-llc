@@ -378,7 +378,7 @@ export default function ComparePage() {
   // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <>
-      <style>{`
+      <style suppressHydrationWarning>{`
         .compare-page { background: #F6F8F7; color: #0C1810; }
         .compare-ct-row:hover { background: rgba(26,122,74,.028); }
         .jn-link { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.3); padding: 11px 20px 11px 0; margin-right: 4px; white-space: nowrap; text-decoration: none; border-bottom: 2px solid transparent; transition: all .15s; letter-spacing: .04em; display: inline-block; }
@@ -398,14 +398,33 @@ export default function ComparePage() {
         .search-result-btn:hover, .search-result-btn.active { background: rgba(26,122,74,.06); }
         .gc-cta-link { display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px; background: #1A7A4A; color: #fff; padding: 15px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: background .15s; margin-bottom: 12px; }
         .gc-cta-link:hover { background: #22995E; }
+
+        /* ── Mobile responsive ────────────────────────────────────────── */
+        @media (max-width: 768px) {
+          .compare-page .cp-header-wrap { padding: 24px 16px 0 !important; }
+          .compare-page .cp-header-wrap .cp-jump-nav { margin: 0 -16px !important; padding: 0 16px !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .compare-page .cp-firm-header { padding: 0 16px !important; }
+          .compare-page .cp-table-wrap { padding: 0 0 32px !important; }
+          .compare-page .cp-fee-section { padding: 0 16px !important; margin-bottom: 40px !important; }
+          .compare-page .cp-fee-body { grid-template-columns: 1fr !important; }
+          .compare-page .cp-fee-input-row { flex-direction: column !important; gap: 12px !important; padding: 16px !important; }
+          .compare-page .cp-fee-input-row .cp-slider-wrap { width: 100% !important; }
+          .compare-page .cp-gate-card { top: 120px !important; padding: 28px 20px !important; max-width: calc(100% - 32px) !important; }
+          .compare-page .cp-gate-perks { padding: 12px 14px !important; }
+          .compare-page .cp-gate-firms { flex-direction: column !important; }
+          .compare-page .cp-gate-firms > div { border-right: none !important; border-bottom: 1px solid #CAD8D0; }
+          .compare-page .cp-gate-firms > div:last-child { border-bottom: none; }
+          .compare-page .cp-empty-state { padding: 48px 16px !important; }
+          .compare-page .cp-search-modal-inner { margin: 0 16px; }
+        }
       `}</style>
 
       <div className="compare-page" style={{ minHeight: '100vh' }}>
 
         {/* ── PAGE HEADER (dark navy) ─────────────────────────────────────── */}
-        <div style={{ background: '#0A1C2A', padding: '32px 48px 0' }}>
+        <div className="cp-header-wrap" style={{ background: '#0A1C2A', padding: '32px 48px 0' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
               Side-by-Side Comparison
             </div>
@@ -416,7 +435,7 @@ export default function ComparePage() {
               Up to 4 firms · Scores, fees, growth, and client profile
             </p>
             {/* Jump nav */}
-            <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,.07)', margin: '0 -48px', padding: '0 48px' }}>
+            <div className="cp-jump-nav" style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,.07)', margin: '0 -48px', padding: '0 48px' }}>
               {jumpLinks.map(link => (
                 <a
                   key={link.id}
@@ -442,7 +461,7 @@ export default function ComparePage() {
               boxShadow: '0 4px 20px rgba(0,0,0,.15)',
               overflowX: 'auto',
             }}>
-              <div style={{
+              <div className="cp-firm-header" style={{
                 display: 'grid',
                 gridTemplateColumns: '188px repeat(4, 1fr)',
                 maxWidth: 1200, margin: '0 auto',
@@ -451,7 +470,7 @@ export default function ComparePage() {
               }}>
                 {/* Gutter label */}
                 <div style={{ padding: '14px 0', display: 'flex', alignItems: 'center', borderRight: '1px solid rgba(255,255,255,.07)' }}>
-                  <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,.2)' }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,.2)' }}>
                     {selected.length} {selected.length === 1 ? 'firm' : 'firms'}
                   </span>
                 </div>
@@ -527,7 +546,7 @@ export default function ComparePage() {
             )}
 
             {/* ── COMPARISON TABLE ─────────────────────────────────────── */}
-            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px 48px', overflowX: 'auto' }}>
+            <div className="cp-table-wrap" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px 48px', overflowX: 'auto' }}>
               <div style={{ minWidth: 700 }}>
 
                 {/* VISOR SCORE™ */}
@@ -571,14 +590,14 @@ export default function ComparePage() {
             </div>
 
             {/* ── FEE CALCULATOR ───────────────────────────────────────── */}
-            <div id="fees" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 48px' }}>
+            <div id="fees" className="cp-fee-section" style={{ maxWidth: 1200, margin: '0 auto 80px', padding: '0 48px' }}>
               <div style={{ padding: '28px 0 10px', borderBottom: '2px solid #0C1810', marginBottom: 24, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 19, fontWeight: 700, color: '#0C1810' }}>Fee Calculator</span>
                 <span style={{ fontSize: 10, color: '#5A7568' }}>Enter your portfolio value to compare estimated fees across all firms</span>
               </div>
 
               {/* Full-width input row */}
-              <div style={{ background: '#fff', border: '1px solid #CAD8D0', borderTop: '2px solid #1A7A4A', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24, marginBottom: 1 }}>
+              <div className="cp-fee-input-row" style={{ background: '#fff', border: '1px solid #CAD8D0', borderTop: '2px solid #1A7A4A', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 24, marginBottom: 1 }}>
                 <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', whiteSpace: 'nowrap' }}>Portfolio Value</span>
                 <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #CAD8D0', background: '#F6F8F7', flexShrink: 0 }}>
                   <span style={{ padding: '0 12px', fontFamily: 'Cormorant Garamond, serif', fontSize: 19, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '44px' }}>$</span>
@@ -596,7 +615,7 @@ export default function ComparePage() {
                     style={{ border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#0C1810', padding: '10px 14px', width: 180 }}
                   />
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div className="cp-slider-wrap" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <input
                     type="range"
                     className="fee-slider-input"
@@ -609,7 +628,7 @@ export default function ComparePage() {
                       setFeeInput(num.toLocaleString('en-US'));
                     }}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'DM Mono, monospace', fontSize: 9, color: '#5A7568' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#5A7568' }}>
                     <span>$5M</span><span>$15M</span><span>$25M</span><span>$35M</span><span>$50M+</span>
                   </div>
                 </div>
@@ -620,7 +639,7 @@ export default function ComparePage() {
 
               {/* Two-column fee body */}
               {comparisonData.length > 0 && feeAmount > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: '#CAD8D0', border: '1px solid #CAD8D0' }}>
+                <div className="cp-fee-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: '#CAD8D0', border: '1px solid #CAD8D0' }}>
 
                   {/* Left: fee bars */}
                   <div style={{ background: '#fff', padding: 24 }}>
@@ -669,7 +688,7 @@ export default function ComparePage() {
                   <div style={{ background: '#fff', padding: 24 }}>
                     <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                       Portfolio Impact Over Time
-                      <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 9, color: '#5A7568' }}>(7% annual return)</span>
+                      <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10, color: '#5A7568' }}>(7% annual return)</span>
                       <span style={{ flex: 1, height: 1, background: '#CAD8D0', display: 'inline-block' }} />
                     </div>
 
@@ -692,7 +711,7 @@ export default function ComparePage() {
                             <thead>
                               <tr>
                                 {['Firm', 'Annual Fee', 'Portfolio Value', 'Fees Paid'].map(h => (
-                                  <th key={h} style={{ fontSize: 9, fontWeight: 600, letterSpacing: '.13em', textTransform: 'uppercase', color: '#5A7568', padding: '6px 8px', borderBottom: '1px solid #CAD8D0', textAlign: h === 'Firm' ? 'left' : 'right' }}>{h}</th>
+                                  <th key={h} style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.13em', textTransform: 'uppercase', color: '#5A7568', padding: '6px 8px', borderBottom: '1px solid #CAD8D0', textAlign: h === 'Firm' ? 'left' : 'right' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -714,7 +733,7 @@ export default function ComparePage() {
                       );
                     })}
 
-                    <div style={{ fontSize: 9, color: '#5A7568', lineHeight: 1.6, fontStyle: 'italic', paddingTop: 14, borderTop: '1px solid #CAD8D0', marginTop: 14 }}>
+                    <div style={{ fontSize: 10, color: '#5A7568', lineHeight: 1.6, fontStyle: 'italic', paddingTop: 14, borderTop: '1px solid #CAD8D0', marginTop: 14 }}>
                       Estimates based on disclosed fee schedules. Actual fees may be negotiated and will vary. Peer comparison uses national median for fee-only advisors at equivalent AUM. Projections assume a constant blended fee rate and 7% gross annual return.
                     </div>
                   </div>
@@ -735,14 +754,14 @@ export default function ComparePage() {
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '54%', background: '#F6F8F7', pointerEvents: 'none', zIndex: 5 }} />
 
               {/* Gate card */}
-              <div style={{
+              <div className="cp-gate-card" style={{
                 position: 'absolute', top: 220, left: '50%', transform: 'translateX(-50%)',
                 width: '100%', maxWidth: 520,
                 background: '#fff', border: '1px solid #CAD8D0', borderTop: '2px solid #0A1C2A',
                 boxShadow: '0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07)',
                 padding: '40px 44px', textAlign: 'center', zIndex: 50,
               }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                   <span style={{ width: 20, height: 1, background: '#2DBD74', display: 'inline-block' }} />
                   Free to join
                   <span style={{ width: 20, height: 1, background: '#2DBD74', display: 'inline-block' }} />
@@ -755,7 +774,7 @@ export default function ComparePage() {
                 </p>
 
                 {/* Firm teaser row */}
-                <div style={{ display: 'flex', border: '1px solid #CAD8D0', marginBottom: 24 }}>
+                <div className="cp-gate-firms" style={{ display: 'flex', border: '1px solid #CAD8D0', marginBottom: 24 }}>
                   {selected.length > 0 ? selected.slice(0, 4).map((firm, i) => (
                     <div key={firm.crd} style={{ flex: 1, padding: '12px 14px', borderRight: i < selected.length - 1 ? '1px solid #CAD8D0' : 'none', textAlign: 'center' }}>
                       <div style={{ width: 26, height: 26, background: '#0A1C2A', display: 'grid', placeItems: 'center', fontFamily: 'Cormorant Garamond, serif', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.45)', margin: '0 auto 5px' }}>
@@ -774,7 +793,7 @@ export default function ComparePage() {
                 </div>
 
                 {/* Perks */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, textAlign: 'left', marginBottom: 24, padding: '14px 18px', background: '#F6F8F7', border: '1px solid #CAD8D0' }}>
+                <div className="cp-gate-perks" style={{ display: 'flex', flexDirection: 'column', gap: 7, textAlign: 'left', marginBottom: 24, padding: '14px 18px', background: '#F6F8F7', border: '1px solid #CAD8D0' }}>
                   {[
                     'Full Visor Value Score™ breakdown across 8 sub-metrics',
                     'AUM growth, client profile, and advisor bandwidth data',
@@ -804,7 +823,7 @@ export default function ComparePage() {
 
         {/* ── EMPTY STATE (signed in, no firms) ──────────────────────────── */}
         {!isGated && session !== undefined && selected.length === 0 && !showSearch && (
-          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 48px', textAlign: 'center' }}>
+          <div className="cp-empty-state" style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 48px', textAlign: 'center' }}>
             <div style={{ width: 56, height: 56, border: '1px solid #CAD8D0', display: 'grid', placeItems: 'center', margin: '0 auto 24px', opacity: 0.5 }}>
               <svg width="22" height="22" fill="none" stroke="#5A7568" strokeWidth="1.5" viewBox="0 0 22 22">
                 <circle cx="11" cy="11" r="9" /><line x1="11" y1="7" x2="11" y2="15" /><line x1="7" y1="11" x2="15" y2="11" />
@@ -829,7 +848,7 @@ export default function ComparePage() {
             style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(10,28,42,.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 120 }}
             onClick={e => { if (e.target === e.currentTarget) { setShowSearch(false); setQuery(''); setResults([]); } }}
           >
-            <div style={{ background: '#fff', width: '100%', maxWidth: 520, border: '1px solid #CAD8D0', borderTop: '2px solid #1A7A4A', padding: 24 }}>
+            <div className="cp-search-modal-inner" style={{ background: '#fff', width: '100%', maxWidth: 520, border: '1px solid #CAD8D0', borderTop: '2px solid #1A7A4A', padding: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 12 }}>Add a Firm to Compare</div>
               <input
                 autoFocus

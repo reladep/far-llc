@@ -39,7 +39,7 @@ const CSS = `
   /* user identity */
   .db-id { padding:24px 20px 20px; border-bottom:1px solid var(--rule); }
   .db-eyebrow {
-    font-size:9px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+    font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
     color:var(--ink-3); font-family:var(--mono); margin-bottom:6px;
   }
   .db-name {
@@ -49,7 +49,7 @@ const CSS = `
   }
   .db-plan {
     display:inline-flex; align-items:center; gap:5px;
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.1em; text-transform:uppercase;
     color:var(--green); background:var(--green-pale);
     border:1px solid rgba(26,122,74,.2); padding:3px 9px;
@@ -75,7 +75,7 @@ const CSS = `
   .db-nav-icon { font-size:14px; flex-shrink:0; width:20px; text-align:center; color:inherit; }
   .db-nav-label { flex:1; }
   .db-nav-count {
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     background:var(--rule); color:var(--ink-3); padding:2px 6px;
   }
   .db-nav-item.active .db-nav-count { background:rgba(26,122,74,.15); color:var(--green); }

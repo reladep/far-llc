@@ -364,6 +364,7 @@ const PAGE_CSS = `
   .vfp-page {
     padding-top:96px; max-width:1200px; margin:0 auto;
     padding-left:56px; padding-right:56px; padding-bottom:120px;
+    overflow-x:hidden;
   }
   .vfp-hero {
     background:var(--navy);
@@ -400,7 +401,7 @@ const PAGE_CSS = `
   }
   .vfp-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .vfp-badge {
-    font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
+    font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
     padding:3px 10px; border:1px solid rgba(255,255,255,.12);
     color:rgba(255,255,255,.45);
   }
@@ -414,7 +415,7 @@ const PAGE_CSS = `
     padding-left:32px; border-left:1px solid rgba(255,255,255,.07);
   }
   .vfp-score-label {
-    font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
     color:rgba(255,255,255,.3); margin-top:8px; text-align:center;
   }
   .vfp-stats-row {
@@ -426,7 +427,7 @@ const PAGE_CSS = `
   }
   .vfp-stat:last-child { border-right:none; }
   .vfp-stat-label {
-    font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
+    font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
     color:rgba(255,255,255,.25); margin-bottom:6px;
   }
   .vfp-stat-val {
@@ -440,6 +441,7 @@ const PAGE_CSS = `
     display:grid; grid-template-columns:1fr 300px;
     gap:48px; padding-top:48px;
   }
+  .vfp-body > main { min-width:0; overflow-wrap:break-word; word-wrap:break-word; }
   .vfp-section { margin-bottom:48px; }
   .vfp-section-head {
     display:flex; align-items:baseline; justify-content:space-between;
@@ -498,7 +500,7 @@ const PAGE_CSS = `
   /* Fees */
   .vfp-fee-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
   .vfp-fee-card { background:#fff; border:1px solid var(--rule); padding:22px 26px; }
-  .vfp-fee-card-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-fee-card-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
   .vfp-fee-card-val { font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:4px; letter-spacing:-.02em; }
   .vfp-fee-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
   .vfp-fee-table { background:#fff; border:1px solid var(--rule); margin-bottom:20px; }
@@ -506,7 +508,7 @@ const PAGE_CSS = `
     display:grid; grid-template-columns:1fr 1fr 1fr;
     padding:10px 20px; border-bottom:1px solid var(--rule); background:var(--white);
   }
-  .vfp-fee-table-head span { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
+  .vfp-fee-table-head span { font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
   .vfp-fee-row {
     display:grid; grid-template-columns:1fr 1fr 1fr;
     padding:14px 20px; border-bottom:1px solid var(--rule); align-items:center;
@@ -521,7 +523,7 @@ const PAGE_CSS = `
   .vfp-aum-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--rule); }
   .vfp-aum-stat { padding:18px 24px; border-right:1px solid var(--rule); }
   .vfp-aum-stat:last-child { border-right:none; }
-  .vfp-aum-stat-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
+  .vfp-aum-stat-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
   .vfp-aum-stat-val { font-family:var(--serif); font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
   .vfp-aum-stat-delta { display:inline-flex; align-items:center; gap:4px; font-size:11px; margin-top:4px; font-family:var(--mono); }
   .vfp-aum-stat-delta.up { color:var(--green); }
@@ -536,7 +538,7 @@ const PAGE_CSS = `
   /* Clients */
   .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .vfp-client-card { background:#fff; border:1px solid var(--rule); padding:24px 28px; }
-  .vfp-client-card-label { font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-client-card-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
   .vfp-client-card-val { font-family:var(--serif); font-size:32px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:6px; letter-spacing:-.02em; }
   .vfp-client-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
   .vfp-client-breakdown { background:#fff; border:1px solid var(--rule); margin-top:16px; }
@@ -587,7 +589,7 @@ const PAGE_CSS = `
   .vfp-cta-card { background:var(--navy); border:none; border-top:2px solid var(--green-3); overflow:hidden; }
   .vfp-cta-body { padding:24px; }
   .vfp-cta-eyebrow {
-    font-size:9px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+    font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
     color:var(--green-3); margin-bottom:12px; display:flex; align-items:center; gap:6px;
   }
   .vfp-cta-h { font-family:var(--serif); font-size:20px; font-weight:700; color:#fff; line-height:1.25; margin-bottom:10px; }
@@ -602,6 +604,74 @@ const PAGE_CSS = `
   .vfp-cta-btn:hover { background:var(--green-2); }
   .vfp-cta-trust { font-size:10px; color:rgba(255,255,255,.2); text-align:center; margin-top:10px; line-height:1.5; }
 
+  /* Gated view */
+  .vfp-gate-blur {
+    pointer-events:none; user-select:none; position:relative;
+  }
+  .vfp-gate-blur::after {
+    content:''; position:absolute; inset:0;
+    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.2) 6%,rgba(0,0,0,1) 18%);
+    mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.2) 6%,rgba(0,0,0,1) 18%);
+    pointer-events:none; z-index:2;
+  }
+  .vfp-gate-preview-data {
+    filter:blur(6px); pointer-events:none; user-select:none;
+  }
+  .vfp-gate-cta {
+    position:absolute; top:60px; left:50%; transform:translateX(-50%);
+    width:calc(100% - 48px); max-width:520px;
+    background:#fff; border:1px solid var(--rule); border-top:2px solid var(--navy);
+    box-shadow:0 32px 80px rgba(10,28,42,.13),0 4px 20px rgba(10,28,42,.07);
+    padding:40px 44px; text-align:center; z-index:50;
+  }
+  .vfp-gate-lock {
+    width:48px; height:48px; background:var(--navy);
+    display:grid; place-items:center; margin:0 auto 20px;
+  }
+  .vfp-gate-list {
+    text-align:left; margin:0 auto 24px; max-width:320px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .vfp-gate-list-item {
+    display:flex; align-items:center; gap:10px;
+    font-size:12px; color:var(--ink-2); font-family:var(--sans);
+  }
+  .vfp-gate-check {
+    width:16px; height:16px; background:rgba(45,189,116,.1);
+    display:grid; place-items:center; flex-shrink:0;
+  }
+  .vfp-gate-email-row { display:flex; border:1px solid var(--rule); margin-bottom:14px; }
+  .vfp-gate-email-input {
+    flex:1; border:none; background:var(--white); outline:none;
+    font-family:var(--mono); font-size:13px; color:var(--ink); padding:12px 14px;
+  }
+  .vfp-gate-submit {
+    background:var(--green); color:#fff; border:none; padding:12px 20px;
+    font-family:var(--sans); font-size:12px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+    transition:background .15s; white-space:nowrap;
+  }
+  .vfp-gate-submit:hover { background:var(--green-2); }
+  .vfp-gate-google {
+    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:#fff; border:1px solid var(--rule); color:var(--ink); padding:11px;
+    font-size:13px; cursor:pointer; transition:border-color .15s;
+    margin-bottom:14px; font-family:var(--sans); text-decoration:none;
+  }
+  .vfp-gate-google:hover { border-color:var(--ink-3); }
+  .vfp-gate-nav {
+    background:var(--white); border-bottom:1px solid var(--rule);
+    margin:0 -56px; display:flex; overflow-x:auto;
+  }
+  .vfp-gate-nav-inner { max-width:1200px; margin:0 auto; padding:0 56px; display:flex; }
+  .vfp-gate-tab {
+    font-size:12px; font-weight:500; color:var(--ink-3); padding:14px 20px;
+    white-space:nowrap; letter-spacing:.02em; border-bottom:2px solid transparent;
+    font-family:var(--sans);
+  }
+  .vfp-gate-tab.active { font-weight:600; color:var(--green); border-bottom-color:var(--green); }
+
   @media (max-width:900px) {
     .vfp-breadcrumb { padding:0 20px; }
     .vfp-page { padding-left:20px; padding-right:20px; }
@@ -613,6 +683,28 @@ const PAGE_CSS = `
     .vfp-sidebar { position:static; }
     .vfp-fee-grid { grid-template-columns:1fr; }
     .vfp-client-grid { grid-template-columns:1fr; }
+    .vfp-gate-cta { padding:28px 24px; width:calc(100% - 24px); top:40px; }
+    .vfp-gate-nav { margin:0 -20px; }
+    .vfp-gate-nav-inner { padding:0 20px; }
+  }
+
+  @media (max-width:640px) {
+    .vfp-page { padding-left:16px; padding-right:16px; }
+    .vfp-hero { margin:0 -16px; padding:24px 16px 0; }
+    .vfp-hero-top { grid-template-columns:1fr; gap:16px; }
+    .vfp-stats-row { grid-template-columns:repeat(2,1fr); gap:1px; }
+    .vfp-tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; gap:0; }
+    .vfp-tab { white-space:nowrap; flex-shrink:0; }
+    .vfp-score-grid { grid-template-columns:1fr 1fr; }
+    .vfp-aum-stats { grid-template-columns:1fr 1fr; }
+    .vfp-client-grid { grid-template-columns:1fr; }
+    .vfp-fee-grid { grid-template-columns:1fr; }
+    .vfp-fee-card { padding:16px; }
+    .vfp-similar-grid { grid-template-columns:1fr; }
+    .vfp-gate-cta { padding:24px 16px; width:calc(100% - 16px); top:20px; }
+    .vfp-breadcrumb { padding:0 16px; }
+    .vfp-gate-nav { margin:0 -16px; }
+    .vfp-gate-nav-inner { padding:0 16px; }
   }
 `;
 
@@ -666,59 +758,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     isSaved = !!fav;
   }
 
-  // ── Not authenticated ──
-  if (!user) {
-    return (
-      <>
-        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 40, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>
-            {firmDisplayName}
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 40 }}>
-            {firm.main_office_city}, {firm.main_office_state}
-          </p>
-          <div style={{
-            maxWidth: 420, margin: '0 auto', padding: '32px',
-            background: '#fff', border: '1px solid var(--rule)',
-          }}>
-            <p style={{
-              fontFamily: 'var(--serif)', fontSize: 9, fontWeight: 600,
-              letterSpacing: '.18em', textTransform: 'uppercase',
-              color: 'var(--green-3)', marginBottom: 16,
-            }}>
-              Free access required
-            </p>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 8, fontFamily: 'var(--serif)' }}>
-              Create a free account to view this firm&apos;s full profile
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 24, lineHeight: 1.6 }}>
-              Access fee schedules, Visor Score™, growth history, and regulatory disclosures — all from SEC filings.
-            </p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Link href="/auth/signup" style={{
-                flex: 1, display: 'block', textAlign: 'center',
-                padding: '10px', background: 'var(--green)', color: '#fff',
-                textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600,
-              }}>
-                Get Started Free
-              </Link>
-              <Link href="/auth/login" style={{
-                flex: 1, display: 'block', textAlign: 'center',
-                padding: '10px', background: 'none',
-                border: '1px solid var(--rule)', color: 'var(--ink-2)',
-                textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13,
-              }}>
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // ── Computed stats (preserve data logic) ──
+  // ── Computed stats (needed for both gated + authenticated views) ──
   const totalClients = [
     firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
     firm.client_charitable_number, firm.client_corporations_number, firm.client_pooled_vehicles_number,
@@ -871,6 +911,289 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     !(s.id === 'about' && !profileText?.business_profile && !profileText?.investment_philosophy) &&
     !(s.id === 'aum' && !showGrowthSection)
   );
+
+  // ── GATED VIEW (unauthenticated) ─────────────────────────────────────────────
+  if (!user) {
+    const truncatedAbout = profileText?.business_profile
+      ? profileText.business_profile.slice(0, 280) + '…'
+      : 'This SEC-registered investment adviser provides fiduciary wealth management services. Create a free account to read the full profile, including investment philosophy, fee structure, and regulatory history.';
+
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+
+        {/* Breadcrumb (simplified — no Save/Compare) */}
+        <div className="vfp-breadcrumb">
+          <div className="vfp-breadcrumb-i">
+            <div className="vfp-bc-trail">
+              <Link href="/search">Search</Link>
+              <span className="vfp-bc-sep">›</span>
+              {firm.main_office_city && firm.main_office_state && (
+                <>
+                  <Link href={`/search?state=${firm.main_office_state}`}>
+                    {firm.main_office_city} · {firm.main_office_state}
+                  </Link>
+                  <span className="vfp-bc-sep">›</span>
+                </>
+              )}
+              <span className="vfp-bc-current">{firmDisplayName}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="vfp-page">
+
+          {/* ── GATED CONTENT ── */}
+          <div style={{ position: 'relative', minHeight: 700, marginTop: 24 }}>
+
+            {/* Blurred preview sections */}
+            <div className="vfp-gate-blur">
+
+              {/* About preview */}
+              <div className="vfp-section" style={{ paddingTop: 32 }}>
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">About</span>
+                  <span className="vfp-section-meta">Derived from ADV Part 2A</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  <p className="vfp-gate-preview-data" style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                    {truncatedAbout}
+                  </p>
+                </div>
+              </div>
+
+              {/* Visor Score preview */}
+              <div className="vfp-section" style={{ marginTop: 40 }}>
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">Visor Value Score™</span>
+                  <span className="vfp-section-meta">Composite of 8 dimensions</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  <div className="vfp-gate-preview-data" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {(vvsBars.length > 0 ? vvsBars.slice(0, 4) : [
+                      { label: 'Disclosure Quality', score: 72 },
+                      { label: 'Fee Transparency', score: 85 },
+                      { label: 'Fee Competitiveness', score: 64 },
+                      { label: 'Conflict-Free', score: 78 },
+                    ]).map((bar, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', width: 140, flexShrink: 0 }}>{bar.label}</span>
+                        <div style={{ flex: 1, height: 8, background: 'var(--rule)', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ width: `${bar.score}%`, height: '100%', background: 'var(--green-3)', borderRadius: 4 }} />
+                        </div>
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', width: 24, textAlign: 'right' }}>{bar.score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fee Schedule preview */}
+              <div className="vfp-section" style={{ marginTop: 40 }}>
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">Fee Schedule</span>
+                  <span className="vfp-section-meta">{feeTypeDisplay}</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  <div className="vfp-gate-preview-data">
+                    {sortedFeeTiers.length > 0 ? (
+                      <table style={{ width: '100%', fontSize: 12, fontFamily: 'var(--mono)', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--rule)' }}>
+                            <th style={{ textAlign: 'left', padding: '8px 0', color: 'var(--ink-3)', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em' }}>AUM Range</th>
+                            <th style={{ textAlign: 'right', padding: '8px 0', color: 'var(--ink-3)', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em' }}>Annual Fee</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedFeeTiers.slice(0, 4).map((tier, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--rule)' }}>
+                              <td style={{ padding: '10px 0', color: 'var(--ink-2)' }}>
+                                {formatAUM(parseInt(tier.min_aum || '0'))} – {tier.max_aum ? formatAUM(tier.max_aum) : '∞'}
+                              </td>
+                              <td style={{ textAlign: 'right', padding: '10px 0', color: 'var(--ink)' }}>
+                                {tier.fee_pct ? `${(tier.fee_pct * 100).toFixed(2)}%` : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.75, margin: 0 }}>
+                        Fee schedule details are available in the full profile. Create a free account to view tiered fee breakdowns and use our interactive fee calculator.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* AUM & Growth preview */}
+              <div className="vfp-section" style={{ marginTop: 40 }}>
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">AUM &amp; Growth</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  <div className="vfp-gate-preview-data" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Current AUM</div>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: 22, color: 'var(--navy)', marginTop: 4 }}>{formatAUM(firm.aum)}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Avg Annual Growth</div>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: 22, color: 'var(--green)', marginTop: 4 }}>
+                        {aumStats.avgAnnualPct > 0 ? `${aumStats.avgAnnualPct.toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>Total Clients</div>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: 22, color: 'var(--navy)', marginTop: 4 }}>
+                        {totalClients > 0 ? totalClients.toLocaleString() : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Regulatory preview */}
+              <div className="vfp-section" style={{ marginTop: 40, paddingBottom: 32 }}>
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">Regulatory &amp; Disciplinary</span>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                  <p className="vfp-gate-preview-data" style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.75, margin: 0 }}>
+                    Regulatory disclosure history, disciplinary events, and compliance record details are available in the full profile view.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── CTA OVERLAY CARD ── */}
+            <div className="vfp-gate-cta">
+              {/* Lock icon */}
+              <div className="vfp-gate-lock">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+
+              <h2 style={{
+                fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600,
+                color: 'var(--navy)', marginTop: 16, lineHeight: 1.3,
+                textAlign: 'center',
+              }}>
+                Unlock {firmDisplayName.split(' ').slice(0, 3).join(' ')}&apos;s full profile
+              </h2>
+
+              <p style={{
+                fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)',
+                marginTop: 6, textAlign: 'center', letterSpacing: '.03em',
+              }}>
+                Free forever · No credit card required
+              </p>
+
+              {/* Feature list */}
+              <div className="vfp-gate-list">
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  Visor Score™ breakdown (8 dimensions)
+                </div>
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  Interactive fee calculator
+                </div>
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  AUM &amp; client growth charts
+                </div>
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  Regulatory &amp; disciplinary history
+                </div>
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  Side-by-side firm comparison
+                </div>
+                <div className="vfp-gate-list-item">
+                  <span className="vfp-gate-check">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  Similar firms in your state
+                </div>
+              </div>
+
+              {/* Email + submit row */}
+              <div className="vfp-gate-email-row">
+                <input
+                  type="email"
+                  placeholder="you@email.com"
+                  className="vfp-gate-email-input"
+                  readOnly
+                  tabIndex={-1}
+                />
+                <Link href="/auth/signup" className="vfp-gate-submit">
+                  View Profile
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 6h8M7 3l3 3-3 3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </Link>
+              </div>
+
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--rule)' }} />
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.08em' }}>or</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--rule)' }} />
+              </div>
+
+              {/* Google OAuth */}
+              <Link href="/auth/signup" className="vfp-gate-google">
+                <svg width="16" height="16" viewBox="0 0 18 18">
+                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+                  <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </Link>
+
+              {/* Trust line */}
+              <p style={{
+                fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)',
+                textAlign: 'center', marginTop: 14, letterSpacing: '.02em',
+              }}>
+                Free forever · No credit card ·{' '}
+                <Link href="/terms" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Terms</Link>
+                {' · '}
+                <Link href="/privacy" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Privacy</Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   return (
@@ -1053,7 +1376,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   {profileText.investment_philosophy && (
                     <>
                       <div style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
+                        fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
                         color: 'var(--ink-3)', marginBottom: 8,
                         marginTop: profileText.business_profile ? 16 : 0,
                         paddingTop: profileText.business_profile ? 16 : 0,

@@ -48,7 +48,7 @@ const CSS = `
   .alert-firm-meta { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-bottom:6px; }
   .alert-types { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
   .alert-type-tag {
-    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
     padding:2px 6px; background:var(--white); border:1px solid var(--rule); color:var(--ink-3);
   }
 

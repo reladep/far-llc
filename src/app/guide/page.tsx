@@ -150,7 +150,7 @@ const CSS = `
     margin-bottom:32px; flex-wrap:wrap; gap:16px;
   }
   .gi-eyebrow {
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.18em; text-transform:uppercase;
     color:var(--ink-3); margin-bottom:8px;
   }
@@ -250,8 +250,8 @@ const CSS = `
     display:flex; align-items:center; justify-content:space-between;
     margin-top:20px; padding-top:14px; border-top:1px solid var(--rule);
   }
-  .gi-card-date { font-family:var(--mono); font-size:9px; color:var(--ink-3); }
-  .gi-card-rt { font-family:var(--mono); font-size:9px; color:var(--ink-3); }
+  .gi-card-date { font-family:var(--mono); font-size:10px; color:var(--ink-3); }
+  .gi-card-rt { font-family:var(--mono); font-size:10px; color:var(--ink-3); }
   .gi-card-arrow { font-size:14px; color:var(--ink-3); transition:all .2s; display:inline-block; }
   .gi-card:hover .gi-card-arrow { color:var(--green); transform:translateX(3px); }
 
@@ -291,7 +291,7 @@ const CSS = `
   /* ── Type tag ── */
   .gi-type {
     display:inline-flex; align-items:center; gap:5px;
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.1em; text-transform:uppercase; padding:2px 8px;
   }
   .gi-type.guide { color:#1d4ed8; background:#eff6ff; border:1px solid rgba(29,78,216,.15); }
@@ -326,7 +326,7 @@ const CSS = `
   }
   .gi-nl-left { position:relative; }
   .gi-nl-eyebrow {
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.2em; text-transform:uppercase;
     color:rgba(255,255,255,.3); margin-bottom:10px;
   }

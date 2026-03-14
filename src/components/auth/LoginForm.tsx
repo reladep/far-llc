@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button, Input } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthLayout } from './AuthLayout';
 
 export function LoginForm() {
   const auth = useAuth();
@@ -16,13 +17,11 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <h1 className="text-2xl font-bold text-text-primary text-center">Welcome back</h1>
-      <p className="text-sm text-text-secondary text-center mt-1">
-        Sign in to your account
-      </p>
+    <AuthLayout variant="login">
+      <h1 className="auth-form-title">Welcome back</h1>
+      <p className="auth-form-sub">Sign in to your account</p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Email"
           type="email"
@@ -57,13 +56,6 @@ export function LoginForm() {
           {auth.loading ? 'Signing in...' : 'Sign In'}
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-text-secondary">
-        Don&apos;t have an account?{' '}
-        <Link href="/auth/signup" className="text-primary hover:underline font-medium">
-          Sign up
-        </Link>
-      </p>
-    </div>
+    </AuthLayout>
   );
 }

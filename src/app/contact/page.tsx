@@ -1,14 +1,11 @@
 import type { Metadata } from 'next';
+import { ContactPageClient } from '@/components/contact/ContactPageClient';
 
 export const metadata: Metadata = {
-  title: 'Contact',
+  title: 'Contact — Visor Index',
+  description: 'Get in touch with the Visor Index team. Questions about our data, methodology, or enterprise access.',
 };
 
 export default function ContactPage() {
-  return (
-    <div className="container-page py-8">
-      <h1 className="text-2xl font-bold text-text-primary">Contact</h1>
-      <p className="mt-2 text-text-muted">This page is under construction.</p>
-    </div>
-  );
+  return <ContactPageClient />;
 }

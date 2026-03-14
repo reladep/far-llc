@@ -106,7 +106,7 @@ export default function PricingPage() {
 
   return (
     <>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: none; }
@@ -136,7 +136,7 @@ export default function PricingPage() {
 
             {/* Eyebrow */}
             <div className="pricing-anim" style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '.24em', textTransform: 'uppercase',
+              fontSize: 10, fontWeight: 700, letterSpacing: '.24em', textTransform: 'uppercase',
               color: '#2DBD74', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ width: 20, height: 1, background: '#2DBD74', display: 'inline-block' }} />
@@ -172,17 +172,17 @@ export default function PricingPage() {
               <div style={{ padding: '0 32px 0 0', borderRight: '1px solid rgba(255,255,255,.06)' }}>
                 <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 38, fontWeight: 700, color: '#2DBD74', lineHeight: 1, letterSpacing: '-.02em', marginBottom: 6 }}>0.38%</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', lineHeight: 1.5, maxWidth: 200 }}>Average fee overcharge above what the market bears, per year</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>Source: Visor analysis of 14,280 SEC ADV filings · Feb 2025</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>Source: Visor analysis of 14,280 SEC ADV filings · Feb 2025</div>
               </div>
               <div style={{ padding: '0 32px', borderRight: '1px solid rgba(255,255,255,.06)' }}>
                 <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 38, fontWeight: 700, color: '#2DBD74', lineHeight: 1, letterSpacing: '-.02em', marginBottom: 6 }}>$8,400</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', lineHeight: 1.5, maxWidth: 200 }}>Annual overpayment for a $2.2M portfolio at average overcharge rate</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>Based on national median HNW portfolio · Cerulli Associates 2024</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>Based on national median HNW portfolio · Cerulli Associates 2024</div>
               </div>
               <div style={{ padding: '0 0 0 32px' }}>
                 <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 38, fontWeight: 700, color: '#2DBD74', lineHeight: 1, letterSpacing: '-.02em', marginBottom: 6 }}>83×</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', lineHeight: 1.5, maxWidth: 200 }}>Return on Visor&rsquo;s annual plan vs. average annual fee savings identified</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 9, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>$199 annual plan vs. $16,600 avg. first-year savings identified</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.18)', marginTop: 6 }}>$199 annual plan vs. $16,600 avg. first-year savings identified</div>
               </div>
             </div>
           </div>
@@ -195,7 +195,7 @@ export default function PricingPage() {
             {/* Section header */}
             <div style={{ textAlign: 'center', marginBottom: 56 }}>
               <div style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+                fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
                 color: '#1A7A4A', marginBottom: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>Plans</div>
@@ -213,7 +213,7 @@ export default function PricingPage() {
 
               {/* ── 30-Day ── */}
               <div style={{ background: '#fff', padding: '36px 32px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 20 }}>
                   30-Day Access
                 </div>
                 <div style={{ marginBottom: 6 }}>
@@ -264,12 +264,12 @@ export default function PricingPage() {
                 {/* Most Popular badge */}
                 <div style={{
                   position: 'absolute', top: -1, right: 28, zIndex: 1,
-                  fontSize: 9, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase',
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase',
                   background: '#2DBD74', color: '#0A1C2A', padding: '5px 12px',
                 }}>
                   Most Popular
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', marginBottom: 20, position: 'relative', zIndex: 1 }}>
                   Annual Access
                 </div>
                 <div style={{ marginBottom: 6, position: 'relative', zIndex: 1 }}>
@@ -313,7 +313,7 @@ export default function PricingPage() {
 
               {/* ── Concierge ── */}
               <div style={{ background: '#162F45', padding: '36px 32px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', marginBottom: 20 }}>
                   Concierge
                 </div>
                 <div style={{ marginBottom: 6 }}>
@@ -386,7 +386,7 @@ export default function PricingPage() {
         <section style={{ padding: '72px 0', background: '#0A1C2A' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px' }}>
             <div style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+              fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
               color: 'rgba(255,255,255,.3)', marginBottom: 16,
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
@@ -415,7 +415,7 @@ export default function PricingPage() {
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', lineHeight: 1.6 }}>{feat.desc}</div>
                   <span style={{
                     display: 'inline-block', marginTop: 10,
-                    fontFamily: "'DM Mono',monospace", fontSize: 9,
+                    fontFamily: "'DM Mono',monospace", fontSize: 10,
                     padding: '2px 8px', color: '#2DBD74',
                     border: '1px solid rgba(45,189,116,.25)', letterSpacing: '.06em',
                   }}>{feat.tag}</span>
@@ -429,7 +429,7 @@ export default function PricingPage() {
         <section style={{ padding: '72px 0', background: '#F6F8F7' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px' }}>
             <div style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+              fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
               color: '#1A7A4A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ width: 16, height: 1, background: '#1A7A4A', display: 'inline-block' }} />
@@ -460,7 +460,7 @@ export default function PricingPage() {
               <tbody>
                 {/* Section: Core Access */}
                 <tr>
-                  <td colSpan={4} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
+                  <td colSpan={4} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
                     Core Access
                   </td>
                 </tr>
@@ -484,7 +484,7 @@ export default function PricingPage() {
 
                 {/* Section: Annual Plan Extras */}
                 <tr>
-                  <td colSpan={4} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
+                  <td colSpan={4} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
                     Annual Plan Extras
                   </td>
                 </tr>
@@ -510,7 +510,7 @@ export default function PricingPage() {
 
                 {/* Section: Concierge Extras */}
                 <tr>
-                  <td colSpan={4} style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
+                  <td colSpan={4} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: '#5A7568', background: '#F6F8F7', padding: '24px 20px 13px', borderBottom: '1px solid #CAD8D0' }}>
                     Concierge Extras
                   </td>
                 </tr>
@@ -537,7 +537,7 @@ export default function PricingPage() {
         <section style={{ padding: '72px 0', background: '#F6F8F7', borderTop: '1px solid #CAD8D0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px' }}>
             <div style={{
-              fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+              fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
               color: '#1A7A4A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span style={{ width: 16, height: 1, background: '#1A7A4A', display: 'inline-block' }} />
@@ -584,40 +584,6 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── FREE SEARCH CALLOUT ── */}
-        <section style={{ padding: '56px 0', background: '#0A1C2A', borderTop: '1px solid rgba(255,255,255,.04)' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 48 }}>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,.3)', marginBottom: 12 }}>
-                  Start free
-                </div>
-                <h2 style={{
-                  fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 700,
-                  color: '#fff', letterSpacing: '-.02em', lineHeight: 1.15, marginBottom: 8,
-                }}>
-                  Search any advisor.<br />No account required.
-                </h2>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', lineHeight: 1.6 }}>
-                  14,280 firms indexed. Full intelligence unlocks when you&rsquo;re ready.
-                </p>
-              </div>
-              <Link
-                href="/search"
-                className="fc-cta-btn"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  fontSize: 12, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase',
-                  background: '#2DBD74', color: '#0A1C2A', padding: '14px 28px',
-                  textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
-                  transition: 'background .15s',
-                }}
-              >
-                Search Advisors →
-              </Link>
-            </div>
-          </div>
-        </section>
 
       </div>
     </>
