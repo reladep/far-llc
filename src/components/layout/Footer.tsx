@@ -66,7 +66,7 @@ export function Footer() {
               {[
                 { label: 'Terms', href: '/terms' },
                 { label: 'Privacy', href: '/privacy' },
-                { label: 'Disclosures', href: '/disclosures/disclaimer' },
+                { label: 'Disclosures', href: '/disclosures' },
               ].map((link) => (
                 <li key={link.label}>
                   <Link href={link.href} className="text-[13px] text-white/35 transition hover:text-white">
