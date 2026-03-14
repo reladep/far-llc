@@ -44,7 +44,7 @@ const CSS = `
   /* Hero */
   .mr-hero { background:var(--navy); padding:52px 24px 44px; text-align:center; }
   .mr-eyebrow {
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.18em; text-transform:uppercase;
     color:var(--green-3); margin-bottom:14px;
   }
@@ -94,7 +94,7 @@ const CSS = `
   }
   .mr-reasons { display:flex; flex-wrap:wrap; gap:6px; }
   .mr-reason {
-    font-family:var(--mono); font-size:9px; font-weight:700;
+    font-family:var(--mono); font-size:10px; font-weight:700;
     letter-spacing:.1em; text-transform:uppercase;
     color:var(--green); background:var(--green-pale);
     border:1px solid rgba(26,122,74,.2); padding:2px 8px;
@@ -110,7 +110,7 @@ const CSS = `
     color:var(--green); line-height:1;
   }
   .mr-match-label {
-    font-family:var(--mono); font-size:9px; color:var(--ink-3);
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
     letter-spacing:.1em; text-transform:uppercase; margin-top:3px;
   }
   .mr-vvs {
@@ -135,7 +135,7 @@ const CSS = `
     max-width:400px; width:100%;
   }
   .mr-gate-eyebrow {
-    font-family:var(--mono); font-size:9px; font-weight:700;
+    font-family:var(--mono); font-size:10px; font-weight:700;
     letter-spacing:.18em; text-transform:uppercase;
     color:var(--green-3); margin-bottom:14px;
   }
@@ -198,10 +198,21 @@ const CSS = `
   .mr-act-btn:hover { border-color:var(--ink-3); color:var(--ink); }
 
   @media(max-width:600px){
-    .mr-card { grid-template-columns:40px 1fr; }
-    .mr-match-col { display:none; }
-    .mr-card-body { padding:14px 16px; }
-    .mr-rank { padding:0 10px; }
+    .mr-hero { padding:36px 16px 32px; }
+    .mr-body { padding:24px 16px 60px; }
+    .mr-card { grid-template-columns:1fr; }
+    .mr-rank { display:none; }
+    .mr-card-body { padding:14px 16px; display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 16px; }
+    .mr-firm-name { flex:1; min-width:0; }
+    .mr-firm-name::before { content:'#'; font-family:var(--serif); color:var(--ink-3); margin-right:2px; }
+    .mr-firm-meta { width:100%; margin-bottom:8px; }
+    .mr-match-col { border-left:none; border-top:1px solid var(--rule); flex-direction:row; align-items:center; gap:10px; padding:10px 16px; min-width:0; }
+    .mr-match-pct { font-size:22px; }
+    .mr-match-label { margin-top:0; }
+    .mr-gate-card { padding:24px 20px; }
+    .mr-gate-btns { flex-direction:column; }
+    .mr-actions { flex-direction:column; align-items:stretch; }
+    .mr-act-btn { text-align:center; }
   }
 `;
 

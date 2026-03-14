@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Button, Input } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthLayout } from './AuthLayout';
 
 export function SignupForm() {
   const auth = useAuth();
@@ -32,13 +32,11 @@ export function SignupForm() {
   const error = localError || auth.error;
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <h1 className="text-2xl font-bold text-text-primary text-center">Create an account</h1>
-      <p className="text-sm text-text-secondary text-center mt-1">
-        Start finding the right financial advisor
-      </p>
+    <AuthLayout variant="signup">
+      <h1 className="auth-form-title">Create an account</h1>
+      <p className="auth-form-sub">Start finding the right financial advisor</p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Full Name"
           value={fullName}
@@ -77,13 +75,6 @@ export function SignupForm() {
           {auth.loading ? 'Creating account...' : 'Create Account'}
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-text-secondary">
-        Already have an account?{' '}
-        <Link href="/auth/login" className="text-primary hover:underline font-medium">
-          Sign in
-        </Link>
-      </p>
-    </div>
+    </AuthLayout>
   );
 }

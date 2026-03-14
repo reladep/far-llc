@@ -32,13 +32,13 @@ const CSS = `
     width:160px; height:160px; border-radius:50%;
     background:radial-gradient(circle,rgba(26,122,74,.2) 0%,transparent 70%);
   }
-  .plan-eyebrow { font-size:9px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.3); margin-bottom:7px; font-family:var(--mono); }
+  .plan-eyebrow { font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.3); margin-bottom:7px; font-family:var(--mono); }
   .plan-name { font-family:var(--serif); font-size:24px; font-weight:700; color:#fff; display:flex; align-items:baseline; gap:12px; margin-bottom:4px; }
   .plan-price { font-family:var(--mono); font-size:13px; color:rgba(255,255,255,.35); }
   .plan-renew { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.3); margin-bottom:10px; }
   .plan-status {
     display:inline-flex; align-items:center; gap:5px;
-    font-family:var(--mono); font-size:9px; color:var(--green-3);
+    font-family:var(--mono); font-size:10px; color:var(--green-3);
     background:rgba(45,189,116,.1); border:1px solid rgba(45,189,116,.2); padding:3px 9px;
   }
   .plan-dot { width:5px; height:5px; background:var(--green-3); border-radius:50%; animation:bl-pulse 2s infinite; }
@@ -83,7 +83,7 @@ const CSS = `
   /* invoices */
   .inv-table { width:100%; border-collapse:collapse; }
   .inv-table th {
-    font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     color:var(--ink-3); padding:8px 0; border-bottom:1px solid var(--rule); text-align:left; font-family:var(--sans);
   }
   .inv-table td {
@@ -92,7 +92,7 @@ const CSS = `
   }
   .inv-table tr:last-child td { border-bottom:none; }
   .inv-table td.inv-desc { font-family:var(--sans); font-size:13px; color:var(--ink); }
-  .inv-badge { font-size:9px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; padding:2px 7px; background:var(--green-pale); color:var(--green); }
+  .inv-badge { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; padding:2px 7px; background:var(--green-pale); color:var(--green); }
   .inv-dl { font-size:11px; color:var(--ink-3); background:none; border:none; cursor:pointer; font-family:var(--sans); transition:color .12s; }
   .inv-dl:hover { color:var(--green); }
 

@@ -131,7 +131,7 @@ const CSS = `
     padding:14px 0;
   }
   .rd-chip {
-    display:inline-block; font-family:var(--mono); font-size:9px; font-weight:600;
+    display:inline-block; font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.1em; text-transform:uppercase; padding:3px 9px;
     border-radius:2px;
   }

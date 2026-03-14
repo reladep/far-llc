@@ -37,37 +37,32 @@ export function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 w-full backdrop-blur transition-all duration-300 ease-out',
+        'sticky top-0 z-50 w-full transition-all duration-500 ease-out',
         scrolled
-          ? 'border-b border-white/[0.06] bg-[#0a1c2a]/95 shadow-[0_1px_24px_-6px_rgba(0,0,0,0.5)]'
-          : 'border-b border-transparent bg-[#0a1c2a]/60'
+          ? 'border-b border-white/[0.08] bg-[#0a1c2a]/90 shadow-[0_4px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl'
+          : 'border-b border-transparent bg-[#0a1c2a]'
       )}
     >
       <div
         className={cn(
-          'container-page flex items-center justify-between transition-[height] duration-300 ease-out',
-          scrolled ? 'h-[56px]' : 'h-[64px]'
+          'container-page flex items-center justify-between transition-[height] duration-500 ease-out',
+          scrolled ? 'h-[52px]' : 'h-[60px]'
         )}
       >
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-3">
-          <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#1A7A4A] to-[#16a34a] shadow-[0_0_16px_rgba(26,122,74,0.25),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300 group-hover:shadow-[0_0_24px_rgba(45,189,116,0.35)]">
-            <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              {/* Shield outline */}
-              <path d="M10 1L1 4.5V10C1 15.5 4.8 19.7 10 21C15.2 19.7 19 15.5 19 10V4.5L10 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" opacity="0.35" />
-              {/* Inner shield */}
-              <path d="M10 3.5L3 6.2V10.5C3 14.8 6.1 18.2 10 19.2C13.9 18.2 17 14.8 17 10.5V6.2L10 3.5Z" stroke="white" strokeWidth="1.2" strokeLinejoin="round" fill="none" opacity="0.2" />
-              {/* Prominent V */}
+        <Link href="/" className="group flex items-center gap-2.5">
+          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-[#1A7A4A] shadow-[0_0_12px_rgba(26,122,74,0.2)] transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(45,189,116,0.3)]">
+            <svg width="16" height="18" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M6.5 7L10 14.5L13.5 7" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </svg>
           </div>
-          <span className="text-[18px] font-semibold tracking-[-0.02em] text-white">
-            Visor<span className="ml-[0.12em] font-bold text-[#2DBD74]">Index</span>
+          <span className="text-[17px] font-semibold tracking-[-0.02em] text-white">
+            Visor<span className="ml-[0.1em] font-bold text-[#2DBD74]">Index</span>
           </span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-0.5 lg:flex">
+        <nav className="hidden items-center gap-[2px] lg:flex">
           {[
             { href: '/search', label: 'Search' },
             { href: '/compare', label: 'Compare' },
@@ -80,7 +75,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="relative rounded-md px-3 py-1.5 text-[13px] font-medium tracking-[0.02em] text-white/45 transition-all duration-200 hover:text-white/90 after:absolute after:bottom-0 after:left-1/2 after:h-[1.5px] after:w-0 after:-translate-x-1/2 after:bg-[#2DBD74] after:transition-all after:duration-300 hover:after:w-3/5"
+              className="relative px-3 py-1.5 text-[12.5px] font-medium tracking-[0.01em] text-white/40 transition-colors duration-200 hover:text-white/85"
             >
               {link.label}
             </Link>
@@ -89,28 +84,27 @@ export function Header() {
 
         {/* Auth + Mobile Menu */}
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-5 lg:flex">
-            <div className="mr-1 h-4 w-px bg-white/[0.08]" />
+          <div className="hidden items-center gap-4 lg:flex">
             {user ? (
               <>
                 <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="text-white/70 hover:bg-white/10 hover:text-white">Dashboard</Button>
+                  <Button variant="ghost" size="sm" className="text-[12.5px] text-white/50 hover:bg-white/[0.06] hover:text-white">Dashboard</Button>
                 </Link>
-                <span className="max-w-[150px] truncate text-[13.5px] text-white/45">
+                <span className="max-w-[120px] truncate text-[12px] text-white/30">
                   {user.user_metadata?.full_name || user.email}
                 </span>
-                <Button variant="ghost" size="sm" className="text-white/70 hover:bg-white/10 hover:text-white" onClick={handleSignOut}>
+                <Button variant="ghost" size="sm" className="text-[12.5px] text-white/40 hover:bg-white/[0.06] hover:text-white" onClick={handleSignOut}>
                   Sign Out
                 </Button>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-[13px] font-medium tracking-[0.02em] text-white/40 transition-colors duration-200 hover:text-white/80">
-                  Log in
+                <Link href="/auth/login" className="text-[12.5px] font-medium text-white/40 transition-colors duration-200 hover:text-white/80">
+                  Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="rounded-md bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_1px_8px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-200 hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_2px_16px_rgba(45,189,116,0.3)]"
+                  className="bg-[#1A7A4A] px-5 py-[7px] text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-all duration-200 hover:bg-[#1f8f55]"
                 >
                   Get Access
                 </Link>

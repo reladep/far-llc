@@ -142,7 +142,7 @@ const CSS = `
     text-align:center;
   }
   .mx-step-label {
-    font-family:var(--mono); font-size:9px; font-weight:600;
+    font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.18em; text-transform:uppercase;
     color:rgba(45,189,116,.7); margin-bottom:16px;
   }
@@ -161,7 +161,7 @@ const CSS = `
     padding:32px 20px 0;
   }
   .mx-multi-hint {
-    display:block; font-family:var(--mono); font-size:9px; font-weight:600;
+    display:block; font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.14em; text-transform:uppercase;
     color:var(--green-3); margin-bottom:16px;
   }

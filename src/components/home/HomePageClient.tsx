@@ -166,11 +166,10 @@ function scoreToneClass(tone: 'good' | 'warn' | 'risk') {
   return 'text-emerald-400';
 }
 
-function HeroStats() {
-  const { ref, inView } = useInView<HTMLDivElement>(0.3);
-  const firmCount = useCountUp(4200, { start: inView, duration: 1400 });
-  const aumCount = useCountUp(8, { start: inView, duration: 1200, delay: 150 });
-  const metricCount = useCountUp(45, { start: inView, duration: 1000, delay: 300 });
+function HeroStatsBar() {
+  const firmCount = useCountUp(4200, { start: true, duration: 1400 });
+  const aumCount = useCountUp(8, { start: true, duration: 1200, delay: 150 });
+  const metricCount = useCountUp(45, { start: true, duration: 1000, delay: 300 });
 
   const stats = [
     { value: firmCount, prefix: '', suffix: '+', label: 'Firms Analyzed' },
@@ -179,21 +178,22 @@ function HeroStats() {
   ];
 
   return (
-    <div ref={ref} className="mt-16 border-t border-white/[0.06] pt-10 md:mt-20">
-      <div className="grid grid-cols-3 gap-6 md:gap-10">
-        {stats.map((stat) => (
-          <div key={stat.label} className="text-center">
-            <div className="font-serif text-2xl font-bold text-white md:text-3xl">
+    <div className="mb-8 flex items-center justify-center gap-5 md:mb-10 md:gap-8">
+      {stats.map((stat, i) => (
+        <div key={stat.label} className="flex items-center gap-5 md:gap-8">
+          {i > 0 && <span className="h-4 w-px bg-white/10" />}
+          <div className="text-center">
+            <span className="font-serif text-[17px] font-bold text-white md:text-xl">
               {stat.prefix}
               {stat.value.toLocaleString()}
               <span className="text-[#2DBD74]">{stat.suffix}</span>
-            </div>
-            <div className="mt-1.5 text-[11px] uppercase tracking-[0.2em] text-white/35">
+            </span>
+            <span className="mt-0.5 block text-[9px] uppercase tracking-[0.14em] text-white/30 md:text-[10px] md:tracking-[0.16em]">
               {stat.label}
-            </div>
+            </span>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -512,20 +512,20 @@ function ReviewedFirmsStrip() {
 
   return (
     <>
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes logo-marquee {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
         .logo-marquee-track {
-          animation: logo-marquee 40s linear infinite;
+          animation: logo-marquee 25s linear infinite;
         }
         .logo-marquee-track:hover {
           animation-play-state: paused;
         }
       `}</style>
 
-      <section className="relative overflow-hidden bg-[#0a1c2e] py-10 md:py-14" aria-label="Firms reviewed">
+      <section className="relative overflow-hidden bg-[#0a1c2e] py-7 md:py-10" aria-label="Firms reviewed">
         {/* Left green accent bar */}
         <div className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-transparent via-[#2DBD74]/60 to-transparent" />
 
@@ -720,7 +720,7 @@ function StakesCalculator() {
   ];
 
   return (
-    <section ref={ref} className="bg-[#F6F8F7] py-20 text-[#0C1810] md:py-28">
+    <section ref={ref} className="bg-[#F6F8F7] py-16 text-[#0C1810] md:py-20">
       <div className="container-page">
 
         {/* Top: headline left, callout card right */}
@@ -755,7 +755,7 @@ function StakesCalculator() {
         </div>
 
         {/* Calc box */}
-        <div className="mt-16 overflow-hidden border border-[#CAD8D0] bg-white">
+        <div className="mt-10 overflow-hidden border border-[#CAD8D0] bg-white">
 
           {/* Sliders — side by side */}
           <div className="grid grid-cols-2 border-b border-[#CAD8D0]">
@@ -875,7 +875,7 @@ function StakesCalculator() {
 
 function HowItWorks() {
   return (
-    <section className="border-t border-white/[0.05] bg-[#0a1c2a] py-[108px] text-white">
+    <section className="border-t border-white/[0.05] bg-[#0a1c2a] py-[72px] md:py-[88px] text-white">
       <div className="container-page">
         <Reveal className="mx-auto max-w-[680px] text-center">
           <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">
@@ -889,26 +889,28 @@ function HowItWorks() {
           </p>
         </Reveal>
 
-        <Reveal delay={80} className="mt-16">
+        <Reveal delay={80} className="mt-10">
           <div className="grid border border-white/[0.07] md:grid-cols-3">
             {howSteps.map((step, index) => (
               <article
                 key={step.title}
                 className={cn(
-                  'border-b border-white/[0.07] p-[36px_32px]',
+                  'group/card relative border-b border-white/[0.07] p-[36px_32px] transition-all duration-300 hover:bg-[rgba(26,122,74,0.06)]',
                   'md:border-r md:border-white/[0.07]',
                   [2, 5].includes(index) && 'md:border-r-0',
                   [3, 4, 5].includes(index) && 'md:border-b-0',
                   index === 5 && 'border-b-0',
                 )}
               >
-                <span className="block font-mono text-[11px] font-medium tracking-[0.08em] text-[#2DBD74]">
+                {/* Left accent bar on hover */}
+                <span className="absolute inset-y-0 left-0 w-[2px] origin-center scale-y-0 bg-[#2DBD74] transition-transform duration-300 group-hover/card:scale-y-100" />
+                <span className="block font-mono text-[11px] font-medium tracking-[0.08em] text-[#2DBD74] transition-transform duration-300 group-hover/card:translate-x-1">
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <h3 className="mt-[18px] font-serif text-[20px] font-bold leading-[1.2] text-white">
+                <h3 className="mt-[18px] font-serif text-[20px] font-bold leading-[1.2] text-white transition-transform duration-300 group-hover/card:translate-x-1">
                   {step.title}
                 </h3>
-                <p className="mt-[10px] text-[13px] leading-7 text-white/40">
+                <p className="mt-[10px] text-[13px] leading-7 text-white/40 transition-all duration-300 group-hover/card:translate-x-1 group-hover/card:text-white/55">
                   {step.description}
                 </p>
               </article>
@@ -931,7 +933,7 @@ function HowItWorks() {
 
 function MethodologySection() {
   return (
-    <section className="bg-[#F6F8F7] py-[108px] text-[#0C1810]">
+    <section className="bg-[#F6F8F7] py-[72px] md:py-[88px] text-[#0C1810]">
       <div className="container-page">
         <Reveal>
           <span className="inline-flex items-center gap-[10px] text-[10px] font-semibold uppercase tracking-[0.22em] text-[#1A7A4A]">
@@ -943,7 +945,7 @@ function MethodologySection() {
           </h2>
         </Reveal>
 
-        <Reveal delay={80} className="mt-16">
+        <Reveal delay={80} className="mt-10">
           <div className="grid border border-[#CAD8D0] lg:grid-cols-2">
             {/* Left: dark score card */}
             <div className="flex flex-col border-b border-[#CAD8D0] lg:border-b-0 lg:border-r">
@@ -1037,7 +1039,7 @@ function MethodologySection() {
 
 function PricingSection() {
   return (
-    <section id="pricing" className="border-t border-white/[0.05] bg-[#0a1c2a] py-[108px] text-white">
+    <section id="pricing" className="border-t border-white/[0.05] bg-[#0a1c2a] py-[72px] md:py-[88px] text-white">
       <div className="container-page">
         <Reveal className="max-w-2xl">
           <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/30">
@@ -1049,7 +1051,7 @@ function PricingSection() {
           </h2>
         </Reveal>
 
-        <Reveal delay={80} className="mt-14">
+        <Reveal delay={80} className="mt-10">
           <div className="grid gap-px bg-white/[0.06] lg:grid-cols-3">
             {pricingTiers.map((tier, index) => (
               <article
@@ -1135,7 +1137,7 @@ function PersonaSection() {
   };
 
   return (
-    <section className="border-t border-[#CAD8D0] bg-[#F6F8F7] py-[108px] text-[#0C1810]">
+    <section className="border-t border-[#CAD8D0] bg-[#F6F8F7] py-[72px] md:py-[88px] text-[#0C1810]">
       <div className="container-page">
         <Reveal>
           <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#5A7568]">
@@ -1148,7 +1150,7 @@ function PersonaSection() {
           </h2>
         </Reveal>
 
-        <Reveal delay={80} className="mt-14">
+        <Reveal delay={80} className="mt-10">
           <div className="grid items-stretch lg:grid-cols-[340px_1fr]">
             {/* Tabs */}
             <div className="flex flex-col border border-[#CAD8D0] bg-[#E6F4ED] lg:border-r-0">
@@ -1259,9 +1261,9 @@ function PersonaSection() {
 
 function FinalCtaSection() {
   return (
-    <section className="relative overflow-hidden bg-[#0a1c2a] pb-0 pt-[120px] text-center text-white">
-      {/* Radial glow */}
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 bg-[radial-gradient(ellipse,rgba(26,122,74,0.15)_0%,transparent_70%)]" />
+    <section className="relative overflow-hidden bg-[#0a1c2a] pb-0 pt-[72px] md:pt-[88px] text-center text-white">
+      {/* Background grid + glow matching hero */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.16),transparent_34%),linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:auto,72px_72px,72px_72px]" />
 
       <div className="container-page relative z-[2]">
         <Reveal>
@@ -1304,13 +1306,8 @@ function FinalCtaSection() {
         </Reveal>
       </div>
 
-      {/* Skyline SVG */}
-      <div className="relative z-[2] mt-20 w-full">
-        <svg viewBox="0 0 1120 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
-          <path d="M0 160 L0 120 L40 120 L40 80 L60 80 L60 60 L80 60 L80 80 L100 80 L100 40 L120 40 L120 80 L140 80 L140 100 L160 100 L160 70 L180 70 L180 50 L200 50 L200 70 L220 70 L220 90 L240 90 L240 55 L260 55 L260 75 L280 75 L280 45 L300 45 L300 75 L320 75 L320 95 L340 95 L340 65 L360 65 L360 85 L380 85 L380 105 L400 105 L400 70 L420 70 L420 50 L440 50 L440 70 L460 70 L460 90 L480 90 L480 60 L500 60 L500 40 L520 40 L520 60 L540 60 L540 80 L560 80 L560 55 L580 55 L580 75 L600 75 L600 95 L620 95 L620 65 L640 65 L640 45 L660 45 L660 65 L680 65 L680 85 L700 85 L700 105 L720 105 L720 75 L740 75 L740 55 L760 55 L760 75 L780 75 L780 95 L800 95 L800 65 L820 65 L820 85 L840 85 L840 105 L860 105 L860 75 L880 75 L880 55 L900 55 L900 75 L920 75 L920 95 L940 95 L940 65 L960 65 L960 85 L980 85 L980 105 L1000 105 L1000 120 L1020 120 L1020 100 L1040 100 L1040 120 L1060 120 L1060 140 L1080 140 L1080 120 L1120 120 L1120 160 Z" fill="rgba(255,255,255,0.03)" />
-          <path d="M0 160 L0 130 L40 130 L40 90 L80 90 L80 70 L120 70 L120 90 L160 90 L160 110 L200 110 L200 80 L240 80 L240 100 L280 100 L280 120 L320 120 L320 100 L360 100 L360 120 L400 120 L400 140 L440 140 L440 110 L480 110 L480 90 L520 90 L520 110 L560 110 L560 130 L600 130 L600 110 L640 110 L640 130 L680 130 L680 150 L720 150 L720 130 L760 130 L760 110 L800 110 L800 130 L840 130 L840 150 L880 150 L880 130 L920 130 L920 110 L960 110 L960 130 L1000 130 L1000 150 L1040 150 L1040 130 L1080 130 L1080 150 L1120 150 L1120 160 Z" fill="rgba(255,255,255,0.02)" />
-        </svg>
-      </div>
+      {/* Bottom spacer */}
+      <div className="h-16" />
     </section>
   );
 }
@@ -1427,18 +1424,12 @@ export function HomePageClient() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[#0a1c2a] pb-16 pt-14 text-white md:pb-24 md:pt-20">
+      <section className="relative overflow-hidden bg-[#0a1c2a] pb-10 pt-12 text-white md:pb-14 md:pt-16">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.16),transparent_34%),linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:auto,72px_72px,72px_72px]" />
         <div className="container-page relative">
-          <Reveal className="text-center">
-            <p className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-300">
-              <span className="h-px w-8 bg-emerald-300" />
-              Wealth Intelligence · No Paid Placement · Just the Data · Personalized
-              <span className="h-px w-8 bg-emerald-300" />
-            </p>
-          </Reveal>
+          <HeroStatsBar />
 
-          <div className="mt-14 grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <Reveal>
             <div>
               <h1 className="max-w-3xl font-serif text-5xl leading-[1.08] tracking-[-0.02em] text-white md:text-[clamp(36px,4.5vw,62px)]">
@@ -1450,7 +1441,7 @@ export function HomePageClient() {
               </p>
 
               {/* Hero CTAs */}
-              <div className="mt-10 flex flex-wrap items-center gap-3">
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
                   href="/search"
                   className="inline-flex items-center gap-2 border border-white/20 px-7 py-3.5 text-sm font-medium text-white/75 transition-all duration-200 hover:border-white/50 hover:text-white"
@@ -1467,9 +1458,19 @@ export function HomePageClient() {
                 </Link>
               </div>
 
-              <div className="mt-8 flex items-center gap-2.5 border-t border-white/7 pt-7 text-xs text-white/35">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-                No advisor has ever paid to appear here or influence their score.
+              <div className="mt-6 flex items-center gap-6 border-t border-white/[0.06] pt-5 text-[11px] text-white/30">
+                <span className="flex items-center gap-2">
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                  Zero paid placements
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                  SEC data only
+                </span>
+                <span className="hidden items-center gap-2 sm:flex">
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                  Updated quarterly
+                </span>
               </div>
             </div>
             </Reveal>
@@ -1478,8 +1479,6 @@ export function HomePageClient() {
               <HeroScoreCard />
             </Reveal>
           </div>
-          {/* Bottom stat counters */}
-          <HeroStats />
         </div>
       </section>
 

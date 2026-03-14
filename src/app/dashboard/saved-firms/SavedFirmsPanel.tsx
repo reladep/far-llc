@@ -93,7 +93,7 @@ const CSS = `
   .vvs-dot.hi { background:var(--green-pale); color:var(--green); }
   .vvs-dot.mid { background:#FEF3C7; color:#B45309; }
   .vvs-dot.lo  { background:#FEE2E2; color:#DC2626; }
-  .vvs-dot.na  { background:var(--white); color:var(--ink-3); font-size:9px; }
+  .vvs-dot.na  { background:var(--white); color:var(--ink-3); font-size:10px; }
   .firm-date { font-family:var(--mono); font-size:10px; color:var(--ink-3); text-align:right; }
   .firm-actions { display:flex; justify-content:flex-end; gap:6px; opacity:0; transition:opacity .12s; }
   .firm-row:hover .firm-actions { opacity:1; }

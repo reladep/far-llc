@@ -255,7 +255,7 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
             pointerEvents: 'none',
           }} />
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', position: 'relative' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
               color: C.green3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 16, height: 1, background: C.green3, display: 'inline-block' }} />
               Advisor Directory
@@ -346,7 +346,7 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
                     { label: 'Action', body: null, sub: selectedState ? `View all firms in ${selectedState.name}` : 'Select a state first' },
                   ].map((cell, i) => (
                     <div key={i} style={{ background: '#fff', padding: '16px 20px' }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.14em',
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em',
                         textTransform: 'uppercase', color: C.ink3, marginBottom: 6 }}>
                         {cell.label}
                       </div>
@@ -370,7 +370,7 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
                           Browse Firms →
                         </div>
                       )}
-                      <div style={{ fontFamily: MONO, fontSize: 9, color: C.ink3 }}>{cell.sub}</div>
+                      <div style={{ fontFamily: MONO, fontSize: 10, color: C.ink3 }}>{cell.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -394,7 +394,7 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
                   boxShadow: '0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07)',
                   padding: '40px 44px', textAlign: 'center', zIndex: 50,
                 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.2em',
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em',
                     textTransform: 'uppercase', color: C.green3, marginBottom: 12,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                     <span style={{ width: 20, height: 1, background: C.green3, display: 'inline-block' }} />

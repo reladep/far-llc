@@ -366,11 +366,11 @@ export default function NegotiatePage() {
       <title>Fee Negotiation Tool — Are You Overpaying? | Visor Index</title>
       <meta name="description" content="Benchmark your advisory fees against SEC filing data and get a personalized negotiation playbook." />
 
-      <style>{`
+      <style suppressHydrationWarning>{`
         .ng-page { background: #F6F8F7; color: #0C1810; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
         .ng-step { border: 1px solid #CAD8D0; background: #fff; margin-bottom: 32px; }
         .ng-step-hd { padding: 18px 24px; border-bottom: 1px solid #CAD8D0; display: flex; align-items: center; gap: 12px; }
-        .step-n { width: 20px; height: 20px; background: #0A1C2A; display: grid; place-items: center; font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: #fff; flex-shrink: 0; }
+        .step-n { width: 20px; height: 20px; background: #0A1C2A; display: grid; place-items: center; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: #fff; flex-shrink: 0; }
         .step-title { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #0C1810; }
         .step-meta { font-size: 10px; color: #5A7568; margin-left: auto; }
 
@@ -403,7 +403,7 @@ export default function NegotiatePage() {
         .bm-dot.you  { background: #2DBD74; box-shadow: 0 0 0 3px rgba(45,189,116,.25), 0 1px 4px rgba(0,0,0,.15); }
         .bm-dot.peer { background: #5A7568; }
         .bm-dot.p25  { background: #2DBD74; opacity: .5; }
-        .bm-dot-label { position: absolute; top: calc(100% + 8px); transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 9px; color: #5A7568; white-space: nowrap; text-align: center; line-height: 1.4; }
+        .bm-dot-label { position: absolute; top: calc(100% + 8px); transform: translateX(-50%); font-family: 'DM Mono', monospace; font-size: 10px; color: #5A7568; white-space: nowrap; text-align: center; line-height: 1.4; }
         .bm-dot-label strong { display: block; font-size: 10px; color: #0C1810; }
 
         .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #CAD8D0; border: 1px solid #CAD8D0; margin-top: 8px; }
@@ -434,7 +434,7 @@ export default function NegotiatePage() {
         .cmp-delta.neg { color: #EF4444; }
 
         .ask-banner { background: #0A1C2A; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-        .ask-eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: .2em; color: rgba(255,255,255,.3); margin-bottom: 4px; }
+        .ask-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .2em; color: rgba(255,255,255,.3); margin-bottom: 4px; }
         .ask-rate { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #2DBD74; line-height: 1; }
         .ask-ctx  { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
         .ask-savings { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700; color: #fff; line-height: 1; }
@@ -445,7 +445,7 @@ export default function NegotiatePage() {
         .pb-item.rebuttal { border-left-color: #F59E0B; }
         .pb-icon { width: 32px; height: 32px; background: #E6F4ED; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
         .pb-item.rebuttal .pb-icon { background: rgba(245,158,11,.08); }
-        .pb-tag  { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #1A7A4A; margin-bottom: 4px; }
+        .pb-tag  { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #1A7A4A; margin-bottom: 4px; }
         .pb-item.rebuttal .pb-tag { color: #F59E0B; }
         .pb-head { font-size: 14px; font-weight: 600; color: #0C1810; margin-bottom: 6px; }
         .pb-text { font-size: 13px; color: #5A7568; line-height: 1.65; }
@@ -483,11 +483,21 @@ export default function NegotiatePage() {
           .ask-banner { flex-direction: column; gap: 12px; }
           .cta-card { flex-direction: column; align-items: stretch; }
         }
+        @media (max-width: 480px) {
+          .ng-page { padding: 0; }
+          .ng-page > div[style*="padding: '44px 48px"] { padding: 28px 16px 36px !important; }
+          .ng-hero-wrap { padding: 28px 16px 36px !important; }
+          .ng-content-wrap { padding: 0 16px 40px !important; }
+          .bm-dot-label { font-size: 10px; }
+          .step-row { gap: 8px; }
+          .fc-bar { height: 28px; }
+          .fc-val { font-size: 13px; }
+        }
       `}</style>
 
       <div className="ng-page">
         {/* ── HERO ─────────────────────────────────────────────────────────── */}
-        <div style={{
+        <div className="ng-hero-wrap" style={{
           background: '#0A1C2A',
           padding: '44px 48px 52px',
           position: 'relative',
@@ -495,7 +505,7 @@ export default function NegotiatePage() {
         }}>
           <div style={{ position: 'absolute', top: -60, right: -80, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,189,116,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
               Fee Negotiation Tool
             </div>
@@ -509,7 +519,7 @@ export default function NegotiatePage() {
         </div>
 
         {/* ── MAIN ─────────────────────────────────────────────────────────── */}
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
+        <div className="ng-content-wrap" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
 
           {/* ── STEP 01: INPUT ─────────────────────────────────────────────── */}
           <div className="ng-step">
@@ -696,7 +706,7 @@ export default function NegotiatePage() {
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#0C1810' }}>Add your advisor firm</div>
                       <div style={{ fontSize: 10, color: '#5A7568' }}>Enriches results</div>
                     </div>
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1A7A4A', background: '#E6F4ED', padding: '3px 8px', marginLeft: 4 }}>Optional</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1A7A4A', background: '#E6F4ED', padding: '3px 8px', marginLeft: 4 }}>Optional</span>
                   </div>
                   <svg
                     width="14" height="14" fill="none" stroke="#5A7568" strokeWidth="1.5"
@@ -784,15 +794,15 @@ export default function NegotiatePage() {
                     {/* Blurred preview stats */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#CAD8D0', border: '1px solid #CAD8D0', marginBottom: 20 }}>
                       <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Your fee</div>
+                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Your fee</div>
                         <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(annualFee)}</div>
                       </div>
                       <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Peer median</div>
+                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Peer median</div>
                         <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(medianFee)}</div>
                       </div>
                       <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 9, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Annual overage</div>
+                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Annual overage</div>
                         <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#EF4444', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(Math.abs(feeDiff))}</div>
                       </div>
                     </div>
@@ -962,7 +972,7 @@ function ResultsPreview({
           {/* Status badge */}
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
-              display: 'inline-flex', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+              display: 'inline-flex', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
               padding: '3px 10px',
               color: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A',
               background: isSignificantlyOver ? 'rgba(239,68,68,.07)' : isOverpaying ? 'rgba(245,158,11,.07)' : 'rgba(26,122,74,.07)',
