@@ -1,6 +1,6 @@
 # MEMORY.md — Long-term memory for Maxwell
 
-_Last updated: 2026-03-07_
+_Last updated: 2026-03-14_
 
 ## System Info
 - OpenClaw version: **2026.3.2** (updated from 2026.2.14 on 3/5/2026)
@@ -72,6 +72,12 @@ _Last updated: 2026-03-07_
   - Vite + React setup with multiple pages: Home, Dashboard, Search, Directory, Firm Profile, Compare, Negotiate, Pricing, Blog
   - Components: ScoreRing, Nav, Footer, useReveal hook
   - Running in parallel to Next.js frontend (dual frontend strategy)
+- **Guide/Insights Page (3/13):** New content hub at `/guide`
+  - Full listing page with client-side filtering (All/Editorial/Guides/Data Reports)
+  - Navy featured hero, 3-col post grid, type tags, load-more (+6)
+  - Newsletter signup strip
+  - 10 static posts, detail page stubs
+  - Auth-protected via middleware
 - **Issues:**
   - Fuzzy matching producing false positives (generic firm names like CRD 158369 matching 30+ articles). Needs tightening.
   - ADV Diff Checker generating ~554 false positives per run (55% of firms showing "fee schedule changed" - unrealistic, needs threshold tuning)
