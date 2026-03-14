@@ -75,7 +75,7 @@ export function MobileNav() {
       {/* Drawer */}
       <div
         className={cn(
-          'fixed top-0 right-0 z-50 h-full w-72 bg-[#0a1c2a] text-white shadow-xl transition-transform duration-300 ease-out',
+          'fixed top-0 right-0 z-50 flex h-full w-72 flex-col bg-[#0a1c2a] text-white shadow-xl transition-transform duration-300 ease-out',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
       >
@@ -98,7 +98,7 @@ export function MobileNav() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="rounded-xl px-3 py-3 text-base font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-md px-3 py-3 text-base font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             >
               {link.label}
             </Link>
@@ -109,14 +109,14 @@ export function MobileNav() {
           <Link
             href="/auth/login"
             onClick={() => setOpen(false)}
-            className="block w-full rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-medium text-white hover:bg-white/10 transition-colors"
+            className="block w-full rounded-md border border-white/15 px-4 py-3 text-center text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
           >
             Sign In
           </Link>
           <Link
             href="/auth/signup"
             onClick={() => setOpen(false)}
-            className="mt-2 block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary-600 transition-colors"
+            className="mt-3 block w-full rounded-md bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_1px_8px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_2px_16px_rgba(45,189,116,0.3)]"
           >
             Get Access
           </Link>
