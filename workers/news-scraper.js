@@ -15,6 +15,28 @@ const { supabase } = require('./config');
 const GNEWS_RSS = (query) =>
   `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
 
+// M&A keywords — high signal events clients care about
+const MA_KEYWORDS = [
+  'acquire', 'acquired', 'acquires', 'acquiring', 'acquisition',
+  'merger', 'merges', 'merging', 'merged',
+  'sold to', 'takes over', 'takeover', 'takes private',
+  'buyout', 'bought', 'purchase', 'purchased',
+  'combines with', 'combined with',
+];
+
+// RIA/wealth management context — filters out noise from other industries
+const RIA_CONTEXT_TERMS = [
+  'RIA', 'wealth management', 'investment adviser', 'financial advisory',
+  'registered investment', 'assets under management', 'AUM', 'wealth firm',
+  'financial planning', 'investment management', 'private wealth'
+];
+
+// Noise terms to exclude (non-RIA companies with similar names)
+const NOISE_TERMS = [
+  'stock', 'stocks', 'trading', 'securities', 'equities', 'ETF', 'fund',
+  'crypto', 'bitcoin', 'ethereum', 'blockchain', 'trading platform'
+];
+
 async function getAllFirms() {
   const { data, error } = await supabase
     .from('firmdata_current')
@@ -80,11 +102,74 @@ async function fetchNewsForFirm(firm) {
   }
 }
 
+function buildMAQuery(firmName) {
+  // Use a compact set of M&A terms for the search query (post-fetch filter handles the rest)
+  const searchTerms = ['acquired', 'acquisition', 'merger', 'acquires', 'buyout', 'sold to'];
+  const maPart = searchTerms.map(k => `"${firmName}" ${k}`).join(' OR ');
+  const contextPart = RIA_CONTEXT_TERMS.join(' OR ');
+  return `(${maPart}) AND (${contextPart})`;
+}
+
+// Patterns that indicate stock/portfolio transactions, NOT firm M&A
+const STOCK_NOISE_PATTERNS = [
+  'shares acquired', 'shares purchased', 'shares bought',
+  'stake in', 'new stake', 'new position',
+  'shares of', 'stock in', 'holdings in',
+  '$', // ticker symbols like $BMNR
+  'position in',
+];
+
+function isMARelevant(articleTitle, articleSnippet) {
+  // Must contain at least one M&A keyword in the title or snippet
+  const text = `${articleTitle} ${articleSnippet || ''}`.toLowerCase();
+  
+  const hasMAKeyword = MA_KEYWORDS.some(term => text.includes(term.toLowerCase()));
+  if (!hasMAKeyword) return false;
+  
+  // Reject stock/portfolio transaction articles (biggest noise source)
+  const isStockArticle = STOCK_NOISE_PATTERNS.some(p => text.includes(p.toLowerCase()));
+  if (isStockArticle) return false;
+  
+  // Filter out noise (non-RIA content without wealth management context)
+  const hasNoise = NOISE_TERMS.some(term => text.includes(term.toLowerCase()));
+  const hasContext = RIA_CONTEXT_TERMS.some(term => text.includes(term.toLowerCase()));
+  
+  // If noise without context, reject
+  if (hasNoise && !hasContext) return false;
+  
+  return true;
+}
+
+async function fetchMANewsForFirm(firm) {
+  // M&A-specific search with RIA context filter
+  const query = buildMAQuery(firm.primary_business_name);
+  const url = GNEWS_RSS(query);
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'FAR-NewsBot/1.0' },
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const xml = await res.text();
+    const articles = parseRSSItems(xml);
+    
+    // Only keep articles that actually contain M&A keywords in title/snippet
+    return articles.filter(article => isMARelevant(article.title, article.snippet));
+  } catch (err) {
+    console.error(`[News] M&A fetch error for ${firm.primary_business_name}:`, err.message);
+    return [];
+  }
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function processArticles(crd, firmName, articles) {
+async function processArticles(crd, firmName, articles, isMA = false) {
   let inserted = 0;
   let alerts = 0;
 
@@ -106,22 +191,26 @@ async function processArticles(crd, firmName, articles) {
     const matchedWords = nameWords.filter(w => text.includes(w));
     const relevance = matchedWords.length / Math.max(nameWords.length, 1);
 
-    // Only store if reasonably relevant (>50% of name words match)
-    if (relevance < 0.5) continue;
+    // For M&A, lower threshold since query is already filtered
+    // For regular news, require >50% name match
+    const minRelevance = isMA ? 0.3 : 0.5;
+    if (relevance < minRelevance) continue;
 
-    // Insert article
+    // Insert article (is_ma_related may not exist yet)
+    const insertData = {
+      crd,
+      title: article.title,
+      url: article.url,
+      source: article.source,
+      published_at: article.published_at,
+      snippet: article.snippet,
+      relevance_score: Math.round(relevance * 100) / 100,
+      matched_keywords: matchedWords,
+    };
+    
     const { data: inserted_article, error } = await supabase
       .from('news_articles')
-      .insert({
-        crd,
-        title: article.title,
-        url: article.url,
-        source: article.source,
-        published_at: article.published_at,
-        snippet: article.snippet,
-        relevance_score: Math.round(relevance * 100) / 100,
-        matched_keywords: matchedWords,
-      })
+      .insert(insertData)
       .select('id')
       .single();
 
@@ -131,26 +220,39 @@ async function processArticles(crd, firmName, articles) {
     }
     inserted++;
 
-    // Create alert for high-relevance articles
-    if (relevance >= 0.7) {
+    // Create alert for M&A articles (higher relevance threshold) or regular high-relevance
+    const alertThreshold = isMA ? 0.3 : 0.7;
+    if (relevance >= alertThreshold) {
+      // M&A gets medium severity, regular gets low
+      const severity = isMA ? 'medium' : 'low';
+      // Use 'news' alert type for both (ma_news may not be in enum yet)
+      const alertType = 'news';
+      const prefix = isMA ? '🏢 M&A Alert' : 'News';
+      
       const { error: alertErr } = await supabase
         .from('firm_alerts')
         .insert({
           crd,
-          alert_type: 'news',
-          severity: 'low',
-          title: article.title,
-          summary: `News about ${firmName}: ${article.title}`,
+          alert_type: alertType,
+          severity,
+          title: `${prefix}: ${firmName}`,
+          summary: article.title,
           detail: {
             url: article.url,
             source: article.source,
             published_at: article.published_at,
+            is_ma_related: isMA,
           },
           news_article_id: inserted_article.id,
           source: 'news_scraper',
         });
 
-      if (!alertErr) alerts++;
+      if (!alertErr) {
+        alerts++;
+        if (isMA) {
+          console.log(`[News] 🚨 M&A Alert: ${firmName} — ${article.title.substring(0, 60)}...`);
+        }
+      }
     }
   }
 
@@ -165,18 +267,32 @@ async function main() {
 
   let totalArticles = 0;
   let totalAlerts = 0;
+  let totalMAArticles = 0;
+  let totalMAAlerts = 0;
 
   for (let i = 0; i < firms.length; i++) {
     const firm = firms[i];
+    
+    // Regular news search
     const articles = await fetchNewsForFirm(firm);
 
     if (articles.length > 0) {
-      const { inserted, alerts } = await processArticles(firm.crd, firm.primary_business_name, articles);
+      const { inserted, alerts } = await processArticles(firm.crd, firm.primary_business_name, articles, false);
       totalArticles += inserted;
       totalAlerts += alerts;
 
       if (inserted > 0) {
         console.log(`[News] ${firm.primary_business_name}: ${inserted} new articles, ${alerts} alerts`);
+      }
+    }
+
+    // M&A-specific search (every other iteration to save API calls)
+    if (i % 2 === 0) {
+      const maArticles = await fetchMANewsForFirm(firm);
+      if (maArticles.length > 0) {
+        const { inserted, alerts } = await processArticles(firm.crd, firm.primary_business_name, maArticles, true);
+        totalMAArticles += inserted;
+        totalMAAlerts += alerts;
       }
     }
 
@@ -187,11 +303,11 @@ async function main() {
 
     // Progress log every 50 firms
     if ((i + 1) % 50 === 0) {
-      console.log(`[News] Progress: ${i + 1}/${firms.length} firms scanned`);
+      console.log(`[News] Progress: ${i + 1}/${firms.length} firms scanned (MA: ${totalMAAlerts} alerts so far)`);
     }
   }
 
-  console.log(`[News] Done. New articles: ${totalArticles}, New alerts: ${totalAlerts}`);
+  console.log(`[News] Done. Regular: ${totalArticles} articles, ${totalAlerts} alerts | M&A: ${totalMAArticles} articles, ${totalMAAlerts} alerts`);
 }
 
 main().catch(err => {
