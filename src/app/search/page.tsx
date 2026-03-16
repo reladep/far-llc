@@ -118,7 +118,7 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
       >
         {/* Mobile header */}
         <div className="flex items-center justify-between border-b border-white/[0.06] p-4 lg:hidden">
-          <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/40">Filters</h3>
+          <h3 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/60">Filters</h3>
           <button onClick={onClose} className="h-7 w-7 flex items-center justify-center text-white/40 hover:text-white" aria-label="Close">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -177,8 +177,8 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
             `}</style>
             <div className="mt-1">
               <div className="flex justify-between mb-2.5">
-                <span className="font-mono text-[11px] text-white/40">{minScore === 0 ? 'Any' : minScore}</span>
-                <span className="font-mono text-[11px] text-white/40">100</span>
+                <span className="font-mono text-[11px] text-white/60">{minScore === 0 ? 'Any' : minScore}</span>
+                <span className="font-mono text-[11px] text-white/60">100</span>
               </div>
               <div className="relative h-[3px] bg-white/[0.08] rounded-full mb-3">
                 <div
@@ -196,7 +196,7 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
                 className="score-range-input"
                 style={{ marginTop: '-16px' }}
               />
-              <p className="text-[10px] text-white/25 mt-2">
+              <p className="text-[10px] text-white/45 mt-2">
                 {minScore === 0 ? 'Showing all scores' : `Minimum score: ${minScore}`}
               </p>
             </div>
@@ -278,7 +278,7 @@ function FilterGroup({ label, children }: { label: string; children: React.React
   return (
     <div className="mb-1">
       <div className="border-t border-white/[0.05] my-4" />
-      <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/20">{label}</p>
+      <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/40">{label}</p>
       <div className="flex flex-col gap-2">{children}</div>
     </div>
   );
@@ -309,8 +309,8 @@ function FilterCheckbox({
           </svg>
         )}
       </span>
-      <span className="flex-1 text-[12px] text-white/50 group-hover:text-white/70 transition-colors">{label}</span>
-      <span className="font-mono text-[10px] text-white/20">{count}</span>
+      <span className="flex-1 text-[12px] text-white/65 group-hover:text-white/90 transition-colors">{label}</span>
+      <span className="font-mono text-[10px] text-white/40">{count}</span>
     </label>
   );
 }
@@ -325,8 +325,8 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
     <div>
       {/* Results count header */}
       <div className="flex items-baseline gap-2.5 mb-4">
-        <span className="font-serif text-[22px] font-bold text-white">{count}</span>
-        <span className="text-[12px] text-white/30">advisors match your filters</span>
+        <span className="font-serif text-[22px] font-bold text-[#0C1810]">{count}</span>
+        <span className="text-[12px] text-[#5A7568]">advisors match your filters</span>
       </div>
 
       {/* Blurred cards + CTA overlay */}
@@ -336,34 +336,34 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
           <div className="flex flex-col gap-[1px]">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-[56px] bg-[#0F2538] border border-white/[0.06] animate-pulse" />
+                <div key={i} className="h-[56px] bg-white border border-[#CAD8D0] animate-pulse" />
               ))
             ) : previewFirms.length > 0 ? (
               previewFirms.map((firm) => {
                 const score = firm.final_score ?? null;
-                const scoreColor = score == null ? '#ffffff' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
+                const scoreColor = score == null ? '#CAD8D0' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
                 return (
-                  <div key={firm.crd} className="grid grid-cols-[56px_1fr_auto_auto] border border-white/[0.06] bg-[#0F2538]">
-                    <div className="grid place-items-center border-r border-white/[0.06]" style={{ height: 56, width: 56 }}>
-                      <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
+                  <div key={firm.crd} className="grid grid-cols-[56px_1fr_auto_auto] border border-[#CAD8D0] bg-white">
+                    <div className="grid place-items-center border-r border-[#CAD8D0]" style={{ height: 56, width: 56 }}>
+                      <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
                         {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
                       </div>
                     </div>
                     <div className="px-5 py-[14px] min-w-0">
-                      <p className="font-serif text-[16px] font-semibold text-white truncate mb-1">
+                      <p className="font-serif text-[16px] font-semibold text-[#0C1810] truncate mb-1">
                         {firm.display_name || firm.primary_business_name}
                       </p>
-                      <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+                      <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
                     </div>
                     <div className="px-5 py-[14px] text-right" style={{ minWidth: 100 }}>
-                      <p className="font-serif text-[18px] font-bold text-white leading-none mb-1">{formatAUM(firm.aum)}</p>
-                      <p className="text-[9px] uppercase tracking-[0.1em] text-white/25">AUM</p>
+                      <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
+                      <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
                     </div>
                     <div className="px-5 py-[14px] text-center" style={{ minWidth: 80 }}>
                       {score != null ? (
                         <p className="font-serif text-[28px] font-bold leading-none" style={{ color: scoreColor }}>{score}</p>
                       ) : (
-                        <p className="text-[11px] text-white/20">N/A</p>
+                        <p className="text-[11px] text-[#CAD8D0]">N/A</p>
                       )}
                     </div>
                   </div>
@@ -371,7 +371,7 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
               })
             ) : (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-[56px] bg-[#0F2538] border border-white/[0.06]" />
+                <div key={i} className="h-[56px] bg-white border border-[#CAD8D0]" />
               ))
             )}
           </div>
@@ -380,7 +380,7 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
         {/* Gradient overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(180deg, rgba(10,28,42,0) 0%, rgba(10,28,42,0.6) 60%, rgba(10,28,42,0.95) 100%)' }}
+          style={{ background: 'linear-gradient(180deg, rgba(246,248,247,0) 0%, rgba(246,248,247,0.6) 60%, rgba(246,248,247,0.95) 100%)' }}
         />
 
         {/* CTA overlay card */}
@@ -400,7 +400,7 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
             </h2>
 
             {/* Subtitle */}
-            <p className="text-[13px] text-white/35 leading-[1.7] border-t border-white/[0.06] pt-4 mb-6">
+            <p className="text-[13px] text-white/55 leading-[1.7] border-t border-white/[0.06] pt-4 mb-6">
               Search and filter freely. Full profiles with Visor Scores, fee breakdowns, and regulatory history require an account.
             </p>
 
@@ -414,14 +414,14 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
               </Link>
               <Link
                 href="/pricing"
-                className="inline-flex items-center px-7 py-3 border border-white/10 text-white/40 hover:border-white/30 hover:text-white text-[13px] transition-all"
+                className="inline-flex items-center px-7 py-3 border border-white/10 text-white/60 hover:border-white/30 hover:text-white text-[13px] transition-all"
               >
                 View Pricing
               </Link>
             </div>
 
             {/* Trust line */}
-            <p className="flex items-center gap-2 text-[11px] text-white/20">
+            <p className="flex items-center gap-2 text-[11px] text-white/40">
               <span className="h-[5px] w-[5px] rounded-full bg-[#2DBD74] shrink-0" />
               Free forever · No credit card required
             </p>
@@ -435,7 +435,7 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
 // ─── Score Bar ────────────────────────────────────────────────────────────────
 
 function GrowthCell({ value }: { value: number | null | undefined }) {
-  if (value == null) return <span className="text-right font-mono text-white/20">—</span>;
+  if (value == null) return <span className="text-right font-mono text-[#CAD8D0]">—</span>;
   const pct = value.toFixed(1);
   const isPositive = value >= 0;
   return (
@@ -467,7 +467,7 @@ function FirmCard({
   const [expanded, setExpanded] = useState(false);
   const score = firm.final_score ?? null;
   const scoreColor =
-    score == null ? '#ffffff' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
+    score == null ? '#CAD8D0' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
   const isFeatured = score != null && score >= 85;
   const description = firm.specialty_strategies || firm.investment_philosophy || null;
   const firmName = firm.display_name || firm.primary_business_name;
@@ -518,66 +518,66 @@ function FirmCard({
       <div
         onClick={handleCardClick}
         className={cn(
-          'transition-all duration-200 cursor-pointer border bg-[#0F2538]',
-          'hover:border-white/[0.14]',
-          expanded ? 'border-[rgba(45,189,116,0.3)] bg-[rgba(45,189,116,0.02)]' : '',
+          'transition-all duration-200 cursor-pointer border bg-white',
+          'hover:border-[#1A7A4A]/30',
+          expanded ? 'border-[rgba(45,189,116,0.3)] bg-[rgba(45,189,116,0.04)]' : '',
           isFeatured && !expanded ? 'border-[rgba(45,189,116,0.2)]' : '',
-          !isFeatured && !expanded ? 'border-white/[0.06]' : '',
+          !isFeatured && !expanded ? 'border-[#CAD8D0]' : '',
           isSelected && 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.04)]'
         )}
       >
         {/* Desktop layout */}
         <div className="hidden md:grid grid-cols-[56px_1fr_auto_auto_auto]">
           {/* Logo column */}
-          <div className="grid place-items-center border-r border-white/[0.06]" style={{ height: 56, width: 56 }}>
+          <div className="grid place-items-center border-r border-[#CAD8D0]/50" style={{ height: 56, width: 56 }}>
             {firm.logo_key ? (
               <FirmLogo logoKey={firm.logo_key} firmName={firmName} size="sm" />
             ) : (
-              <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
+              <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
                 {firmName.slice(0, 2).toUpperCase()}
               </div>
             )}
           </div>
 
           {/* Main info column */}
-          <div className="px-5 py-[12px] border-r border-white/[0.05] min-w-0">
-            <p className="font-serif text-[16px] font-semibold text-white truncate mb-0.5">{firmName}</p>
+          <div className="px-5 py-[12px] border-r border-[#CAD8D0]/50 min-w-0">
+            <p className="font-serif text-[16px] font-semibold text-[#0C1810] truncate mb-0.5">{firmName}</p>
             <div className="flex flex-wrap items-center gap-3 mb-0.5">
-              <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+              <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
               {(firm.services_financial_planning === 'Y' || firm.services_mgr_selection === 'Y') && (
-                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] px-[7px] py-[2px] border border-white/10 text-white/30">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.12em] px-[7px] py-[2px] border border-[#CAD8D0] text-[#5A7568]">
                   {firm.services_financial_planning === 'Y' ? 'Fee-only · RIA' : 'RIA'}
                 </span>
               )}
             </div>
-            {description && <p className="text-[11px] text-white/25 truncate max-w-[400px]">{description}</p>}
+            {description && <p className="text-[11px] text-[#5A7568]/80 truncate max-w-[400px]">{description}</p>}
           </div>
 
           {/* AUM column */}
-          <div className="px-5 py-[12px] border-r border-white/[0.05] text-right" style={{ minWidth: 110 }}>
-            <p className="font-serif text-[18px] font-bold text-white leading-none mb-1">{formatAUM(firm.aum)}</p>
-            <p className="text-[9px] uppercase tracking-[0.1em] text-white/25">AUM</p>
-            {firm.employee_total ? <p className="font-mono text-[10px] text-white/25 mt-1">{firm.employee_total} empl.</p> : null}
+          <div className="px-5 py-[12px] border-r border-[#CAD8D0]/50 text-right" style={{ minWidth: 110 }}>
+            <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
+            <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
+            {firm.employee_total ? <p className="font-mono text-[10px] text-[#5A7568] mt-1">{firm.employee_total} empl.</p> : null}
           </div>
 
           {/* Score column */}
-          <div className="px-5 py-[12px] border-r border-white/[0.05] text-center" style={{ minWidth: 90 }}>
+          <div className="px-5 py-[12px] border-r border-[#CAD8D0]/50 text-center" style={{ minWidth: 90 }}>
             {score != null ? (
               <>
                 <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
-                <p className="text-[8px] uppercase tracking-[0.12em] text-white/25">Visor Score™</p>
-                <div className="h-[2px] bg-white/[0.08] mt-2">
+                <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
+                <div className="h-[2px] bg-[#CAD8D0] mt-2">
                   <div className="h-full transition-[width] duration-500" style={{ width: `${score}%`, background: scoreColor }} />
                 </div>
               </>
             ) : (
-              <p className="text-[11px] text-white/20">N/A</p>
+              <p className="text-[11px] text-[#CAD8D0]">N/A</p>
             )}
           </div>
 
           {/* Actions column */}
           <div className="px-4 py-[12px] flex flex-col gap-2 items-center justify-center" style={{ minWidth: 80 }}>
-            <span className="text-[11px] font-semibold text-white/50 border border-white/10 px-3 py-1.5 hover:border-white/30 hover:text-white transition-all whitespace-nowrap">
+            <span className="text-[11px] font-semibold text-[#0C1810] border border-[#CAD8D0] px-3 py-1.5 hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all whitespace-nowrap">
               {expanded ? '▾ Less' : '▸ More'}
             </span>
           </div>
@@ -590,64 +590,64 @@ function FirmCard({
               {firm.logo_key ? (
                 <FirmLogo logoKey={firm.logo_key} firmName={firmName} size="sm" />
               ) : (
-                <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
+                <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
                   {firmName.slice(0, 2).toUpperCase()}
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-serif text-[15px] font-semibold text-white truncate">{firmName}</p>
+              <p className="font-serif text-[15px] font-semibold text-[#0C1810] truncate">{firmName}</p>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+                <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
                 {firm.services_financial_planning === 'Y' && (
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.1em] px-[5px] py-[1px] border border-white/10 text-white/30">Fee-only</span>
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.1em] px-[5px] py-[1px] border border-[#CAD8D0] text-[#5A7568]">Fee-only</span>
                 )}
               </div>
             </div>
-            <span className="text-[10px] text-white/30 shrink-0">{expanded ? '▾' : '▸'}</span>
+            <span className="text-[10px] text-[#5A7568] shrink-0">{expanded ? '▾' : '▸'}</span>
           </div>
-          <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 mt-1">
+          <div className="flex items-center justify-between border-t border-[#CAD8D0] pt-2 mt-1">
             <div>
-              <span className="font-serif text-[16px] font-bold text-white">{formatAUM(firm.aum)}</span>
-              <span className="text-[9px] uppercase tracking-[0.1em] text-white/25 ml-1.5">AUM</span>
+              <span className="font-serif text-[16px] font-bold text-[#0C1810]">{formatAUM(firm.aum)}</span>
+              <span className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568] ml-1.5">AUM</span>
             </div>
             {score != null ? (
               <div className="flex items-center gap-2">
                 <span className="font-serif text-[20px] font-bold" style={{ color: scoreColor }}>{score}</span>
                 <div className="text-center">
-                  <p className="text-[7px] uppercase tracking-[0.1em] text-white/25 leading-none">Visor</p>
-                  <p className="text-[7px] uppercase tracking-[0.1em] text-white/25 leading-none">Score™</p>
+                  <p className="text-[7px] uppercase tracking-[0.1em] text-[#5A7568] leading-none">Visor</p>
+                  <p className="text-[7px] uppercase tracking-[0.1em] text-[#5A7568] leading-none">Score™</p>
                 </div>
               </div>
             ) : (
-              <span className="text-[11px] text-white/20">N/A</span>
+              <span className="text-[11px] text-[#CAD8D0]">N/A</span>
             )}
           </div>
         </div>
 
         {/* ── Expanded detail panel ── */}
         {expanded && (
-          <div className="border-t border-white/[0.06] px-6 py-5 animate-[cardFadeIn_0.2s_ease-out]">
+          <div className="border-t border-[#CAD8D0] px-6 py-5 animate-[cardFadeIn_0.2s_ease-out]">
             {/* About — first sentence */}
             {aboutSnippet && (
-              <p className="text-[12px] leading-[1.7] text-white/45 mb-5">{aboutSnippet}</p>
+              <p className="text-[12px] leading-[1.7] text-[#5A7568] mb-5">{aboutSnippet}</p>
             )}
 
             <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
               {/* Left: Firm Details */}
               <div>
-                <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/30 mb-3">Firm Details</h4>
+                <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#5A7568] mb-3">Firm Details</h4>
                 <div className="flex flex-col gap-2">
                   {avgClientSize != null && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-white/35">Avg. Client Size</span>
-                      <span className="font-mono text-white/60">{formatAUM(avgClientSize)}</span>
+                      <span className="text-[#5A7568]">Avg. Client Size</span>
+                      <span className="font-mono text-[#2E4438]">{formatAUM(avgClientSize)}</span>
                     </div>
                   )}
                   {firm.minimum_account_size && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-white/35">Minimum Account Size</span>
-                      <span className="font-mono text-white/60">
+                      <span className="text-[#5A7568]">Minimum Account Size</span>
+                      <span className="font-mono text-[#2E4438]">
                         {(() => {
                           const val = parseFloat(firm.minimum_account_size.replace(/[^0-9.]/g, ''));
                           return isNaN(val) ? firm.minimum_account_size : formatAUM(val);
@@ -657,24 +657,24 @@ function FirmCard({
                   )}
                   {firm.employee_total != null && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-white/35">Total Employees</span>
-                      <span className="font-mono text-white/60">{firm.employee_total.toLocaleString()}</span>
+                      <span className="text-[#5A7568]">Total Employees</span>
+                      <span className="font-mono text-[#2E4438]">{firm.employee_total.toLocaleString()}</span>
                     </div>
                   )}
                   {firm.employee_investment != null && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-white/35">Investment Professionals</span>
-                      <span className="font-mono text-white/60">{firm.employee_investment.toLocaleString()}</span>
+                      <span className="text-[#5A7568]">Investment Professionals</span>
+                      <span className="font-mono text-[#2E4438]">{firm.employee_investment.toLocaleString()}</span>
                     </div>
                   )}
                   {firm.website && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-white/35">Website</span>
+                      <span className="text-[#5A7568]">Website</span>
                       <a
                         href={firm.website.startsWith('http') ? firm.website : `https://${firm.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-mono text-[#2DBD74]/70 hover:text-[#2DBD74] transition-colors truncate max-w-[200px]"
+                        className="font-mono text-[#1A7A4A] hover:text-[#2DBD74] transition-colors truncate max-w-[200px]"
                         onClick={e => e.stopPropagation()}
                       >
                         {firm.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
@@ -688,25 +688,25 @@ function FirmCard({
               <div>
                 {hasGrowthData && (
                   <>
-                    <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/30 mb-3">Growth</h4>
+                    <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#5A7568] mb-3">Growth</h4>
                     <div className="grid grid-cols-[auto_1fr_1fr] gap-x-4 gap-y-1.5 text-[11px]">
                       {/* Header row */}
                       <span />
-                      <span className="text-[8px] uppercase tracking-[0.12em] text-white/25 text-right">AUM</span>
-                      <span className="text-[8px] uppercase tracking-[0.12em] text-white/25 text-right">Clients</span>
+                      <span className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568] text-right">AUM</span>
+                      <span className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568] text-right">Clients</span>
 
                       {/* 1 Yr row */}
-                      <span className="text-white/35">1 Yr</span>
+                      <span className="text-[#5A7568]">1 Yr</span>
                       <GrowthCell value={firm.aum_1yr_growth_annualized} />
                       <GrowthCell value={firm.clients_1yr_growth_annualized} />
 
                       {/* 5 Yr row */}
-                      <span className="text-white/35">5 Yr</span>
+                      <span className="text-[#5A7568]">5 Yr</span>
                       <GrowthCell value={firm.aum_5yr_growth_annualized} />
                       <GrowthCell value={firm.clients_5yr_growth_annualized} />
 
                       {/* 10 Yr row */}
-                      <span className="text-white/35">10 Yr</span>
+                      <span className="text-[#5A7568]">10 Yr</span>
                       <GrowthCell value={firm.aum_10yr_growth_annualized} />
                       <GrowthCell value={firm.clients_10yr_growth_annualized} />
                     </div>
@@ -716,17 +716,17 @@ function FirmCard({
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center gap-3 border-t border-white/[0.06] pt-4 mt-5">
+            <div className="flex items-center gap-3 border-t border-[#CAD8D0] pt-4 mt-5">
               <Link
                 href={`/firm/${firm.crd}`}
-                className="text-[11px] font-semibold text-white/60 border border-white/12 px-4 py-2 hover:border-white/30 hover:text-white transition-all"
+                className="text-[11px] font-semibold text-[#0C1810] border border-[#CAD8D0] px-4 py-2 hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all"
                 onClick={e => e.stopPropagation()}
               >
                 View Full Profile →
               </Link>
               <Link
                 href={`/compare?crds=${firm.crd}`}
-                className="text-[11px] font-semibold text-[rgba(45,189,116,0.6)] hover:text-[#2DBD74] transition-colors"
+                className="text-[11px] font-semibold text-[#1A7A4A] hover:text-[#2DBD74] transition-colors"
                 onClick={e => e.stopPropagation()}
               >
                 + Add to Compare
@@ -747,7 +747,7 @@ function LoadingSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="h-[56px] bg-[#0F2538] border border-white/[0.06] animate-pulse"
+          className="h-[56px] bg-white border border-[#CAD8D0] animate-pulse"
           style={{ opacity: 1 - i * 0.1 }}
         />
       ))}
@@ -1040,7 +1040,7 @@ export default function SearchPage() {
         <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-6 py-3">
           {/* Mobile filter toggle */}
           <button
-            className="lg:hidden h-10 w-10 shrink-0 flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
+            className="lg:hidden h-10 w-10 shrink-0 flex items-center justify-center border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-all"
             onClick={() => setFiltersOpen(true)}
             aria-label="Open filters"
           >
@@ -1050,7 +1050,7 @@ export default function SearchPage() {
           </button>
 
           <form onSubmit={handleSearch} className="flex flex-1 items-center border border-white/[0.12] bg-white/[0.04] focus-within:border-[rgba(45,189,116,0.5)] px-3 gap-2 transition-colors">
-            <svg className="h-4 w-4 shrink-0 text-white/25" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg className="h-4 w-4 shrink-0 text-white/45" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <input
@@ -1071,13 +1071,13 @@ export default function SearchPage() {
                   if (selected) window.location.href = `/firm/${selected.crd}`;
                 }
               }}
-              className="flex-1 h-10 bg-transparent text-[14px] text-white placeholder:text-white/25 outline-none font-sans"
+              className="flex-1 h-10 bg-transparent text-[14px] text-white placeholder:text-white/45 outline-none font-sans"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => { setSearchQuery(''); fetchFirms('', filters); }}
-                className="text-[11px] text-white/30 hover:text-white/60 transition-colors shrink-0"
+                className="text-[11px] text-white/50 hover:text-white/75 transition-colors shrink-0"
               >
                 ✕ Clear
               </button>
@@ -1091,20 +1091,20 @@ export default function SearchPage() {
             Search
           </button>
 
-          <span className="font-mono text-[12px] text-white/30 shrink-0 hidden sm:block whitespace-nowrap">
+          <span className="font-mono text-[12px] text-white/50 shrink-0 hidden sm:block whitespace-nowrap">
             {loading ? '…' : `${firms.length.toLocaleString()} results`}
           </span>
         </div>
 
         {/* Quick filter tags */}
         <div className="flex items-center gap-2 px-6 py-2.5 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/25 shrink-0">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45 shrink-0">
             Quick:
           </span>
           {['Fee-only', 'Fiduciary', 'No minimum', 'Under $500K min', '$1M+ AUM', 'Conflict-free', 'Top scored'].map(tag => (
             <button
               key={tag}
-              className="shrink-0 px-3 py-1 text-[11px] border border-white/10 text-white/45 hover:border-[rgba(45,189,116,0.5)] hover:text-[#2DBD74] hover:bg-[rgba(45,189,116,0.06)] transition-all whitespace-nowrap"
+              className="shrink-0 px-3 py-1 text-[11px] border border-white/10 text-white/60 hover:border-[rgba(45,189,116,0.5)] hover:text-[#2DBD74] hover:bg-[rgba(45,189,116,0.06)] transition-all whitespace-nowrap"
             >
               {tag}
             </button>
@@ -1139,7 +1139,7 @@ export default function SearchPage() {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 border-l border-white/[0.06] px-8 pt-8 pb-20 min-h-[600px]">
+        <main className="flex-1 min-w-0 border-l border-[#CAD8D0] bg-[#F6F8F7] px-8 pt-8 pb-20 min-h-[600px]">
 
           {/* Auth-conditional rendering */}
           {session === undefined ? (
@@ -1156,47 +1156,47 @@ export default function SearchPage() {
               {/* Results toolbar */}
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-baseline gap-2.5">
-                  <span className="font-serif text-[22px] font-bold text-white">
+                  <span className="font-serif text-[22px] font-bold text-[#0C1810]">
                     {visibleFirms.length}
                   </span>
-                  <span className="text-[12px] text-white/30">advisors match your filters</span>
+                  <span className="text-[12px] text-[#5A7568]">advisors match your filters</span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] text-white/30">Sort by</span>
+                  <span className="text-[11px] text-[#5A7568]">Sort by</span>
                   <select
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value)}
-                    className="bg-white/[0.05] border border-white/10 text-white/70 font-sans text-[12px] px-3 py-1.5 outline-none"
+                    className="bg-white border border-[#CAD8D0] text-[#0C1810] font-sans text-[12px] px-3 py-1.5 outline-none"
                   >
-                    <option value="score" className="bg-[#0F2538]">Visor Score™ (high to low)</option>
-                    <option value="aum_high" className="bg-[#0F2538]">AUM (high to low)</option>
-                    <option value="aum_low" className="bg-[#0F2538]">AUM (low to high)</option>
-                    <option value="alpha" className="bg-[#0F2538]">Alphabetical</option>
-                    <option value="newest" className="bg-[#0F2538]">Newest filing</option>
+                    <option value="score" className="bg-white">Visor Score™ (high to low)</option>
+                    <option value="aum_high" className="bg-white">AUM (high to low)</option>
+                    <option value="aum_low" className="bg-white">AUM (low to high)</option>
+                    <option value="alpha" className="bg-white">Alphabetical</option>
+                    <option value="newest" className="bg-white">Newest filing</option>
                   </select>
                   {/* View toggle */}
                   <div className="flex gap-0.5">
                     <button
                       onClick={() => setViewMode('list')}
                       className={cn(
-                        'h-[30px] w-[30px] border border-white/[0.08] grid place-items-center transition-all',
-                        viewMode === 'list' && 'bg-white/[0.06] border-white/20'
+                        'h-[30px] w-[30px] border border-[#CAD8D0] grid place-items-center transition-all',
+                        viewMode === 'list' && 'bg-[rgba(26,122,74,0.06)] border-[#1A7A4A]/30'
                       )}
                       aria-label="List view"
                     >
-                      <svg className={cn('h-3.5 w-3.5', viewMode === 'list' ? 'text-white' : 'text-white/40')} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className={cn('h-3.5 w-3.5', viewMode === 'list' ? 'text-[#0C1810]' : 'text-[#5A7568]')} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" d="M2 4h12M2 8h12M2 12h12" />
                       </svg>
                     </button>
                     <button
                       onClick={() => setViewMode('grid')}
                       className={cn(
-                        'h-[30px] w-[30px] border border-white/[0.08] grid place-items-center transition-all',
-                        viewMode === 'grid' && 'bg-white/[0.06] border-white/20'
+                        'h-[30px] w-[30px] border border-[#CAD8D0] grid place-items-center transition-all',
+                        viewMode === 'grid' && 'bg-[rgba(26,122,74,0.06)] border-[#1A7A4A]/30'
                       )}
                       aria-label="Grid view"
                     >
-                      <svg className={cn('h-3.5 w-3.5', viewMode === 'grid' ? 'text-white' : 'text-white/40')} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className={cn('h-3.5 w-3.5', viewMode === 'grid' ? 'text-[#0C1810]' : 'text-[#5A7568]')} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5}>
                         <rect x="2" y="2" width="5" height="5" rx="0.5" />
                         <rect x="9" y="2" width="5" height="5" rx="0.5" />
                         <rect x="2" y="9" width="5" height="5" rx="0.5" />
@@ -1237,7 +1237,7 @@ export default function SearchPage() {
                   )}
                   <button
                     onClick={() => { handleClearFilters(); setMinScore(0); }}
-                    className="text-[11px] text-white/30 hover:text-white/60 transition-colors px-1"
+                    className="text-[11px] text-[#5A7568] hover:text-[#0C1810] transition-colors px-1"
                   >
                     Clear all
                   </button>
@@ -1279,65 +1279,101 @@ export default function SearchPage() {
                         {/* Empty state */}
                         {visibleFirms.length === 0 && (
                           <div className="py-20 text-center">
-                            <div className="h-12 w-12 border border-white/[0.08] grid place-items-center mx-auto mb-5 opacity-40">
-                              <svg className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <div className="h-12 w-12 border border-[#CAD8D0] grid place-items-center mx-auto mb-5 opacity-40">
+                              <svg className="h-5 w-5 text-[#5A7568]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                               </svg>
                             </div>
-                            <p className="font-serif text-[22px] text-white/50 mb-2">No results found</p>
-                            <p className="text-[13px] text-white/25 leading-[1.6] mb-6">
+                            <p className="font-serif text-[22px] text-[#0C1810] mb-2">No results found</p>
+                            <p className="text-[13px] text-[#5A7568] leading-[1.6] mb-6">
                               Try adjusting your filters or broadening your search.
                             </p>
-                            <button
-                              onClick={() => { handleClearFilters(); setMinScore(0); }}
-                              className="text-[13px] border border-white/10 text-white/50 px-6 py-2.5 hover:border-white/30 hover:text-white transition-all"
-                            >
-                              Clear filters
-                            </button>
+                            <div className="flex items-center gap-3 flex-wrap justify-center">
+                              <button
+                                onClick={() => { handleClearFilters(); setMinScore(0); }}
+                                className="text-[13px] border border-[#CAD8D0] text-[#0C1810] px-6 py-2.5 hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all"
+                              >
+                                Clear filters
+                              </button>
+                            </div>
+
+                            {/* Contact CTA */}
+                            <div className="mt-8 pt-6 border-t border-[#CAD8D0] max-w-[360px] mx-auto text-center">
+                              <p className="text-[12px] text-[#5A7568] leading-[1.6] mb-3">
+                                Can't find the firm you're looking for? Let us know and we'll look into it.
+                              </p>
+                              <Link
+                                href="/contact"
+                                className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2DBD74]/80 hover:text-[#2DBD74] transition-colors"
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                </svg>
+                                Contact us
+                              </Link>
+                            </div>
                           </div>
                         )}
 
                         {/* Pagination footer */}
                         {visibleFirms.length > 0 && (
-                          <div className="flex flex-col items-center gap-4 pt-8 mt-4 border-t border-white/[0.06]">
+                          <div className="flex flex-col items-center gap-4 pt-8 mt-4 border-t border-[#CAD8D0]">
                             {/* Page numbers */}
-                            {totalPages > 1 && (
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                  disabled={safePage === 1}
-                                  className="h-8 w-8 flex items-center justify-center border border-white/10 text-white/40 hover:border-white/30 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
-                                >
-                                  ←
-                                </button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            {totalPages > 1 && (() => {
+                              // Build truncated page list: 1 ... 4 5 [6] 7 8 ... 78
+                              const pages: (number | 'ellipsis-start' | 'ellipsis-end')[] = [];
+                              const delta = 2; // pages around current
+                              const left = Math.max(2, safePage - delta);
+                              const right = Math.min(totalPages - 1, safePage + delta);
+
+                              pages.push(1);
+                              if (left > 2) pages.push('ellipsis-start');
+                              for (let i = left; i <= right; i++) pages.push(i);
+                              if (right < totalPages - 1) pages.push('ellipsis-end');
+                              if (totalPages > 1) pages.push(totalPages);
+
+                              return (
+                                <div className="flex items-center gap-1">
                                   <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={cn(
-                                      'h-8 w-8 flex items-center justify-center border text-[12px] transition-all',
-                                      page === safePage
-                                        ? 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.08)] text-[#2DBD74]'
-                                        : 'border-white/10 text-white/40 hover:border-white/30 hover:text-white'
-                                    )}
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    className="h-8 w-8 flex items-center justify-center border border-[#CAD8D0] text-[#5A7568] hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
                                   >
-                                    {page}
+                                    ←
                                   </button>
-                                ))}
-                                <button
-                                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                  disabled={safePage === totalPages}
-                                  className="h-8 w-8 flex items-center justify-center border border-white/10 text-white/40 hover:border-white/30 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
-                                >
-                                  →
-                                </button>
-                              </div>
-                            )}
+                                  {pages.map((page, idx) =>
+                                    typeof page === 'string' ? (
+                                      <span key={page} className="h-8 w-8 flex items-center justify-center text-[12px] text-[#CAD8D0]">…</span>
+                                    ) : (
+                                      <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={cn(
+                                          'h-8 w-8 flex items-center justify-center border text-[12px] transition-all',
+                                          page === safePage
+                                            ? 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.08)] text-[#2DBD74]'
+                                            : 'border-[#CAD8D0] text-[#5A7568] hover:border-[#1A7A4A]/30 hover:text-[#0C1810]'
+                                        )}
+                                      >
+                                        {page}
+                                      </button>
+                                    )
+                                  )}
+                                  <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    className="h-8 w-8 flex items-center justify-center border border-[#CAD8D0] text-[#5A7568] hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[12px]"
+                                  >
+                                    →
+                                  </button>
+                                </div>
+                              );
+                            })()}
 
                             {/* Per-page + count row */}
                             <div className="flex items-center gap-4">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-white/20">Per page</span>
+                                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#5A7568]">Per page</span>
                                 <div className="flex gap-0.5">
                                   {([25, 50, 100] as const).map(n => (
                                     <button
@@ -1347,7 +1383,7 @@ export default function SearchPage() {
                                         'h-7 px-2.5 text-[11px] border transition-all',
                                         perPage === n
                                           ? 'border-[rgba(45,189,116,0.4)] bg-[rgba(45,189,116,0.07)] text-[#2DBD74]'
-                                          : 'border-white/10 text-white/35 hover:border-white/25 hover:text-white/70'
+                                          : 'border-[#CAD8D0] text-[#5A7568] hover:border-[#1A7A4A]/30 hover:text-[#0C1810]'
                                       )}
                                     >
                                       {n}
@@ -1355,7 +1391,7 @@ export default function SearchPage() {
                                   ))}
                                 </div>
                               </div>
-                              <span className="font-mono text-[11px] text-white/20">
+                              <span className="font-mono text-[11px] text-[#5A7568]">
                                 {startIdx + 1}–{Math.min(startIdx + perPage, visibleFirms.length)} of {visibleFirms.length}
                               </span>
                             </div>

@@ -70,7 +70,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="relative px-3 py-1.5 text-[14px] font-medium tracking-[0.01em] text-white/40 transition-colors duration-200 hover:text-white/85"
+              className="relative px-3 py-1.5 text-[14px] font-medium tracking-[0.01em] text-white/60 transition-colors duration-200 hover:text-white/95"
             >
               {link.label}
             </Link>
@@ -83,18 +83,18 @@ export function Header() {
             {user ? (
               <>
                 <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="text-[12.5px] text-white/50 hover:bg-white/[0.06] hover:text-white">Dashboard</Button>
+                  <Button variant="ghost" size="sm" className="text-[12.5px] text-white/65 hover:bg-white/[0.06] hover:text-white">Dashboard</Button>
                 </Link>
-                <span className="max-w-[120px] truncate text-[12px] text-white/30">
+                <span className="max-w-[120px] truncate text-[12px] text-white/50">
                   {user.user_metadata?.full_name || user.email}
                 </span>
-                <Button variant="ghost" size="sm" className="text-[12.5px] text-white/40 hover:bg-white/[0.06] hover:text-white" onClick={handleSignOut}>
+                <Button variant="ghost" size="sm" className="text-[12.5px] text-white/60 hover:bg-white/[0.06] hover:text-white" onClick={handleSignOut}>
                   Sign Out
                 </Button>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-[12.5px] font-medium text-white/40 transition-colors duration-200 hover:text-white/80">
+                <Link href="/auth/login" className="text-[12.5px] font-medium text-white/60 transition-colors duration-200 hover:text-white/90">
                   Sign In
                 </Link>
                 <Link
