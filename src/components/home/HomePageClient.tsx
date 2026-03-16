@@ -1151,7 +1151,8 @@ function PersonaSection() {
         </Reveal>
 
         <Reveal delay={80} className="mt-10">
-          <div className="grid items-stretch lg:grid-cols-[340px_1fr]">
+          {/* Desktop: side-by-side tabs + panel */}
+          <div className="hidden items-stretch lg:grid lg:grid-cols-[340px_1fr]">
             {/* Tabs */}
             <div className="flex flex-col border border-[#CAD8D0] bg-[#E6F4ED] lg:border-r-0">
               {personas.map((persona, index) => (
@@ -1164,7 +1165,6 @@ function PersonaSection() {
                     index === activePersona ? 'bg-white' : 'hover:bg-white/50'
                   )}
                 >
-                  {/* Left accent bar */}
                   <span
                     className={cn(
                       'absolute inset-y-0 left-0 w-0.5 origin-center bg-[#1A7A4A] transition-transform duration-200',
@@ -1253,6 +1253,107 @@ function PersonaSection() {
               </div>
             </div>
           </div>
+
+          {/* Mobile: accordion — panel appears directly under the selected tab */}
+          <div className="flex flex-col border border-[#CAD8D0] lg:hidden">
+            {personas.map((persona, index) => {
+              const isActive = index === activePersona;
+              const p = persona;
+              return (
+                <div key={p.persona}>
+                  <button
+                    type="button"
+                    onClick={() => setActivePersona(index)}
+                    className={cn(
+                      'relative w-full border-b border-[#CAD8D0] px-5 py-4 text-left transition-colors last:border-b-0',
+                      isActive ? 'bg-white' : 'bg-[#E6F4ED] hover:bg-white/50'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute inset-y-0 left-0 w-0.5 origin-center bg-[#1A7A4A] transition-transform duration-200',
+                        isActive ? 'scale-y-100' : 'scale-y-0'
+                      )}
+                    />
+                    <span className={cn(
+                      'block text-[9px] font-semibold uppercase tracking-[0.14em] transition-colors',
+                      isActive ? 'text-[#1A7A4A]' : 'text-[#5A7568]'
+                    )}>
+                      {p.persona}
+                    </span>
+                    <span className={cn(
+                      'block font-serif text-[14px] font-semibold leading-[1.25] transition-colors',
+                      isActive ? 'text-[#0C1810]' : 'text-[#5A7568]'
+                    )}>
+                      {p.situation}
+                    </span>
+                    <span className={cn(
+                      'absolute right-4 top-1/2 -translate-y-1/2 text-[12px] transition-transform',
+                      isActive ? 'rotate-90 text-[#1A7A4A]' : 'text-[#5A7568]'
+                    )}>→</span>
+                  </button>
+
+                  {/* Expanded panel directly under selected tab */}
+                  {isActive && (
+                    <div className="border-b border-[#CAD8D0] bg-white p-5">
+                      <span className="mb-3 inline-flex items-center gap-[7px] text-[9px] font-bold uppercase tracking-[0.2em] text-[#1A7A4A]">
+                        <span className="h-px w-4 bg-current" />
+                        {p.tag}
+                      </span>
+                      <h3 className="mb-4 font-serif text-[18px] font-semibold leading-[1.3] text-[#0C1810]">{p.blurb}</h3>
+
+                      <div className="mb-3 flex flex-wrap items-center gap-2 border border-[#CAD8D0] bg-[#E6F4ED] p-2 px-3">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5A7568]">{p.searchLabel}</span>
+                        <span className="flex-1 text-[12px] italic text-[#2E4438]">{p.searchQuery}</span>
+                        <span className="bg-[rgba(26,122,74,0.1)] px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-[#1A7A4A]">
+                          {p.searchResultLabel}
+                        </span>
+                      </div>
+
+                      <div className="border border-[#CAD8D0] bg-[#F6F8F7]">
+                        <div className="flex items-start justify-between border-b border-[#CAD8D0] p-3">
+                          <div>
+                            <p className="font-serif text-[14px] font-semibold leading-snug text-[#0C1810]">{p.firmName}</p>
+                            <p className="mt-0.5 text-[9px] tracking-[0.04em] text-[#5A7568]">{p.firmMeta}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.03em]" style={{ color: scoreColor(p.scoreTone) }}>
+                              {p.score}
+                            </p>
+                            <p className="mt-0.5 text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 p-3">
+                          {p.metrics.map((metric) => (
+                            <div key={metric.label} className="flex items-center gap-1.5 text-[10px]">
+                              <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ background: scoreColor(metric.tone) }} />
+                              <span className="flex-1 text-[#5A7568]">{metric.label}</span>
+                              <span className="font-mono text-[9px] font-medium text-[#2E4438]">{metric.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={cn(
+                        'mt-3 border-l-2 p-3',
+                        p.scoreTone === 'risk'
+                          ? 'border-[#DC2626] bg-[rgba(220,38,38,0.05)]'
+                          : 'border-[#1A7A4A] bg-[#E6F4ED]'
+                      )}>
+                        <p className={cn(
+                          'mb-1 text-[8px] font-bold uppercase tracking-[0.18em]',
+                          p.scoreTone === 'risk' ? 'text-[#DC2626]' : 'text-[#1A7A4A]'
+                        )}>
+                          {p.findingLabel}
+                        </p>
+                        <p className="text-[11px] leading-[1.6] text-[#5A7568]">{p.finding}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </Reveal>
       </div>
     </section>
@@ -1288,20 +1389,20 @@ function FinalCtaSection() {
               href="#pricing"
               className="inline-flex items-center gap-2 bg-[#1A7A4A] px-9 py-[15px] text-[14px] font-semibold text-white transition-colors hover:bg-[#22995E]"
             >
-              Get Full Access
+              Get Access
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14">
                 <line x1="2" y1="7" x2="12" y2="7" /><polyline points="8,3 12,7 8,11" />
               </svg>
             </Link>
             <Link
-              href="/search"
+              href="/about"
               className="inline-flex items-center gap-2 border border-white/[0.12] px-7 py-[15px] text-[14px] text-white/50 transition-all hover:border-white/30 hover:text-white"
             >
-              Search Advisors Free
+              Our Mission
             </Link>
           </div>
           <p className="text-[11px] text-white/25">
-            No account required for basic search. No advisor has paid to appear here.
+            Unbiased intelligence. Measurable savings.
           </p>
         </Reveal>
       </div>
@@ -1427,9 +1528,7 @@ export function HomePageClient() {
       <section className="relative overflow-hidden bg-[#0a1c2a] pb-10 pt-12 text-white md:pb-14 md:pt-16">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.16),transparent_34%),linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:auto,72px_72px,72px_72px]" />
         <div className="container-page relative">
-          <HeroStatsBar />
-
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <Reveal>
             <div>
               <h1 className="max-w-3xl font-serif text-5xl leading-[1.08] tracking-[-0.02em] text-white md:text-[clamp(36px,4.5vw,62px)]">
@@ -1437,24 +1536,23 @@ export function HomePageClient() {
                 <em className="italic text-emerald-300">Shouldn&apos;t you know everything about them?</em>
               </h1>
               <p className="mt-6 max-w-[480px] text-base font-light leading-7 text-white/50">
-                Search, compare, track, and negotiate — across thousands of firms managing trillions in assets.
+                Search, compare, track, and negotiate across 4,000+ firms managing $8T+ in AUM.
               </p>
 
               {/* Hero CTAs */}
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link
-                  href="/search"
-                  className="inline-flex items-center gap-2 border border-white/20 px-7 py-3.5 text-sm font-medium text-white/75 transition-all duration-200 hover:border-white/50 hover:text-white"
-                >
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4"/><line x1="9.5" y1="9.5" x2="13" y2="13"/></svg>
-                  Search Advisors
-                </Link>
-                <Link
                   href="#pricing"
-                  className="inline-flex items-center gap-2 bg-[#1A7A4A] px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#22995E]"
+                  className="inline-flex items-center justify-center bg-[#1A7A4A] px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#22995E]"
                 >
                   Get Access
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14" aria-hidden="true"><line x1="2" y1="7" x2="12" y2="7"/><polyline points="8,3 12,7 8,11"/></svg>
+                </Link>
+                <Link
+                  href="/search"
+                  className="inline-flex items-center gap-2 border border-white/20 px-7 py-3.5 text-sm font-semibold text-white/75 transition-all duration-200 hover:border-white/50 hover:text-white"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="4"/><line x1="9.5" y1="9.5" x2="13" y2="13"/></svg>
+                  Search
                 </Link>
               </div>
 

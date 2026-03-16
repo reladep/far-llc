@@ -80,7 +80,7 @@ export function MobileNav() {
         )}
       >
         <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-          <span className="font-serif text-xl font-semibold text-white">Visor Index</span>
+          <span className="font-serif text-[22px] font-bold italic tracking-[0.02em] text-white">VISOR<span className="ml-[0.12em] text-[#2DBD74]">INDEX</span></span>
           <button
             onClick={() => setOpen(false)}
             className="flex h-10 w-10 items-center justify-center rounded-xl text-white hover:bg-white/10"

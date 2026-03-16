@@ -10,14 +10,11 @@ export function Footer() {
         <div className="grid border-b border-white/[0.06] gap-0 px-6 py-10 sm:px-10 lg:px-14 lg:py-14 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div className="border-b border-white/[0.06] pb-6 pr-0 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-12 lg:mr-10">
-            <p className="mb-[10px] font-serif text-[20px] font-bold text-white">
-              Visor <em className="not-italic text-[#2DBD74]">Index</em>
+            <p className="mb-[10px] font-serif text-[22px] font-bold italic tracking-[0.02em] text-white">
+              VISOR<span className="ml-[0.12em] text-[#2DBD74]">INDEX</span>
             </p>
-            <p className="mb-5 max-w-[200px] text-[12px] leading-7">
+            <p className="mb-5 max-w-[260px] text-[12px] leading-[1.6]">
               Independent intelligence for the most important financial decision of your life.
-            </p>
-            <p className="border-t border-white/[0.06] pt-4 text-[11px] leading-[1.5] text-[rgba(45,189,116,0.7)]">
-              Conflict-free by design. Revenue from subscribers only — never from advisors.
             </p>
           </div>
 

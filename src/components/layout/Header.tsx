@@ -50,14 +50,9 @@ export function Header() {
         )}
       >
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-2.5">
-          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-[#1A7A4A] shadow-[0_0_12px_rgba(26,122,74,0.2)] transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(45,189,116,0.3)]">
-            <svg width="16" height="18" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M6.5 7L10 14.5L13.5 7" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-          </div>
-          <span className="text-[17px] font-semibold tracking-[-0.02em] text-white">
-            Visor<span className="ml-[0.1em] font-bold text-[#2DBD74]">Index</span>
+        <Link href="/" className="group flex items-center">
+          <span className="font-serif text-[22px] font-bold italic tracking-[0.02em] text-white">
+            VISOR<span className="ml-[0.12em] text-[#2DBD74]">INDEX</span>
           </span>
         </Link>
 
@@ -75,7 +70,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="relative px-3 py-1.5 text-[12.5px] font-medium tracking-[0.01em] text-white/40 transition-colors duration-200 hover:text-white/85"
+              className="relative px-3 py-1.5 text-[14px] font-medium tracking-[0.01em] text-white/40 transition-colors duration-200 hover:text-white/85"
             >
               {link.label}
             </Link>
