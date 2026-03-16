@@ -9,6 +9,19 @@ import type { Session } from '@supabase/supabase-js';
 
 const supabase = createSupabaseBrowserClient();
 
+const SEARCH_PAGE_CSS = `
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.search-card-stagger {
+  animation: cardFadeIn 0.35s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-card-stagger { animation: none; }
+}
+`;
+
 interface Firm {
   crd: number;
   primary_business_name: string;
@@ -18,21 +31,45 @@ interface Firm {
   main_office_state: string;
   aum: number | null;
   employee_total: number | null;
+  employee_investment: number | null;
   number_of_offices: number | null;
   services_financial_planning: string | null;
   services_mgr_selection: string | null;
   services_pension_consulting: string | null;
+  // Client counts (for avg client size calc)
+  client_hnw_number: number | null;
+  client_non_hnw_number: number | null;
+  client_pension_number: number | null;
+  client_charitable_number: number | null;
+  client_corporations_number: number | null;
+  client_pooled_vehicles_number: number | null;
+  client_other_number: number | null;
   // Profile text fields
   client_base: string | null;
   wealth_tier: string | null;
   investment_philosophy: string | null;
   firm_character: string | null;
   specialty_strategies: string | null;
+  business_profile: string | null;
   // Fee tiers
   min_fee: number | null;
+  minimum_account_size: string | null;
+  // Website
+  website: string | null;
   // Visor Score
   final_score?: number | null;
   stars?: number | null;
+  fee_competitiveness_score?: number | null;
+  conflict_free_score?: number | null;
+  aum_growth_score?: number | null;
+  fee_transparency_score?: number | null;
+  // Growth rates
+  aum_1yr_growth_annualized?: number | null;
+  aum_5yr_growth_annualized?: number | null;
+  aum_10yr_growth_annualized?: number | null;
+  clients_1yr_growth_annualized?: number | null;
+  clients_5yr_growth_annualized?: number | null;
+  clients_10yr_growth_annualized?: number | null;
 }
 
 function formatAUM(value: number | null): string {
@@ -395,96 +432,142 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
   );
 }
 
+// ─── Score Bar ────────────────────────────────────────────────────────────────
+
+function GrowthCell({ value }: { value: number | null | undefined }) {
+  if (value == null) return <span className="text-right font-mono text-white/20">—</span>;
+  const pct = value.toFixed(1);
+  const isPositive = value >= 0;
+  return (
+    <span className={cn('text-right font-mono', isPositive ? 'text-[#2DBD74]/80' : 'text-[#EF4444]/80')}>
+      {isPositive ? '+' : ''}{pct}%
+    </span>
+  );
+}
+
+function getFirstSentence(text: string): string {
+  // Match first sentence ending with . ! or ? followed by space or end
+  const match = text.match(/^(.+?[.!?])(?:\s|$)/);
+  return match ? match[1] : text.slice(0, 200);
+}
+
 // ─── Firm Card ────────────────────────────────────────────────────────────────
 
 function FirmCard({
   firm,
   isSelected,
   cardRef,
+  index = 0,
 }: {
   firm: Firm;
   isSelected?: boolean;
   cardRef?: React.RefObject<HTMLDivElement>;
+  index?: number;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const score = firm.final_score ?? null;
   const scoreColor =
     score == null ? '#ffffff' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
   const isFeatured = score != null && score >= 85;
+  const description = firm.specialty_strategies || firm.investment_philosophy || null;
+  const firmName = firm.display_name || firm.primary_business_name;
+
+  // Computed values for expanded panel
+  const aboutText = firm.business_profile || firm.investment_philosophy || firm.firm_character || null;
+  const aboutSnippet = aboutText ? getFirstSentence(aboutText) : null;
+
+  const totalClients = [
+    firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
+    firm.client_charitable_number, firm.client_corporations_number,
+    firm.client_pooled_vehicles_number, firm.client_other_number,
+  ].reduce((sum, v) => (sum || 0) + (v || 0), 0) as number;
+
+  const avgClientSize = totalClients > 0 && firm.aum ? firm.aum / totalClients : null;
+
+  const hasGrowthData = firm.aum_1yr_growth_annualized != null || firm.aum_5yr_growth_annualized != null ||
+    firm.clients_1yr_growth_annualized != null;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't expand if clicking a link inside the card
+    if ((e.target as HTMLElement).closest('a[href]')) return;
+    e.preventDefault();
+    setExpanded(prev => !prev);
+  };
+
+  const scoreBreakdown = [
+    { label: 'Fee Competitiveness', value: firm.fee_competitiveness_score ?? null },
+    { label: 'Fee Transparency', value: firm.fee_transparency_score ?? null },
+    { label: 'Conflict Exposure', value: firm.conflict_free_score ?? null },
+    { label: 'AUM Growth', value: firm.aum_growth_score ?? null },
+  ];
 
   return (
-    <div ref={cardRef} className="relative">
-      {isFeatured && (
-        <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#2DBD74] z-10" />
-      )}
-      <Link href={`/firm/${firm.crd}`}>
-        <div
-          className={cn(
-            'grid border bg-[#0F2538] hover:border-white/[0.14] transition-all cursor-pointer',
-            'grid-cols-[56px_1fr_auto_auto_auto]',
-            isFeatured ? 'border-[rgba(45,189,116,0.2)]' : 'border-white/[0.06]',
-            isSelected && 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.04)]'
-          )}
-        >
+    <div
+      ref={cardRef}
+      className="search-card-stagger relative"
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      {/* Green accent bar */}
+      <div
+        className={cn(
+          'absolute left-0 top-0 bottom-0 w-[2px] z-10 origin-top transition-transform duration-300 bg-[#2DBD74]',
+        )}
+        style={{ transform: (isFeatured || expanded) ? 'scaleY(1)' : 'scaleY(0)' }}
+      />
+
+      <div
+        onClick={handleCardClick}
+        className={cn(
+          'transition-all duration-200 cursor-pointer border bg-[#0F2538]',
+          'hover:border-white/[0.14]',
+          expanded ? 'border-[rgba(45,189,116,0.3)] bg-[rgba(45,189,116,0.02)]' : '',
+          isFeatured && !expanded ? 'border-[rgba(45,189,116,0.2)]' : '',
+          !isFeatured && !expanded ? 'border-white/[0.06]' : '',
+          isSelected && 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.04)]'
+        )}
+      >
+        {/* Desktop layout */}
+        <div className="hidden md:grid grid-cols-[56px_1fr_auto_auto_auto]">
           {/* Logo column */}
           <div className="grid place-items-center border-r border-white/[0.06]" style={{ height: 56, width: 56 }}>
             {firm.logo_key ? (
-              <FirmLogo
-                logoKey={firm.logo_key}
-                firmName={firm.display_name || firm.primary_business_name}
-                size="sm"
-              />
+              <FirmLogo logoKey={firm.logo_key} firmName={firmName} size="sm" />
             ) : (
               <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
-                {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
+                {firmName.slice(0, 2).toUpperCase()}
               </div>
             )}
           </div>
 
           {/* Main info column */}
-          <div className="px-5 py-[14px] border-r border-white/[0.05] min-w-0">
-            <p className="font-serif text-[16px] font-semibold text-white truncate mb-1">
-              {firm.display_name || firm.primary_business_name}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-[11px] text-white/35">
-                {firm.main_office_city}, {firm.main_office_state}
-              </span>
-              {(firm.services_financial_planning === 'Y' ||
-                firm.services_mgr_selection === 'Y') && (
+          <div className="px-5 py-[12px] border-r border-white/[0.05] min-w-0">
+            <p className="font-serif text-[16px] font-semibold text-white truncate mb-0.5">{firmName}</p>
+            <div className="flex flex-wrap items-center gap-3 mb-0.5">
+              <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+              {(firm.services_financial_planning === 'Y' || firm.services_mgr_selection === 'Y') && (
                 <span className="text-[9px] font-semibold uppercase tracking-[0.12em] px-[7px] py-[2px] border border-white/10 text-white/30">
                   {firm.services_financial_planning === 'Y' ? 'Fee-only · RIA' : 'RIA'}
                 </span>
               )}
             </div>
+            {description && <p className="text-[11px] text-white/25 truncate max-w-[400px]">{description}</p>}
           </div>
 
           {/* AUM column */}
-          <div className="px-5 py-[14px] border-r border-white/[0.05] text-right" style={{ minWidth: 110 }}>
-            <p className="font-serif text-[18px] font-bold text-white leading-none mb-1">
-              {formatAUM(firm.aum)}
-            </p>
+          <div className="px-5 py-[12px] border-r border-white/[0.05] text-right" style={{ minWidth: 110 }}>
+            <p className="font-serif text-[18px] font-bold text-white leading-none mb-1">{formatAUM(firm.aum)}</p>
             <p className="text-[9px] uppercase tracking-[0.1em] text-white/25">AUM</p>
-            {firm.employee_total ? (
-              <p className="font-mono text-[10px] text-white/25 mt-1">{firm.employee_total} empl.</p>
-            ) : null}
+            {firm.employee_total ? <p className="font-mono text-[10px] text-white/25 mt-1">{firm.employee_total} empl.</p> : null}
           </div>
 
           {/* Score column */}
-          <div className="px-5 py-[14px] border-r border-white/[0.05] text-center" style={{ minWidth: 90 }}>
+          <div className="px-5 py-[12px] border-r border-white/[0.05] text-center" style={{ minWidth: 90 }}>
             {score != null ? (
               <>
-                <p
-                  className="font-serif text-[28px] font-bold leading-none tracking-[-0.02em] mb-0.5"
-                  style={{ color: scoreColor }}
-                >
-                  {score}
-                </p>
+                <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
                 <p className="text-[8px] uppercase tracking-[0.12em] text-white/25">Visor Score™</p>
                 <div className="h-[2px] bg-white/[0.08] mt-2">
-                  <div
-                    className="h-full transition-[width] duration-500"
-                    style={{ width: `${score}%`, background: scoreColor }}
-                  />
+                  <div className="h-full transition-[width] duration-500" style={{ width: `${score}%`, background: scoreColor }} />
                 </div>
               </>
             ) : (
@@ -493,16 +576,165 @@ function FirmCard({
           </div>
 
           {/* Actions column */}
-          <div className="px-4 py-[14px] flex flex-col gap-2 items-center justify-center" style={{ minWidth: 80 }}>
+          <div className="px-4 py-[12px] flex flex-col gap-2 items-center justify-center" style={{ minWidth: 80 }}>
             <span className="text-[11px] font-semibold text-white/50 border border-white/10 px-3 py-1.5 hover:border-white/30 hover:text-white transition-all whitespace-nowrap">
-              View →
-            </span>
-            <span className="text-[10px] text-[rgba(45,189,116,0.5)] hover:text-[#2DBD74] transition-colors whitespace-nowrap">
-              + Compare
+              {expanded ? '▾ Less' : '▸ More'}
             </span>
           </div>
         </div>
-      </Link>
+
+        {/* Mobile layout */}
+        <div className="md:hidden p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="shrink-0">
+              {firm.logo_key ? (
+                <FirmLogo logoKey={firm.logo_key} firmName={firmName} size="sm" />
+              ) : (
+                <div className="h-8 w-8 bg-white/[0.04] border border-white/[0.08] grid place-items-center font-serif text-[13px] font-bold text-white/25">
+                  {firmName.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-serif text-[15px] font-semibold text-white truncate">{firmName}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-white/35">{firm.main_office_city}, {firm.main_office_state}</span>
+                {firm.services_financial_planning === 'Y' && (
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.1em] px-[5px] py-[1px] border border-white/10 text-white/30">Fee-only</span>
+                )}
+              </div>
+            </div>
+            <span className="text-[10px] text-white/30 shrink-0">{expanded ? '▾' : '▸'}</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 mt-1">
+            <div>
+              <span className="font-serif text-[16px] font-bold text-white">{formatAUM(firm.aum)}</span>
+              <span className="text-[9px] uppercase tracking-[0.1em] text-white/25 ml-1.5">AUM</span>
+            </div>
+            {score != null ? (
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-[20px] font-bold" style={{ color: scoreColor }}>{score}</span>
+                <div className="text-center">
+                  <p className="text-[7px] uppercase tracking-[0.1em] text-white/25 leading-none">Visor</p>
+                  <p className="text-[7px] uppercase tracking-[0.1em] text-white/25 leading-none">Score™</p>
+                </div>
+              </div>
+            ) : (
+              <span className="text-[11px] text-white/20">N/A</span>
+            )}
+          </div>
+        </div>
+
+        {/* ── Expanded detail panel ── */}
+        {expanded && (
+          <div className="border-t border-white/[0.06] px-6 py-5 animate-[cardFadeIn_0.2s_ease-out]">
+            {/* About — first sentence */}
+            {aboutSnippet && (
+              <p className="text-[12px] leading-[1.7] text-white/45 mb-5">{aboutSnippet}</p>
+            )}
+
+            <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
+              {/* Left: Firm Details */}
+              <div>
+                <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/30 mb-3">Firm Details</h4>
+                <div className="flex flex-col gap-2">
+                  {avgClientSize != null && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Avg. Client Size</span>
+                      <span className="font-mono text-white/60">{formatAUM(avgClientSize)}</span>
+                    </div>
+                  )}
+                  {firm.minimum_account_size && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Minimum Account Size</span>
+                      <span className="font-mono text-white/60">
+                        {(() => {
+                          const val = parseFloat(firm.minimum_account_size.replace(/[^0-9.]/g, ''));
+                          return isNaN(val) ? firm.minimum_account_size : formatAUM(val);
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  {firm.employee_total != null && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Total Employees</span>
+                      <span className="font-mono text-white/60">{firm.employee_total.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {firm.employee_investment != null && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Investment Professionals</span>
+                      <span className="font-mono text-white/60">{firm.employee_investment.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {firm.website && (
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Website</span>
+                      <a
+                        href={firm.website.startsWith('http') ? firm.website : `https://${firm.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-[#2DBD74]/70 hover:text-[#2DBD74] transition-colors truncate max-w-[200px]"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {firm.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Growth Rates */}
+              <div>
+                {hasGrowthData && (
+                  <>
+                    <h4 className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/30 mb-3">Growth</h4>
+                    <div className="grid grid-cols-[auto_1fr_1fr] gap-x-4 gap-y-1.5 text-[11px]">
+                      {/* Header row */}
+                      <span />
+                      <span className="text-[8px] uppercase tracking-[0.12em] text-white/25 text-right">AUM</span>
+                      <span className="text-[8px] uppercase tracking-[0.12em] text-white/25 text-right">Clients</span>
+
+                      {/* 1 Yr row */}
+                      <span className="text-white/35">1 Yr</span>
+                      <GrowthCell value={firm.aum_1yr_growth_annualized} />
+                      <GrowthCell value={firm.clients_1yr_growth_annualized} />
+
+                      {/* 5 Yr row */}
+                      <span className="text-white/35">5 Yr</span>
+                      <GrowthCell value={firm.aum_5yr_growth_annualized} />
+                      <GrowthCell value={firm.clients_5yr_growth_annualized} />
+
+                      {/* 10 Yr row */}
+                      <span className="text-white/35">10 Yr</span>
+                      <GrowthCell value={firm.aum_10yr_growth_annualized} />
+                      <GrowthCell value={firm.clients_10yr_growth_annualized} />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-3 border-t border-white/[0.06] pt-4 mt-5">
+              <Link
+                href={`/firm/${firm.crd}`}
+                className="text-[11px] font-semibold text-white/60 border border-white/12 px-4 py-2 hover:border-white/30 hover:text-white transition-all"
+                onClick={e => e.stopPropagation()}
+              >
+                View Full Profile →
+              </Link>
+              <Link
+                href={`/compare?crds=${firm.crd}`}
+                className="text-[11px] font-semibold text-[rgba(45,189,116,0.6)] hover:text-[#2DBD74] transition-colors"
+                onClick={e => e.stopPropagation()}
+              >
+                + Add to Compare
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -575,10 +807,18 @@ export default function SearchPage() {
           main_office_state,
           aum,
           employee_total,
+          employee_investment,
           number_of_offices,
           services_financial_planning,
           services_mgr_selection,
-          services_pension_consulting
+          services_pension_consulting,
+          client_hnw_number,
+          client_non_hnw_number,
+          client_pension_number,
+          client_charitable_number,
+          client_corporations_number,
+          client_pooled_vehicles_number,
+          client_other_number
         `);
 
       if (query && query.length > 0) {
@@ -595,17 +835,38 @@ export default function SearchPage() {
         queryBuilder = queryBuilder.gte('aum', minAUM);
       }
 
-      const { data: baseFirms, error: baseError } = await queryBuilder.limit(100);
+      // Paginate through all results (Supabase caps at 1000 per request)
+      const PAGE_SIZE = 1000;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let allBaseFirms: any[] = [];
+      let pageNum = 0;
+      let hasMore = true;
 
-      if (baseError) {
-        console.error('Error fetching firms:', baseError);
-        setError(baseError.message);
-        setFirms([]);
-        setLoading(false);
-        return;
+      while (hasMore) {
+        const from = pageNum * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data: baseFirmsPage, error: baseError } = await queryBuilder.range(from, to);
+
+        if (baseError) {
+          console.error('Error fetching firms:', baseError);
+          setError(baseError.message);
+          setFirms([]);
+          setLoading(false);
+          return;
+        }
+
+        if (!baseFirmsPage || baseFirmsPage.length === 0) {
+          hasMore = false;
+        } else {
+          allBaseFirms = [...allBaseFirms, ...baseFirmsPage];
+          hasMore = baseFirmsPage.length === PAGE_SIZE;
+          pageNum++;
+        }
       }
 
-      if (!baseFirms || baseFirms.length === 0) {
+      const baseFirms = allBaseFirms;
+
+      if (baseFirms.length === 0) {
         setFirms([]);
         setLoading(false);
         return;
@@ -613,27 +874,45 @@ export default function SearchPage() {
 
       const crds = baseFirms.map(f => f.crd);
 
-      const { data: profileData } = await supabase
-        .from('firmdata_profile_text')
-        .select('crd, client_base, wealth_tier, investment_philosophy, firm_character, specialty_strategies')
-        .in('crd', crds);
+      // Batch CRDs into chunks of 500 to avoid Supabase .in() limits
+      const CHUNK = 500;
+      const crdChunks: number[][] = [];
+      for (let i = 0; i < crds.length; i += CHUNK) {
+        crdChunks.push(crds.slice(i, i + CHUNK));
+      }
 
-      const { data: feeData } = await supabase
-        .from('firmdata_feetiers')
-        .select('crd, min_aum')
-        .in('crd', crds);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fetchChunked = async (table: string, select: string, extraFilter?: (q: any) => any) => {
+        const results = await Promise.all(
+          crdChunks.map(chunk => {
+            let q = supabase.from(table).select(select).in('crd', chunk);
+            if (extraFilter) q = extraFilter(q);
+            return q;
+          })
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return results.flatMap(r => (r.data || []) as any[]);
+      };
 
-      const [{ data: nameData }, { data: logoData }, { data: scoreData }] = await Promise.all([
-        supabase.from('firm_names').select('crd, display_name').in('crd', crds),
-        supabase.from('firm_logos').select('crd, logo_key').eq('has_logo', true).in('crd', crds),
-        supabase.from('firm_scores').select('crd, final_score, stars').in('crd', crds),
+      const [profileData, feeData, nameData, logoData, scoreData, websiteData, feesAndMinsData, growthRankData] = await Promise.all([
+        fetchChunked('firmdata_profile_text', 'crd, client_base, wealth_tier, investment_philosophy, firm_character, specialty_strategies, business_profile'),
+        fetchChunked('firmdata_feetiers', 'crd, min_aum'),
+        fetchChunked('firm_names', 'crd, display_name'),
+        fetchChunked('firm_logos', 'crd, logo_key', q => q.eq('has_logo', true)),
+        fetchChunked('firm_scores', 'crd, final_score, stars, fee_competitiveness_score, conflict_free_score, aum_growth_score, fee_transparency_score'),
+        fetchChunked('firmdata_website', 'crd, website'),
+        fetchChunked('firmdata_feesandmins', 'crd, minimum_account_size'),
+        fetchChunked('firmdata_growth_rate_rankings', 'crd, aum_1y_growth_annualized, aum_5y_growth_annualized, aum_10y_growth_annualized, clients_1y_growth_annualized, clients_5y_growth_annualized, clients_10y_growth_annualized'),
       ]);
 
-      const profileMap = new Map((profileData || []).map(p => [p.crd, p]));
-      const feeMap = new Map((feeData || []).map(f => [f.crd, f]));
-      const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
-      const logoMap = new Map((logoData || []).map(l => [l.crd, l.logo_key]));
-      const scoreMap = new Map((scoreData || []).map(s => [s.crd, s]));
+      const profileMap = new Map(profileData.map(p => [p.crd, p]));
+      const feeMap = new Map(feeData.map(f => [f.crd, f]));
+      const nameMap = new Map(nameData.map(n => [n.crd, n.display_name]));
+      const logoMap = new Map(logoData.map(l => [l.crd, l.logo_key]));
+      const scoreMap = new Map(scoreData.map(s => [s.crd, s]));
+      const websiteMap = new Map(websiteData.map(w => [w.crd, w.website]));
+      const feesAndMinsMap = new Map(feesAndMinsData.map(f => [f.crd, f]));
+      const growthRankMap = new Map(growthRankData.map(g => [g.crd, g]));
 
       let mergedFirms = baseFirms.map(firm => ({
         ...firm,
@@ -644,9 +923,22 @@ export default function SearchPage() {
         investment_philosophy: profileMap.get(firm.crd)?.investment_philosophy || null,
         firm_character: profileMap.get(firm.crd)?.firm_character || null,
         specialty_strategies: profileMap.get(firm.crd)?.specialty_strategies || null,
+        business_profile: profileMap.get(firm.crd)?.business_profile || null,
         min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd)!.min_aum) : null,
+        minimum_account_size: feesAndMinsMap.get(firm.crd)?.minimum_account_size || null,
+        website: websiteMap.get(firm.crd) || null,
         final_score: scoreMap.get(firm.crd)?.final_score ?? null,
         stars: scoreMap.get(firm.crd)?.stars ?? null,
+        fee_competitiveness_score: scoreMap.get(firm.crd)?.fee_competitiveness_score ?? null,
+        conflict_free_score: scoreMap.get(firm.crd)?.conflict_free_score ?? null,
+        aum_growth_score: scoreMap.get(firm.crd)?.aum_growth_score ?? null,
+        fee_transparency_score: scoreMap.get(firm.crd)?.fee_transparency_score ?? null,
+        aum_1yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_1y_growth_annualized) : null,
+        aum_5yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_5y_growth_annualized) : null,
+        aum_10yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_10y_growth_annualized) : null,
+        clients_1yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_1y_growth_annualized) : null,
+        clients_5yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_5y_growth_annualized) : null,
+        clients_10yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_10y_growth_annualized) : null,
       }));
 
       if (filterOptions.wealthTier && (filterOptions.wealthTier as string).length > 0) {
@@ -668,7 +960,7 @@ export default function SearchPage() {
         );
       }
 
-      setFirms(mergedFirms.slice(0, 50));
+      setFirms(mergedFirms);
     } catch (err) {
       console.error('Fetch error:', err);
       setError('Failed to fetch firms');
@@ -739,6 +1031,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-[#0A1C2A]">
+      <style suppressHydrationWarning>{SEARCH_PAGE_CSS}</style>
 
       {/* ── Sticky search strip ── */}
       <div className="sticky top-14 z-30 bg-[#0A1C2A] border-b border-white/[0.06]">
@@ -976,6 +1269,7 @@ export default function SearchPage() {
                             <FirmCard
                               key={firm.crd}
                               firm={firm}
+                              index={idx}
                               isSelected={startIdx + idx === selectedIndex}
                               cardRef={startIdx + idx === selectedIndex ? selectedRef : undefined}
                             />
