@@ -70,6 +70,109 @@ interface Firm {
   clients_1yr_growth_annualized?: number | null;
   clients_5yr_growth_annualized?: number | null;
   clients_10yr_growth_annualized?: number | null;
+  // Fee structure (from firmdata_feesandmins)
+  fee_structure_type?: string | null;
+  // Tags (from firmdata_manual)
+  tag_1?: string | null;
+  tag_2?: string | null;
+  tag_3?: string | null;
+  // Asset allocation (from firmdata_current)
+  asset_allocation_private_equity_direct?: number | null;
+  // Client type breakdown counts (from firmdata_current)
+  client_banks_number?: number | null;
+  client_bdc_number?: number | null;
+  client_govt_number?: number | null;
+  client_insurance_number?: number | null;
+  client_investment_cos_number?: number | null;
+  client_other_advisors_number?: number | null;
+  client_swf_number?: number | null;
+}
+
+// ─── Filter Types ─────────────────────────────────────────────────────────────
+
+type FeeStructureFilter = 'range' | 'tiered' | 'flat_percentage' | 'capped' | 'maximum_only';
+type FirmTypeFilter = 'ria' | 'multi_family_office' | 'ocio' | 'bank_affiliated';
+type ConflictFilter = 'no_referral' | 'no_12b1' | 'no_disciplinary' | 'no_pe_ownership';
+type ClientTypeFilter = 'hnw' | 'non_hnw' | 'pension' | 'charitable' | 'corporations' | 'pooled_vehicles' | 'banks' | 'govt' | 'insurance';
+
+interface SearchFilters {
+  // Text / location
+  location: string;
+  // Ranges (string-encoded numbers)
+  minAUM: string;
+  minAccountSize: string;
+  // Score ranges
+  minVisorScore: number;
+  minFeeCompetitiveness: number;
+  // Multi-select sets
+  feeStructure: Set<FeeStructureFilter>;
+  firmType: Set<FirmTypeFilter>;
+  conflictScreening: Set<ConflictFilter>;
+  clientType: Set<ClientTypeFilter>;
+  tags: Set<string>;
+  // Growth ranges
+  minAUMGrowth: string;    // '0' | '5' | '10' | '20' — min 1yr AUM growth %
+  minClientGrowth: string; // '0' | '5' | '10' | '20' — min 1yr client growth %
+  // Computed ranges
+  avgClientSizeMin: string; // min avg client size
+  avgClientSizeMax: string;
+  totalClientsMin: string;
+  totalClientsMax: string;
+  aumPerAdvisorMin: string;
+  // Alternatives
+  hasAlternatives: boolean;
+  // Legacy
+  clientBase: string;
+  wealthTier: string;
+}
+
+const DEFAULT_FILTERS: SearchFilters = {
+  location: '',
+  minAUM: '',
+  minAccountSize: '',
+  minVisorScore: 0,
+  minFeeCompetitiveness: 0,
+  feeStructure: new Set(),
+  firmType: new Set(),
+  conflictScreening: new Set(),
+  clientType: new Set(),
+  tags: new Set(),
+  minAUMGrowth: '',
+  minClientGrowth: '',
+  avgClientSizeMin: '',
+  avgClientSizeMax: '',
+  totalClientsMin: '',
+  totalClientsMax: '',
+  aumPerAdvisorMin: '',
+  hasAlternatives: false,
+  clientBase: '',
+  wealthTier: '',
+};
+
+// Helper: compute total clients for a firm (matches firm profile page computation)
+function getTotalClients(firm: Firm): number {
+  return [
+    firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
+    firm.client_charitable_number, firm.client_corporations_number,
+    firm.client_pooled_vehicles_number, firm.client_other_number,
+    firm.client_banks_number, firm.client_bdc_number,
+    firm.client_govt_number, firm.client_insurance_number,
+    firm.client_investment_cos_number, firm.client_other_advisors_number,
+    firm.client_swf_number,
+  ].reduce((sum, v) => (sum || 0) + (v || 0), 0) as number;
+}
+
+// Helper: compute avg client size
+function getAvgClientSize(firm: Firm): number | null {
+  const total = getTotalClients(firm);
+  return total > 0 && firm.aum ? firm.aum / total : null;
+}
+
+// Helper: compute AUM per investment professional
+function getAUMPerAdvisor(firm: Firm): number | null {
+  return firm.employee_investment && firm.employee_investment > 0 && firm.aum
+    ? firm.aum / firm.employee_investment
+    : null;
 }
 
 function formatAUM(value: number | null): string {
@@ -84,19 +187,111 @@ function formatAUM(value: number | null): string {
 interface FilterSidebarProps {
   open: boolean;
   onClose: () => void;
-  onApply: (filters: Record<string, unknown>) => void;
-  onMinScoreChange: (v: number) => void;
-  minScore: number;
+  filters: SearchFilters;
+  onFiltersChange: (filters: SearchFilters) => void;
+  firms: Firm[];           // all fetched firms — for computing real counts
+  loading: boolean;
 }
 
-function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: FilterSidebarProps) {
-  const [minAUM, setMinAUM] = useState('');
-  const [minAccountSize, setMinAccountSize] = useState('');
+function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, loading }: FilterSidebarProps) {
 
-  const applyAndClose = () => {
-    onApply({ location: '', minAUM, minAccountSize, clientBase: '', wealthTier: '' });
-    onClose();
+  // Helper: toggle a value in a Set-based filter
+  const toggleSet = <T extends string>(key: keyof SearchFilters, value: T) => {
+    const current = filters[key] as Set<T>;
+    const next = new Set(current);
+    if (next.has(value)) next.delete(value); else next.add(value);
+    onFiltersChange({ ...filters, [key]: next });
   };
+
+  // Helper: set a string filter, toggling off if same value
+  const toggleString = (key: keyof SearchFilters, value: string) => {
+    onFiltersChange({ ...filters, [key]: filters[key] === value ? '' : value });
+  };
+
+  // ── Compute real counts from the full firm set (before client-side filters) ──
+  const counts = useMemo(() => {
+    if (loading || firms.length === 0) return null;
+
+    const feeRange = firms.filter(f => f.fee_structure_type === 'range').length;
+    const feeTiered = firms.filter(f => f.fee_structure_type === 'tiered').length;
+    const feeFlatPct = firms.filter(f => f.fee_structure_type === 'flat_percentage').length;
+    const feeCapped = firms.filter(f => f.fee_structure_type === 'capped').length;
+    const feeMaxOnly = firms.filter(f => f.fee_structure_type === 'maximum_only').length;
+
+    const aumUnder100 = firms.filter(f => f.aum != null && f.aum < 100000000).length;
+    const aum100to500 = firms.filter(f => f.aum != null && f.aum >= 100000000 && f.aum < 500000000).length;
+    const aum500to2b = firms.filter(f => f.aum != null && f.aum >= 500000000 && f.aum < 2000000000).length;
+    const aum2bPlus = firms.filter(f => f.aum != null && f.aum >= 2000000000).length;
+
+    // Investment minimum counts (from minimum_account_size)
+    const invMinNone = firms.filter(f => { const v = f.minimum_account_size ? parseFloat(f.minimum_account_size) : null; return v === null || v === 0; }).length;
+    const invMinUnder250k = firms.filter(f => { const v = f.minimum_account_size ? parseFloat(f.minimum_account_size) : null; return v != null && v > 0 && v < 250000; }).length;
+    const invMin250kTo1m = firms.filter(f => { const v = f.minimum_account_size ? parseFloat(f.minimum_account_size) : null; return v != null && v >= 250000 && v < 1000000; }).length;
+    const invMin1mPlus = firms.filter(f => { const v = f.minimum_account_size ? parseFloat(f.minimum_account_size) : null; return v != null && v >= 1000000; }).length;
+
+    // Average client size counts
+    const avgUnder1m = firms.filter(f => { const a = getAvgClientSize(f); return a != null && a < 1000000; }).length;
+    const avg1mTo5m = firms.filter(f => { const a = getAvgClientSize(f); return a != null && a >= 1000000 && a < 5000000; }).length;
+    const avg5mTo25m = firms.filter(f => { const a = getAvgClientSize(f); return a != null && a >= 5000000 && a < 25000000; }).length;
+    const avg25mPlus = firms.filter(f => { const a = getAvgClientSize(f); return a != null && a >= 25000000; }).length;
+
+    // Total clients counts
+    const clientsUnder100 = firms.filter(f => { const t = getTotalClients(f); return t > 0 && t < 100; }).length;
+    const clients100to500 = firms.filter(f => { const t = getTotalClients(f); return t >= 100 && t < 500; }).length;
+    const clients500to2k = firms.filter(f => { const t = getTotalClients(f); return t >= 500 && t < 2000; }).length;
+    const clients2kPlus = firms.filter(f => { const t = getTotalClients(f); return t >= 2000; }).length;
+
+    // AUM per advisor counts
+    const apaUnder100m = firms.filter(f => { const r = getAUMPerAdvisor(f); return r != null && r < 100000000; }).length;
+    const apa100mTo500m = firms.filter(f => { const r = getAUMPerAdvisor(f); return r != null && r >= 100000000 && r < 500000000; }).length;
+    const apa500mPlus = firms.filter(f => { const r = getAUMPerAdvisor(f); return r != null && r >= 500000000; }).length;
+
+    const conflictHigh = firms.filter(f => (f.conflict_free_score ?? 0) >= 80).length;
+    const feeCompHigh = firms.filter(f => (f.fee_competitiveness_score ?? 0) >= 70).length;
+
+    // Client type counts
+    const ctHnw = firms.filter(f => (f.client_hnw_number ?? 0) > 0).length;
+    const ctNonHnw = firms.filter(f => (f.client_non_hnw_number ?? 0) > 0).length;
+    const ctPension = firms.filter(f => (f.client_pension_number ?? 0) > 0).length;
+    const ctCharitable = firms.filter(f => (f.client_charitable_number ?? 0) > 0).length;
+    const ctCorporations = firms.filter(f => (f.client_corporations_number ?? 0) > 0).length;
+    const ctPooled = firms.filter(f => (f.client_pooled_vehicles_number ?? 0) > 0).length;
+    const ctBanks = firms.filter(f => (f.client_banks_number ?? 0) > 0).length;
+    const ctGovt = firms.filter(f => (f.client_govt_number ?? 0) > 0).length;
+    const ctInsurance = firms.filter(f => (f.client_insurance_number ?? 0) > 0).length;
+
+    const hasAlts = firms.filter(f => (f.asset_allocation_private_equity_direct ?? 0) > 0).length;
+
+    const withTags = firms.filter(f => f.tag_1 || f.tag_2 || f.tag_3);
+    const tagCounts = new Map<string, number>();
+    withTags.forEach(f => {
+      [f.tag_1, f.tag_2, f.tag_3].forEach(t => {
+        if (t) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+      });
+    });
+    // Top 8 tags by count
+    const topTags = Array.from(tagCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    const aumGrowth5Plus = firms.filter(f => (f.aum_1yr_growth_annualized ?? -999) >= 5).length;
+    const aumGrowth10Plus = firms.filter(f => (f.aum_1yr_growth_annualized ?? -999) >= 10).length;
+    const clientGrowth5Plus = firms.filter(f => (f.clients_1yr_growth_annualized ?? -999) >= 5).length;
+    const clientGrowth10Plus = firms.filter(f => (f.clients_1yr_growth_annualized ?? -999) >= 10).length;
+
+    return {
+      feeRange, feeTiered, feeFlatPct, feeCapped, feeMaxOnly,
+      aumUnder100, aum100to500, aum500to2b, aum2bPlus,
+      invMinNone, invMinUnder250k, invMin250kTo1m, invMin1mPlus,
+      avgUnder1m, avg1mTo5m, avg5mTo25m, avg25mPlus,
+      clientsUnder100, clients100to500, clients500to2k, clients2kPlus,
+      apaUnder100m, apa100mTo500m, apa500mPlus,
+      ctHnw, ctNonHnw, ctPension, ctCharitable, ctCorporations, ctPooled, ctBanks, ctGovt, ctInsurance,
+      conflictHigh, feeCompHigh, hasAlts, topTags,
+      aumGrowth5Plus, aumGrowth10Plus,
+      clientGrowth5Plus, clientGrowth10Plus,
+    };
+  }, [firms, loading]);
+
+  const fmt = (n: number | undefined) => n != null ? n.toLocaleString() : '—';
 
   return (
     <>
@@ -112,7 +307,7 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
       <aside
         className={cn(
           'fixed top-0 left-0 z-50 h-full w-[280px] bg-[#0A1C2A] overflow-y-auto transition-transform duration-300',
-          'lg:relative lg:z-auto lg:h-auto lg:translate-x-0',
+          'lg:sticky lg:top-[108px] lg:z-auto lg:h-[calc(100vh-108px)] lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -128,19 +323,25 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
 
         <div className="pr-8 pt-2 pb-12">
 
-          {/* Fee Structure */}
-          <FilterGroup label="Fee Structure">
-            {[
-              { label: 'Fee-only', count: '1,204' },
-              { label: 'Fee-based', count: '892' },
-              { label: 'Commission-based', count: '418' },
-              { label: 'Flat / subscription', count: '333' },
-            ].map(opt => (
-              <FilterCheckbox key={opt.label} label={opt.label} count={opt.count} />
+          {/* ── Fee Structure ── */}
+          <FilterGroup label="Fee Schedule">
+            {([
+              { label: 'Range-based', key: 'range' as FeeStructureFilter, count: counts?.feeRange },
+              { label: 'Tiered', key: 'tiered' as FeeStructureFilter, count: counts?.feeTiered },
+              { label: 'Flat percentage', key: 'flat_percentage' as FeeStructureFilter, count: counts?.feeFlatPct },
+              { label: 'Capped / max only', key: 'capped' as FeeStructureFilter, count: counts?.feeCapped != null && counts?.feeMaxOnly != null ? counts.feeCapped + counts.feeMaxOnly : undefined },
+            ]).map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.feeStructure.has(opt.key)}
+                onChange={() => toggleSet('feeStructure', opt.key)}
+              />
             ))}
           </FilterGroup>
 
-          {/* Visor Score Range */}
+          {/* ── Visor Score Range ── */}
           <FilterGroup label="Visor Score™">
             <style suppressHydrationWarning>{`
               .score-range-input {
@@ -177,13 +378,13 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
             `}</style>
             <div className="mt-1">
               <div className="flex justify-between mb-2.5">
-                <span className="font-mono text-[11px] text-white/60">{minScore === 0 ? 'Any' : minScore}</span>
+                <span className="font-mono text-[11px] text-white/60">{filters.minVisorScore === 0 ? 'Any' : filters.minVisorScore}</span>
                 <span className="font-mono text-[11px] text-white/60">100</span>
               </div>
               <div className="relative h-[3px] bg-white/[0.08] rounded-full mb-3">
                 <div
                   className="absolute top-0 bottom-0 bg-[#1A7A4A] rounded-full"
-                  style={{ left: `${minScore}%`, right: 0 }}
+                  style={{ left: `${filters.minVisorScore}%`, right: 0 }}
                 />
               </div>
               <input
@@ -191,82 +392,249 @@ function FilterSidebar({ open, onClose, onApply, onMinScoreChange, minScore }: F
                 min={0}
                 max={100}
                 step={5}
-                value={minScore}
-                onChange={e => onMinScoreChange(Number(e.target.value))}
+                value={filters.minVisorScore}
+                onChange={e => onFiltersChange({ ...filters, minVisorScore: Number(e.target.value) })}
                 className="score-range-input"
                 style={{ marginTop: '-16px' }}
               />
               <p className="text-[10px] text-white/45 mt-2">
-                {minScore === 0 ? 'Showing all scores' : `Minimum score: ${minScore}`}
+                {filters.minVisorScore === 0 ? 'Showing all scores' : `Minimum score: ${filters.minVisorScore}`}
               </p>
             </div>
           </FilterGroup>
 
-          {/* Firm AUM */}
+          {/* ── Fee Competitiveness ── */}
+          <FilterGroup label="Fee Competitiveness">
+            <div className="mt-1">
+              <div className="flex justify-between mb-2.5">
+                <span className="font-mono text-[11px] text-white/60">{filters.minFeeCompetitiveness === 0 ? 'Any' : filters.minFeeCompetitiveness}</span>
+                <span className="font-mono text-[11px] text-white/60">100</span>
+              </div>
+              <div className="relative h-[3px] bg-white/[0.08] rounded-full mb-3">
+                <div
+                  className="absolute top-0 bottom-0 bg-[#1A7A4A] rounded-full"
+                  style={{ left: `${filters.minFeeCompetitiveness}%`, right: 0 }}
+                />
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={filters.minFeeCompetitiveness}
+                onChange={e => onFiltersChange({ ...filters, minFeeCompetitiveness: Number(e.target.value) })}
+                className="score-range-input"
+                style={{ marginTop: '-16px' }}
+              />
+              <p className="text-[10px] text-white/45 mt-2">
+                {filters.minFeeCompetitiveness === 0 ? 'Showing all' : `Min fee competitiveness: ${filters.minFeeCompetitiveness}`}
+              </p>
+            </div>
+          </FilterGroup>
+
+          {/* ── Firm AUM ── */}
           <FilterGroup label="Firm AUM">
             {[
-              { label: 'Under $100M', count: '341', value: '' },
-              { label: '$100M – $500M', count: '628', value: '100000000' },
-              { label: '$500M – $2B', count: '512', value: '500000000' },
-              { label: '$2B+', count: '204', value: '2000000000' },
+              { label: 'Under $100M', value: 'under100m', count: counts?.aumUnder100 },
+              { label: '$100M – $500M', value: '100000000', count: counts?.aum100to500 },
+              { label: '$500M – $2B', value: '500000000', count: counts?.aum500to2b },
+              { label: '$2B+', value: '2000000000', count: counts?.aum2bPlus },
             ].map(opt => (
               <FilterCheckbox
                 key={opt.label}
                 label={opt.label}
-                count={opt.count}
-                checked={minAUM === opt.value && opt.value !== ''}
-                onChange={() => {
-                  setMinAUM(prev => prev === opt.value ? '' : opt.value);
-                  setTimeout(applyAndClose, 0);
-                }}
+                count={fmt(opt.count)}
+                checked={filters.minAUM === opt.value}
+                onChange={() => toggleString('minAUM', opt.value)}
               />
             ))}
           </FilterGroup>
 
-          {/* Minimum Investment */}
-          <FilterGroup label="Minimum Investment">
+          {/* ── Investment Minimum ── */}
+          <FilterGroup label="Investment Minimum">
             {[
-              { label: 'No minimum', count: '289', value: '0' },
-              { label: 'Under $250K', count: '441', value: '' },
-              { label: '$250K – $1M', count: '617', value: '250000' },
-              { label: '$1M+', count: '398', value: '1000000' },
+              { label: 'No minimum', value: '0', count: counts?.invMinNone },
+              { label: 'Under $250K', value: 'under250k', count: counts?.invMinUnder250k },
+              { label: '$250K – $1M', value: '250000', count: counts?.invMin250kTo1m },
+              { label: '$1M+', value: '1000000', count: counts?.invMin1mPlus },
             ].map(opt => (
               <FilterCheckbox
                 key={opt.label}
                 label={opt.label}
-                count={opt.count}
-                checked={minAccountSize === opt.value && opt.value !== ''}
-                onChange={() => {
-                  setMinAccountSize(prev => prev === opt.value ? '' : opt.value);
-                  setTimeout(applyAndClose, 0);
-                }}
+                count={fmt(opt.count)}
+                checked={filters.minAccountSize === opt.value}
+                onChange={() => toggleString('minAccountSize', opt.value)}
               />
             ))}
           </FilterGroup>
 
-          {/* Firm Type */}
+          {/* ── AUM Growth ── */}
+          <FilterGroup label="AUM Growth (1yr)">
+            {[
+              { label: 'Any growth (0%+)', value: '0' },
+              { label: '5%+ growth', value: '5', count: counts?.aumGrowth5Plus },
+              { label: '10%+ growth', value: '10', count: counts?.aumGrowth10Plus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={opt.count != null ? fmt(opt.count) : '—'}
+                checked={filters.minAUMGrowth === opt.value}
+                onChange={() => toggleString('minAUMGrowth', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── Client Growth ── */}
+          <FilterGroup label="Client Growth (1yr)">
+            {[
+              { label: 'Any growth (0%+)', value: '0' },
+              { label: '5%+ growth', value: '5', count: counts?.clientGrowth5Plus },
+              { label: '10%+ growth', value: '10', count: counts?.clientGrowth10Plus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={opt.count != null ? fmt(opt.count) : '—'}
+                checked={filters.minClientGrowth === opt.value}
+                onChange={() => toggleString('minClientGrowth', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── Average Client Size ── */}
+          <FilterGroup label="Average Client Size">
+            {[
+              { label: 'Under $1M', value: 'under1m', count: counts?.avgUnder1m },
+              { label: '$1M – $5M', value: '1m_5m', count: counts?.avg1mTo5m },
+              { label: '$5M – $25M', value: '5m_25m', count: counts?.avg5mTo25m },
+              { label: '$25M+', value: '25m_plus', count: counts?.avg25mPlus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.avgClientSizeMin === opt.value}
+                onChange={() => toggleString('avgClientSizeMin', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── Total Clients ── */}
+          <FilterGroup label="Total Clients">
+            {[
+              { label: 'Under 100', value: 'under100', count: counts?.clientsUnder100 },
+              { label: '100 – 500', value: '100_500', count: counts?.clients100to500 },
+              { label: '500 – 2,000', value: '500_2000', count: counts?.clients500to2k },
+              { label: '2,000+', value: '2000_plus', count: counts?.clients2kPlus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.totalClientsMin === opt.value}
+                onChange={() => toggleString('totalClientsMin', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── AUM per Investment Professional ── */}
+          <FilterGroup label="AUM per Advisor">
+            {[
+              { label: 'Under $100M', value: 'under100m', count: counts?.apaUnder100m },
+              { label: '$100M – $500M', value: '100m_500m', count: counts?.apa100mTo500m },
+              { label: '$500M+', value: '500m_plus', count: counts?.apa500mPlus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.aumPerAdvisorMin === opt.value}
+                onChange={() => toggleString('aumPerAdvisorMin', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── Client Type Breakdown ── */}
+          <FilterGroup label="Client Type">
+            {([
+              { label: 'High net worth', key: 'hnw' as ClientTypeFilter, count: counts?.ctHnw },
+              { label: 'Non-HNW individuals', key: 'non_hnw' as ClientTypeFilter, count: counts?.ctNonHnw },
+              { label: 'Pension / profit sharing', key: 'pension' as ClientTypeFilter, count: counts?.ctPension },
+              { label: 'Charitable orgs', key: 'charitable' as ClientTypeFilter, count: counts?.ctCharitable },
+              { label: 'Corporations / businesses', key: 'corporations' as ClientTypeFilter, count: counts?.ctCorporations },
+              { label: 'Pooled vehicles', key: 'pooled_vehicles' as ClientTypeFilter, count: counts?.ctPooled },
+              { label: 'Banks / thrifts', key: 'banks' as ClientTypeFilter, count: counts?.ctBanks },
+              { label: 'Government entities', key: 'govt' as ClientTypeFilter, count: counts?.ctGovt },
+              { label: 'Insurance companies', key: 'insurance' as ClientTypeFilter, count: counts?.ctInsurance },
+            ]).map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.clientType.has(opt.key)}
+                onChange={() => toggleSet('clientType', opt.key)}
+              />
+            ))}
+          </FilterGroup>
+
+          {/* ── Firm Type ── */}
           <FilterGroup label="Firm Type">
-            {[
-              { label: 'RIA (independent)', count: '1,847' },
-              { label: 'Multi-family office', count: '142' },
-              { label: 'OCIO', count: '88' },
-              { label: 'Bank-affiliated', count: '334' },
-            ].map(opt => (
-              <FilterCheckbox key={opt.label} label={opt.label} count={opt.count} />
+            {([
+              { label: 'RIA (independent)', key: 'ria' as FirmTypeFilter },
+              { label: 'Multi-family office', key: 'multi_family_office' as FirmTypeFilter },
+              { label: 'OCIO', key: 'ocio' as FirmTypeFilter },
+              { label: 'Bank-affiliated', key: 'bank_affiliated' as FirmTypeFilter },
+            ]).map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count="—"
+                checked={filters.firmType.has(opt.key)}
+                onChange={() => toggleSet('firmType', opt.key)}
+              />
             ))}
           </FilterGroup>
 
-          {/* Conflict Screening */}
+          {/* ── Conflict Screening ── */}
           <FilterGroup label="Conflict Screening">
-            {[
-              { label: 'No referral arrangements', count: '982' },
-              { label: 'No 12b-1 fees', count: '1,204' },
-              { label: 'No disciplinary history', count: '2,491' },
-              { label: 'No PE ownership', count: '1,798' },
-            ].map(opt => (
-              <FilterCheckbox key={opt.label} label={opt.label} count={opt.count} />
+            {([
+              { label: 'High conflict-free score (80+)', key: 'no_referral' as ConflictFilter, count: counts?.conflictHigh },
+            ]).map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.conflictScreening.has(opt.key)}
+                onChange={() => toggleSet('conflictScreening', opt.key)}
+              />
             ))}
           </FilterGroup>
+
+          {/* ── Investment - Alternatives ── */}
+          <FilterGroup label="Alternatives Exposure">
+            <FilterCheckbox
+              label="Has private equity / alternatives"
+              count={fmt(counts?.hasAlts)}
+              checked={filters.hasAlternatives}
+              onChange={() => onFiltersChange({ ...filters, hasAlternatives: !filters.hasAlternatives })}
+            />
+          </FilterGroup>
+
+          {/* ── Tags ── */}
+          {counts && counts.topTags.length > 0 && (
+            <FilterGroup label="Tags">
+              {counts.topTags.map(([tag, count]) => (
+                <FilterCheckbox
+                  key={tag}
+                  label={tag}
+                  count={count.toLocaleString()}
+                  checked={filters.tags.has(tag)}
+                  onChange={() => toggleSet('tags', tag)}
+                />
+              ))}
+            </FilterGroup>
+          )}
 
         </div>
       </aside>
@@ -458,11 +826,13 @@ function FirmCard({
   isSelected,
   cardRef,
   index = 0,
+  viewMode = 'list',
 }: {
   firm: Firm;
   isSelected?: boolean;
   cardRef?: React.RefObject<HTMLDivElement>;
   index?: number;
+  viewMode?: 'list' | 'grid';
 }) {
   const [expanded, setExpanded] = useState(false);
   const score = firm.final_score ?? null;
@@ -476,13 +846,8 @@ function FirmCard({
   const aboutText = firm.business_profile || firm.investment_philosophy || firm.firm_character || null;
   const aboutSnippet = aboutText ? getFirstSentence(aboutText) : null;
 
-  const totalClients = [
-    firm.client_hnw_number, firm.client_non_hnw_number, firm.client_pension_number,
-    firm.client_charitable_number, firm.client_corporations_number,
-    firm.client_pooled_vehicles_number, firm.client_other_number,
-  ].reduce((sum, v) => (sum || 0) + (v || 0), 0) as number;
-
-  const avgClientSize = totalClients > 0 && firm.aum ? firm.aum / totalClients : null;
+  const totalClients = getTotalClients(firm);
+  const avgClientSize = getAvgClientSize(firm);
 
   const hasGrowthData = firm.aum_1yr_growth_annualized != null || firm.aum_5yr_growth_annualized != null ||
     firm.clients_1yr_growth_annualized != null;
@@ -526,8 +891,60 @@ function FirmCard({
           isSelected && 'border-[rgba(45,189,116,0.5)] bg-[rgba(45,189,116,0.04)]'
         )}
       >
-        {/* Desktop layout */}
-        <div className="hidden md:grid grid-cols-[56px_1fr_auto_auto_auto]">
+        {/* Grid card layout */}
+        {viewMode === 'grid' && (
+          <div className="p-4">
+            {/* Top: logo + name */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="shrink-0">
+                {firm.logo_key ? (
+                  <FirmLogo logoKey={firm.logo_key} firmName={firmName} size="sm" />
+                ) : (
+                  <div className="h-9 w-9 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
+                    {firmName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-serif text-[15px] font-semibold text-[#0C1810] leading-tight mb-1 line-clamp-2">{firmName}</p>
+                <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
+              </div>
+            </div>
+
+            {/* Tags row */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {(firm.services_financial_planning === 'Y' || firm.services_mgr_selection === 'Y') && (
+                <span className="text-[9px] font-semibold uppercase tracking-[0.1em] px-[6px] py-[2px] border border-[#CAD8D0] text-[#5A7568]">
+                  {firm.services_financial_planning === 'Y' ? 'Fee-only' : 'RIA'}
+                </span>
+              )}
+            </div>
+
+            {/* Score + AUM row */}
+            <div className="flex items-end justify-between border-t border-[#CAD8D0]/50 pt-3">
+              <div>
+                <p className="font-serif text-[17px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
+                <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
+              </div>
+              <div className="text-right">
+                {score != null ? (
+                  <>
+                    <p className="font-serif text-[26px] font-bold leading-none tracking-[-0.02em]" style={{ color: scoreColor }}>{score}</p>
+                    <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568] mt-0.5">Visor Score™</p>
+                    <div className="h-[2px] bg-[#CAD8D0] mt-1.5 w-16">
+                      <div className="h-full" style={{ width: `${score}%`, background: scoreColor }} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[11px] text-[#CAD8D0]">N/A</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop list layout */}
+        <div className={cn('hidden md:grid grid-cols-[56px_1fr_auto_auto_auto]', viewMode === 'grid' && '!hidden')}>
           {/* Logo column */}
           <div className="grid place-items-center border-r border-[#CAD8D0]/50" style={{ height: 56, width: 56 }}>
             {firm.logo_key ? (
@@ -584,7 +1001,7 @@ function FirmCard({
         </div>
 
         {/* Mobile layout */}
-        <div className="md:hidden p-4">
+        <div className={cn('md:hidden p-4', viewMode === 'grid' && '!hidden')}>
           <div className="flex items-center gap-3 mb-2">
             <div className="shrink-0">
               {firm.logo_key ? (
@@ -626,7 +1043,7 @@ function FirmCard({
         </div>
 
         {/* ── Expanded detail panel ── */}
-        {expanded && (
+        {expanded && viewMode !== 'grid' && (
           <div className="border-t border-[#CAD8D0] px-6 py-5 animate-[cardFadeIn_0.2s_ease-out]">
             {/* About — first sentence */}
             {aboutSnippet && (
@@ -760,7 +1177,7 @@ function LoadingSkeleton() {
 export default function SearchPage() {
   // ── Protected state (do not remove) ──
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, unknown>>({});
+  const [filters, setFilters] = useState<SearchFilters>({ ...DEFAULT_FILTERS });
   const [searchQuery, setSearchQuery] = useState('');
   const [firms, setFirms] = useState<Firm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -772,7 +1189,6 @@ export default function SearchPage() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [sortBy, setSortBy] = useState('score');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [minScore, setMinScore] = useState(0);
   const [perPage, setPerPage] = useState<25 | 50 | 100>(25);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -792,8 +1208,8 @@ export default function SearchPage() {
     }
   }, [selectedIndex]);
 
-  // Fetch firms from Supabase with filters (protected — do not modify)
-  const fetchFirms = useCallback(async (query: string, filterOptions: Record<string, unknown>) => {
+  // Fetch all firms from Supabase (full dataset — filtering is client-side)
+  const fetchFirms = useCallback(async (query: string) => {
     setLoading(true);
     setError(null);
 
@@ -818,21 +1234,19 @@ export default function SearchPage() {
           client_charitable_number,
           client_corporations_number,
           client_pooled_vehicles_number,
-          client_other_number
+          client_other_number,
+          client_banks_number,
+          client_bdc_number,
+          client_govt_number,
+          client_insurance_number,
+          client_investment_cos_number,
+          client_other_advisors_number,
+          client_swf_number,
+          asset_allocation_private_equity_direct
         `);
 
       if (query && query.length > 0) {
         queryBuilder = queryBuilder.ilike('primary_business_name', `%${query}%`);
-      }
-
-      if (filterOptions.location && (filterOptions.location as string).length > 0) {
-        const loc = (filterOptions.location as string).toLowerCase();
-        queryBuilder = queryBuilder.or(`main_office_city.ilike.%${loc}%,main_office_state.ilike.%${loc}%`);
-      }
-
-      if (filterOptions.minAUM && (filterOptions.minAUM as string).length > 0) {
-        const minAUM = parseInt(filterOptions.minAUM as string);
-        queryBuilder = queryBuilder.gte('aum', minAUM);
       }
 
       // Paginate through all results (Supabase caps at 1000 per request)
@@ -872,7 +1286,7 @@ export default function SearchPage() {
         return;
       }
 
-      const crds = baseFirms.map(f => f.crd);
+      const crds = baseFirms.map((f: { crd: number }) => f.crd);
 
       // Batch CRDs into chunks of 500 to avoid Supabase .in() limits
       const CHUNK = 500;
@@ -894,15 +1308,16 @@ export default function SearchPage() {
         return results.flatMap(r => (r.data || []) as any[]);
       };
 
-      const [profileData, feeData, nameData, logoData, scoreData, websiteData, feesAndMinsData, growthRankData] = await Promise.all([
+      const [profileData, feeData, nameData, logoData, scoreData, websiteData, feesAndMinsData, growthRankData, tagsData] = await Promise.all([
         fetchChunked('firmdata_profile_text', 'crd, client_base, wealth_tier, investment_philosophy, firm_character, specialty_strategies, business_profile'),
         fetchChunked('firmdata_feetiers', 'crd, min_aum'),
         fetchChunked('firm_names', 'crd, display_name'),
         fetchChunked('firm_logos', 'crd, logo_key', q => q.eq('has_logo', true)),
         fetchChunked('firm_scores', 'crd, final_score, stars, fee_competitiveness_score, conflict_free_score, aum_growth_score, fee_transparency_score'),
         fetchChunked('firmdata_website', 'crd, website'),
-        fetchChunked('firmdata_feesandmins', 'crd, minimum_account_size'),
+        fetchChunked('firmdata_feesandmins', 'crd, minimum_account_size, fee_structure_type'),
         fetchChunked('firmdata_growth_rate_rankings', 'crd, aum_1y_growth_annualized, aum_5y_growth_annualized, aum_10y_growth_annualized, clients_1y_growth_annualized, clients_5y_growth_annualized, clients_10y_growth_annualized'),
+        fetchChunked('firmdata_manual', 'crd, tag_1, tag_2, tag_3'),
       ]);
 
       const profileMap = new Map(profileData.map(p => [p.crd, p]));
@@ -913,52 +1328,39 @@ export default function SearchPage() {
       const websiteMap = new Map(websiteData.map(w => [w.crd, w.website]));
       const feesAndMinsMap = new Map(feesAndMinsData.map(f => [f.crd, f]));
       const growthRankMap = new Map(growthRankData.map(g => [g.crd, g]));
+      const tagsMap = new Map(tagsData.map(t => [t.crd, t]));
 
-      let mergedFirms = baseFirms.map(firm => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mergedFirms: Firm[] = baseFirms.map((firm: any) => ({
         ...firm,
-        display_name: nameMap.get(firm.crd) || null,
-        logo_key: logoMap.get(firm.crd) || null,
-        client_base: profileMap.get(firm.crd)?.client_base || null,
-        wealth_tier: profileMap.get(firm.crd)?.wealth_tier || null,
-        investment_philosophy: profileMap.get(firm.crd)?.investment_philosophy || null,
-        firm_character: profileMap.get(firm.crd)?.firm_character || null,
-        specialty_strategies: profileMap.get(firm.crd)?.specialty_strategies || null,
-        business_profile: profileMap.get(firm.crd)?.business_profile || null,
-        min_fee: feeMap.get(firm.crd)?.min_aum ? parseFloat(feeMap.get(firm.crd)!.min_aum) : null,
-        minimum_account_size: feesAndMinsMap.get(firm.crd)?.minimum_account_size || null,
-        website: websiteMap.get(firm.crd) || null,
-        final_score: scoreMap.get(firm.crd)?.final_score ?? null,
-        stars: scoreMap.get(firm.crd)?.stars ?? null,
-        fee_competitiveness_score: scoreMap.get(firm.crd)?.fee_competitiveness_score ?? null,
-        conflict_free_score: scoreMap.get(firm.crd)?.conflict_free_score ?? null,
-        aum_growth_score: scoreMap.get(firm.crd)?.aum_growth_score ?? null,
-        fee_transparency_score: scoreMap.get(firm.crd)?.fee_transparency_score ?? null,
-        aum_1yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_1y_growth_annualized) : null,
-        aum_5yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_5y_growth_annualized) : null,
-        aum_10yr_growth_annualized: growthRankMap.get(firm.crd)?.aum_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.aum_10y_growth_annualized) : null,
-        clients_1yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_1y_growth_annualized) : null,
-        clients_5yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_5y_growth_annualized) : null,
-        clients_10yr_growth_annualized: growthRankMap.get(firm.crd)?.clients_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd)!.clients_10y_growth_annualized) : null,
+        display_name: nameMap.get(firm.crd as number) || null,
+        logo_key: logoMap.get(firm.crd as number) || null,
+        client_base: profileMap.get(firm.crd as number)?.client_base || null,
+        wealth_tier: profileMap.get(firm.crd as number)?.wealth_tier || null,
+        investment_philosophy: profileMap.get(firm.crd as number)?.investment_philosophy || null,
+        firm_character: profileMap.get(firm.crd as number)?.firm_character || null,
+        specialty_strategies: profileMap.get(firm.crd as number)?.specialty_strategies || null,
+        business_profile: profileMap.get(firm.crd as number)?.business_profile || null,
+        min_fee: feeMap.get(firm.crd as number)?.min_aum ? parseFloat(feeMap.get(firm.crd as number)!.min_aum) : null,
+        minimum_account_size: feesAndMinsMap.get(firm.crd as number)?.minimum_account_size || null,
+        fee_structure_type: feesAndMinsMap.get(firm.crd as number)?.fee_structure_type || null,
+        website: websiteMap.get(firm.crd as number) || null,
+        final_score: scoreMap.get(firm.crd as number)?.final_score ?? null,
+        stars: scoreMap.get(firm.crd as number)?.stars ?? null,
+        fee_competitiveness_score: scoreMap.get(firm.crd as number)?.fee_competitiveness_score ?? null,
+        conflict_free_score: scoreMap.get(firm.crd as number)?.conflict_free_score ?? null,
+        aum_growth_score: scoreMap.get(firm.crd as number)?.aum_growth_score ?? null,
+        fee_transparency_score: scoreMap.get(firm.crd as number)?.fee_transparency_score ?? null,
+        aum_1yr_growth_annualized: growthRankMap.get(firm.crd as number)?.aum_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.aum_1y_growth_annualized) : null,
+        aum_5yr_growth_annualized: growthRankMap.get(firm.crd as number)?.aum_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.aum_5y_growth_annualized) : null,
+        aum_10yr_growth_annualized: growthRankMap.get(firm.crd as number)?.aum_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.aum_10y_growth_annualized) : null,
+        clients_1yr_growth_annualized: growthRankMap.get(firm.crd as number)?.clients_1y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.clients_1y_growth_annualized) : null,
+        clients_5yr_growth_annualized: growthRankMap.get(firm.crd as number)?.clients_5y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.clients_5y_growth_annualized) : null,
+        clients_10yr_growth_annualized: growthRankMap.get(firm.crd as number)?.clients_10y_growth_annualized != null ? parseFloat(growthRankMap.get(firm.crd as number)!.clients_10y_growth_annualized) : null,
+        tag_1: tagsMap.get(firm.crd as number)?.tag_1 || null,
+        tag_2: tagsMap.get(firm.crd as number)?.tag_2 || null,
+        tag_3: tagsMap.get(firm.crd as number)?.tag_3 || null,
       }));
-
-      if (filterOptions.wealthTier && (filterOptions.wealthTier as string).length > 0) {
-        mergedFirms = mergedFirms.filter(f =>
-          f.wealth_tier && f.wealth_tier.toLowerCase().includes((filterOptions.wealthTier as string).toLowerCase())
-        );
-      }
-
-      if (filterOptions.clientBase && (filterOptions.clientBase as string).length > 0) {
-        mergedFirms = mergedFirms.filter(f =>
-          f.client_base && f.client_base.toLowerCase().includes((filterOptions.clientBase as string).toLowerCase())
-        );
-      }
-
-      if (filterOptions.minAccountSize && (filterOptions.minAccountSize as string).length > 0) {
-        const minSize = parseInt(filterOptions.minAccountSize as string);
-        mergedFirms = mergedFirms.filter(f =>
-          f.min_fee !== null && (f.min_fee * 1000000) >= minSize
-        );
-      }
 
       setFirms(mergedFirms);
     } catch (err) {
@@ -971,63 +1373,235 @@ export default function SearchPage() {
 
   // Initial load (protected)
   useEffect(() => {
-    fetchFirms('', {});
+    fetchFirms('');
   }, [fetchFirms]);
 
   // Handle search submit (protected)
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
-    fetchFirms(searchQuery, filters);
+    fetchFirms(searchQuery);
   };
 
-  // Handle filter apply (protected)
-  const handleApplyFilters = (newFilters: Record<string, unknown>) => {
+  // Handle filter changes (all client-side now)
+  const handleFiltersChange = (newFilters: SearchFilters) => {
     setFilters(newFilters);
-    fetchFirms(searchQuery, newFilters);
-    setFiltersOpen(false);
   };
 
   // Handle clear filters (protected)
   const handleClearFilters = () => {
-    setFilters({});
+    setFilters({ ...DEFAULT_FILTERS });
     setSearchQuery('');
-    fetchFirms('', {});
+    fetchFirms('');
   };
 
-  // ── Presentation: sorted + score-filtered list ──
-  const sortedFirms = useMemo(() => {
-    const copy = [...firms];
-    if (sortBy === 'score') copy.sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0));
-    else if (sortBy === 'aum_high') copy.sort((a, b) => (b.aum ?? 0) - (a.aum ?? 0));
-    else if (sortBy === 'aum_low') copy.sort((a, b) => (a.aum ?? 0) - (b.aum ?? 0));
-    else if (sortBy === 'alpha') copy.sort((a, b) =>
-      (a.display_name || a.primary_business_name).localeCompare(b.display_name || b.primary_business_name)
-    );
-    return copy;
-  }, [firms, sortBy]);
-
+  // ── Presentation: filtered + sorted list ──
   const visibleFirms = useMemo(() => {
     setCurrentPage(1);
-    return sortedFirms.filter(f => minScore === 0 || (f.final_score != null && f.final_score >= minScore));
+    let result = [...firms];
+
+    // ── Location ──
+    if (filters.location) {
+      const loc = filters.location.toLowerCase();
+      result = result.filter(f =>
+        f.main_office_city?.toLowerCase().includes(loc) ||
+        f.main_office_state?.toLowerCase().includes(loc)
+      );
+    }
+
+    // ── Visor Score ──
+    if (filters.minVisorScore > 0) {
+      result = result.filter(f => f.final_score != null && f.final_score >= filters.minVisorScore);
+    }
+
+    // ── Fee Competitiveness ──
+    if (filters.minFeeCompetitiveness > 0) {
+      result = result.filter(f => (f.fee_competitiveness_score ?? 0) >= filters.minFeeCompetitiveness);
+    }
+
+    // ── Fee Structure ──
+    if (filters.feeStructure.size > 0) {
+      result = result.filter(f => {
+        if (!f.fee_structure_type) return false;
+        const fst = f.fee_structure_type;
+        for (const ft of Array.from(filters.feeStructure)) {
+          if (ft === 'capped' && (fst === 'capped' || fst === 'maximum_only')) return true;
+          if (ft === fst) return true;
+        }
+        return false;
+      });
+    }
+
+    // ── Firm AUM ──
+    if (filters.minAUM) {
+      switch (filters.minAUM) {
+        case 'under100m': result = result.filter(f => f.aum != null && f.aum < 100000000); break;
+        case '100000000': result = result.filter(f => f.aum != null && f.aum >= 100000000 && f.aum < 500000000); break;
+        case '500000000': result = result.filter(f => f.aum != null && f.aum >= 500000000 && f.aum < 2000000000); break;
+        case '2000000000': result = result.filter(f => f.aum != null && f.aum >= 2000000000); break;
+      }
+    }
+
+    // ── Investment Minimum (uses minimum_account_size from firmdata_feesandmins) ──
+    if (filters.minAccountSize) {
+      result = result.filter(f => {
+        const minAcct = f.minimum_account_size ? parseFloat(f.minimum_account_size) : null;
+        switch (filters.minAccountSize) {
+          case '0': return minAcct === null || minAcct === 0;
+          case 'under250k': return minAcct != null && minAcct > 0 && minAcct < 250000;
+          case '250000': return minAcct != null && minAcct >= 250000 && minAcct < 1000000;
+          case '1000000': return minAcct != null && minAcct >= 1000000;
+          default: return true;
+        }
+      });
+    }
+
+    // ── AUM Growth (1yr) ──
+    if (filters.minAUMGrowth) {
+      const threshold = parseFloat(filters.minAUMGrowth);
+      result = result.filter(f => (f.aum_1yr_growth_annualized ?? -999) >= threshold);
+    }
+
+    // ── Client Growth (1yr) ──
+    if (filters.minClientGrowth) {
+      const threshold = parseFloat(filters.minClientGrowth);
+      result = result.filter(f => (f.clients_1yr_growth_annualized ?? -999) >= threshold);
+    }
+
+    // ── Average Client Size ──
+    if (filters.avgClientSizeMin) {
+      result = result.filter(f => {
+        const avg = getAvgClientSize(f);
+        if (avg == null) return false;
+        switch (filters.avgClientSizeMin) {
+          case 'under1m': return avg < 1000000;
+          case '1m_5m': return avg >= 1000000 && avg < 5000000;
+          case '5m_25m': return avg >= 5000000 && avg < 25000000;
+          case '25m_plus': return avg >= 25000000;
+          default: return true;
+        }
+      });
+    }
+
+    // ── Total Clients ──
+    if (filters.totalClientsMin) {
+      result = result.filter(f => {
+        const total = getTotalClients(f);
+        switch (filters.totalClientsMin) {
+          case 'under100': return total > 0 && total < 100;
+          case '100_500': return total >= 100 && total < 500;
+          case '500_2000': return total >= 500 && total < 2000;
+          case '2000_plus': return total >= 2000;
+          default: return true;
+        }
+      });
+    }
+
+    // ── AUM per Advisor ──
+    if (filters.aumPerAdvisorMin) {
+      result = result.filter(f => {
+        const ratio = getAUMPerAdvisor(f);
+        if (ratio == null) return false;
+        switch (filters.aumPerAdvisorMin) {
+          case 'under100m': return ratio < 100000000;
+          case '100m_500m': return ratio >= 100000000 && ratio < 500000000;
+          case '500m_plus': return ratio >= 500000000;
+          default: return true;
+        }
+      });
+    }
+
+    // ── Client Type ──
+    if (filters.clientType.size > 0) {
+      result = result.filter(f => {
+        for (const ct of Array.from(filters.clientType)) {
+          switch (ct) {
+            case 'hnw': if ((f.client_hnw_number ?? 0) > 0) return true; break;
+            case 'non_hnw': if ((f.client_non_hnw_number ?? 0) > 0) return true; break;
+            case 'pension': if ((f.client_pension_number ?? 0) > 0) return true; break;
+            case 'charitable': if ((f.client_charitable_number ?? 0) > 0) return true; break;
+            case 'corporations': if ((f.client_corporations_number ?? 0) > 0) return true; break;
+            case 'pooled_vehicles': if ((f.client_pooled_vehicles_number ?? 0) > 0) return true; break;
+            case 'banks': if ((f.client_banks_number ?? 0) > 0) return true; break;
+            case 'govt': if ((f.client_govt_number ?? 0) > 0) return true; break;
+            case 'insurance': if ((f.client_insurance_number ?? 0) > 0) return true; break;
+          }
+        }
+        return false;
+      });
+    }
+
+    // ── Firm Type ──
+    if (filters.firmType.size > 0) {
+      result = result.filter(f => {
+        const character = (f.firm_character || '').toLowerCase();
+        const profile = (f.business_profile || '').toLowerCase();
+        const combined = character + ' ' + profile;
+        for (const ft of Array.from(filters.firmType)) {
+          if (ft === 'ria' && (combined.includes('ria') || combined.includes('registered investment'))) return true;
+          if (ft === 'multi_family_office' && (combined.includes('family office') || combined.includes('multi-family'))) return true;
+          if (ft === 'ocio' && (combined.includes('ocio') || combined.includes('outsourced chief investment'))) return true;
+          if (ft === 'bank_affiliated' && (combined.includes('bank') || combined.includes('trust company'))) return true;
+        }
+        return false;
+      });
+    }
+
+    // ── Conflict Screening ──
+    if (filters.conflictScreening.size > 0) {
+      if (filters.conflictScreening.has('no_referral')) {
+        result = result.filter(f => (f.conflict_free_score ?? 0) >= 80);
+      }
+    }
+
+    // ── Alternatives ──
+    if (filters.hasAlternatives) {
+      result = result.filter(f => (f.asset_allocation_private_equity_direct ?? 0) > 0);
+    }
+
+    // ── Tags ──
+    if (filters.tags.size > 0) {
+      result = result.filter(f => {
+        const firmTags = [f.tag_1, f.tag_2, f.tag_3].filter(Boolean) as string[];
+        return firmTags.some(t => filters.tags.has(t));
+      });
+    }
+
+    // ── Sort ──
+    if (sortBy === 'score') result.sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0));
+    else if (sortBy === 'aum_high') result.sort((a, b) => (b.aum ?? 0) - (a.aum ?? 0));
+    else if (sortBy === 'aum_low') result.sort((a, b) => (a.aum ?? 0) - (b.aum ?? 0));
+    else if (sortBy === 'alpha') result.sort((a, b) =>
+      (a.display_name || a.primary_business_name).localeCompare(b.display_name || b.primary_business_name)
+    );
+
+    return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedFirms, minScore]);
+  }, [firms, filters, sortBy]);
 
   // ── Active filter chips (derived) ──
-  const activeChips = Object.entries(filters).filter(([, v]) => v && String(v).length > 0);
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = useMemo(() => {
+    const chips: { key: string; label: string; onRemove: () => void }[] = [];
 
-  const removeChip = (key: string) => {
-    const newFilters = { ...filters, [key]: '' };
-    setFilters(newFilters);
-    fetchFirms(searchQuery, newFilters);
-  };
+    if (filters.location) chips.push({ key: 'location', label: `Location: ${filters.location}`, onRemove: () => handleFiltersChange({ ...filters, location: '' }) });
+    if (filters.minAUM) chips.push({ key: 'minAUM', label: `AUM: ${filters.minAUM === 'under100m' ? '<$100M' : filters.minAUM === '100000000' ? '$100M–$500M' : filters.minAUM === '500000000' ? '$500M–$2B' : '$2B+'}`, onRemove: () => handleFiltersChange({ ...filters, minAUM: '' }) });
+    if (filters.minAccountSize) chips.push({ key: 'minAccountSize', label: `Min. investment: ${filters.minAccountSize}`, onRemove: () => handleFiltersChange({ ...filters, minAccountSize: '' }) });
+    if (filters.minVisorScore > 0) chips.push({ key: 'minVisorScore', label: `Visor Score ${filters.minVisorScore}+`, onRemove: () => handleFiltersChange({ ...filters, minVisorScore: 0 }) });
+    if (filters.minFeeCompetitiveness > 0) chips.push({ key: 'feeComp', label: `Fee Comp. ${filters.minFeeCompetitiveness}+`, onRemove: () => handleFiltersChange({ ...filters, minFeeCompetitiveness: 0 }) });
+    if (filters.feeStructure.size > 0) chips.push({ key: 'feeStructure', label: `Fee: ${Array.from(filters.feeStructure).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, feeStructure: new Set() }) });
+    if (filters.firmType.size > 0) chips.push({ key: 'firmType', label: `Type: ${Array.from(filters.firmType).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, firmType: new Set() }) });
+    if (filters.conflictScreening.size > 0) chips.push({ key: 'conflict', label: 'Conflict-free', onRemove: () => handleFiltersChange({ ...filters, conflictScreening: new Set() }) });
+    if (filters.clientType.size > 0) chips.push({ key: 'clientType', label: `Clients: ${Array.from(filters.clientType).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, clientType: new Set() }) });
+    if (filters.minAUMGrowth) chips.push({ key: 'aumGrowth', label: `AUM growth ${filters.minAUMGrowth}%+`, onRemove: () => handleFiltersChange({ ...filters, minAUMGrowth: '' }) });
+    if (filters.minClientGrowth) chips.push({ key: 'clientGrowth', label: `Client growth ${filters.minClientGrowth}%+`, onRemove: () => handleFiltersChange({ ...filters, minClientGrowth: '' }) });
+    if (filters.avgClientSizeMin) chips.push({ key: 'avgClient', label: `Avg client: ${filters.avgClientSizeMin}`, onRemove: () => handleFiltersChange({ ...filters, avgClientSizeMin: '' }) });
+    if (filters.totalClientsMin) chips.push({ key: 'totalClients', label: `Clients: ${filters.totalClientsMin}`, onRemove: () => handleFiltersChange({ ...filters, totalClientsMin: '' }) });
+    if (filters.aumPerAdvisorMin) chips.push({ key: 'aumPerAdvisor', label: `AUM/Advisor: ${filters.aumPerAdvisorMin}`, onRemove: () => handleFiltersChange({ ...filters, aumPerAdvisorMin: '' }) });
+    if (filters.hasAlternatives) chips.push({ key: 'alts', label: 'Has alternatives', onRemove: () => handleFiltersChange({ ...filters, hasAlternatives: false }) });
+    if (filters.tags.size > 0) chips.push({ key: 'tags', label: `Tags: ${Array.from(filters.tags).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, tags: new Set() }) });
 
-  const chipLabel: Record<string, string> = {
-    minAUM: 'AUM filter',
-    minAccountSize: 'Min. account',
-    location: 'Location',
-    clientBase: 'Client base',
-    wealthTier: 'Wealth tier',
-  };
+    return chips;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   return (
     <div className="min-h-screen bg-[#0A1C2A]">
@@ -1076,7 +1650,7 @@ export default function SearchPage() {
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => { setSearchQuery(''); fetchFirms('', filters); }}
+                onClick={() => { setSearchQuery(''); fetchFirms(''); }}
                 className="text-[11px] text-white/50 hover:text-white/75 transition-colors shrink-0"
               >
                 ✕ Clear
@@ -1121,9 +1695,10 @@ export default function SearchPage() {
           <FilterSidebar
             open={filtersOpen}
             onClose={() => setFiltersOpen(false)}
-            onApply={handleApplyFilters}
-            onMinScoreChange={setMinScore}
-            minScore={minScore}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            firms={firms}
+            loading={loading}
           />
         </div>
 
@@ -1132,9 +1707,10 @@ export default function SearchPage() {
           <FilterSidebar
             open={filtersOpen}
             onClose={() => setFiltersOpen(false)}
-            onApply={handleApplyFilters}
-            onMinScoreChange={setMinScore}
-            minScore={minScore}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            firms={firms}
+            loading={loading}
           />
         </div>
 
@@ -1208,35 +1784,24 @@ export default function SearchPage() {
               </div>
 
               {/* Active filter chips */}
-              {(activeChips.length > 0 || minScore > 0) && (
+              {activeChips.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {activeChips.map(([k, v]) => (
+                  {activeChips.map(chip => (
                     <span
-                      key={k}
+                      key={chip.key}
                       className="inline-flex items-center gap-1.5 text-[11px] text-[#2DBD74] bg-[rgba(45,189,116,0.08)] border border-[rgba(45,189,116,0.2)] px-2.5 py-1"
                     >
-                      {chipLabel[k] || k}: {String(v)}
+                      {chip.label}
                       <button
-                        onClick={() => removeChip(k)}
+                        onClick={chip.onRemove}
                         className="text-[rgba(45,189,116,0.5)] hover:text-[#2DBD74] transition-colors"
                       >
                         ×
                       </button>
                     </span>
                   ))}
-                  {minScore > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] text-[#2DBD74] bg-[rgba(45,189,116,0.08)] border border-[rgba(45,189,116,0.2)] px-2.5 py-1">
-                      Visor Score {minScore}+
-                      <button
-                        onClick={() => setMinScore(0)}
-                        className="text-[rgba(45,189,116,0.5)] hover:text-[#2DBD74] transition-colors"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
                   <button
-                    onClick={() => { handleClearFilters(); setMinScore(0); }}
+                    onClick={handleClearFilters}
                     className="text-[11px] text-[#5A7568] hover:text-[#0C1810] transition-colors px-1"
                   >
                     Clear all
@@ -1270,6 +1835,7 @@ export default function SearchPage() {
                               key={firm.crd}
                               firm={firm}
                               index={idx}
+                              viewMode={viewMode}
                               isSelected={startIdx + idx === selectedIndex}
                               cardRef={startIdx + idx === selectedIndex ? selectedRef : undefined}
                             />
@@ -1290,7 +1856,7 @@ export default function SearchPage() {
                             </p>
                             <div className="flex items-center gap-3 flex-wrap justify-center">
                               <button
-                                onClick={() => { handleClearFilters(); setMinScore(0); }}
+                                onClick={handleClearFilters}
                                 className="text-[13px] border border-[#CAD8D0] text-[#0C1810] px-6 py-2.5 hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all"
                               >
                                 Clear filters
