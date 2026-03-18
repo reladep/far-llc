@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import FirmLogo from '@/components/firms/FirmLogo';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { haversineDistance, zipToCoords, getUSCities, type CityEntry } from '@/lib/geo';
 import type { Session } from '@supabase/supabase-js';
 
 const supabase = createSupabaseBrowserClient();
@@ -29,6 +30,7 @@ interface Firm {
   logo_key?: string | null;
   main_office_city: string;
   main_office_state: string;
+  main_office_zip: string | null;
   aum: number | null;
   employee_total: number | null;
   employee_investment: number | null;
@@ -96,8 +98,9 @@ type ConflictFilter = 'no_referral' | 'no_12b1' | 'no_disciplinary' | 'no_pe_own
 type ClientTypeFilter = 'hnw' | 'non_hnw' | 'pension' | 'charitable' | 'corporations' | 'pooled_vehicles' | 'banks' | 'govt' | 'insurance';
 
 interface SearchFilters {
-  // Text / location
-  location: string;
+  // Geographic radius filter
+  geoLocation: { city: string; state: string; lat: number; lng: number } | null;
+  geoRadius: number; // 10, 25, 50, 100
   // Ranges (string-encoded numbers)
   minAUM: string;
   minAccountSize: string;
@@ -127,7 +130,8 @@ interface SearchFilters {
 }
 
 const DEFAULT_FILTERS: SearchFilters = {
-  location: '',
+  geoLocation: null,
+  geoRadius: 10,
   minAUM: '',
   minAccountSize: '',
   minVisorScore: 0,
@@ -190,10 +194,12 @@ interface FilterSidebarProps {
   filters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
   firms: Firm[];           // all fetched firms — for computing real counts
+  firmCoords: Map<number, { lat: number; lng: number }>;
   loading: boolean;
+  onGeoSelect?: () => void;
 }
 
-function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, loading }: FilterSidebarProps) {
+function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, firmCoords, loading, onGeoSelect }: FilterSidebarProps) {
 
   // Helper: toggle a value in a Set-based filter
   const toggleSet = <T extends string>(key: keyof SearchFilters, value: T) => {
@@ -293,6 +299,93 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, loading
 
   const fmt = (n: number | undefined) => n != null ? n.toLocaleString() : '—';
 
+  // ── Geo filter local state ──
+  const [geoInput, setGeoInput] = useState('');
+  const [showGeoDrop, setShowGeoDrop] = useState(false);
+  const [geoHighlight, setGeoHighlight] = useState(-1);
+  const geoDropRef = useRef<HTMLDivElement>(null);
+
+  // Sync local input when geo filter is cleared externally
+  useEffect(() => {
+    if (!filters.geoLocation) setGeoInput('');
+  }, [filters.geoLocation]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (geoDropRef.current && !geoDropRef.current.contains(e.target as Node)) {
+        setShowGeoDrop(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Static city list (pre-generated, no runtime cost)
+  const allCities = getUSCities();
+
+  // Filter cities based on input
+  const matchingCities = useMemo(() => {
+    if (!geoInput || geoInput.length < 2) return [];
+    const q = geoInput.toLowerCase();
+    const results: CityEntry[] = [];
+    for (const c of allCities) {
+      const label = (c.city + ', ' + c.state).toLowerCase();
+      if (label.startsWith(q) || c.city.toLowerCase().startsWith(q)) {
+        results.push(c);
+        if (results.length >= 20) break;
+      }
+    }
+    return results;
+  }, [geoInput]);
+
+  // Compute match count for active geo filter
+  const geoMatchCount = useMemo(() => {
+    if (!filters.geoLocation) return 0;
+    if (filters.geoRadius === 0) return firmCoords.size; // "Any" = all firms with coords
+    const { lat, lng } = filters.geoLocation;
+    let count = 0;
+    for (const f of firms) {
+      const coords = firmCoords.get(f.crd);
+      if (coords && haversineDistance(lat, lng, coords.lat, coords.lng) <= filters.geoRadius) {
+        count++;
+      }
+    }
+    return count;
+  }, [firms, firmCoords, filters.geoLocation, filters.geoRadius]);
+
+  const selectCity = (c: CityEntry) => {
+    setGeoInput(c.city + ', ' + c.state);
+    setShowGeoDrop(false);
+    setGeoHighlight(-1);
+    onFiltersChange({ ...filters, geoLocation: { city: c.city, state: c.state, lat: c.lat, lng: c.lng } });
+    onGeoSelect?.();
+  };
+
+  // Keyboard navigation for geo dropdown
+  const handleGeoKeyDown = (e: React.KeyboardEvent) => {
+    if (!showGeoDrop || matchingCities.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setGeoHighlight(prev => (prev < matchingCities.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setGeoHighlight(prev => (prev > 0 ? prev - 1 : matchingCities.length - 1));
+    } else if (e.key === 'Enter' && geoHighlight >= 0 && geoHighlight < matchingCities.length) {
+      e.preventDefault();
+      selectCity(matchingCities[geoHighlight]);
+    } else if (e.key === 'Escape') {
+      setShowGeoDrop(false);
+      setGeoHighlight(-1);
+    }
+  };
+
+  const clearGeo = () => {
+    setGeoInput('');
+    setShowGeoDrop(false);
+    onFiltersChange({ ...filters, geoLocation: null });
+  };
+
   return (
     <>
       {/* Mobile overlay */}
@@ -322,6 +415,87 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, loading
         </div>
 
         <div className="pr-8 pt-2 pb-12">
+
+          {/* ── Location (Geographic Radius) ── */}
+          <FilterGroup label="Location">
+            <div ref={geoDropRef} className="relative">
+              <div className="relative">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25 pointer-events-none" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="City, State…"
+                  value={geoInput}
+                  onChange={e => { setGeoInput(e.target.value); setShowGeoDrop(true); setGeoHighlight(-1); if (filters.geoLocation) onFiltersChange({ ...filters, geoLocation: null }); }}
+                  onKeyDown={handleGeoKeyDown}
+                  onFocus={() => { if (geoInput.length >= 2) setShowGeoDrop(true); }}
+                  className="w-full bg-white/[0.06] border border-white/[0.08] text-white text-[12px] pl-8 pr-8 py-2 placeholder:text-white/25 focus:outline-none focus:border-[#2DBD74]/40 transition-colors"
+                />
+                {filters.geoLocation && (
+                  <button
+                    onClick={clearGeo}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                    aria-label="Clear location"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {showGeoDrop && geoInput.length >= 2 && matchingCities.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-[200px] overflow-y-auto bg-[#0D2233] border border-white/[0.08] shadow-lg">
+                  {matchingCities.map((c, i) => (
+                    <button
+                      key={c.city + '|' + c.state}
+                      ref={el => { if (i === geoHighlight && el) el.scrollIntoView({ block: 'nearest' }); }}
+                      onClick={() => selectCity(c)}
+                      className={cn(
+                        'w-full text-left px-3 py-1.5 text-[11px] transition-colors',
+                        i === geoHighlight
+                          ? 'bg-white/[0.08] text-white'
+                          : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
+                      )}
+                    >
+                      {c.city}, {c.state}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showGeoDrop && geoInput.length >= 2 && matchingCities.length === 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#0D2233] border border-white/[0.08] shadow-lg px-3 py-2">
+                  <span className="text-[11px] text-white/30">No cities found</span>
+                </div>
+              )}
+            </div>
+
+            {/* Radius pills */}
+            <div className="flex gap-1.5 mt-2.5">
+              {([10, 25, 50, 100, 0] as const).map(r => (
+                <button
+                  key={r}
+                  onClick={() => onFiltersChange({ ...filters, geoRadius: r })}
+                  className={cn(
+                    'px-2.5 py-1 text-[10px] font-medium border transition-colors',
+                    filters.geoRadius === r
+                      ? 'bg-[rgba(45,189,116,0.15)] border-[rgba(45,189,116,0.4)] text-[#2DBD74]'
+                      : 'bg-white/[0.04] border-white/[0.08] text-white/35 hover:text-white/55 hover:border-white/[0.15]'
+                  )}
+                >
+                  {r === 0 ? 'Any' : `${r}mi`}
+                </button>
+              ))}
+            </div>
+
+            {/* Match count */}
+            {filters.geoLocation && (
+              <p className="text-[10px] text-white/30 mt-2">
+                {geoMatchCount.toLocaleString()} firm{geoMatchCount !== 1 ? 's' : ''}{filters.geoRadius === 0 ? ` near` : ` within ${filters.geoRadius} mi of`} {filters.geoLocation.city}, {filters.geoLocation.state}
+              </p>
+            )}
+          </FilterGroup>
 
           {/* ── Fee Structure ── */}
           <FilterGroup label="Fee Schedule">
@@ -848,14 +1022,22 @@ function FirmCard({
 
   const totalClients = getTotalClients(firm);
   const avgClientSize = getAvgClientSize(firm);
+  const formattedMinAccount = firm.minimum_account_size
+    ? (() => { const val = parseFloat(firm.minimum_account_size.replace(/[^0-9.]/g, '')); return isNaN(val) ? firm.minimum_account_size : formatAUM(val); })()
+    : null;
 
   const hasGrowthData = firm.aum_1yr_growth_annualized != null || firm.aum_5yr_growth_annualized != null ||
     firm.clients_1yr_growth_annualized != null;
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't expand if clicking a link inside the card
+    // Don't navigate if clicking a link or the More button
     if ((e.target as HTMLElement).closest('a[href]')) return;
-    e.preventDefault();
+    if ((e.target as HTMLElement).closest('[data-more-btn]')) return;
+    window.location.href = `/firm/${firm.crd}`;
+  };
+
+  const handleMoreClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setExpanded(prev => !prev);
   };
 
@@ -944,7 +1126,7 @@ function FirmCard({
         )}
 
         {/* Desktop list layout */}
-        <div className={cn('hidden md:grid grid-cols-[56px_1fr_auto_auto_auto]', viewMode === 'grid' && '!hidden')}>
+        <div className={cn('hidden md:grid grid-cols-[56px_1fr_auto_auto_auto_auto]', viewMode === 'grid' && '!hidden')}>
           {/* Logo column */}
           <div className="grid place-items-center border-r border-[#CAD8D0]/50" style={{ height: 56, width: 56 }}>
             {firm.logo_key ? (
@@ -967,18 +1149,37 @@ function FirmCard({
                 </span>
               )}
             </div>
-            {description && <p className="text-[11px] text-[#5A7568]/80 truncate max-w-[400px]">{description}</p>}
+            {description && <p className="text-[11px] text-[#5A7568]/80 truncate max-w-[340px]">{description}</p>}
+            <button
+              data-more-btn
+              onClick={handleMoreClick}
+              className="text-[10px] font-semibold text-[#5A7568] hover:text-[#0C1810] transition-colors mt-0.5"
+            >
+              {expanded ? '▾ Less' : '▸ More'}
+            </button>
           </div>
 
           {/* AUM column */}
-          <div className="px-5 py-[12px] border-r border-[#CAD8D0]/50 text-right" style={{ minWidth: 110 }}>
-            <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
+          <div className="px-4 py-[12px] border-r border-[#CAD8D0]/50 text-right" style={{ minWidth: 90 }}>
+            <p className="font-serif text-[16px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
             <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
             {firm.employee_total ? <p className="font-mono text-[10px] text-[#5A7568] mt-1">{firm.employee_total} empl.</p> : null}
           </div>
 
+          {/* Avg Account Size column */}
+          <div className="px-4 py-[12px] border-r border-[#CAD8D0]/50 text-right" style={{ minWidth: 85 }}>
+            <p className="font-serif text-[16px] font-bold text-[#0C1810] leading-none mb-1">{avgClientSize != null ? formatAUM(avgClientSize) : 'N/A'}</p>
+            <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">Avg. Acct</p>
+          </div>
+
+          {/* Min Account Size column */}
+          <div className="px-4 py-[12px] border-r border-[#CAD8D0]/50 text-right" style={{ minWidth: 85 }}>
+            <p className={cn('font-serif text-[16px] font-bold leading-none mb-1', formattedMinAccount ? 'text-[#0C1810]' : 'text-[#CAD8D0]')}>{formattedMinAccount ?? 'Not disclosed'}</p>
+            <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">Min. Acct</p>
+          </div>
+
           {/* Score column */}
-          <div className="px-5 py-[12px] border-r border-[#CAD8D0]/50 text-center" style={{ minWidth: 90 }}>
+          <div className="px-5 py-[12px] text-center" style={{ minWidth: 90 }}>
             {score != null ? (
               <>
                 <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
@@ -990,13 +1191,6 @@ function FirmCard({
             ) : (
               <p className="text-[11px] text-[#CAD8D0]">N/A</p>
             )}
-          </div>
-
-          {/* Actions column */}
-          <div className="px-4 py-[12px] flex flex-col gap-2 items-center justify-center" style={{ minWidth: 80 }}>
-            <span className="text-[11px] font-semibold text-[#0C1810] border border-[#CAD8D0] px-3 py-1.5 hover:border-[#1A7A4A]/30 hover:text-[#0C1810] transition-all whitespace-nowrap">
-              {expanded ? '▾ Less' : '▸ More'}
-            </span>
           </div>
         </div>
 
@@ -1160,14 +1354,80 @@ function FirmCard({
 
 function LoadingSkeleton() {
   return (
-    <div className="flex flex-col gap-[1px]">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-[56px] bg-white border border-[#CAD8D0] animate-pulse"
-          style={{ opacity: 1 - i * 0.1 }}
-        />
-      ))}
+    <div>
+      {/* Branded circular loading indicator + logo */}
+      <div className="flex items-center justify-center gap-5 pt-12 pb-8">
+        {/* Spinning score ring */}
+        <div className="relative h-[72px] w-[72px] shrink-0">
+          <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#0A1C2A" strokeWidth="3" opacity="0.12" />
+          </svg>
+          <svg
+            className="absolute inset-0 h-full w-full -rotate-90"
+            viewBox="0 0 100 100"
+            style={{ animation: 'scoreRingSpin 1.4s linear infinite' }}
+          >
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#2DBD74" strokeWidth="3" strokeLinecap="round" strokeDasharray="264" strokeDashoffset="165" />
+          </svg>
+        </div>
+        {/* Logo + loading text */}
+        <div className="flex flex-col">
+          <span className="font-serif text-[24px] font-bold italic tracking-[0.02em] text-[#0A1C2A]">
+            VISOR<span className="ml-[0.12em] text-[#2DBD74]">INDEX</span>
+          </span>
+          <span className="text-[11px] text-[#5A7568] tracking-[0.08em] mt-0.5">
+            Loading advisors
+          </span>
+        </div>
+        <style suppressHydrationWarning>{`
+          @keyframes scoreRingSpin {
+            0% { transform: rotate(-90deg); }
+            100% { transform: rotate(270deg); }
+          }
+        `}</style>
+      </div>
+
+      {/* Skeleton cards */}
+      <div className="flex flex-col gap-[1px]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-white border border-[#CAD8D0] animate-pulse"
+            style={{ opacity: 1 - i * 0.12 }}
+          >
+            <div className="hidden md:grid grid-cols-[56px_1fr_auto_auto] h-[56px]">
+              {/* Logo placeholder */}
+              <div className="grid place-items-center border-r border-[#CAD8D0]/50">
+                <div className="h-8 w-8 bg-[#CAD8D0]/30" />
+              </div>
+              {/* Name + location placeholder */}
+              <div className="px-5 py-3 border-r border-[#CAD8D0]/50">
+                <div className="h-4 w-48 bg-[#CAD8D0]/30 mb-2" />
+                <div className="h-3 w-28 bg-[#CAD8D0]/20" />
+              </div>
+              {/* AUM placeholder */}
+              <div className="px-5 py-3 border-r border-[#CAD8D0]/50" style={{ minWidth: 110 }}>
+                <div className="h-5 w-14 bg-[#CAD8D0]/30 mb-1 ml-auto" />
+                <div className="h-2 w-8 bg-[#CAD8D0]/20 ml-auto" />
+              </div>
+              {/* Score placeholder */}
+              <div className="px-5 py-2.5 flex items-center justify-center" style={{ minWidth: 90 }}>
+                <div className="h-7 w-7 rounded-full bg-[#CAD8D0]/25" />
+              </div>
+            </div>
+            {/* Mobile placeholder */}
+            <div className="md:hidden h-[72px] p-4">
+              <div className="flex gap-3">
+                <div className="h-8 w-8 bg-[#CAD8D0]/30 shrink-0" />
+                <div className="flex-1">
+                  <div className="h-4 w-40 bg-[#CAD8D0]/30 mb-2" />
+                  <div className="h-3 w-24 bg-[#CAD8D0]/20" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1188,6 +1448,10 @@ export default function SearchPage() {
   // ── Presentation state ──
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [sortBy, setSortBy] = useState('score');
+  // Revert from proximity sort when geo filter is cleared
+  useEffect(() => {
+    if (!filters.geoLocation && sortBy === 'proximity') setSortBy('score');
+  }, [filters.geoLocation, sortBy]);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [perPage, setPerPage] = useState<25 | 50 | 100>(25);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1221,6 +1485,7 @@ export default function SearchPage() {
           primary_business_name,
           main_office_city,
           main_office_state,
+          main_office_zip,
           aum,
           employee_total,
           employee_investment,
@@ -1394,18 +1659,37 @@ export default function SearchPage() {
     fetchFirms('');
   };
 
+  // ── Pre-compute firm coordinates from ZIP codes ──
+  const firmCoords = useMemo(() => {
+    const coords = new Map<number, { lat: number; lng: number }>();
+    for (const f of firms) {
+      if (f.main_office_zip) {
+        const c = zipToCoords(f.main_office_zip);
+        if (c) coords.set(f.crd, c);
+      }
+    }
+    return coords;
+  }, [firms]);
+
   // ── Presentation: filtered + sorted list ──
   const visibleFirms = useMemo(() => {
     setCurrentPage(1);
     let result = [...firms];
 
-    // ── Location ──
-    if (filters.location) {
-      const loc = filters.location.toLowerCase();
-      result = result.filter(f =>
-        f.main_office_city?.toLowerCase().includes(loc) ||
-        f.main_office_state?.toLowerCase().includes(loc)
-      );
+    // ── Geographic Radius ──
+    if (filters.geoLocation) {
+      if (filters.geoRadius === 0) {
+        // "Any" radius — keep all firms that have coordinates
+        result = result.filter(f => firmCoords.has(f.crd));
+      } else {
+        const { lat: cLat, lng: cLng } = filters.geoLocation;
+        const maxDist = filters.geoRadius;
+        result = result.filter(f => {
+          const coords = firmCoords.get(f.crd);
+          if (!coords) return false;
+          return haversineDistance(cLat, cLng, coords.lat, coords.lng) <= maxDist;
+        });
+      }
     }
 
     // ── Visor Score ──
@@ -1567,7 +1851,16 @@ export default function SearchPage() {
     }
 
     // ── Sort ──
-    if (sortBy === 'score') result.sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0));
+    if (sortBy === 'proximity' && filters.geoLocation) {
+      const { lat: cLat, lng: cLng } = filters.geoLocation;
+      result.sort((a, b) => {
+        const ca = firmCoords.get(a.crd);
+        const cb = firmCoords.get(b.crd);
+        const da = ca ? haversineDistance(cLat, cLng, ca.lat, ca.lng) : Infinity;
+        const db = cb ? haversineDistance(cLat, cLng, cb.lat, cb.lng) : Infinity;
+        return da - db;
+      });
+    } else if (sortBy === 'score') result.sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0));
     else if (sortBy === 'aum_high') result.sort((a, b) => (b.aum ?? 0) - (a.aum ?? 0));
     else if (sortBy === 'aum_low') result.sort((a, b) => (a.aum ?? 0) - (b.aum ?? 0));
     else if (sortBy === 'alpha') result.sort((a, b) =>
@@ -1576,13 +1869,13 @@ export default function SearchPage() {
 
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firms, filters, sortBy]);
+  }, [firms, filters, sortBy, firmCoords]);
 
   // ── Active filter chips (derived) ──
   const activeChips: { key: string; label: string; onRemove: () => void }[] = useMemo(() => {
     const chips: { key: string; label: string; onRemove: () => void }[] = [];
 
-    if (filters.location) chips.push({ key: 'location', label: `Location: ${filters.location}`, onRemove: () => handleFiltersChange({ ...filters, location: '' }) });
+    if (filters.geoLocation) chips.push({ key: 'geo', label: filters.geoRadius === 0 ? `Near ${filters.geoLocation.city}, ${filters.geoLocation.state}` : `Within ${filters.geoRadius}mi of ${filters.geoLocation.city}, ${filters.geoLocation.state}`, onRemove: () => handleFiltersChange({ ...filters, geoLocation: null }) });
     if (filters.minAUM) chips.push({ key: 'minAUM', label: `AUM: ${filters.minAUM === 'under100m' ? '<$100M' : filters.minAUM === '100000000' ? '$100M–$500M' : filters.minAUM === '500000000' ? '$500M–$2B' : '$2B+'}`, onRemove: () => handleFiltersChange({ ...filters, minAUM: '' }) });
     if (filters.minAccountSize) chips.push({ key: 'minAccountSize', label: `Min. investment: ${filters.minAccountSize}`, onRemove: () => handleFiltersChange({ ...filters, minAccountSize: '' }) });
     if (filters.minVisorScore > 0) chips.push({ key: 'minVisorScore', label: `Visor Score ${filters.minVisorScore}+`, onRemove: () => handleFiltersChange({ ...filters, minVisorScore: 0 }) });
@@ -1629,7 +1922,7 @@ export default function SearchPage() {
             </svg>
             <input
               type="text"
-              placeholder="Search firm name, advisor, city, or ZIP…"
+              placeholder="Search firm name…"
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setSelectedIndex(-1); }}
               onKeyDown={e => {
@@ -1698,7 +1991,9 @@ export default function SearchPage() {
             filters={filters}
             onFiltersChange={handleFiltersChange}
             firms={firms}
+            firmCoords={firmCoords}
             loading={loading}
+            onGeoSelect={() => setSortBy('proximity')}
           />
         </div>
 
@@ -1710,7 +2005,9 @@ export default function SearchPage() {
             filters={filters}
             onFiltersChange={handleFiltersChange}
             firms={firms}
+            firmCoords={firmCoords}
             loading={loading}
+            onGeoSelect={() => setSortBy('proximity')}
           />
         </div>
 
@@ -1729,6 +2026,18 @@ export default function SearchPage() {
           ) : (
             /* Full results for authenticated users */
             <>
+              {/* Error state */}
+              {error && (
+                <div className="py-8 text-center">
+                  <p className="text-[13px] text-red-400">Error: {error}</p>
+                </div>
+              )}
+
+              {/* Results */}
+              {loading ? (
+                <LoadingSkeleton />
+              ) : (
+                <>
               {/* Results toolbar */}
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-baseline gap-2.5">
@@ -1744,6 +2053,9 @@ export default function SearchPage() {
                     onChange={e => setSortBy(e.target.value)}
                     className="bg-white border border-[#CAD8D0] text-[#0C1810] font-sans text-[12px] px-3 py-1.5 outline-none"
                   >
+                    {filters.geoLocation && (
+                      <option value="proximity" className="bg-white">Proximity (nearest first)</option>
+                    )}
                     <option value="score" className="bg-white">Visor Score™ (high to low)</option>
                     <option value="aum_high" className="bg-white">AUM (high to low)</option>
                     <option value="aum_low" className="bg-white">AUM (low to high)</option>
@@ -1809,18 +2121,6 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Error state */}
-              {error && (
-                <div className="py-8 text-center">
-                  <p className="text-[13px] text-red-400">Error: {error}</p>
-                </div>
-              )}
-
-              {/* Results */}
-              {loading ? (
-                <LoadingSkeleton />
-              ) : (
-                <>
                   {(() => {
                     const totalPages = Math.max(1, Math.ceil(visibleFirms.length / perPage));
                     const safePage = Math.min(currentPage, totalPages);
