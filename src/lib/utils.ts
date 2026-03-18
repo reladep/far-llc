@@ -20,7 +20,7 @@ export function formatAUM(aum: number): string {
   if (aum >= 1_000_000_000) return `$${(aum / 1_000_000_000).toFixed(1)}B`;
   if (aum >= 1_000_000) return `$${(aum / 1_000_000).toFixed(1)}M`;
   if (aum >= 1_000) return `$${(aum / 1_000).toFixed(0)}K`;
-  return `$${aum}`;
+  return `$${Math.round(aum).toLocaleString()}`;
 }
 
 /** Generate firm slug */

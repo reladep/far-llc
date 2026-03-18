@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import type { User } from '@supabase/supabase-js';
 
-const navLinks = [
+const allNavLinks = [
   { label: 'Search', href: '/search' },
   { label: 'Compare', href: '/compare' },
   { label: 'Match', href: '/match' },
@@ -16,6 +18,18 @@ const navLinks = [
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const navLinks = user ? allNavLinks.filter(l => l.href !== '/pricing') : allNavLinks;
 
   // Lock body scroll when open
   useEffect(() => {

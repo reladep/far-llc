@@ -286,14 +286,14 @@ function formatCurrency(value: number | null): string {
   if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
   if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
-  return `$${value.toLocaleString()}`;
+  return `$${Math.round(value).toLocaleString()}`;
 }
 
 function formatAUM(value: number | null): string {
   if (!value) return 'N/A';
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
-  return `$${value.toLocaleString()}`;
+  return `$${Math.round(value).toLocaleString()}`;
 }
 
 // ─── Presentational helpers ───────────────────────────────────────────────────
@@ -930,7 +930,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               <span className="vfp-bc-sep">›</span>
               {firm.main_office_city && firm.main_office_state && (
                 <>
-                  <Link href={`/search?state=${firm.main_office_state}`}>
+                  <Link href={`/search?city=${encodeURIComponent(firm.main_office_city)}&state=${encodeURIComponent(firm.main_office_state)}`}>
                     {firm.main_office_city} · {firm.main_office_state}
                   </Link>
                   <span className="vfp-bc-sep">›</span>
@@ -1208,7 +1208,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <span className="vfp-bc-sep">›</span>
             {firm.main_office_city && firm.main_office_state && (
               <>
-                <Link href={`/search?state=${firm.main_office_state}`}>
+                <Link href={`/search?city=${encodeURIComponent(firm.main_office_city)}&state=${encodeURIComponent(firm.main_office_state)}`}>
                   {firm.main_office_city} · {firm.main_office_state}
                 </Link>
                 <span className="vfp-bc-sep">›</span>
