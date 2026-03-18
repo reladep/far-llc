@@ -81,7 +81,7 @@ function formatAUM(value: number | null): string {
   if (!value) return 'N/A';
   if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
-  return `$${value.toLocaleString()}`;
+  return `$${Math.round(value).toLocaleString()}`;
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────

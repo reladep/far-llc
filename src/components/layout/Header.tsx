@@ -65,7 +65,7 @@ export function Header() {
             { href: '/negotiate', label: 'Negotiate' },
             { href: '/guide', label: 'Guide' },
             { href: '/directory', label: 'Directory' },
-            { href: '/pricing', label: 'Pricing' },
+            ...(!user ? [{ href: '/pricing', label: 'Pricing' }] : []),
           ].map((link) => (
             <Link
               key={link.href}
