@@ -298,7 +298,9 @@ function formatAUM(value: number | null): string {
 
 // ─── Presentational helpers ───────────────────────────────────────────────────
 function scoreColor(score: number): string {
-  return score >= 70 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
+  // Works for both 0-10 sub-scores and 0-100 overall scores
+  const s = score <= 10 ? score * 10 : score;
+  return s >= 80 ? 'var(--green-3)' : s >= 50 ? 'var(--amber)' : 'var(--red)';
 }
 
 const FEE_TYPE_LABELS: Record<string, string> = {
@@ -323,7 +325,7 @@ const SECTION_NAV = [
 
 const PAGE_CSS = `
   .vfp-breadcrumb, .vfp-page {
-    --navy:#0A1C2A; --navy-2:#0F2538;
+    --navy:#172438; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --rule-2:#B0C4BA;
@@ -395,19 +397,19 @@ const PAGE_CSS = `
     color:rgba(255,255,255,.3); letter-spacing:.04em;
   }
   .vfp-firm-name {
-    font-family:var(--serif); font-size:clamp(26px,3.2vw,40px);
+    font-family:var(--sans); font-size:clamp(26px,3.2vw,40px);
     font-weight:700; color:#fff; line-height:1.1;
     letter-spacing:-.02em; margin-bottom:10px;
   }
   .vfp-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .vfp-badge {
-    font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
-    padding:3px 10px; border:1px solid rgba(255,255,255,.12);
-    color:rgba(255,255,255,.45);
+    font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    padding:3px 8px; border:0.5px solid rgba(255,255,255,.2);
+    color:rgba(255,255,255,.72); border-radius:3px;
   }
-  .vfp-badge.green { border-color:rgba(45,189,116,.35); color:var(--green-3); background:rgba(45,189,116,.07); }
+  .vfp-badge.green { border-color:rgba(45,189,116,.5); color:#5EDFA0; background:rgba(45,189,116,.09); }
   .vfp-meta-row { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-  .vfp-meta-item { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,255,255,.35); }
+  .vfp-meta-item { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px; color:rgba(255,255,255,.35); }
   .vfp-meta-item a { color:rgba(255,255,255,.35); text-decoration:none; transition:color .15s; }
   .vfp-meta-item a:hover { color:rgba(255,255,255,.8); }
   .vfp-score-block {
@@ -415,27 +417,28 @@ const PAGE_CSS = `
     padding-left:32px; border-left:1px solid rgba(255,255,255,.07);
   }
   .vfp-score-label {
-    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
     color:rgba(255,255,255,.3); margin-top:8px; text-align:center;
   }
   .vfp-stats-row {
     display:grid; grid-template-columns:repeat(5,1fr);
-    border-top:1px solid rgba(255,255,255,.06);
+    border-top:0.5px solid rgba(255,255,255,.09);
   }
   .vfp-stat {
-    padding:20px 24px; border-right:1px solid rgba(255,255,255,.06);
+    padding:20px 24px; border-right:0.5px solid rgba(255,255,255,.09);
   }
   .vfp-stat:last-child { border-right:none; }
   .vfp-stat-label {
-    font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
-    color:rgba(255,255,255,.25); margin-bottom:6px;
+    font-family:var(--sans); font-size:8px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+    color:rgba(255,255,255,.35); margin-bottom:6px;
   }
   .vfp-stat-val {
     font-family:var(--serif); font-size:26px; font-weight:700;
     color:#fff; line-height:1; letter-spacing:-.02em;
   }
   .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
-  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.25); margin-top:4px; font-family:var(--mono); }
+  .vfp-stat-sub { font-size:9px; color:rgba(255,255,255,.3); margin-top:4px; font-family:var(--mono); }
+  .vfp-stat-sub em { font-style:normal; color:var(--green-3); }
 
   .vfp-body {
     display:grid; grid-template-columns:1fr 300px;
@@ -445,11 +448,12 @@ const PAGE_CSS = `
   .vfp-section { margin-bottom:48px; }
   .vfp-section-head {
     display:flex; align-items:baseline; justify-content:space-between;
-    margin-bottom:24px; padding-bottom:14px;
-    border-bottom:1px solid var(--rule);
+    margin-bottom:24px;
+    border-left:2.5px solid var(--green-3); padding-left:10px;
+    border-radius:0;
   }
   .vfp-section-title {
-    font-family:var(--serif); font-size:22px; font-weight:700;
+    font-family:var(--sans); font-size:22px; font-weight:700;
     color:var(--ink); letter-spacing:-.01em;
   }
   .vfp-section-meta { font-size:11px; color:var(--ink-3); font-family:var(--mono); }
@@ -458,11 +462,11 @@ const PAGE_CSS = `
   .vfp-vvs-overall {
     display:grid; grid-template-columns:auto 1fr;
     gap:32px; align-items:center;
-    padding:28px 32px; background:#fff; border:1px solid var(--rule);
+    padding:18px; background:#fff; border:0.5px solid var(--rule); border-radius:9px;
     margin-bottom:20px;
   }
   .vfp-vvs-big { font-family:var(--serif); font-size:72px; font-weight:700; line-height:1; letter-spacing:-.04em; }
-  .vfp-vvs-big-label { font-size:11px; color:var(--ink-3); margin-top:6px; letter-spacing:.06em; }
+  .vfp-vvs-big-label { font-family:var(--sans); font-size:11px; color:var(--ink-3); margin-top:6px; letter-spacing:.06em; }
   .vfp-vvs-rank {
     font-size:13px; color:var(--ink-3); line-height:1.7;
     border-left:2px solid var(--green); padding-left:20px;
@@ -475,8 +479,8 @@ const PAGE_CSS = `
     padding:14px 0; border-bottom:1px solid var(--rule);
   }
   .vfp-bar-row:last-child { border-bottom:none; }
-  .vfp-bar-label { font-size:12px; color:var(--ink-2); font-weight:500; display:flex; align-items:center; }
-  .vfp-bar-track { height:4px; background:var(--rule); position:relative; }
+  .vfp-bar-label { font-family:var(--sans); font-size:12px; color:var(--ink-2); font-weight:500; display:flex; align-items:center; }
+  .vfp-bar-track { height:4px; background:rgba(202,216,208,.35); position:relative; }
   .vfp-bar-fill { height:100%; transition:width 1s ease; }
   .vfp-bar-val { font-family:var(--mono); font-size:13px; font-weight:500; text-align:right; }
   .vfp-info-tip {
@@ -499,31 +503,31 @@ const PAGE_CSS = `
 
   /* Fees */
   .vfp-fee-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
-  .vfp-fee-card { background:#fff; border:1px solid var(--rule); padding:22px 26px; }
-  .vfp-fee-card-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-fee-card { background:#fff; border:0.5px solid var(--rule); border-radius:9px; padding:18px; }
+  .vfp-fee-card-label { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
   .vfp-fee-card-val { font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:4px; letter-spacing:-.02em; }
-  .vfp-fee-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
-  .vfp-fee-table { background:#fff; border:1px solid var(--rule); margin-bottom:20px; }
+  .vfp-fee-card-sub { font-family:var(--mono); font-size:12px; color:var(--ink-3); line-height:1.6; }
+  .vfp-fee-table { background:#fff; border:0.5px solid var(--rule); border-radius:9px; margin-bottom:20px; overflow:hidden; }
   .vfp-fee-table-head {
     display:grid; grid-template-columns:1fr 1fr 1fr;
     padding:10px 20px; border-bottom:1px solid var(--rule); background:var(--white);
   }
-  .vfp-fee-table-head span { font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
+  .vfp-fee-table-head span { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
   .vfp-fee-row {
     display:grid; grid-template-columns:1fr 1fr 1fr;
     padding:14px 20px; border-bottom:1px solid var(--rule); align-items:center;
   }
   .vfp-fee-row:last-child { border-bottom:none; }
-  .vfp-fee-row span { font-size:13px; color:var(--ink-2); }
+  .vfp-fee-row span { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
   .vfp-fee-rate { font-family:var(--mono); font-size:13px; color:var(--ink); font-weight:500; }
   .vfp-fee-note { font-size:11px; color:var(--ink-3); }
 
   /* AUM chart wrap */
-  .vfp-aum-wrap { background:#fff; border:1px solid var(--rule); overflow:hidden; }
+  .vfp-aum-wrap { background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden; }
   .vfp-aum-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--rule); }
-  .vfp-aum-stat { padding:18px 24px; border-right:1px solid var(--rule); }
+  .vfp-aum-stat { padding:11px 13px; border-right:1px solid var(--rule); background:var(--white); border-radius:0; }
   .vfp-aum-stat:last-child { border-right:none; }
-  .vfp-aum-stat-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
+  .vfp-aum-stat-label { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
   .vfp-aum-stat-val { font-family:var(--serif); font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
   .vfp-aum-stat-delta { display:inline-flex; align-items:center; gap:4px; font-size:11px; margin-top:4px; font-family:var(--mono); }
   .vfp-aum-stat-delta.up { color:var(--green); }
@@ -537,42 +541,42 @@ const PAGE_CSS = `
 
   /* Clients */
   .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .vfp-client-card { background:#fff; border:1px solid var(--rule); padding:24px 28px; }
-  .vfp-client-card-label { font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
+  .vfp-client-card { background:var(--white); border:none; border-radius:6px; padding:11px 13px; }
+  .vfp-client-card-label { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
   .vfp-client-card-val { font-family:var(--serif); font-size:32px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:6px; letter-spacing:-.02em; }
-  .vfp-client-card-sub { font-size:12px; color:var(--ink-3); line-height:1.6; }
-  .vfp-client-breakdown { background:#fff; border:1px solid var(--rule); margin-top:16px; }
-  .vfp-client-bd-head { padding:16px 24px; border-bottom:1px solid var(--rule); font-size:11px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; }
+  .vfp-client-card-sub { font-family:var(--mono); font-size:12px; color:var(--ink-3); line-height:1.6; }
+  .vfp-client-breakdown { background:#fff; border:0.5px solid var(--rule); border-radius:9px; margin-top:16px; overflow:hidden; }
+  .vfp-client-bd-head { padding:16px 24px; border-bottom:1px solid var(--rule); font-family:var(--sans); font-size:11px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; }
   .vfp-client-type-row {
     display:grid; grid-template-columns:1fr auto 120px;
     align-items:center; gap:16px;
     padding:12px 24px; border-bottom:1px solid var(--rule);
   }
   .vfp-client-type-row:last-child { border-bottom:none; }
-  .vfp-client-type-name { font-size:13px; color:var(--ink-2); }
+  .vfp-client-type-name { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
   .vfp-client-type-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); }
   .vfp-client-type-bar { height:3px; background:var(--rule); }
   .vfp-client-type-fill { height:100%; background:var(--green-2); border-radius:1px; }
 
   /* Sidebar */
   .vfp-sidebar { position:sticky; top:160px; display:flex; flex-direction:column; gap:16px; align-self:start; }
-  .vfp-scard { background:#fff; border:1px solid var(--rule); overflow:hidden; }
+  .vfp-scard { background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden; }
   .vfp-scard-head {
-    padding:14px 20px; border-bottom:1px solid var(--rule);
-    font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+    padding:13px 16px; border-bottom:0.5px solid var(--rule);
+    font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
   }
-  .vfp-scard-body { padding:20px; }
+  .vfp-scard-body { padding:13px 16px; }
   .vfp-sfield {
     display:flex; justify-content:space-between; align-items:baseline;
-    padding:8px 0; border-bottom:1px solid var(--rule);
+    padding:8px 0; border-bottom:0.5px solid var(--rule);
   }
   .vfp-sfield:last-child { border-bottom:none; }
-  .vfp-sfield-label { font-size:11px; color:var(--ink-3); }
+  .vfp-sfield-label { font-family:var(--sans); font-size:11px; color:var(--ink-3); }
   .vfp-sfield-val { font-family:var(--mono); font-size:11px; color:var(--ink-2); font-weight:500; text-align:right; }
   .vfp-sfield-val a { color:var(--green); text-decoration:none; transition:color .15s; }
   .vfp-sfield-val a:hover { color:var(--green-2); }
 
-  .vfp-similar { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule); text-decoration:none; transition:opacity .15s; }
+  .vfp-similar { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:0.5px solid var(--rule); text-decoration:none; transition:opacity .15s; }
   .vfp-similar:last-child { border-bottom:none; }
   .vfp-similar:hover { opacity:.7; }
   .vfp-similar-initials {
@@ -582,8 +586,8 @@ const PAGE_CSS = `
     font-family:var(--serif); font-size:12px; font-weight:700; color:var(--ink-3);
   }
   .vfp-similar-info { flex:1; min-width:0; }
-  .vfp-similar-name { font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .vfp-similar-meta { font-size:10px; color:var(--ink-3); margin-top:1px; }
+  .vfp-similar-name { font-family:var(--sans); font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .vfp-similar-meta { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:1px; }
   .vfp-similar-score { font-family:var(--serif); font-size:18px; font-weight:700; flex-shrink:0; color:var(--ink-3); }
 
   .vfp-cta-card { background:var(--navy); border:none; border-top:2px solid var(--green-3); overflow:hidden; }
@@ -1674,20 +1678,20 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                     <div className="vfp-fee-card-val">{firm.employee_investment ?? '—'}</div>
                   </div>
                 </div>
-                <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 16, display: 'flex', gap: 12 }}>
+                <div style={{ background: 'var(--white)', border: '0.5px dashed var(--rule-2)', borderRadius: 6, padding: '12px 13px', display: 'flex', gap: 12, marginTop: 16 }}>
                   <div style={{
-                    width: 32, height: 32, background: 'var(--white)', border: '1px solid var(--rule)',
-                    display: 'grid', placeItems: 'center', flexShrink: 0,
+                    width: 32, height: 32, background: '#fff', border: '0.5px solid var(--rule)',
+                    display: 'grid', placeItems: 'center', flexShrink: 0, borderRadius: 4,
                   }}>
                     <svg width="12" height="12" fill="none" stroke="var(--ink-3)" strokeWidth="1.4" viewBox="0 0 12 12">
                       <circle cx="6" cy="6" r="5" /><path d="M6 4v2.5L7.5 8" />
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontSize: 11.5, fontWeight: 500, color: 'var(--ink-2)', marginBottom: 4 }}>
                       Ownership &amp; principal data coming soon
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.6 }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontSize: 10.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
                       Individual principal names, roles, and ownership percentages from ADV Schedule A will be available in an upcoming release.
                     </div>
                   </div>
