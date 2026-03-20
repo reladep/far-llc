@@ -353,12 +353,12 @@ const PAGE_CSS = `
   .vfp-bc-trail a:hover { color:rgba(255,255,255,.7); }
   .vfp-bc-sep { opacity:.3; }
   .vfp-bc-current { color:rgba(255,255,255,.6); }
-  .vfp-bc-actions { display:flex; align-items:center; gap:8px; }
+  .vfp-bc-actions { display:flex; align-items:center; gap:10px; padding-left:16px; border-left:1px solid rgba(255,255,255,.08); }
   .vfp-bc-compare {
     display:inline-flex; align-items:center; gap:7px;
     font-family:var(--sans); font-size:11px; font-weight:600;
-    background:var(--green); color:#fff;
-    padding:7px 16px; border:none; cursor:pointer;
+    background:var(--green-3); color:#fff;
+    padding:8px 18px; border:none; cursor:pointer; border-radius:3px;
     transition:background .2s; letter-spacing:.04em; text-decoration:none;
   }
   .vfp-bc-compare:hover { background:var(--green-2); }
@@ -366,7 +366,7 @@ const PAGE_CSS = `
   .vfp-page {
     padding-top:96px; max-width:1200px; margin:0 auto;
     padding-left:56px; padding-right:56px; padding-bottom:120px;
-    overflow-x:hidden;
+    overflow-x:hidden; background:var(--navy);
   }
   .vfp-hero {
     background:var(--navy);
@@ -388,8 +388,6 @@ const PAGE_CSS = `
   }
   .vfp-logo-mark {
     width:72px; height:72px;
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.1);
     display:grid; place-items:center; flex-shrink:0;
   }
   .vfp-logo-initials {
@@ -414,20 +412,25 @@ const PAGE_CSS = `
   .vfp-meta-item a:hover { color:rgba(255,255,255,.8); }
   .vfp-score-block {
     display:flex; flex-direction:column; align-items:center; gap:0;
-    padding-left:32px; border-left:1px solid rgba(255,255,255,.07);
+    padding-left:32px;
+    filter:drop-shadow(0 0 24px rgba(45,189,116,.12));
   }
   .vfp-score-label {
     font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
     color:rgba(255,255,255,.3); margin-top:8px; text-align:center;
   }
   .vfp-stats-row {
-    display:grid; grid-template-columns:repeat(5,1fr);
+    display:grid; grid-template-columns:repeat(6,1fr);
     border-top:0.5px solid rgba(255,255,255,.09);
   }
   .vfp-stat {
     padding:20px 24px; border-right:0.5px solid rgba(255,255,255,.09);
   }
   .vfp-stat:last-child { border-right:none; }
+  .vfp-stat:nth-child(n+4) { background:rgba(0,0,0,.08); }
+  .vfp-stat:nth-child(1) .vfp-stat-val,
+  .vfp-stat:nth-child(2) .vfp-stat-val,
+  .vfp-stat:nth-child(3) .vfp-stat-val { font-size:30px; }
   .vfp-stat-label {
     font-family:var(--sans); font-size:8px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
     color:rgba(255,255,255,.35); margin-bottom:6px;
@@ -437,18 +440,19 @@ const PAGE_CSS = `
     color:#fff; line-height:1; letter-spacing:-.02em;
   }
   .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
-  .vfp-stat-sub { font-size:9px; color:rgba(255,255,255,.3); margin-top:4px; font-family:var(--mono); }
+  .vfp-stat-sub { font-size:9px; color:rgba(255,255,255,.45); margin-top:4px; font-family:var(--mono); }
   .vfp-stat-sub em { font-style:normal; color:var(--green-3); }
 
   .vfp-body {
     display:grid; grid-template-columns:1fr 300px;
-    gap:48px; padding-top:48px;
+    gap:36px; padding-top:28px;
+    background:var(--white); margin:0 -56px; padding-left:56px; padding-right:56px; padding-bottom:80px;
   }
   .vfp-body > main { min-width:0; overflow-wrap:break-word; word-wrap:break-word; }
-  .vfp-section { margin-bottom:48px; }
+  .vfp-section { margin-bottom:32px; }
   .vfp-section-head {
     display:flex; align-items:baseline; justify-content:space-between;
-    margin-bottom:24px;
+    margin-bottom:16px;
     border-left:2.5px solid var(--green-3); padding-left:10px;
     border-radius:0;
   }
@@ -695,8 +699,19 @@ const PAGE_CSS = `
   @media (max-width:640px) {
     .vfp-page { padding-left:16px; padding-right:16px; }
     .vfp-hero { margin:0 -16px; padding:24px 16px 0; }
-    .vfp-hero-top { grid-template-columns:1fr; gap:16px; }
-    .vfp-stats-row { grid-template-columns:repeat(2,1fr); gap:1px; }
+    .vfp-hero-top { grid-template-columns:1fr; gap:16px; text-align:center; }
+    .vfp-logo-mark { width:56px; height:56px; margin:0 auto; }
+    .vfp-logo-mark .shrink-0 { height:48px !important; width:48px !important; }
+    .vfp-firm-name { font-size:24px; }
+    .vfp-badges { justify-content:center; }
+    .vfp-badge { font-size:8px; padding:2px 6px; }
+    .vfp-meta-row { justify-content:center; }
+    .vfp-meta-item { font-size:10px; }
+    .vfp-stats-row { grid-template-columns:repeat(2,1fr); gap:0; }
+    .vfp-stat { padding:14px 16px; }
+    .vfp-stat-label { font-size:7px; letter-spacing:.06em; }
+    .vfp-stat-val { font-size:20px; }
+    .vfp-stat-sub { font-size:8px; }
     .vfp-tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; gap:0; }
     .vfp-tab { white-space:nowrap; flex-shrink:0; }
     .vfp-score-grid { grid-template-columns:1fr 1fr; }
@@ -706,7 +721,10 @@ const PAGE_CSS = `
     .vfp-fee-card { padding:16px; }
     .vfp-similar-grid { grid-template-columns:1fr; }
     .vfp-gate-cta { padding:24px 16px; width:calc(100% - 16px); top:20px; }
-    .vfp-breadcrumb { padding:0 16px; }
+    .vfp-breadcrumb { padding:0 12px; }
+    .vfp-breadcrumb-i { gap:4px; }
+    .vfp-bc-trail { font-size:10px; gap:4px; }
+    .vfp-bc-actions { gap:4px; }
     .vfp-gate-nav { margin:0 -16px; }
     .vfp-gate-nav-inner { padding:0 16px; }
   }
@@ -872,10 +890,14 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   }
 
   // ── Hero badges ──
-  const heroBadges: Array<{ label: string; green: boolean }> = [
-    { label: 'Fiduciary', green: true },
+  const heroBadges: Array<{ label: string; green: boolean; href?: string }> = [
+    { label: 'Fiduciary', green: true, href: '/search?type=ria' },
   ];
-  if (feesAndMins?.fee_structure_type) heroBadges.push({ label: feeTypeDisplay, green: false });
+  if (feesAndMins?.fee_structure_type) {
+    const feeFilterMap: Record<string, string> = { 'range': 'range', 'tiered': 'tiered', 'flat_percentage': 'flat_percentage', 'capped': 'capped' };
+    const feeParam = feeFilterMap[feesAndMins.fee_structure_type];
+    heroBadges.push({ label: feeTypeDisplay, green: false, href: feeParam ? `/search?fee=${feeParam}` : undefined });
+  }
   if (firm.legal_structure) heroBadges.push({ label: firm.legal_structure, green: false });
   if (profileText?.firm_character) {
     heroBadges.push({ label: profileText.firm_character.split(',')[0].trim(), green: false });
@@ -1208,7 +1230,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
       <div className="vfp-breadcrumb">
         <div className="vfp-breadcrumb-i">
           <div className="vfp-bc-trail">
-            <Link href="/search">Search</Link>
+            <Link href="/search" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 14 }}>←</span> Search
+            </Link>
             <span className="vfp-bc-sep">›</span>
             {firm.main_office_city && firm.main_office_state && (
               <>
@@ -1240,23 +1264,17 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           <div className="vfp-hero-top">
 
             {/* Logo mark */}
-            {logoKey ? (
-              <div className="vfp-logo-mark" style={{ padding: 8 }}>
-                <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" />
-              </div>
-            ) : (
-              <div className="vfp-logo-mark">
-                <span className="vfp-logo-initials">
-                  {firmDisplayName.slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-            )}
+            <div className="vfp-logo-mark">
+              <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" className="!h-[68px] !w-[68px] !text-2xl" />
+            </div>
 
             {/* Identity */}
             <div>
               <h1 className="vfp-firm-name">{firmDisplayName}</h1>
               <div className="vfp-badges">
-                {heroBadges.map((b, i) => (
+                {heroBadges.map((b, i) => b.href ? (
+                  <Link key={i} href={b.href} className={`vfp-badge${b.green ? ' green' : ''}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>{b.label}</Link>
+                ) : (
                   <span key={i} className={`vfp-badge${b.green ? ' green' : ''}`}>{b.label}</span>
                 ))}
               </div>
@@ -1352,6 +1370,13 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 <div className="vfp-stat-sub">{firm.employee_investment} investment staff</div>
               )}
             </div>
+            <div className="vfp-stat">
+              <div className="vfp-stat-label">Investment Staff</div>
+              <div className="vfp-stat-val">{firm.employee_investment ?? '—'}</div>
+              {firm.employee_total && firm.employee_investment && (
+                <div className="vfp-stat-sub">{Math.round((firm.employee_investment / firm.employee_total) * 100)}% of total</div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1371,37 +1396,43 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <span className="vfp-section-title">About</span>
                   <span className="vfp-section-meta">Derived from ADV Part 2A</span>
                 </div>
-                <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
+                <div style={{ background: '#fff', border: '0.5px solid var(--rule)', borderRadius: 9, padding: '24px 28px' }}>
                   {profileText.business_profile && (
-                    <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                    <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.85, margin: 0, maxWidth: 640, fontFamily: 'var(--sans)' }}>
                       {profileText.business_profile}
                     </p>
                   )}
                   {profileText.investment_philosophy && (
-                    <>
+                    <div style={{
+                      marginTop: profileText.business_profile ? 20 : 0,
+                      paddingTop: profileText.business_profile ? 20 : 0,
+                      borderTop: profileText.business_profile ? '1px solid var(--rule)' : 'none',
+                      borderLeft: '2.5px solid var(--green-3)',
+                      paddingLeft: 14,
+                    }}>
                       <div style={{
-                        fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase',
-                        color: 'var(--ink-3)', marginBottom: 8,
-                        marginTop: profileText.business_profile ? 16 : 0,
-                        paddingTop: profileText.business_profile ? 16 : 0,
-                        borderTop: profileText.business_profile ? '1px solid var(--rule)' : 'none',
+                        fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase' as const,
+                        color: 'var(--ink-3)', marginBottom: 8, fontFamily: 'var(--sans)',
                       }}>
                         Investment Philosophy
                       </div>
-                      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.75, margin: 0 }}>
+                      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.85, margin: 0, maxWidth: 640, fontFamily: 'var(--sans)' }}>
                         {profileText.investment_philosophy}
                       </p>
-                    </>
+                    </div>
                   )}
                 </div>
                 {(profileText.specialty_strategies || profileText.client_base) && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
                     {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
                       .filter(Boolean)
                       .flatMap(s => s!.split(',').map(t => t.trim()))
                       .slice(0, 6)
                       .map((tag, i) => (
-                        <span key={i} className="vfp-badge">{tag}</span>
+                        <span key={i} style={{
+                          fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                          padding: '3px 8px', border: '0.5px solid var(--rule)', color: 'var(--ink-3)', borderRadius: 3,
+                        }}>{tag}</span>
                       ))}
                   </div>
                 )}
@@ -1601,7 +1632,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               <div className="vfp-section" id="clients">
                 <div className="vfp-section-head">
                   <span className="vfp-section-title">Client Count &amp; Composition</span>
-                  <span className="vfp-section-meta">As of latest ADV filing</span>
+                  <span className="vfp-section-meta">{totalClients > 0 ? `${totalClients.toLocaleString()} total · ` : ''}As of latest ADV filing</span>
                 </div>
 
                 <div className="vfp-client-grid">
@@ -1665,7 +1696,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <div className="vfp-section" id="personnel">
               <div className="vfp-section-head">
                 <span className="vfp-section-title">Key Personnel</span>
-                <span className="vfp-section-meta">ADV Part 1 · Schedule A</span>
+                <span className="vfp-section-meta">{firm.employee_total ? `${firm.employee_total} employees · ` : ''}ADV Part 1 · Schedule A</span>
               </div>
               <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
@@ -1703,43 +1734,6 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
           {/* ══ SIDEBAR ══ */}
           <aside className="vfp-sidebar">
-
-            {/* Contact */}
-            <div className="vfp-scard">
-              <div className="vfp-scard-head">Contact</div>
-              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
-                {(firm.main_office_street_1 || firm.main_office_city) && (
-                  <div className="vfp-sfield">
-                    <span className="vfp-sfield-label">Address</span>
-                    <span className="vfp-sfield-val" style={{ lineHeight: 1.6 }}>
-                      {firm.main_office_street_1 && <>{firm.main_office_street_1}<br /></>}
-                      {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
-                    </span>
-                  </div>
-                )}
-                {firm.main_phone_number && (
-                  <div className="vfp-sfield">
-                    <span className="vfp-sfield-label">Phone</span>
-                    <span className="vfp-sfield-val">
-                      <a href={`tel:${firm.main_phone_number}`}>{firm.main_phone_number}</a>
-                    </span>
-                  </div>
-                )}
-                {website?.website && (
-                  <div className="vfp-sfield">
-                    <span className="vfp-sfield-label">Website</span>
-                    <span className="vfp-sfield-val">
-                      <a
-                        href={website.website.startsWith('http') ? website.website : `https://${website.website}`}
-                        target="_blank" rel="noopener noreferrer"
-                      >
-                        {website.website.replace(/^https?:\/\//, '')} ↗
-                      </a>
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
 
             {/* Filing details */}
             <div className="vfp-scard">
@@ -1808,6 +1802,43 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                       </Link>
                     ))}
                   </>
+                )}
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">Contact</div>
+              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
+                {(firm.main_office_street_1 || firm.main_office_city) && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Address</span>
+                    <span className="vfp-sfield-val" style={{ lineHeight: 1.6 }}>
+                      {firm.main_office_street_1 && <>{firm.main_office_street_1}<br /></>}
+                      {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
+                    </span>
+                  </div>
+                )}
+                {firm.main_phone_number && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Phone</span>
+                    <span className="vfp-sfield-val">
+                      <a href={`tel:${firm.main_phone_number}`}>{firm.main_phone_number}</a>
+                    </span>
+                  </div>
+                )}
+                {website?.website && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Website</span>
+                    <span className="vfp-sfield-val">
+                      <a
+                        href={website.website.startsWith('http') ? website.website : `https://${website.website}`}
+                        target="_blank" rel="noopener noreferrer"
+                      >
+                        {website.website.replace(/^https?:\/\//, '')} ↗
+                      </a>
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
