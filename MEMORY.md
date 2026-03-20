@@ -48,6 +48,10 @@ _Last updated: 2026-03-14_
 - Search page working with real data
 - Firm profiles showing real data
 - **Fee calculator widget live on all firm profiles**
+
+## Active Issues (March 2026)
+
+- **News Scraper Debugging:** Scraper runs but exits after 50/150 firms (consistent pattern). Also not creating alerts despite articles being stored. Investigating Supabase schema/RLS issues.
   - Tiered bracket calculation, industry average comparison, growth projections
   - Industry averages computed from 207 firms / 5,412 fee tiers
 - **Alerts MVP complete** (built 2/20)
