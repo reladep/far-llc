@@ -34,8 +34,10 @@ export default function SectionNav({ sections }: SectionNavProps) {
   return (
     <div style={{
       background: 'var(--white)',
+      borderTop: '1px solid var(--rule)',
       borderBottom: '1px solid var(--rule)',
       margin: '0 -56px',
+      boxShadow: '0 2px 8px rgba(10,28,42,.04)',
       position: 'sticky',
       top: 96,
       zIndex: 300,
