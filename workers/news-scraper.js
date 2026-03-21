@@ -118,7 +118,6 @@ const STOCK_NOISE_PATTERNS = [
   'shares acquired', 'shares purchased', 'shares bought',
   'stake in', 'new stake', 'new position',
   'shares of', 'stock in', 'holdings in',
-  '$', // ticker symbols like $BMNR
   'position in',
 ];
 
