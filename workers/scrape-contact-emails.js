@@ -31,8 +31,36 @@ const CONTACT_PATTERNS = [
 // Email regex pattern
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 
-// Known business email patterns (prefer these over generic contacts)
-const PREFERRED_DOMAINS = ['advisor', 'wealth', 'financial', 'invest', 'capital', 'management', 'partners'];
+// Client-facing email prefixes (highest priority - direct contact for new clients)
+const CLIENT_FACING_PREFIXES = [
+  'contact', 'info', 'sales', 'hello', 'getstarted', 'newclient', 
+  'client', 'investor', 'advisor', 'wealth', 'invest', 'partners',
+  'team', 'growth', 'ahead', 'listen', 'questions', 'support'
+];
+
+// Known business email domains (prefer these over generic consumer emails)
+const PREFERRED_DOMAINS = ['advisor', 'wealth', 'financial', 'invest', 'capital', 'management', 'partners', 'group'];
+
+// Generic/internal emails to AVOID (lowest priority)
+const AVOID_PREFIXES = [
+  'privatebenchmarks', 'marketing', 'hr', 'jobs', 'careers', 'recruit',
+  'support', 'help', 'noreply', 'no-reply', 'admin', 'webmaster',
+  'postmaster', 'abuse', 'security', 'legal', 'compliance', 'accounts', 'finance'
+];
+
+// Third-party platform domains to AVOID (not the firm's actual email)
+const AVOID_DOMAINS = [
+  'relume.io', 'hubspot', 'calendly', 'mailchimp', 'klaviyo', 'convertkit',
+  'zendesk', 'freshdesk', 'intercom', 'drift', 'craigslist', 'wedevs',
+  'webflow', 'squarespace', 'wix', 'godaddy', 'ionos', 'dreamhost',
+  'lonebeacon', 'leaddna', 'leadfeeder', 'demandbase', 'bizzabo'
+];
+
+// Exclude patterns - anything matching these should be filtered out entirely
+const EXCLUDE_PATTERNS = [
+  /\.png$/i, /\.jpg$/i, /\.jpeg$/i, /\.gif$/i, /\.svg$/i, /\.webp$/i,
+  /^[a-z]+\s+/i  // Starts with word followed by space (likely misparse from alt text)
+];
 
 async function fetchWithTimeout(url, timeout = 10000) {
   const controller = new AbortController();
@@ -89,26 +117,86 @@ async function findContactPage(baseUrl) {
   return null;
 }
 
-function selectBestEmail(emails) {
-  // Filter out common non-business emails
-  const excludeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'mail.com'];
-  
-  const valid = emails.filter(e => {
-    const domain = e.split('@')[1]?.toLowerCase();
-    return !excludeDomains.includes(domain);
-  });
-  
-  if (valid.length > 0) {
-    // Prefer emails with business-related keywords in the local part
-    for (const domain of PREFERRED_DOMAINS) {
-      const found = valid.find(e => e.toLowerCase().includes(domain));
-      if (found) return found;
-    }
-    return valid[0];
+function selectBestEmail(emails, firmWebsite) {
+  // Extract firm domain for matching
+  let firmDomain = '';
+  try {
+    const urlObj = new URL(firmWebsite);
+    firmDomain = urlObj.hostname.replace(/^www\./, '').toLowerCase();
+  } catch (e) {
+    // Ignore
   }
   
-  // Fall back to any email if no business email found
-  return emails[0];
+  // Filter out common non-business consumer emails and invalid matches
+  const excludeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'mail.com', 'protonmail.com', 'live.com', 'msn.com'];
+  
+  const valid = emails.filter(e => {
+    // Skip if matches exclude patterns (likely not an email)
+    for (const pattern of EXCLUDE_PATTERNS) {
+      if (pattern.test(e)) return false;
+    }
+    const domain = e.split('@')[1]?.toLowerCase();
+    return domain && !excludeDomains.includes(domain);
+  });
+  
+  if (valid.length === 0) return null;
+  
+  // Score each email based on client-facing likelihood
+  const scored = valid.map(email => {
+    const local = email.split('@')[0]?.toLowerCase() || '';
+    const domain = email.split('@')[1]?.toLowerCase() || '';
+    let score = 0;
+    
+    // Priority 0: Domain match (highest priority) - email domain matches firm website
+    if (firmDomain && (domain === firmDomain || domain.endsWith('.' + firmDomain))) {
+      score += 200;
+    }
+    
+    // Priority 1: Client-facing prefixes (highest score)
+    for (const prefix of CLIENT_FACING_PREFIXES) {
+      if (local.startsWith(prefix) || local.includes(prefix)) {
+        score += 100;
+        break;
+      }
+    }
+    
+    // Priority 2: Preferred business domains
+    for (const d of PREFERRED_DOMAINS) {
+      if (domain.includes(d)) {
+        score += 50;
+        break;
+      }
+    }
+    
+    // Penalty: Avoid internal/generic prefixes
+    for (const prefix of AVOID_PREFIXES) {
+      if (local.startsWith(prefix)) {
+        score -= 50;
+        break;
+      }
+    }
+    
+    // Penalty: Avoid third-party platform domains
+    for (const d of AVOID_DOMAINS) {
+      if (domain.includes(d)) {
+        score -= 100;
+        break;
+      }
+    }
+    
+    return { email, score };
+  });
+  
+  // Sort by score descending
+  scored.sort((a, b) => b.score - a.score);
+  
+  // Only return if score is positive (has client-facing indicators or domain match)
+  const best = scored[0];
+  if (best && best.score > 0) {
+    return best.email;
+  }
+  
+  return null;
 }
 
 async function getFirmsWithoutEmails(limit) {
@@ -202,7 +290,7 @@ async function main() {
       const result = await findContactPage(firm.website);
       
       if (result) {
-        const bestEmail = selectBestEmail(result.emails);
+        const bestEmail = selectBestEmail(result.emails, firm.website);
         await updateFirmEmail(firm.crd, bestEmail);
         console.log(`  ✓ Found: ${bestEmail}`);
         successCount++;
