@@ -2,7 +2,10 @@
  * Worker: Scrape Contact Emails
  * Fetches firm websites, finds contact pages, extracts email addresses
  * 
- * Usage: node workers/scrape-contact-emails.js [limit]
+ * Usage: node workers/scrape-contact-emails.js [limit] [--json]
+ * 
+ * With --json flag: saves results to data/contact_emails.json
+ * Without --json: uploads to Supabase firmdata_manual table
  * 
  * Environment: 
  *   SUPABASE_URL
@@ -12,7 +15,12 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tgbatuqvvltemslwtpia.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnYmF0dXF2dmx0ZW1zbHd0cGlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjgwNTYyMSwiZXhwIjoyMDc4MzgxNjIxfQ.aFLJhDRJ8BewaJ24ylUw6Wb32aT5c9U-JljgjOf4VcY';
 
-const LIMIT = parseInt(process.argv[2]) || 50;
+const args = process.argv.slice(2);
+const LIMIT = parseInt(args[0]) || 20;
+const SAVE_JSON = args.includes('--json');
+
+const fs = require('fs');
+const path = require('path');
 
 // Contact page URL patterns to try
 const CONTACT_PATTERNS = [
@@ -199,10 +207,27 @@ function selectBestEmail(emails, firmWebsite) {
   return null;
 }
 
+function classifyEmail(email) {
+  if (!email) return { type: 'unknown', prefix: null };
+  
+  const local = email.split('@')[0].toLowerCase();
+  const domain = email.split('@')[1].toLowerCase();
+  
+  // Check if it's a known individual (has a name-like pattern)
+  const namePattern = /^[a-z]+\.[a-z]+$/;  // e.g., john.smith
+  const initialPattern = /^[a-z]{1,2}[a-z]+$/;  // e.g., bwrubel, jimmy
+  
+  if (namePattern.test(local) || (initialPattern.test(local) && !CLIENT_FACING_PREFIXES.includes(local))) {
+    return { type: 'individual', prefix: local };
+  }
+  
+  return { type: 'generic', prefix: local };
+}
+
 async function getFirmsWithoutEmails(limit) {
-  // Get firms with websites but no contact_email in firmdata_manual
+  // Get firms with websites
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/firmdata_website?website=not.is.null&select=crd,website,primary_business_name&limit=${limit}`,
+    `${SUPABASE_URL}/rest/v1/firmdata_website?website=not.is.null&select=crd,website,primary_business_name&limit=${limit * 3}`, // fetch more to filter
     {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -210,22 +235,41 @@ async function getFirmsWithoutEmails(limit) {
       }
     }
   );
-  const firms = await res.json();
+  let firms = await res.json();
   
-  // Get already scraped CRDs
-  const manualRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/firmdata_manual?select=crd,contact_email&contact_email=not.is.null`,
-    {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+  // If JSON mode, check against existing JSON file instead of Supabase
+  if (SAVE_JSON) {
+    const jsonPath = path.join(__dirname, '..', 'data', 'contact_emails.json');
+    let scrapedCrds = new Set();
+    
+    if (fs.existsSync(jsonPath)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        scrapedCrds = new Set(existing.map(e => e.crd));
+      } catch (e) {
+        // Ignore
       }
     }
-  );
-  const manualData = await manualRes.json();
-  const scrapedCrds = new Set(manualData.map(m => m.crd));
+    
+    firms = firms.filter(f => !scrapedCrds.has(f.crd));
+  } else {
+    // Get already scraped CRDs from Supabase
+    const manualRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/firmdata_manual?select=crd,contact_email&contact_email=not.is.null`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+    const manualData = await manualRes.json();
+    const scrapedCrds = new Set(manualData.map(m => m.crd));
+    
+    firms = firms.filter(f => !scrapedCrds.has(f.crd));
+  }
   
-  return firms.filter(f => !scrapedCrds.has(f.crd));
+  return firms.slice(0, limit);
 }
 
 async function updateFirmEmail(crd, email) {
@@ -241,6 +285,8 @@ async function updateFirmEmail(crd, email) {
   );
   const existing = await checkRes.json();
   
+  const { type, prefix } = classifyEmail(email);
+  
   if (existing.length > 0) {
     // Update existing
     await fetch(
@@ -253,7 +299,7 @@ async function updateFirmEmail(crd, email) {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ contact_email: email })
+        body: JSON.stringify({ contact_email: email, email_type: type, email_prefix: prefix })
       }
     );
   } else {
@@ -268,7 +314,7 @@ async function updateFirmEmail(crd, email) {
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ crd, contact_email: email })
+        body: JSON.stringify({ crd, contact_email: email, email_type: type, email_prefix: prefix })
       }
     );
   }
@@ -276,10 +322,12 @@ async function updateFirmEmail(crd, email) {
 
 async function main() {
   console.log(`[${new Date().toISOString()}] Starting contact email scrape (limit: ${LIMIT})`);
+  console.log(`Mode: ${SAVE_JSON ? 'JSON file' : 'Supabase'}`);
   
   const firms = await getFirmsWithoutEmails(LIMIT);
   console.log(`Found ${firms.length} firms to scrape`);
   
+  const results = [];
   let successCount = 0;
   let failCount = 0;
   
@@ -291,9 +339,32 @@ async function main() {
       
       if (result) {
         const bestEmail = selectBestEmail(result.emails, firm.website);
-        await updateFirmEmail(firm.crd, bestEmail);
-        console.log(`  ✓ Found: ${bestEmail}`);
-        successCount++;
+        
+        if (bestEmail) {
+          const { type, prefix } = classifyEmail(bestEmail);
+          
+          const firmResult = {
+            crd: firm.crd,
+            firm_name: firm.primary_business_name,
+            website: firm.website,
+            contact_email: bestEmail,
+            email_type: type,
+            email_prefix: prefix,
+            source_url: result.url
+          };
+          
+          results.push(firmResult);
+          
+          if (!SAVE_JSON) {
+            await updateFirmEmail(firm.crd, bestEmail);
+          }
+          
+          console.log(`  ✓ Found: ${bestEmail} (${type}: ${prefix})`);
+          successCount++;
+        } else {
+          console.log(`  ✗ No quality email found`);
+          failCount++;
+        }
       } else {
         console.log(`  ✗ No email found`);
         failCount++;
@@ -308,7 +379,41 @@ async function main() {
     }
   }
   
+  // Save to JSON if requested
+  if (SAVE_JSON && results.length > 0) {
+    const dataDir = path.join(__dirname, '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    const jsonPath = path.join(dataDir, 'contact_emails.json');
+    
+    // Read existing file if it exists
+    let existing = [];
+    if (fs.existsSync(jsonPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      } catch (e) {
+        // Start fresh if file is invalid
+      }
+    }
+    
+    // Merge new results (avoid duplicates by CRD)
+    const existingCrds = new Set(existing.map(e => e.crd));
+    const newResults = results.filter(r => !existingCrds.has(r.crd));
+    const combined = [...existing, ...newResults];
+    
+    fs.writeFileSync(jsonPath, JSON.stringify(combined, null, 2));
+    console.log(`\nSaved ${newResults.length} new emails to ${jsonPath}`);
+    console.log(`Total emails in file: ${combined.length}`);
+  }
+  
   console.log(`\n[${new Date().toISOString()}] Complete: ${successCount} found, ${failCount} failed`);
+  
+  // Cost estimate (assuming $0.0001 per webpage fetch)
+  const totalRequests = firms.length * 2; // homepage + contact page attempts
+  const estimatedCost = (totalRequests * 0.0001).toFixed(4);
+  console.log(`Estimated cost for ${totalRequests} requests: $${estimatedCost}`);
 }
 
 main().catch(console.error);
