@@ -27,15 +27,15 @@ export default function ScoreRing({ score }: ScoreRingProps) {
   }, [targetOffset]);
 
   return (
-    <div style={{ position: 'relative', width: 120, height: 120, flexShrink: 0 }}>
-      <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="6" />
+    <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0 }}>
+      <svg width="56" height="56" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
         <circle
           ref={ringRef}
           cx="60" cy="60" r="50"
           fill="none"
           stroke={col}
-          strokeWidth="6"
+          strokeWidth="7"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={CIRCUMFERENCE}
           strokeLinecap="round"
@@ -48,12 +48,11 @@ export default function ScoreRing({ score }: ScoreRingProps) {
       }}>
         <div style={{
           fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 40, fontWeight: 700,
+          fontSize: 22, fontWeight: 700,
           lineHeight: 1, letterSpacing: '-0.03em', color: '#fff',
         }}>
           {clamped}
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 1 }}>/100</div>
       </div>
     </div>
   );

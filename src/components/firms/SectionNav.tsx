@@ -34,10 +34,8 @@ export default function SectionNav({ sections }: SectionNavProps) {
   return (
     <div style={{
       background: 'var(--white)',
-      borderTop: '1px solid var(--rule)',
       borderBottom: '1px solid var(--rule)',
       margin: '0 -56px',
-      boxShadow: '0 2px 8px rgba(10,28,42,.04)',
       position: 'sticky',
       top: 96,
       zIndex: 300,
@@ -49,6 +47,7 @@ export default function SectionNav({ sections }: SectionNavProps) {
         display: 'flex',
         alignItems: 'center',
         overflowX: 'auto',
+        gap: 0,
       }}>
         {sections.map(s => (
           <a
@@ -58,12 +57,12 @@ export default function SectionNav({ sections }: SectionNavProps) {
               display: 'block',
               fontSize: 12,
               fontWeight: active === s.id ? 600 : 500,
-              color: active === s.id ? 'var(--green)' : 'var(--ink-3)',
+              color: active === s.id ? 'var(--ink)' : 'var(--ink-3)',
               textDecoration: 'none',
-              padding: '14px 20px',
+              padding: '11px 18px',
               whiteSpace: 'nowrap',
-              borderBottom: active === s.id ? '2px solid var(--green)' : '2px solid transparent',
-              transition: 'all 0.15s',
+              borderBottom: active === s.id ? '2px solid #2DBD74' : '2px solid transparent',
+              transition: 'color 0.15s, border-color 0.15s',
               letterSpacing: '0.02em',
             }}
           >

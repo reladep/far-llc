@@ -19,14 +19,14 @@ const SIZES = {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 const AVATAR_COLORS = [
-  { bg: '#E8F5E9', text: '#2E7D32' },
-  { bg: '#E3F2FD', text: '#1565C0' },
-  { bg: '#FFF3E0', text: '#E65100' },
-  { bg: '#F3E5F5', text: '#7B1FA2' },
-  { bg: '#E0F2F1', text: '#00695C' },
-  { bg: '#FBE9E7', text: '#BF360C' },
-  { bg: '#E8EAF6', text: '#283593' },
-  { bg: '#EFEBE9', text: '#4E342E' },
+  { bg: '#1A3A2A', text: '#5EDFA0' },
+  { bg: '#1A2E3E', text: '#6BB8E0' },
+  { bg: '#2A2A38', text: '#A0A0CC' },
+  { bg: '#1E3328', text: '#7DC8A0' },
+  { bg: '#1A2838', text: '#80B0D0' },
+  { bg: '#2A2838', text: '#B0A0C8' },
+  { bg: '#1E2E2E', text: '#70C0B0' },
+  { bg: '#28282E', text: '#A0B0B8' },
 ];
 
 export function getAvatarColor(name: string) {
