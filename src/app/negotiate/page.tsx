@@ -1113,7 +1113,7 @@ function ResultsPreview({
             <div style={{ fontSize: 11, color: '#5A7568', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '.1em' }}>Next step</div>
             <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', marginBottom: 4 }}>See who charges less</div>
             <div style={{ fontSize: 13, color: '#5A7568', lineHeight: 1.6 }}>
-              Advisors serving portfolios near {formatCompact(aum)}, ranked by Visor Value Score™.
+              Advisors serving portfolios near {formatCompact(aum)}, ranked by Visor Index Score™.
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>

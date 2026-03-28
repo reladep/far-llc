@@ -61,7 +61,7 @@ const tenets = [
   {
     num: '01',
     title: 'Not all wealth management firms are created equal.',
-    body: 'Quality, sophistication, and value vary enormously across the industry. That\u2019s exactly what drove us to build the Visor Value Score\u2009\u2014\u2009a proprietary framework that cuts through the noise.',
+    body: 'Quality, sophistication, and value vary enormously across the industry. That\u2019s exactly what drove us to build the Visor Index Score\u2009\u2014\u2009a proprietary framework that cuts through the noise.',
   },
   {
     num: '02',

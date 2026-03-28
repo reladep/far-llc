@@ -81,6 +81,7 @@ function formatAUM(value: number | null): string {
   if (!value) return 'N/A';
   if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+  if (value >= 1000) return `$${Math.round(value / 1000).toLocaleString()}K`;
   return `$${Math.round(value).toLocaleString()}`;
 }
 
@@ -360,7 +361,7 @@ export default function ComparePage() {
   const isGated = session === null;
 
   const jumpLinks = [
-    { id: 'vvs', label: 'Visor Score™' },
+    { id: 'vvs', label: 'Visor Index™' },
     { id: 'aum', label: 'AUM & Growth' },
     { id: 'clients', label: 'Client Profile' },
     { id: 'regulatory', label: 'Regulatory' },
@@ -550,7 +551,7 @@ export default function ComparePage() {
               <div style={{ minWidth: 700 }}>
 
                 {/* VISOR SCORE™ */}
-                <SectionHeader id="vvs" title="Visor Value Score™" meta="Based on SEC ADV · Updated 2025" />
+                <SectionHeader id="vvs" title="Visor Index Score™" meta="Based on SEC ADV · Updated 2025" />
                 <ScoreRow label="Overall Score" strong scores={comparisonData.map(() => null)} />
                 <ScoreRow label="Disclosure Quality" tip="Completeness and clarity of ADV filings including brochure quality and update frequency." scores={comparisonData.map(() => null)} />
                 <ScoreRow label="Fee Transparency" tip="How explicitly the firm discloses its fee structure, tiers, and billing practices." scores={comparisonData.map(() => null)} />
@@ -795,7 +796,7 @@ export default function ComparePage() {
                 {/* Perks */}
                 <div className="cp-gate-perks" style={{ display: 'flex', flexDirection: 'column', gap: 7, textAlign: 'left', marginBottom: 24, padding: '14px 18px', background: '#F6F8F7', border: '1px solid #CAD8D0' }}>
                   {[
-                    'Full Visor Value Score™ breakdown across 8 sub-metrics',
+                    'Full Visor Index Score™ breakdown across 8 sub-metrics',
                     'AUM growth, client profile, and advisor bandwidth data',
                     'Regulatory history, conflict flags, and ownership structure',
                     'Fee Calculator — 10 & 20-year compounding impact side by side',

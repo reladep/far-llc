@@ -59,7 +59,7 @@ interface Firm {
   minimum_account_size: string | null;
   // Website
   website: string | null;
-  // Visor Score
+  // Visor Index
   final_score?: number | null;
   stars?: number | null;
   fee_competitiveness_score?: number | null;
@@ -123,6 +123,7 @@ interface SearchFilters {
   totalClientsMin: string;
   totalClientsMax: string;
   aumPerAdvisorMin: string;
+  clientsPerAdvisorMin: string;
   // Alternatives
   hasAlternatives: boolean;
   // Legacy
@@ -149,6 +150,7 @@ const DEFAULT_FILTERS: SearchFilters = {
   totalClientsMin: '',
   totalClientsMax: '',
   aumPerAdvisorMin: '',
+  clientsPerAdvisorMin: '',
   hasAlternatives: false,
   clientBase: '',
   wealthTier: '',
@@ -177,6 +179,14 @@ function getAvgClientSize(firm: Firm): number | null {
 function getAUMPerAdvisor(firm: Firm): number | null {
   return firm.employee_investment && firm.employee_investment > 0 && firm.aum
     ? firm.aum / firm.employee_investment
+    : null;
+}
+
+// Helper: compute clients per advisor
+function getClientsPerAdvisor(firm: Firm): number | null {
+  const total = getTotalClients(firm);
+  return total > 0 && firm.employee_investment && firm.employee_investment > 0
+    ? total / firm.employee_investment
     : null;
 }
 
@@ -272,6 +282,11 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, firmCoo
     const apa100mTo500m = firms.filter(f => { const r = getAUMPerAdvisor(f); return r != null && r >= 100000000 && r < 500000000; }).length;
     const apa500mPlus = firms.filter(f => { const r = getAUMPerAdvisor(f); return r != null && r >= 500000000; }).length;
 
+    const cpaUnder25 = firms.filter(f => { const r = getClientsPerAdvisor(f); return r != null && r < 25; }).length;
+    const cpa25to75 = firms.filter(f => { const r = getClientsPerAdvisor(f); return r != null && r >= 25 && r < 75; }).length;
+    const cpa75to150 = firms.filter(f => { const r = getClientsPerAdvisor(f); return r != null && r >= 75 && r < 150; }).length;
+    const cpa150Plus = firms.filter(f => { const r = getClientsPerAdvisor(f); return r != null && r >= 150; }).length;
+
     const conflictHigh = firms.filter(f => (f.conflict_free_score ?? 0) >= 80).length;
     const feeCompHigh = firms.filter(f => (f.fee_competitiveness_score ?? 0) >= 70).length;
 
@@ -310,6 +325,7 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, firmCoo
       avgUnder1m, avg1mTo5m, avg5mTo25m, avg25mPlus,
       clientsUnder100, clients100to500, clients500to2k, clients2kPlus,
       apaUnder100m, apa100mTo500m, apa500mPlus,
+      cpaUnder25, cpa25to75, cpa75to150, cpa150Plus,
       ctHnw, ctNonHnw, ctPension, ctCharitable, ctCorporations, ctPooled, ctBanks, ctGovt, ctInsurance,
       conflictHigh, feeCompHigh, hasAlts, topTags,
       aumGrowth5Plus, aumGrowth10Plus,
@@ -535,8 +551,8 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, firmCoo
             ))}
           </FilterGroup>
 
-          {/* ── Visor Score Range ── */}
-          <FilterGroup label="Visor Score™">
+          {/* ── Visor Index Range ── */}
+          <FilterGroup label="Visor Index™">
             <style suppressHydrationWarning>{`
               .score-range-input {
                 -webkit-appearance: none;
@@ -749,6 +765,24 @@ function FilterSidebar({ open, onClose, filters, onFiltersChange, firms, firmCoo
             ))}
           </FilterGroup>
 
+          {/* ── Clients per Advisor ── */}
+          <FilterGroup label="Clients / Advisor">
+            {[
+              { label: 'Under 25', value: 'under25', count: counts?.cpaUnder25 },
+              { label: '25 – 75', value: '25_75', count: counts?.cpa25to75 },
+              { label: '75 – 150', value: '75_150', count: counts?.cpa75to150 },
+              { label: '150+', value: '150_plus', count: counts?.cpa150Plus },
+            ].map(opt => (
+              <FilterCheckbox
+                key={opt.label}
+                label={opt.label}
+                count={fmt(opt.count)}
+                checked={filters.clientsPerAdvisorMin === opt.value}
+                onChange={() => toggleString('clientsPerAdvisorMin', opt.value)}
+              />
+            ))}
+          </FilterGroup>
+
           {/* ── Client Type Breakdown ── */}
           <FilterGroup label="Client Type">
             {([
@@ -948,7 +982,7 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
 
             {/* Subtitle */}
             <p className="text-[13px] text-white/55 leading-[1.7] border-t border-white/[0.06] pt-4 mb-6">
-              Search and filter freely. Full profiles with Visor Scores, fee breakdowns, and regulatory history require an account.
+              Search and filter freely. Full profiles with Visor Indexs, fee breakdowns, and regulatory history require an account.
             </p>
 
             {/* CTAs */}
@@ -1025,6 +1059,7 @@ function FirmCard({
 
   const totalClients = getTotalClients(firm);
   const avgClientSize = getAvgClientSize(firm);
+  const clientsPerAdvisor = getClientsPerAdvisor(firm);
   const minAccountVal = parseMinAccount(firm.minimum_account_size);
   const formattedMinAccount = minAccountVal ? formatAUM(minAccountVal) : null;
 
@@ -1076,7 +1111,7 @@ function FirmCard({
         )}
       >
         {/* Desktop list layout */}
-        <div className="hidden md:grid grid-cols-[56px_1fr_90px_90px_90px_100px]" style={{ minHeight: 80 }}>
+        <div className="hidden md:grid grid-cols-[56px_1fr_90px_90px_90px_100px_90px]" style={{ minHeight: 80 }}>
           {/* Logo column */}
           <div className="grid place-items-center border-r border-[#CAD8D0]/50" style={{ width: 56 }}>
             {firm.logo_key ? (
@@ -1109,34 +1144,42 @@ function FirmCard({
             </button>
           </div>
 
-          {/* AUM column */}
+          {/* AUM */}
           <div className="border-r border-[#CAD8D0]/50 flex flex-col items-center justify-center">
-            <p className="font-serif text-[28px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={firm.aum} /></p>
-            <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">AUM</p>
+            <p className="font-serif text-[24px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={firm.aum} /></p>
+            <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">AUM</p>
           </div>
 
-          {/* Avg Account Size column */}
-          <div className="border-r border-[#CAD8D0]/50 flex flex-col items-center justify-center">
-            <p className="font-serif text-[28px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={avgClientSize} /></p>
-            <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Avg. Acct</p>
-          </div>
-
-          {/* Min Account Size column */}
+          {/* Min. Account */}
           <div className="border-r border-[#CAD8D0]/50 flex flex-col items-center justify-center">
             {formattedMinAccount
-              ? <p className="font-serif text-[28px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={firm.minimum_account_size ? parseFloat(firm.minimum_account_size.replace(/[^0-9.]/g, '')) : null} /></p>
-              : <div className="mb-0.5"><p className="text-[11px] text-[#CAD8D0] leading-tight text-center">Not</p><p className="text-[11px] text-[#CAD8D0] leading-tight text-center">disclosed</p></div>
+              ? <p className="font-serif text-[24px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={minAccountVal} /></p>
+              : <div className="mb-0.5"><p className="text-[10px] text-[#CAD8D0] leading-tight text-center">None</p></div>
             }
-            <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Min. Acct</p>
+            <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Min. Acct</p>
           </div>
 
-          {/* Score column */}
+          {/* Avg. Account Size */}
+          <div className="border-r border-[#CAD8D0]/50 flex flex-col items-center justify-center">
+            <p className="font-serif text-[24px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={avgClientSize} /></p>
+            <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Avg. Acct</p>
+          </div>
+
+          {/* Clients / Advisor */}
+          <div className="border-r border-[#CAD8D0]/50 flex flex-col items-center justify-center">
+            <p className="font-serif text-[24px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5">
+              {clientsPerAdvisor != null ? Math.round(clientsPerAdvisor) : '—'}
+            </p>
+            <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Clients/Inv Pro</p>
+          </div>
+
+          {/* Score */}
           <div className="flex flex-col items-center justify-center">
             {score != null ? (
               <>
-                <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
-                <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
-                <div className="h-[2px] bg-[#CAD8D0] mt-2 w-16">
+                <p className="font-serif text-[24px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
+                <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Score</p>
+                <div className="h-[2px] bg-[#CAD8D0] mt-1.5 w-12">
                   <div className="h-full transition-[width] duration-500" style={{ width: `${score}%`, background: scoreColor }} />
                 </div>
               </>
@@ -1179,36 +1222,42 @@ function FirmCard({
           >
             {expanded ? '▾ Less' : '▸ More'}
           </button>
-          {/* Data grid: 2x2 */}
-          <div className="grid grid-cols-2 gap-y-3 border-t border-[#CAD8D0] pt-3">
+          {/* Data grid: 5 columns matching firm profile order */}
+          <div className="grid grid-cols-5 gap-x-1 border-t border-[#CAD8D0] pt-3">
             <div className="flex flex-col items-center">
-              <p className="font-serif text-[20px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={firm.aum} /></p>
-              <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">AUM</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <p className="font-serif text-[20px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={avgClientSize} /></p>
-              <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Avg. Acct</p>
+              <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={firm.aum} /></p>
+              <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">AUM</p>
             </div>
             <div className="flex flex-col items-center">
               {formattedMinAccount
-                ? <p className="font-serif text-[20px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={minAccountVal} /></p>
-                : <div className="mb-0.5"><p className="text-[9px] text-[#CAD8D0] leading-tight text-center">Not</p><p className="text-[9px] text-[#CAD8D0] leading-tight text-center">disclosed</p></div>
+                ? <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={minAccountVal} /></p>
+                : <div className="mb-0.5"><p className="text-[9px] text-[#CAD8D0] leading-tight text-center">None</p></div>
               }
-              <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Min. Acct</p>
+              <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Min. Acct</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5"><FormatAUMDisplay value={avgClientSize} /></p>
+              <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Avg. Acct</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none tracking-[-0.02em] mb-0.5">
+                {clientsPerAdvisor != null ? Math.round(clientsPerAdvisor) : '—'}
+              </p>
+              <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Clients/Inv Pro</p>
             </div>
             <div className="flex flex-col items-center">
               {score != null ? (
                 <>
-                  <p className="font-serif text-[20px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
-                  <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
-                  <div className="h-[2px] bg-[#CAD8D0] mt-1 w-12">
+                  <p className="font-serif text-[18px] font-bold leading-none tracking-[-0.02em] mb-0.5" style={{ color: scoreColor }}>{score}</p>
+                  <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Score</p>
+                  <div className="h-[2px] bg-[#CAD8D0] mt-1 w-10">
                     <div className="h-full" style={{ width: `${score}%`, background: scoreColor }} />
                   </div>
                 </>
               ) : (
                 <>
                   <p className="text-[11px] text-[#CAD8D0] mb-0.5">N/A</p>
-                  <p className="text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
+                  <p className="text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Score</p>
                 </>
               )}
             </div>
@@ -1440,11 +1489,13 @@ export default function SearchPage() {
     if (searchParams.get('avgSize')) f.avgClientSizeMin = searchParams.get('avgSize')!;
     if (searchParams.get('totalClients')) f.totalClientsMin = searchParams.get('totalClients')!;
     if (searchParams.get('aumPerAdvisor')) f.aumPerAdvisorMin = searchParams.get('aumPerAdvisor')!;
+    if (searchParams.get('clientsPerAdvisor')) f.clientsPerAdvisorMin = searchParams.get('clientsPerAdvisor')!;
     // Set-based filters
     if (searchParams.get('fee')) f.feeStructure = new Set(searchParams.get('fee')!.split(',') as FeeStructureFilter[]);
     if (searchParams.get('type')) f.firmType = new Set(searchParams.get('type')!.split(',') as FirmTypeFilter[]);
     if (searchParams.get('client')) f.clientType = new Set(searchParams.get('client')!.split(',') as ClientTypeFilter[]);
     if (searchParams.get('alts') === '1') f.hasAlternatives = true;
+    if (searchParams.get('tag')) f.tags = new Set(searchParams.get('tag')!.split(','));
     return f;
   });
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -1471,10 +1522,12 @@ export default function SearchPage() {
     if (filters.avgClientSizeMin) params.set('avgSize', filters.avgClientSizeMin);
     if (filters.totalClientsMin) params.set('totalClients', filters.totalClientsMin);
     if (filters.aumPerAdvisorMin) params.set('aumPerAdvisor', filters.aumPerAdvisorMin);
+    if (filters.clientsPerAdvisorMin) params.set('clientsPerAdvisor', filters.clientsPerAdvisorMin);
     if (filters.feeStructure.size > 0) params.set('fee', [...filters.feeStructure].join(','));
     if (filters.firmType.size > 0) params.set('type', [...filters.firmType].join(','));
     if (filters.clientType.size > 0) params.set('client', [...filters.clientType].join(','));
     if (filters.hasAlternatives) params.set('alts', '1');
+    if (filters.tags.size > 0) params.set('tag', [...filters.tags].join(','));
     if (searchQuery) params.set('q', searchQuery);
     const qs = params.toString();
     const newUrl = qs ? `/search?${qs}` : '/search';
@@ -1729,7 +1782,7 @@ export default function SearchPage() {
       }
     }
 
-    // ── Visor Score ──
+    // ── Visor Index ──
     if (filters.minVisorScore > 0) {
       result = result.filter(f => f.final_score != null && f.final_score >= filters.minVisorScore);
     }
@@ -1831,6 +1884,21 @@ export default function SearchPage() {
       });
     }
 
+    // ── Clients per Advisor ──
+    if (filters.clientsPerAdvisorMin) {
+      result = result.filter(f => {
+        const ratio = getClientsPerAdvisor(f);
+        if (ratio == null) return false;
+        switch (filters.clientsPerAdvisorMin) {
+          case 'under25': return ratio < 25;
+          case '25_75': return ratio >= 25 && ratio < 75;
+          case '75_150': return ratio >= 75 && ratio < 150;
+          case '150_plus': return ratio >= 150;
+          default: return true;
+        }
+      });
+    }
+
     // ── Client Type ──
     if (filters.clientType.size > 0) {
       result = result.filter(f => {
@@ -1882,8 +1950,16 @@ export default function SearchPage() {
     // ── Tags ──
     if (filters.tags.size > 0) {
       result = result.filter(f => {
+        // Match against tag_1/tag_2/tag_3 (exact match)
         const firmTags = [f.tag_1, f.tag_2, f.tag_3].filter(Boolean) as string[];
-        return firmTags.some(t => filters.tags.has(t));
+        if (firmTags.some(t => filters.tags.has(t))) return true;
+        // Match against profile text fields (slug match)
+        const profileText = [f.specialty_strategies, f.client_base, f.wealth_tier]
+          .filter(Boolean)
+          .join(',')
+          .split(',')
+          .map(t => t.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+$/, ''));
+        return profileText.some(slug => filters.tags.has(slug));
       });
     }
 
@@ -1915,6 +1991,8 @@ export default function SearchPage() {
       if ((av !== null) !== (bv !== null)) return av !== null ? -1 : 1;
       return (av ?? 0) - (bv ?? 0);
     });
+    else if (sortBy === 'cpa_high') result.sort((a, b) => (getClientsPerAdvisor(b) ?? 0) - (getClientsPerAdvisor(a) ?? 0));
+    else if (sortBy === 'cpa_low') result.sort((a, b) => (getClientsPerAdvisor(a) ?? 0) - (getClientsPerAdvisor(b) ?? 0));
     else if (sortBy === 'alpha') result.sort((a, b) =>
       (a.display_name || a.primary_business_name).localeCompare(b.display_name || b.primary_business_name)
     );
@@ -1933,7 +2011,7 @@ export default function SearchPage() {
     if (filters.geoLocation) chips.push({ key: 'geo', label: filters.geoRadius === 0 ? `Near ${filters.geoLocation.city}, ${filters.geoLocation.state}` : `Within ${filters.geoRadius}mi of ${filters.geoLocation.city}, ${filters.geoLocation.state}`, onRemove: () => handleFiltersChange({ ...filters, geoLocation: null }) });
     if (filters.minAUM) chips.push({ key: 'minAUM', label: `AUM: ${filters.minAUM === 'under100m' ? '<$100M' : filters.minAUM === '100000000' ? '$100M–$500M' : filters.minAUM === '500000000' ? '$500M–$2B' : '$2B+'}`, onRemove: () => handleFiltersChange({ ...filters, minAUM: '' }) });
     if (filters.minAccountSize) chips.push({ key: 'minAccountSize', label: `Min. investment: ${filters.minAccountSize}`, onRemove: () => handleFiltersChange({ ...filters, minAccountSize: '' }) });
-    if (filters.minVisorScore > 0) chips.push({ key: 'minVisorScore', label: `Visor Score ${filters.minVisorScore}+`, onRemove: () => handleFiltersChange({ ...filters, minVisorScore: 0 }) });
+    if (filters.minVisorScore > 0) chips.push({ key: 'minVisorScore', label: `Visor Index ${filters.minVisorScore}+`, onRemove: () => handleFiltersChange({ ...filters, minVisorScore: 0 }) });
     if (filters.minFeeCompetitiveness > 0) chips.push({ key: 'feeComp', label: `Fee Comp. ${filters.minFeeCompetitiveness}+`, onRemove: () => handleFiltersChange({ ...filters, minFeeCompetitiveness: 0 }) });
     if (filters.feeStructure.size > 0) chips.push({ key: 'feeStructure', label: `Fee: ${Array.from(filters.feeStructure).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, feeStructure: new Set() }) });
     if (filters.firmType.size > 0) chips.push({ key: 'firmType', label: `Type: ${Array.from(filters.firmType).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, firmType: new Set() }) });
@@ -1944,8 +2022,9 @@ export default function SearchPage() {
     if (filters.avgClientSizeMin) chips.push({ key: 'avgClient', label: `Avg client: ${filters.avgClientSizeMin}`, onRemove: () => handleFiltersChange({ ...filters, avgClientSizeMin: '' }) });
     if (filters.totalClientsMin) chips.push({ key: 'totalClients', label: `Clients: ${filters.totalClientsMin}`, onRemove: () => handleFiltersChange({ ...filters, totalClientsMin: '' }) });
     if (filters.aumPerAdvisorMin) chips.push({ key: 'aumPerAdvisor', label: `AUM/Advisor: ${filters.aumPerAdvisorMin}`, onRemove: () => handleFiltersChange({ ...filters, aumPerAdvisorMin: '' }) });
+    if (filters.clientsPerAdvisorMin) chips.push({ key: 'clientsPerAdvisor', label: `Clients/Inv Proisor: ${filters.clientsPerAdvisorMin}`, onRemove: () => handleFiltersChange({ ...filters, clientsPerAdvisorMin: '' }) });
     if (filters.hasAlternatives) chips.push({ key: 'alts', label: 'Has alternatives', onRemove: () => handleFiltersChange({ ...filters, hasAlternatives: false }) });
-    if (filters.tags.size > 0) chips.push({ key: 'tags', label: `Tags: ${Array.from(filters.tags).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, tags: new Set() }) });
+    if (filters.tags.size > 0) chips.push({ key: 'tags', label: `Tags: ${Array.from(filters.tags).map(t => t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ')}`, onRemove: () => handleFiltersChange({ ...filters, tags: new Set() }) });
 
     return chips;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2135,8 +2214,8 @@ export default function SearchPage() {
                     {filters.geoLocation && (
                       <option value="proximity" className="bg-white">Proximity (nearest first)</option>
                     )}
-                    <option value="score" className="bg-white">Visor Score™</option>
-                    <option value="score_asc" className="bg-white" hidden>Visor Score™ (low)</option>
+                    <option value="score" className="bg-white">Visor Index™</option>
+                    <option value="score_asc" className="bg-white" hidden>Visor Index™ (low)</option>
                     <option value="aum_high" className="bg-white">AUM</option>
                     <option value="aum_low" className="bg-white" hidden>AUM (low)</option>
                     <option value="avg_high" className="bg-white">Average Account</option>
@@ -2185,7 +2264,7 @@ export default function SearchPage() {
                       <>
                         {/* Column header row with sort arrows (desktop only) */}
                         {(
-                          <div className="hidden md:grid grid-cols-[56px_1fr_90px_90px_90px_100px] mb-1 border border-transparent">
+                          <div className="hidden md:grid grid-cols-[56px_1fr_90px_90px_90px_100px_90px] mb-1 border border-transparent">
                             <div style={{ width: 56 }} />
                             <button
                               data-more-btn
@@ -2203,8 +2282,9 @@ export default function SearchPage() {
                             </button>
                             {([
                               { label: 'AUM', high: 'aum_high', low: 'aum_low' },
-                              { label: 'Avg. Acct', high: 'avg_high', low: 'avg_low' },
                               { label: 'Min. Acct', high: 'min_high', low: 'min_low' },
+                              { label: 'Avg. Acct', high: 'avg_high', low: 'avg_low' },
+                              { label: 'Clients/Inv Pro', high: 'cpa_high', low: 'cpa_low' },
                               { label: 'Score', high: 'score', low: 'score_asc' },
                             ] as const).map(col => {
                               const isHigh = sortBy === col.high;
@@ -2256,7 +2336,7 @@ export default function SearchPage() {
                               {filters.geoLocation && filters.geoRadius > 0
                                 ? `No firms found within ${filters.geoRadius}mi of ${filters.geoLocation.city}, ${filters.geoLocation.state}. Try expanding your radius or removing some filters.`
                                 : filters.minVisorScore >= 80
-                                ? 'No firms match your score threshold with the current filters. Try lowering the Visor Score minimum or removing other filters.'
+                                ? 'No firms match your score threshold with the current filters. Try lowering the Visor Index minimum or removing other filters.'
                                 : activeChips.length > 2
                                 ? `You have ${activeChips.length} active filters. Try removing some to see more results.`
                                 : 'Try adjusting your filters or broadening your search.'}

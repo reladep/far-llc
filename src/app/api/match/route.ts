@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         const reasons: string[] = [];
         
         if (score) {
-          // Add base score from Visor Score
+          // Add base score from Visor Index
           matchPercent += (score.final_score - 50) * 0.4;
           
           // Weight fee transparency and conflict-free higher

@@ -111,9 +111,9 @@ const POSTS: Post[] = [
   {
     slug: 'visor-value-score-explained',
     type: 'guide',
-    title: 'What Is a Visor Value Score™ and How Is It Calculated?',
+    title: 'What Is a Visor Index Score™ and How Is It Calculated?',
     excerpt:
-      "The Visor Value Score™ distills hundreds of data points into a single number. Here's exactly how it works — and what it doesn't measure.",
+      "The Visor Index Score™ distills hundreds of data points into a single number. Here's exactly how it works — and what it doesn't measure.",
     date: 'January 10, 2026',
     readTime: 5,
     author: 'Visor Research',

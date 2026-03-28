@@ -145,7 +145,7 @@ const sections: LegalSection[] = [
         <P className="mt-5 font-semibold text-[#0a1c2a]">To improve the Service</P>
         <P>
           Analyzing usage patterns, diagnosing technical issues, developing new features, and
-          refining our analytical models including the Visor Value Score.
+          refining our analytical models including the Visor Index Score.
         </P>
 
         <P className="mt-5 font-semibold text-[#0a1c2a]">To communicate with you</P>

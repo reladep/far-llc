@@ -941,7 +941,7 @@ function MethodologySection() {
             The Intelligence Layer
           </span>
           <h2 className="mt-4 font-serif text-[clamp(34px,4.5vw,58px)] font-bold leading-[1.04] tracking-[-0.025em] text-[#0C1810]">
-            The <em className="italic text-[#1A7A4A]">Visor Value Score™</em><br />— our proprietary edge.
+            The <em className="italic text-[#1A7A4A]">Visor Index Score™</em><br />— our proprietary edge.
           </h2>
         </Reveal>
 
@@ -964,7 +964,7 @@ function MethodologySection() {
               {/* Score bar */}
               <div className="border-b border-[#CAD8D0] bg-white p-[18px_32px]">
                 <div className="flex justify-between text-[10px] text-[#5A7568]">
-                  <span>Visor Value Score™</span>
+                  <span>Visor Index Score™</span>
                   <span className="font-semibold text-[#1A7A4A]">84 / 100</span>
                 </div>
                 <div className="mt-[7px] h-[5px] overflow-hidden bg-[#E6F4ED]">
@@ -1222,7 +1222,7 @@ function PersonaSection() {
                     <p className="font-serif text-[36px] font-bold leading-none tracking-[-0.03em]" style={{ color: scoreColor(active.scoreTone) }}>
                       {active.score}
                     </p>
-                    <p className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
+                    <p className="mt-0.5 text-[8px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Index™</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 p-[14px_18px]">
@@ -1320,7 +1320,7 @@ function PersonaSection() {
                             <p className="font-serif text-[28px] font-bold leading-none tracking-[-0.03em]" style={{ color: scoreColor(p.scoreTone) }}>
                               {p.score}
                             </p>
-                            <p className="mt-0.5 text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Score™</p>
+                            <p className="mt-0.5 text-[7px] uppercase tracking-[0.12em] text-[#5A7568]">Visor Index™</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-1.5 p-3">

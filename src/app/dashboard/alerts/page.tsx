@@ -12,6 +12,7 @@ function formatAUM(value: number | null): string {
   if (!value) return '';
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B AUM`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M AUM`;
+  if (value >= 1000) return `$${Math.round(value / 1000).toLocaleString()}K AUM`;
   return `$${value.toLocaleString()} AUM`;
 }
 

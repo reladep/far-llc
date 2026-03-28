@@ -85,7 +85,7 @@ const sections: LegalSection[] = [
       <>
         <P>
           The Content on this platform&thinsp;&mdash;&thinsp;including firm profiles, data tables,
-          analytical summaries, the Visor Value Score, comparisons, rankings, fee analyses, and any
+          analytical summaries, the Visor Index Score, comparisons, rankings, fee analyses, and any
           other information&thinsp;&mdash;&thinsp;is provided exclusively for informational and
           comparative purposes.
         </P>
@@ -170,7 +170,7 @@ const sections: LegalSection[] = [
             </LI>
           </UL>
           <P>
-            Our analytical outputs&thinsp;&mdash;&thinsp;including the Visor Value Score and all
+            Our analytical outputs&thinsp;&mdash;&thinsp;including the Visor Index Score and all
             firm rankings&thinsp;&mdash;&thinsp;are not influenced by any commercial relationship
             with the firms profiled.
           </P>
@@ -321,7 +321,7 @@ const sections: LegalSection[] = [
           6.2 &mdash; Limitations of Automated Analysis
         </P>
         <P>
-          Automated analytical systems, including those used in the construction of the Visor Value
+          Automated analytical systems, including those used in the construction of the Visor Index
           Score and related outputs, operate on the data inputs provided to them. If underlying data
           is inaccurate, incomplete, or unrepresentative, the analytical outputs derived from that
           data will reflect those same limitations. Automated systems also cannot account for
@@ -347,14 +347,14 @@ const sections: LegalSection[] = [
   {
     id: 'visor-value-score',
     num: '07',
-    title: 'The Visor Value Score',
+    title: 'The Visor Index Score',
     content: (
       <>
         {/* Thin navy top border for visual distinction */}
         <div className="mt-5 border-t-2 border-[#0a1c2a] pt-6">
           <P className="font-semibold text-[#0a1c2a]">7.1 &mdash; Purpose</P>
           <P>
-            The Visor Value Score (&ldquo;Score&rdquo;) is a proprietary analytical rating
+            The Visor Index Score (&ldquo;Score&rdquo;) is a proprietary analytical rating
             developed by Visor Index to facilitate structured comparison among SEC-registered
             investment advisory firms. It is designed to help users identify and shortlist firms for
             further review, not to render a definitive verdict on any firm&rsquo;s quality,
@@ -385,7 +385,7 @@ const sections: LegalSection[] = [
 
           {/* Key disclaimer in Cormorant italic, slightly larger */}
           <p className="mt-6 font-serif text-[18px] italic leading-snug text-[#0a1c2a]/85 md:text-[20px]">
-            A higher Visor Value Score does not guarantee a favorable outcome.
+            A higher Visor Index Score does not guarantee a favorable outcome.
           </p>
           <P>
             A lower Score does not disqualify a firm from being an excellent match for a specific
