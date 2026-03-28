@@ -141,10 +141,10 @@ const CSS = `
     padding:18px 24px 0; display:flex; align-items:baseline; justify-content:space-between;
   }
   .fc-head-title {
-    font-family:var(--serif); font-size:18px; font-weight:700; color:var(--ink);
+    font-family:var(--sans); font-size:14px; font-weight:700; color:var(--ink);
     letter-spacing:-.01em;
   }
-  .fc-head-sub { font-size:11px; color:var(--ink-3); font-family:var(--mono); }
+  .fc-head-sub { font-size:10px; color:var(--ink-3); font-family:var(--mono); }
   .fc-body { padding:20px 24px 24px; }
   .fc-input-wrap {
     display:flex; align-items:center; gap:0;

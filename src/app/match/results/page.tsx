@@ -498,6 +498,7 @@ const LABEL_MAP: Record<string, Record<string, string>> = {
 function formatAUM(value: number): string {
   if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B AUM`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M AUM`;
+  if (value >= 1000) return `$${Math.round(value / 1000).toLocaleString()}K AUM`;
   return `$${value.toLocaleString()} AUM`;
 }
 
@@ -878,7 +879,7 @@ export default function MatchResultsPage() {
               <div className="mr-stat-divider" />
               <div className="mr-stat">
                 <div className="mr-stat-value">{avgVisor}<span>/100</span></div>
-                <div className="mr-stat-label">Avg Visor Score</div>
+                <div className="mr-stat-label">Avg Visor Index</div>
               </div>
             </>
           )}
@@ -928,7 +929,7 @@ export default function MatchResultsPage() {
                       <p className="mr-gate-title">See all {Math.min(firms.length, 10)} matches</p>
                       <p className="mr-gate-sub">
                         Create a free Visor Index account to unlock your full ranked list,
-                        fee estimates, and Visor Score™ for each match.
+                        fee estimates, and Visor Index™ for each match.
                       </p>
                       <div className="mr-gate-btns">
                         <Link href="/auth/signup" className="mr-gate-btn-primary">Get Started Free</Link>

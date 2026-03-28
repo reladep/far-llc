@@ -97,7 +97,7 @@ export const howSteps: HowStep[] = [
     description: 'Find firms by name, city, AUM, minimums, fee structure, and other SEC-disclosed attributes.',
   },
   {
-    title: 'Review the Visor Value Score',
+    title: 'Review the Visor Index Score',
     description: 'Use one composite score plus factor grades across fees, conflicts, compliance, and growth signals.',
   },
   {
@@ -129,7 +129,7 @@ export const methodologyPillars: MethodologyPillar[] = [
 
 export const comparisonPoints: ComparisonPoint[] = [
   { label: 'Firm discovery', free: 'Search and basic profile access', paid: 'Full firm profile and unlimited comparison workflow' },
-  { label: 'Score visibility', free: 'High-level preview only', paid: 'Full Visor Value Score plus sub-metric detail' },
+  { label: 'Score visibility', free: 'High-level preview only', paid: 'Full Visor Index Score plus sub-metric detail' },
   { label: 'Monitoring', free: 'Limited recency context', paid: 'Alerts and ongoing filing-change visibility' },
   { label: 'Selection support', free: 'Self-serve research', paid: 'Matching, shortlist support, and deeper diligence tools' },
 ];
@@ -141,7 +141,7 @@ export const pricingTiers: PricingTier[] = [
     note: '/ 30 days',
     description: 'Full platform access for investors in early-stage research without recurring billing.',
     features: [
-      'Full Visor Value Score for every firm',
+      'Full Visor Index Score for every firm',
       'All available sub-metric scores',
       'Historical AUM trend context',
       'Conflict flags and disclosure visibility',

@@ -228,7 +228,7 @@ export default function PricingPage() {
                 <div style={{ height: 1, background: '#CAD8D0', margin: '0 0 24px' }} />
                 <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32, flex: 1 }}>
                   {[
-                    'Visor Value Score™ for every firm',
+                    'Visor Index Score™ for every firm',
                     'All six sub-metric breakdowns',
                     'Historical AUM trend data',
                     'Conflict flags & disclosures',
@@ -402,7 +402,7 @@ export default function PricingPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'rgba(255,255,255,.05)', marginTop: 48 }}>
               {[
-                { icon: '◈', title: 'Visor Value Score™', desc: 'Proprietary composite across six weighted dimensions: fees, conflicts, AUM growth, client retention, regulatory history, and structure.', tag: 'Exclusive' },
+                { icon: '◈', title: 'Visor Index Score™', desc: 'Proprietary composite across six weighted dimensions: fees, conflicts, AUM growth, client retention, regulatory history, and structure.', tag: 'Exclusive' },
                 { icon: '⬡', title: 'Fee Benchmarking', desc: "See exactly where any advisor's fee schedule lands against national, regional, and peer-size percentiles — sourced from SEC ADV filings.", tag: 'All plans' },
                 { icon: '△', title: 'Conflict Intelligence', desc: 'Every compensation arrangement, affiliated broker-dealer, referral fee, and 12b-1 relationship — disclosed, flagged, and scored.', tag: 'All plans' },
                 { icon: '◯', title: 'AUM Growth Trends', desc: 'Multi-year AUM trajectory, client count evolution, and account size trends derived from every annual ADV filing on record.', tag: 'All plans' },
@@ -465,7 +465,7 @@ export default function PricingPage() {
                   </td>
                 </tr>
                 {[
-                  ['Visor Value Score™',               '✓','✓','✓'],
+                  ['Visor Index Score™',               '✓','✓','✓'],
                   ['Six sub-metric scores',             '✓','✓','✓'],
                   ['Full fee schedule',                 '✓','✓','✓'],
                   ['Conflict flags & disclosures',      '✓','✓','✓'],

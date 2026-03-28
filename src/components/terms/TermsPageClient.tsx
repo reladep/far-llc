@@ -59,18 +59,18 @@ const sections: LegalSection[] = [
   {
     id: 'visor-value-score',
     num: '03',
-    title: 'The Visor Value Score',
+    title: 'The Visor Index Score',
     callout: true,
     content: (
       <>
         <P>
-          The Visor Value Score (&ldquo;Score&rdquo;) is a proprietary analytical framework
+          The Visor Index Score (&ldquo;Score&rdquo;) is a proprietary analytical framework
           developed by Visor Index for comparative purposes only. The Score is designed to
           facilitate relative comparisons among SEC-registered advisory firms across a defined set
           of quantitative and qualitative criteria.
         </P>
         <P>
-          The Visor Value Score is not a guarantee, prediction, or assurance of any outcome. A
+          The Visor Index Score is not a guarantee, prediction, or assurance of any outcome. A
           higher Score does not guarantee that a firm will deliver superior investment returns,
           provide better client service, act in your best interest, or be an appropriate match for
           your individual circumstances. A lower Score does not indicate that a firm is deficient,
