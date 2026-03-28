@@ -261,6 +261,42 @@ async function getScorePercentile(score: number): Promise<{ rank: number; total:
   return { rank: (above ?? 0) + 1, total };
 }
 
+// ─── New: Stat percentiles query ──────────────────────────────────────────────
+interface StatPercentiles {
+  aum: string | null;
+  avgClient: string | null;
+  aumPerPro: string | null;
+  minAccount: string | null;
+  employees: string | null;
+  invStaff: string | null;
+}
+
+async function getStatPercentiles(firm: FirmData, totalClients: number, avgClientSize: number | null, aumPerInvPro: number | null, minAccount: number | null): Promise<StatPercentiles> {
+  const result: StatPercentiles = { aum: null, avgClient: null, aumPerPro: null, minAccount: null, employees: null, invStaff: null };
+
+  // Run all percentile queries in parallel
+  const queries: Array<{ key: keyof StatPercentiles; col: string; val: number | null; table?: string }> = [
+    { key: 'aum', col: 'aum', val: firm.aum },
+    { key: 'employees', col: 'employee_total', val: firm.employee_total },
+    { key: 'invStaff', col: 'employee_investment', val: firm.employee_investment },
+  ];
+
+  const promises = queries.map(async (q) => {
+    if (q.val == null) return;
+    const [{ count: below }, { count: total }] = await Promise.all([
+      supabase.from('firmdata_current').select('*', { count: 'exact', head: true }).lt(q.col, q.val).not(q.col, 'is', null),
+      supabase.from('firmdata_current').select('*', { count: 'exact', head: true }).not(q.col, 'is', null),
+    ]);
+    if (total && total > 0) {
+      const pct = Math.round(((below ?? 0) / total) * 100);
+      result[q.key] = pct >= 50 ? `Top ${100 - pct}%` : `Bottom ${pct + 1}%`;
+    }
+  });
+
+  await Promise.all(promises);
+  return result;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -318,6 +354,7 @@ const SECTION_NAV = [
   { id: 'fees',       label: 'Fee Schedule' },
   { id: 'aum',        label: 'AUM & Growth' },
   { id: 'clients',    label: 'Clients' },
+  { id: 'allocation', label: 'Allocation' },
   { id: 'regulatory', label: 'Regulatory' },
   { id: 'news',       label: 'News' },
   { id: 'personnel',  label: 'Key Personnel' },
@@ -364,13 +401,13 @@ const PAGE_CSS = `
   .vfp-bc-compare:hover { background:var(--green-2); }
 
   .vfp-page {
-    padding-top:96px; max-width:1200px; margin:0 auto;
-    padding-left:56px; padding-right:56px; padding-bottom:120px;
+    padding-top:40px; max-width:1200px; margin:0 auto;
+    padding-left:56px; padding-right:56px; padding-bottom:0;
     overflow-x:hidden; background:var(--navy);
   }
   .vfp-hero {
     background:var(--navy);
-    margin:0 -56px; padding:48px 56px 0;
+    margin:0 -56px; padding:16px 56px 0;
     border-bottom:1px solid rgba(255,255,255,.06);
     position:relative; overflow:hidden;
   }
@@ -380,113 +417,100 @@ const PAGE_CSS = `
     background:radial-gradient(ellipse,rgba(26,122,74,.1) 0%,transparent 70%);
     pointer-events:none;
   }
+  /* Hero top: logo | identity | score */
   .vfp-hero-top {
-    display:grid; grid-template-columns:auto 1fr auto;
-    gap:32px; align-items:center;
-    padding-bottom:32px;
-    border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex; align-items:stretch; gap:0;
+    padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.1);
+  }
+  .vfp-logo-col {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding-right:24px; border-right:1px solid rgba(255,255,255,.1);
+    flex-shrink:0;
   }
   .vfp-logo-mark {
-    width:72px; height:72px;
+    width:64px; height:64px;
     display:grid; place-items:center; flex-shrink:0;
   }
   .vfp-logo-initials {
-    font-family:var(--serif); font-size:26px; font-weight:700;
+    font-family:var(--serif); font-size:24px; font-weight:700;
     color:rgba(255,255,255,.3); letter-spacing:.04em;
   }
+  .vfp-hero-text { flex:1; min-width:0; max-width:680px; padding:2px 24px; display:flex; flex-direction:column; justify-content:center; }
   .vfp-firm-name {
-    font-family:var(--sans); font-size:clamp(26px,3.2vw,40px);
+    font-family:var(--sans); font-size:clamp(26px,3.2vw,38px);
     font-weight:700; color:#fff; line-height:1.1;
-    letter-spacing:-.02em; margin-bottom:10px;
+    letter-spacing:-.02em; margin-bottom:6px;
   }
-  .vfp-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-  .vfp-badge {
-    font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
-    padding:3px 8px; border:0.5px solid rgba(255,255,255,.2);
-    color:rgba(255,255,255,.72); border-radius:3px;
-  }
-  .vfp-badge.green { border-color:rgba(45,189,116,.5); color:#5EDFA0; background:rgba(45,189,116,.09); }
-  .vfp-meta-row { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-  .vfp-meta-item { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px; color:rgba(255,255,255,.35); }
-  .vfp-meta-item a { color:rgba(255,255,255,.35); text-decoration:none; transition:color .15s; }
-  .vfp-meta-item a:hover { color:rgba(255,255,255,.8); }
-  .vfp-score-block {
-    display:flex; flex-direction:column; align-items:center; gap:0;
-    padding-left:32px;
-    filter:drop-shadow(0 0 24px rgba(45,189,116,.12));
-  }
-  .vfp-score-label {
-    font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
-    color:rgba(255,255,255,.3); margin-top:8px; text-align:center;
-  }
+  .vfp-meta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .vfp-meta-item { display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11px; color:rgba(255,255,255,.6); }
+  .vfp-meta-item a { color:rgba(255,255,255,.6); text-decoration:none; transition:color .15s; }
+  .vfp-meta-item a:hover { color:#fff; }
+
+  .vfp-stat-score { display:flex; flex-direction:column; }
   .vfp-stats-row {
     display:grid; grid-template-columns:repeat(6,1fr);
-    border-top:0.5px solid rgba(255,255,255,.09);
+    border-top:0.5px solid rgba(255,255,255,.1);
   }
   .vfp-stat {
-    padding:20px 24px; border-right:0.5px solid rgba(255,255,255,.09);
+    padding:14px 18px; border-right:0.5px solid rgba(255,255,255,.08);
   }
   .vfp-stat:last-child { border-right:none; }
-  .vfp-stat:nth-child(n+4) { background:rgba(0,0,0,.08); }
-  .vfp-stat:nth-child(1) .vfp-stat-val,
-  .vfp-stat:nth-child(2) .vfp-stat-val,
-  .vfp-stat:nth-child(3) .vfp-stat-val { font-size:30px; }
   .vfp-stat-label {
-    font-family:var(--sans); font-size:8px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
-    color:rgba(255,255,255,.35); margin-bottom:6px;
+    font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    color:rgba(255,255,255,.7); margin-bottom:5px;
   }
   .vfp-stat-val {
     font-family:var(--serif); font-size:26px; font-weight:700;
     color:#fff; line-height:1; letter-spacing:-.02em;
   }
   .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
-  .vfp-stat-sub { font-size:9px; color:rgba(255,255,255,.45); margin-top:4px; font-family:var(--mono); }
+  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.55); margin-top:4px; font-family:var(--mono); }
   .vfp-stat-sub em { font-style:normal; color:var(--green-3); }
 
   .vfp-body {
-    display:grid; grid-template-columns:1fr 300px;
-    gap:36px; padding-top:28px;
-    background:var(--white); margin:0 -56px; padding-left:56px; padding-right:56px; padding-bottom:80px;
+    display:grid; grid-template-columns:1fr 280px;
+    gap:48px; padding-top:20px;
+    background:var(--white); margin:0 -56px; padding-left:56px; padding-right:56px; padding-bottom:60px;
   }
   .vfp-body > main { min-width:0; overflow-wrap:break-word; word-wrap:break-word; }
-  .vfp-section { margin-bottom:32px; }
+  .vfp-section { margin-bottom:28px; scroll-margin-top:140px; }
   .vfp-section-head {
     display:flex; align-items:baseline; justify-content:space-between;
-    margin-bottom:16px;
-    border-left:2.5px solid var(--green-3); padding-left:10px;
-    border-radius:0;
+    margin-bottom:14px; padding-bottom:8px;
+    border-bottom:0.5px solid var(--rule);
   }
   .vfp-section-title {
-    font-family:var(--sans); font-size:22px; font-weight:700;
+    font-family:var(--sans); font-size:18px; font-weight:700;
     color:var(--ink); letter-spacing:-.01em;
   }
-  .vfp-section-meta { font-size:11px; color:var(--ink-3); font-family:var(--mono); }
+  .vfp-section-meta { font-size:10px; color:var(--ink-3); font-family:var(--mono); letter-spacing:.02em; }
 
   /* VVS Score section */
   .vfp-vvs-overall {
     display:grid; grid-template-columns:auto 1fr;
-    gap:32px; align-items:center;
-    padding:18px; background:#fff; border:0.5px solid var(--rule); border-radius:9px;
-    margin-bottom:20px;
+    gap:20px; align-items:flex-start;
+    padding:20px; background:#fff; border:0.5px solid var(--rule); border-radius:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+    margin-bottom:14px;
   }
-  .vfp-vvs-big { font-family:var(--serif); font-size:72px; font-weight:700; line-height:1; letter-spacing:-.04em; }
-  .vfp-vvs-big-label { font-family:var(--sans); font-size:11px; color:var(--ink-3); margin-top:6px; letter-spacing:.06em; }
+  .vfp-vvs-big { font-family:var(--serif); font-size:64px; font-weight:700; line-height:1; letter-spacing:-.04em; }
+  .vfp-vvs-big-label { font-family:var(--sans); font-size:11px; color:var(--ink-3); margin-top:2px; letter-spacing:.06em; }
   .vfp-vvs-rank {
-    font-size:13px; color:var(--ink-3); line-height:1.7;
-    border-left:2px solid var(--green); padding-left:20px;
+    font-size:12.5px; color:var(--ink-2); line-height:1.65;
+    max-width:420px;
   }
   .vfp-vvs-rank strong { color:var(--ink); font-weight:600; }
   .vfp-vvs-bars { display:flex; flex-direction:column; gap:0; }
   .vfp-bar-row {
-    display:grid; grid-template-columns:160px 1fr 48px;
+    display:grid; grid-template-columns:140px 1fr 36px;
     align-items:center; gap:16px;
-    padding:14px 0; border-bottom:1px solid var(--rule);
+    padding:8px 0; border-bottom:0.5px solid rgba(0,0,0,.04);
   }
   .vfp-bar-row:last-child { border-bottom:none; }
   .vfp-bar-label { font-family:var(--sans); font-size:12px; color:var(--ink-2); font-weight:500; display:flex; align-items:center; }
-  .vfp-bar-track { height:4px; background:rgba(202,216,208,.35); position:relative; }
-  .vfp-bar-fill { height:100%; transition:width 1s ease; }
-  .vfp-bar-val { font-family:var(--mono); font-size:13px; font-weight:500; text-align:right; }
+  .vfp-bar-track { height:3px; background:var(--rule); border-radius:2px; position:relative; overflow:hidden; }
+  .vfp-bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+  .vfp-bar-val { font-family:var(--mono); font-size:12px; font-weight:500; text-align:right; }
   .vfp-info-tip {
     display:inline-flex; align-items:center; justify-content:center;
     font-size:10px; color:var(--ink-3); cursor:default;
@@ -506,12 +530,12 @@ const PAGE_CSS = `
   }
 
   /* Fees */
-  .vfp-fee-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
-  .vfp-fee-card { background:#fff; border:0.5px solid var(--rule); border-radius:9px; padding:18px; }
+  .vfp-fee-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .vfp-fee-card { background:#fff; border:0.5px solid var(--rule); border-radius:10px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03); }
   .vfp-fee-card-label { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
   .vfp-fee-card-val { font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:4px; letter-spacing:-.02em; }
   .vfp-fee-card-sub { font-family:var(--mono); font-size:12px; color:var(--ink-3); line-height:1.6; }
-  .vfp-fee-table { background:#fff; border:0.5px solid var(--rule); border-radius:9px; margin-bottom:20px; overflow:hidden; }
+  .vfp-fee-table { background:#fff; border:0.5px solid var(--rule); border-radius:10px; margin-bottom:20px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03); }
   .vfp-fee-table-head {
     display:grid; grid-template-columns:1fr 1fr 1fr;
     padding:10px 20px; border-bottom:1px solid var(--rule); background:var(--white);
@@ -544,17 +568,19 @@ const PAGE_CSS = `
   }
 
   /* Clients */
-  .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .vfp-client-card { background:var(--white); border:none; border-radius:6px; padding:11px 13px; }
-  .vfp-client-card-label { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3); margin-bottom:10px; }
-  .vfp-client-card-val { font-family:var(--serif); font-size:32px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:6px; letter-spacing:-.02em; }
-  .vfp-client-card-sub { font-family:var(--mono); font-size:12px; color:var(--ink-3); line-height:1.6; }
-  .vfp-client-breakdown { background:#fff; border:0.5px solid var(--rule); border-radius:9px; margin-top:16px; overflow:hidden; }
-  .vfp-client-bd-head { padding:16px 24px; border-bottom:1px solid var(--rule); font-family:var(--sans); font-size:11px; font-weight:600; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase; }
+  .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .vfp-client-card { padding:12px 0; border-bottom:0.5px solid var(--rule); }
+  .vfp-client-card:nth-child(odd) { padding-right:20px; border-right:0.5px solid var(--rule); }
+  .vfp-client-card:nth-child(even) { padding-left:20px; }
+  .vfp-client-card-label { font-family:var(--sans); font-size:8px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px; }
+  .vfp-client-card-val { font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:3px; letter-spacing:-.02em; }
+  .vfp-client-card-sub { font-family:var(--mono); font-size:10px; color:var(--ink-3); line-height:1.6; }
+  .vfp-client-breakdown { margin-top:16px; overflow:hidden; }
+  .vfp-client-bd-head { font-family:var(--sans); font-size:8px; font-weight:600; color:var(--ink-3); letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px; }
   .vfp-client-type-row {
-    display:grid; grid-template-columns:1fr auto 120px;
-    align-items:center; gap:16px;
-    padding:12px 24px; border-bottom:1px solid var(--rule);
+    display:grid; grid-template-columns:1fr auto 100px;
+    align-items:center; gap:12px;
+    padding:10px 0; border-bottom:0.5px solid rgba(0,0,0,.05);
   }
   .vfp-client-type-row:last-child { border-bottom:none; }
   .vfp-client-type-name { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
@@ -562,14 +588,31 @@ const PAGE_CSS = `
   .vfp-client-type-bar { height:3px; background:var(--rule); }
   .vfp-client-type-fill { height:100%; background:var(--green-2); border-radius:1px; }
 
-  /* Sidebar */
-  .vfp-sidebar { position:sticky; top:160px; display:flex; flex-direction:column; gap:16px; align-self:start; }
-  .vfp-scard { background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden; }
-  .vfp-scard-head {
-    padding:13px 16px; border-bottom:0.5px solid var(--rule);
-    font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+  /* Asset Allocation */
+  .vfp-alloc-bar { display:flex; height:8px; border-radius:4px; overflow:hidden; gap:1px; margin-bottom:12px; }
+  .vfp-alloc-bar-seg { height:100%; transition:width .6s ease; min-width:2px; }
+  .vfp-alloc-bar-seg:first-child { border-radius:4px 0 0 4px; }
+  .vfp-alloc-bar-seg:last-child { border-radius:0 4px 4px 0; }
+  .vfp-alloc-row {
+    display:grid; grid-template-columns:10px 1fr auto;
+    align-items:center; gap:10px;
+    padding:8px 0; border-bottom:0.5px solid rgba(0,0,0,.05);
   }
-  .vfp-scard-body { padding:13px 16px; }
+  .vfp-alloc-row:last-child { border-bottom:none; }
+  .vfp-alloc-dot { width:8px; height:8px; border-radius:2px; }
+  .vfp-alloc-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
+  .vfp-alloc-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); text-align:right; }
+
+  /* Sidebar */
+  .vfp-sidebar { position:sticky; top:108px; display:flex; flex-direction:column; gap:16px; align-self:start; }
+  .vfp-scard { overflow:hidden; }
+  .vfp-scard-head {
+    padding-bottom:8px; border-bottom:0.5px solid var(--rule);
+    font-family:var(--sans); font-size:8px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+    margin-bottom:10px;
+  }
+  .vfp-scard-body { padding:0; }
+  .vfp-scard-elevated { background:#fff; border:0.5px solid var(--rule); border-radius:10px; padding:12px 20px; }
   .vfp-sfield {
     display:flex; justify-content:space-between; align-items:baseline;
     padding:8px 0; border-bottom:0.5px solid var(--rule);
@@ -584,8 +627,8 @@ const PAGE_CSS = `
   .vfp-similar:last-child { border-bottom:none; }
   .vfp-similar:hover { opacity:.7; }
   .vfp-similar-initials {
-    width:32px; height:32px; flex-shrink:0;
-    background:var(--white); border:1px solid var(--rule);
+    width:32px; height:32px; flex-shrink:0; border-radius:6px;
+    background:var(--white); border:0.5px solid var(--rule);
     display:grid; place-items:center;
     font-family:var(--serif); font-size:12px; font-weight:700; color:var(--ink-3);
   }
@@ -594,7 +637,7 @@ const PAGE_CSS = `
   .vfp-similar-meta { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:1px; }
   .vfp-similar-score { font-family:var(--serif); font-size:18px; font-weight:700; flex-shrink:0; color:var(--ink-3); }
 
-  .vfp-cta-card { background:var(--navy); border:none; border-top:2px solid var(--green-3); overflow:hidden; }
+  .vfp-cta-card { background:var(--navy); border:none; border-radius:10px; overflow:hidden; }
   .vfp-cta-body { padding:24px; }
   .vfp-cta-eyebrow {
     font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
@@ -683,14 +726,15 @@ const PAGE_CSS = `
   @media (max-width:900px) {
     .vfp-breadcrumb { padding:0 20px; }
     .vfp-page { padding-left:20px; padding-right:20px; }
-    .vfp-hero { margin:0 -20px; padding:32px 20px 0; }
-    .vfp-hero-top { grid-template-columns:auto 1fr; }
-    .vfp-score-block { display:none; }
+    .vfp-hero { margin:0 -20px; padding:20px 20px 0; }
+    .vfp-stat-score .vfp-stat-val { font-size:22px; }
     .vfp-stats-row { grid-template-columns:repeat(3,1fr); }
     .vfp-body { grid-template-columns:1fr; gap:32px; }
     .vfp-sidebar { position:static; }
     .vfp-fee-grid { grid-template-columns:1fr; }
     .vfp-client-grid { grid-template-columns:1fr; }
+    .vfp-client-card:nth-child(odd) { border-right:none; padding-right:0; }
+    .vfp-client-card:nth-child(even) { padding-left:0; }
     .vfp-gate-cta { padding:28px 24px; width:calc(100% - 24px); top:40px; }
     .vfp-gate-nav { margin:0 -20px; }
     .vfp-gate-nav-inner { padding:0 20px; }
@@ -699,13 +743,10 @@ const PAGE_CSS = `
   @media (max-width:640px) {
     .vfp-page { padding-left:16px; padding-right:16px; }
     .vfp-hero { margin:0 -16px; padding:24px 16px 0; }
-    .vfp-hero-top { grid-template-columns:1fr; gap:16px; text-align:center; }
-    .vfp-logo-mark { width:56px; height:56px; margin:0 auto; }
-    .vfp-logo-mark .shrink-0 { height:48px !important; width:48px !important; }
-    .vfp-firm-name { font-size:24px; }
-    .vfp-badges { justify-content:center; }
+    .vfp-logo-col { display:none; }
+    .vfp-firm-name { font-size:20px; }
     .vfp-badge { font-size:8px; padding:2px 6px; }
-    .vfp-meta-row { justify-content:center; }
+    .vfp-meta-line { gap:8px; }
     .vfp-meta-item { font-size:10px; }
     .vfp-stats-row { grid-template-columns:repeat(2,1fr); gap:0; }
     .vfp-stat { padding:14px 16px; }
@@ -734,7 +775,7 @@ const PAGE_CSS = `
 export default async function FirmPage({ params }: { params: { crd: string } }) {
   const {
     firmData, displayName, logoKey, feeTiers, feesAndMins,
-    profileText, website, growth, clientBreakdown, firmScore, error,
+    profileText, website, growth, clientBreakdown, assetAllocation, firmScore, error,
   } = await getFirmData(params.crd);
 
   const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
@@ -906,12 +947,13 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── Score ──
   const finalScore: number = (firmScore as unknown as Record<string, number>)?.final_score ?? 0;
 
-  // ── New: Similar firms + score percentile (parallel) ──
-  const [similarFirms, scoreRank] = await Promise.all([
+  // ── New: Similar firms + score percentile + stat percentiles (parallel) ──
+  const [similarFirms, scoreRank, statPct] = await Promise.all([
     firm.main_office_state
       ? getSimilarFirms(firm.crd, firm.main_office_state, firm.aum)
       : Promise.resolve([]),
     finalScore > 0 ? getScorePercentile(finalScore) : Promise.resolve(null),
+    getStatPercentiles(firm, totalClients, avgClientSize, aumPerInvPro, minAccount),
   ]);
 
   // ── VVS bars data ──
@@ -933,9 +975,34 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     : [];
 
   // ── Active sections for nav (filter out unavailable sections) ──
+  // ── Allocation rows ──
+  const ALLOC_LABELS: Record<string, { label: string; color: string }> = {
+    public_equity:    { label: 'Public Equity',       color: '#22995E' },
+    private_equity:   { label: 'Private Equity',      color: '#1A7A4A' },
+    ig_corp_bonds:    { label: 'IG Corporate Bonds',  color: '#4B8ECC' },
+    non_ig_corp_bonds:{ label: 'Non-IG Corp Bonds',   color: '#7AA8D4' },
+    us_govt_bonds:    { label: 'US Government Bonds',  color: '#2E6BAD' },
+    us_muni_bonds:    { label: 'Municipal Bonds',     color: '#5BA0D9' },
+    cash:             { label: 'Cash & Equivalents',   color: '#B0C4BA' },
+    derivatives:      { label: 'Derivatives',          color: '#F59E0B' },
+    other:            { label: 'Other',                color: '#8FA69A' },
+  };
+
+  const allocRows: Array<{ key: string; label: string; pct: number; color: string }> = [];
+  if (assetAllocation) {
+    for (const [key, meta] of Object.entries(ALLOC_LABELS)) {
+      const val = assetAllocation[key as keyof AssetAllocation];
+      if (val != null && val > 0) {
+        allocRows.push({ key, label: meta.label, pct: val, color: meta.color });
+      }
+    }
+    allocRows.sort((a, b) => b.pct - a.pct);
+  }
+
   const activeSections = SECTION_NAV.filter(s =>
     !(s.id === 'about' && !profileText?.business_profile && !profileText?.investment_philosophy) &&
-    !(s.id === 'aum' && !showGrowthSection)
+    !(s.id === 'aum' && !showGrowthSection) &&
+    !(s.id === 'allocation' && allocRows.length === 0)
   );
 
   // ── GATED VIEW (unauthenticated) ─────────────────────────────────────────────
@@ -1263,25 +1330,20 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
         <div className="vfp-hero">
           <div className="vfp-hero-top">
 
-            {/* Logo mark */}
-            <div className="vfp-logo-mark">
-              <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" className="!h-[68px] !w-[68px] !text-2xl" />
+            {/* Logo column */}
+            <div className="vfp-logo-col">
+              <div className="vfp-logo-mark">
+                <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" className="!h-[64px] !w-[64px] !text-xl" />
+              </div>
             </div>
 
-            {/* Identity */}
-            <div>
+            {/* Identity: 2 lines */}
+            <div className="vfp-hero-text">
               <h1 className="vfp-firm-name">{firmDisplayName}</h1>
-              <div className="vfp-badges">
-                {heroBadges.map((b, i) => b.href ? (
-                  <Link key={i} href={b.href} className={`vfp-badge${b.green ? ' green' : ''}`} style={{ textDecoration: 'none', cursor: 'pointer' }}>{b.label}</Link>
-                ) : (
-                  <span key={i} className={`vfp-badge${b.green ? ' green' : ''}`}>{b.label}</span>
-                ))}
-              </div>
               <div className="vfp-meta-row">
                 {firm.main_office_city && (
                   <span className="vfp-meta-item">
-                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                       <circle cx="5.5" cy="4.5" r="2" /><path d="M1 10c0-2.5 2-4.5 4.5-4.5S10 7.5 10 10" />
                     </svg>
                     {firm.main_office_city}, {firm.main_office_state}
@@ -1289,7 +1351,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 )}
                 {website?.website && (
                   <span className="vfp-meta-item">
-                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                       <circle cx="5.5" cy="5.5" r="4.5" /><path d="M1 5.5h9M5.5 1c-1.4 1.5-2.2 3-2.2 4.5s.8 3 2.2 4.5M5.5 1c1.4 1.5 2.2 3 2.2 4.5S6.9 8.5 5.5 10" />
                     </svg>
                     <a href={website.website.startsWith('http') ? website.website : `https://${website.website}`}
@@ -1299,7 +1361,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   </span>
                 )}
                 <span className="vfp-meta-item">
-                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                     <path d="M5.5 1v1M5.5 9v1M1 5.5h1M9 5.5h1" /><circle cx="5.5" cy="5.5" r="2.5" />
                   </svg>
                   CRD #{firm.crd}
@@ -1307,75 +1369,45 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* Score ring */}
-            {finalScore > 0 ? (
-              <div className="vfp-score-block">
-                <ScoreRing score={finalScore} />
-                <div className="vfp-score-label">Visor Score™</div>
-              </div>
-            ) : (
-              <div className="vfp-score-block">
-                <div style={{
-                  width: 120, height: 120,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  display: 'grid', placeItems: 'center',
-                }}>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>N/A</span>
-                </div>
-                <div className="vfp-score-label">Visor Score™</div>
-              </div>
-            )}
           </div>
 
           {/* Stats row */}
           <div className="vfp-stats-row">
             <div className="vfp-stat">
-              <div className="vfp-stat-label">Assets Under Management</div>
+              <div className="vfp-stat-label">AUM</div>
               <div className="vfp-stat-val">{formatAUM(firm.aum)}</div>
-              {aumStats.avgAnnualPct > 0 && (
-                <div className="vfp-stat-sub">↑ {aumStats.avgAnnualPct.toFixed(1)}% avg annual</div>
-              )}
+              <div className="vfp-stat-sub">
+                {aumStats.avgAnnualPct > 0 ? `↑ ${aumStats.avgAnnualPct.toFixed(1)}% avg annual` : 'Assets under management'}
+              </div>
             </div>
             <div className="vfp-stat">
               <div className="vfp-stat-label">Avg. Client Size</div>
-              <div className="vfp-stat-val">
-                {avgClientSize ? formatAUM(avgClientSize) : '—'}
-              </div>
-              {totalClients > 0 && (
-                <div className="vfp-stat-sub">{totalClients.toLocaleString()} total clients</div>
-              )}
+              <div className="vfp-stat-val">{avgClientSize ? formatAUM(avgClientSize) : '—'}</div>
+              <div className="vfp-stat-sub">{totalClients > 0 ? `${totalClients.toLocaleString()} total clients` : 'Per client average'}</div>
             </div>
             <div className="vfp-stat">
-              <div className="vfp-stat-label">AUM per Inv. Pro</div>
-              <div className="vfp-stat-val">
-                {aumPerInvPro ? formatAUM(aumPerInvPro) : '—'}
-              </div>
-              {firm.employee_investment && (
-                <div className="vfp-stat-sub">{firm.employee_investment} advisory staff</div>
-              )}
+              <div className="vfp-stat-label">AUM / Inv. Pro</div>
+              <div className="vfp-stat-val">{aumPerInvPro ? formatAUM(aumPerInvPro) : '—'}</div>
+              <div className="vfp-stat-sub">{firm.employee_investment ? `${firm.employee_investment} advisory staff` : 'Per investment professional'}</div>
             </div>
             <div className="vfp-stat">
-              <div className="vfp-stat-label">Minimum Account Size</div>
-              <div className="vfp-stat-val">
-                {minAccount ? formatAUM(minAccount) : '—'}
-              </div>
-              {minFee && (
-                <div className="vfp-stat-sub">Min fee {formatCurrency(minFee)}</div>
-              )}
+              <div className="vfp-stat-label">Min. Account</div>
+              <div className="vfp-stat-val">{minAccount ? formatAUM(minAccount) : '—'}</div>
+              <div className="vfp-stat-sub">{minFee ? `Min fee ${formatCurrency(minFee)}` : 'No minimum disclosed'}</div>
             </div>
             <div className="vfp-stat">
               <div className="vfp-stat-label">Employees</div>
               <div className="vfp-stat-val">{firm.employee_total ?? '—'}</div>
-              {firm.employee_investment && (
-                <div className="vfp-stat-sub">{firm.employee_investment} investment staff</div>
-              )}
+              <div className="vfp-stat-sub">{firm.employee_investment ? `${firm.employee_investment} investment staff` : 'Total headcount'}</div>
             </div>
-            <div className="vfp-stat">
-              <div className="vfp-stat-label">Investment Staff</div>
-              <div className="vfp-stat-val">{firm.employee_investment ?? '—'}</div>
-              {firm.employee_total && firm.employee_investment && (
-                <div className="vfp-stat-sub">{Math.round((firm.employee_investment / firm.employee_total) * 100)}% of total</div>
+            <div className="vfp-stat vfp-stat-score">
+              <div className="vfp-stat-label">Visor Score™</div>
+              {finalScore > 0 ? (
+                <ScoreRing score={finalScore} />
+              ) : (
+                <div className="vfp-stat-val">—</div>
               )}
+              <div className="vfp-stat-sub">{scoreRank ? `Top ${Math.ceil((scoreRank.rank / scoreRank.total) * 100)}%` : 'Out of 100'}</div>
             </div>
           </div>
         </div>
@@ -1396,46 +1428,59 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <span className="vfp-section-title">About</span>
                   <span className="vfp-section-meta">Derived from ADV Part 2A</span>
                 </div>
-                <div style={{ background: '#fff', border: '0.5px solid var(--rule)', borderRadius: 9, padding: '24px 28px' }}>
+                <div>
                   {profileText.business_profile && (
-                    <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.85, margin: 0, maxWidth: 640, fontFamily: 'var(--sans)' }}>
+                    <p style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.9, margin: 0, maxWidth: 620, fontFamily: 'var(--sans)' }}>
                       {profileText.business_profile}
                     </p>
                   )}
                   {profileText.investment_philosophy && (
                     <div style={{
-                      marginTop: profileText.business_profile ? 20 : 0,
+                      marginTop: profileText.business_profile ? 24 : 0,
                       paddingTop: profileText.business_profile ? 20 : 0,
-                      borderTop: profileText.business_profile ? '1px solid var(--rule)' : 'none',
-                      borderLeft: '2.5px solid var(--green-3)',
-                      paddingLeft: 14,
+                      borderTop: profileText.business_profile ? '0.5px solid var(--rule)' : 'none',
                     }}>
                       <div style={{
-                        fontSize: 10, fontWeight: 700, letterSpacing: '.16em', textTransform: 'uppercase' as const,
+                        fontSize: 9, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const,
                         color: 'var(--ink-3)', marginBottom: 8, fontFamily: 'var(--sans)',
                       }}>
                         Investment Philosophy
                       </div>
-                      <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.85, margin: 0, maxWidth: 640, fontFamily: 'var(--sans)' }}>
+                      <p style={{ fontSize: 17, color: 'var(--ink-2)', lineHeight: 1.6, margin: 0, maxWidth: 560, fontFamily: 'var(--serif)', fontStyle: 'italic' }}>
                         {profileText.investment_philosophy}
                       </p>
                     </div>
                   )}
                 </div>
-                {(profileText.specialty_strategies || profileText.client_base) && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-                    {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
+                {/* Classification badges + client tags */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+                  {heroBadges.map((b, i) => b.href ? (
+                    <Link key={`b-${i}`} href={b.href} style={{
+                      fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                      padding: '3px 8px', borderRadius: 3, textDecoration: 'none',
+                      background: b.green ? 'var(--green-pale)' : 'transparent',
+                      color: b.green ? 'var(--green)' : 'var(--ink-3)',
+                      border: b.green ? '0.5px solid rgba(26,122,74,.25)' : '0.5px solid var(--rule)',
+                    }}>{b.label}</Link>
+                  ) : (
+                    <span key={`b-${i}`} style={{
+                      fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                      padding: '3px 8px', border: '0.5px solid var(--rule)', color: 'var(--ink-3)', borderRadius: 3,
+                    }}>{b.label}</span>
+                  ))}
+                  {(profileText.specialty_strategies || profileText.client_base) &&
+                    [profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
                       .filter(Boolean)
                       .flatMap(s => s!.split(',').map(t => t.trim()))
                       .slice(0, 6)
                       .map((tag, i) => (
-                        <span key={i} style={{
+                        <span key={`t-${i}`} style={{
                           fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
                           padding: '3px 8px', border: '0.5px solid var(--rule)', color: 'var(--ink-3)', borderRadius: 3,
                         }}>{tag}</span>
-                      ))}
-                  </div>
-                )}
+                      ))
+                  }
+                </div>
               </div>
             )}
 
@@ -1673,6 +1718,37 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             )}
 
+            {/* ── ASSET ALLOCATION ── */}
+            {allocRows.length > 0 && (
+              <div className="vfp-section" id="allocation">
+                <div className="vfp-section-head">
+                  <span className="vfp-section-title">Asset Allocation</span>
+                  <span className="vfp-section-meta">Form ADV · Self-reported</span>
+                </div>
+
+                {/* Stacked bar */}
+                <div className="vfp-alloc-bar">
+                  {allocRows.map(r => (
+                    <div
+                      key={r.key}
+                      className="vfp-alloc-bar-seg"
+                      style={{ width: `${r.pct}%`, background: r.color }}
+                      title={`${r.label}: ${r.pct.toFixed(1)}%`}
+                    />
+                  ))}
+                </div>
+
+                {/* Legend rows */}
+                {allocRows.map(r => (
+                  <div key={r.key} className="vfp-alloc-row">
+                    <div className="vfp-alloc-dot" style={{ background: r.color }} />
+                    <div className="vfp-alloc-label">{r.label}</div>
+                    <div className="vfp-alloc-pct">{r.pct.toFixed(1)}%</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* ── REGULATORY ── */}
             <div className="vfp-section" id="regulatory">
               <div className="vfp-section-head">
@@ -1698,15 +1774,15 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 <span className="vfp-section-title">Key Personnel</span>
                 <span className="vfp-section-meta">{firm.employee_total ? `${firm.employee_total} employees · ` : ''}ADV Part 1 · Schedule A</span>
               </div>
-              <div style={{ background: '#fff', border: '1px solid var(--rule)', padding: '24px 28px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-                  <div>
-                    <div className="vfp-fee-card-label">Total Employees</div>
-                    <div className="vfp-fee-card-val">{firm.employee_total ?? '—'}</div>
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 20 }}>
+                  <div style={{ padding: '16px 24px 16px 0', borderRight: '0.5px solid var(--rule)', borderBottom: '0.5px solid var(--rule)' }}>
+                    <div className="vfp-client-card-label">Total Employees</div>
+                    <div className="vfp-client-card-val">{firm.employee_total ?? '—'}</div>
                   </div>
-                  <div>
-                    <div className="vfp-fee-card-label">Investment Staff</div>
-                    <div className="vfp-fee-card-val">{firm.employee_investment ?? '—'}</div>
+                  <div style={{ padding: '16px 0 16px 24px', borderBottom: '0.5px solid var(--rule)' }}>
+                    <div className="vfp-client-card-label">Investment Staff</div>
+                    <div className="vfp-client-card-val">{firm.employee_investment ?? '—'}</div>
                   </div>
                 </div>
                 <div style={{ background: 'var(--white)', border: '0.5px dashed var(--rule-2)', borderRadius: 6, padding: '12px 13px', display: 'flex', gap: 12, marginTop: 16 }}>
@@ -1735,45 +1811,35 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
           {/* ══ SIDEBAR ══ */}
           <aside className="vfp-sidebar">
 
-            {/* Filing details */}
-            <div className="vfp-scard">
-              <div className="vfp-scard-head">Filing Details</div>
-              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">CRD Number</span>
-                  <span className="vfp-sfield-val">{firm.crd}</span>
+            {/* CTA — Negotiate (top of sidebar, most prominent) */}
+            <div className="vfp-cta-card">
+              <div className="vfp-cta-body">
+                <div className="vfp-cta-eyebrow">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <polygon points="5,1 9,3 9,7 5,9 1,7 1,3" stroke="#2DBD74" strokeWidth="1" fill="none" />
+                  </svg>
+                  Visor Negotiate
                 </div>
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">Filing type</span>
-                  <span className="vfp-sfield-val">Form ADV</span>
+                <div className="vfp-cta-h">
+                  See how much you could save
                 </div>
-                {firm.latest_adv_filing && (
-                  <div className="vfp-sfield">
-                    <span className="vfp-sfield-label">Last amended</span>
-                    <span className="vfp-sfield-val">{firm.latest_adv_filing}</span>
-                  </div>
-                )}
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">Registration</span>
-                  <span className="vfp-sfield-val">SEC (federal)</span>
+                <div className="vfp-cta-sub">
+                  Fees are negotiable. Our guide shows you exactly what to say — and what to ask for.
                 </div>
-                {firm.legal_structure && (
-                  <div className="vfp-sfield">
-                    <span className="vfp-sfield-label">Legal structure</span>
-                    <span className="vfp-sfield-val">{firm.legal_structure}</span>
-                  </div>
-                )}
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">Private fund advisor</span>
-                  <span className="vfp-sfield-val">{firm.private_fund_advisor === 'Y' ? 'Yes' : 'No'}</span>
-                </div>
+                <Link href={`/negotiate`} className="vfp-cta-btn">
+                  Start Negotiating
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 12 12">
+                    <path d="M2 6h8M7 3l3 3-3 3" />
+                  </svg>
+                </Link>
+                <div className="vfp-cta-trust">Free · No account upgrade required</div>
               </div>
             </div>
 
             {/* Similar firms */}
             <div className="vfp-scard">
               <div className="vfp-scard-head">Similar Firms</div>
-              <div className="vfp-scard-body" style={{ padding: '12px 20px' }}>
+              <div className="vfp-scard-body">
                 {similarFirms.length > 0 ? similarFirms.map((sf) => (
                   <Link key={sf.crd} href={`/firm/${sf.crd}`} className="vfp-similar">
                     <div className="vfp-similar-initials">{sf.name.slice(0, 2).toUpperCase()}</div>
@@ -1806,10 +1872,10 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* Contact */}
+            {/* Contact — flat */}
             <div className="vfp-scard">
               <div className="vfp-scard-head">Contact</div>
-              <div className="vfp-scard-body" style={{ padding: '16px 20px' }}>
+              <div className="vfp-scard-body">
                 {(firm.main_office_street_1 || firm.main_office_city) && (
                   <div className="vfp-sfield">
                     <span className="vfp-sfield-label">Address</span>
@@ -1843,28 +1909,38 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* CTA — Negotiate */}
-            <div className="vfp-scard vfp-cta-card">
-              <div className="vfp-cta-body">
-                <div className="vfp-cta-eyebrow">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <polygon points="5,1 9,3 9,7 5,9 1,7 1,3" stroke="#2DBD74" strokeWidth="1" fill="none" />
-                  </svg>
-                  Visor Negotiate
+            {/* Filing details — flat */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">Filing Details</div>
+              <div className="vfp-scard-body">
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">CRD Number</span>
+                  <span className="vfp-sfield-val">{firm.crd}</span>
                 </div>
-                <div className="vfp-cta-h">
-                  See how much you could save
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Filing type</span>
+                  <span className="vfp-sfield-val">Form ADV</span>
                 </div>
-                <div className="vfp-cta-sub">
-                  Fees are negotiable. Our guide shows you exactly what to say — and what to ask for.
+                {firm.latest_adv_filing && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Last amended</span>
+                    <span className="vfp-sfield-val">{firm.latest_adv_filing}</span>
+                  </div>
+                )}
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Registration</span>
+                  <span className="vfp-sfield-val">SEC (federal)</span>
                 </div>
-                <Link href={`/negotiate`} className="vfp-cta-btn">
-                  Start Negotiating
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 12 12">
-                    <path d="M2 6h8M7 3l3 3-3 3" />
-                  </svg>
-                </Link>
-                <div className="vfp-cta-trust">Free · No account upgrade required</div>
+                {firm.legal_structure && (
+                  <div className="vfp-sfield">
+                    <span className="vfp-sfield-label">Legal structure</span>
+                    <span className="vfp-sfield-val">{firm.legal_structure}</span>
+                  </div>
+                )}
+                <div className="vfp-sfield">
+                  <span className="vfp-sfield-label">Private fund advisor</span>
+                  <span className="vfp-sfield-val">{firm.private_fund_advisor === 'Y' ? 'Yes' : 'No'}</span>
+                </div>
               </div>
             </div>
 
