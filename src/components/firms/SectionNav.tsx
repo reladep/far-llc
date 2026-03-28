@@ -40,6 +40,7 @@ export default function SectionNav({ sections }: SectionNavProps) {
       top: 96,
       zIndex: 300,
     }}>
+      <style dangerouslySetInnerHTML={{ __html: `.vfp-tab:hover { color:var(--ink-2) !important; }` }} />
       <div style={{
         maxWidth: 1200,
         margin: '0 auto',
@@ -53,6 +54,12 @@ export default function SectionNav({ sections }: SectionNavProps) {
           <a
             key={s.id}
             href={`#${s.id}`}
+            className="vfp-tab"
+            onClick={(e) => {
+              e.preventDefault();
+              const el = document.getElementById(s.id);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             style={{
               display: 'block',
               fontSize: 12,

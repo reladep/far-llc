@@ -160,6 +160,9 @@ const CSS = `
     padding:10px 12px;
   }
   .fc-input::placeholder { color:var(--ink-3); }
+  .fc-input-wrap:focus-within {
+    border-color:var(--green-3); box-shadow:0 0 0 2px rgba(45,189,116,.15);
+  }
   .fc-industry-note {
     font-size:11px; color:var(--amber); margin-bottom:16px; padding:10px 14px;
     border:1px solid rgba(245,158,11,.2); background:rgba(245,158,11,.04);
