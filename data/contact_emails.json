@@ -3,54 +3,156 @@
     "crd": 104942,
     "firm_name": "CAMBRIDGE ASSOCIATES",
     "website": "https://cambridgeassociates.com/",
-    "contact_email": "ContactCA@cambridgeassociates.com",
-    "email_type": "individual",
-    "email_prefix": "contactca",
-    "source_url": "https://cambridgeassociates.com/"
+    "emails": [
+      {
+        "address": "ContactCA@cambridgeassociates.com",
+        "type": "individual",
+        "score": 300,
+        "source": "/"
+      },
+      {
+        "address": "HumanCapital@cambridgeassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/contact"
+      },
+      {
+        "address": "PrivateBenchmarks@cambridgeassociates.com",
+        "type": "individual",
+        "score": 150,
+        "source": "/"
+      }
+    ]
   },
   {
     "crd": 110601,
     "firm_name": "MEKETA INVESTMENT GROUP INC",
     "website": "https://meketa.com/",
-    "contact_email": "marketing@meketa.com",
-    "email_type": "individual",
-    "email_prefix": "marketing",
-    "source_url": "https://meketa.com/contact"
+    "emails": [
+      {
+        "address": "marketing@meketa.com",
+        "type": "individual",
+        "score": 150,
+        "source": "/contact"
+      }
+    ]
   },
   {
     "crd": 21572,
     "firm_name": "MARQUETTE ASSOCIATES",
     "website": "https://marquetteassociates.com/",
-    "contact_email": "bwrubel@marquetteassociates.com",
-    "email_type": "individual",
-    "email_prefix": "bwrubel",
-    "source_url": "https://marquetteassociates.com/"
+    "emails": [
+      {
+        "address": "bwrubel@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "lpayne@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "mzarate@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "jwesner@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "kobed@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "tsalemy@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "dsmith@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "aoconnor@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "tburdick@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      },
+      {
+        "address": "gleonberger@marquetteassociates.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/"
+      }
+    ]
   },
   {
     "crd": 289276,
     "firm_name": "THE RUDD COMPANY, LLC",
     "website": "https://ruddco.com/",
-    "contact_email": "info@ruddco.com",
-    "email_type": "generic",
-    "email_prefix": "info",
-    "source_url": "https://ruddco.com/"
+    "emails": [
+      {
+        "address": "info@ruddco.com",
+        "type": "generic",
+        "score": 300,
+        "source": "/"
+      },
+      {
+        "address": "awainwright@ruddco.com",
+        "type": "individual",
+        "score": 200,
+        "source": "/contact.html"
+      }
+    ]
   },
   {
     "crd": 128199,
     "firm_name": "STRATEGIC FAMILY WEALTH COUNSELORS, L.L.C.",
     "website": "https://strategicfamilywealth.com/",
-    "contact_email": "info@strategicfamilywealth.com",
-    "email_type": "generic",
-    "email_prefix": "info",
-    "source_url": "https://strategicfamilywealth.com/"
+    "emails": [
+      {
+        "address": "info@strategicfamilywealth.com",
+        "type": "generic",
+        "score": 350,
+        "source": "/"
+      }
+    ]
   },
   {
     "crd": 132058,
     "firm_name": "CRANBROOK WEALTH MANAGEMENT, LLC",
     "website": "https://cranbrookwealth.com/",
-    "contact_email": "rb@cranbrookwealth.com",
-    "email_type": "individual",
-    "email_prefix": "rb",
-    "source_url": "https://cranbrookwealth.com/"
+    "emails": [
+      {
+        "address": "rb@cranbrookwealth.com",
+        "type": "individual",
+        "score": 250,
+        "source": "/"
+      },
+      {
+        "address": "lr@cranbrookwealth.com",
+        "type": "individual",
+        "score": 250,
+        "source": "/contact"
+      }
+    ]
   }
 ]

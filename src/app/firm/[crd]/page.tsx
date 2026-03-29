@@ -1597,71 +1597,16 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 <span className="vfp-section-meta">Disclosed in ADV Part 2A · Item 5</span>
               </div>
 
-              {/* Unified fee data card */}
-              <div className="vfp-fee-unified">
-                {/* Summary row */}
-                <div className="vfp-fee-grid">
-                  <div style={{ padding: '20px' }}>
-                    <div className="vfp-fee-card-label">Fee Structure</div>
-                    <div className="vfp-fee-card-val">{feeTypeDisplay}</div>
-                    <div className="vfp-fee-card-sub">
-                      {feesAndMins?.notes
-                        ? feesAndMins.notes.slice(0, 120) + (feesAndMins.notes.length > 120 ? '…' : '')
-                        : 'Annual percentage of assets under management. All fees are negotiable.'}
-                    </div>
-                  </div>
-                  <div style={{ padding: '20px', borderLeft: '0.5px solid var(--rule)' }}>
-                    <div className="vfp-fee-card-label">Minimum Annual Fee</div>
-                    <div className="vfp-fee-card-val">
-                      {minFee ? formatCurrency(minFee) : minAccount ? `${formatAUM(minAccount)} min AUM` : '—'}
-                    </div>
-                    <div className="vfp-fee-card-sub">
-                      {minAccount ? `Effective minimum given ${formatAUM(minAccount)} account minimum` : 'Contact firm for minimum requirements'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fee tier table */}
-                {sortedFeeTiers.length > 0 && (
-                  <div style={{ borderTop: '0.5px solid var(--rule)' }}>
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between', padding: '8px 20px',
-                      borderBottom: '0.5px solid var(--rule)',
-                    }}>
-                      <span style={{ fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: 'var(--ink-3)' }}>AUM Tier</span>
-                      <span style={{ fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: 'var(--ink-3)' }}>Annual Rate</span>
-                    </div>
-                    {sortedFeeTiers.map((tier, i) => {
-                      const minVal = parseInt(tier.min_aum || '0');
-                      const isFirst = i === 0 && minVal === 0;
-                      const isLast = !tier.max_aum;
-                      const tierLabel = isFirst
-                        ? `Up to ${formatCurrency(sortedFeeTiers[1]?.min_aum ? parseInt(sortedFeeTiers[1].min_aum) : tier.max_aum || 0)}`
-                        : isLast
-                          ? `${formatCurrency(minVal)}+`
-                          : `${formatCurrency(minVal)} – ${formatCurrency(tier.max_aum!)}`;
-                      return (
-                        <div key={i} className="vfp-fee-tier">
-                          <span className="vfp-fee-tier-label">{tierLabel}</span>
-                          <span className="vfp-fee-rate">
-                            {tier.fee_pct != null ? `${tier.fee_pct}%` : 'Negotiated'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Fee calculator widget — separate interactive tool */}
-              <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--mono)', margin: '4px 0 10px', textAlign: 'center' }}>
-                Calculate your estimated fee based on {sortedFeeTiers.length > 0 ? 'the schedule above' : 'industry averages'}
-              </div>
               <FeeCalculator
                 feeTiers={feeTiers}
                 crd={String(firm.crd)}
                 firmAum={firm.aum}
                 industryOnly={!feeTiers || feeTiers.length === 0}
+                feeTypeDisplay={feeTypeDisplay}
+                feeNotes={feesAndMins?.notes ?? null}
+                minAccount={minAccount}
+                minFee={minFee}
+                sortedFeeTiers={sortedFeeTiers}
               />
             </div>
 
