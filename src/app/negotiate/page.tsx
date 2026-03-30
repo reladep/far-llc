@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Session } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -62,8 +61,6 @@ interface PlaybookItem {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function NegotiatePage() {
-  const searchParams = useSearchParams();
-
   // ── PROTECTED STATE ──────────────────────────────────────────────────────
   const [rawAum, setRawAum] = useState('');
   const [rawFee, setRawFee] = useState('');
@@ -77,7 +74,6 @@ export default function NegotiatePage() {
   const [tierFeeRaw, setTierFeeRaw] = useState<Record<number, string>>({});
   const [showMinAumWarning, setShowMinAumWarning] = useState(false);
   const [showDollarFeeWarning, setShowDollarFeeWarning] = useState(false);
-  const [prefillFirmName, setPrefillFirmName] = useState<string | null>(null);
 
   // ── PRESENTATION STATE ───────────────────────────────────────────────────
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -94,66 +90,6 @@ export default function NegotiatePage() {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
   }, []);
-
-  // Pre-fill from URL params (linked from firm profile fee calculator)
-  useEffect(() => {
-    const paramAum = searchParams.get('aum');
-    const paramFee = searchParams.get('fee');
-    const paramCrd = searchParams.get('crd');
-
-    if (paramAum) {
-      const num = parseInt(paramAum, 10);
-      if (!isNaN(num) && num > 0) setRawAum(num.toLocaleString('en-US'));
-    }
-
-    if (paramCrd) {
-      // Fetch firm's actual fee tiers from database
-      const supabase = createSupabaseBrowserClient();
-      (async () => {
-        const { data: firmData } = await supabase
-          .from('firm_names')
-          .select('display_name')
-          .eq('crd', paramCrd)
-          .single();
-        if (firmData?.display_name) setPrefillFirmName(firmData.display_name);
-
-        const { data: tiers } = await supabase
-          .from('firmdata_feetiers')
-          .select('min_aum, max_aum, fee_pct')
-          .eq('crd', paramCrd)
-          .order('min_aum', { ascending: true });
-
-        if (tiers && tiers.length > 0) {
-          const validTiers = tiers.filter((t: { fee_pct: number | null }) => t.fee_pct != null);
-          if (validTiers.length > 0) {
-            setFeeMode('tiered');
-            setFeeTiers(validTiers.map((t: { min_aum: string | null; max_aum: number | null; fee_pct: number | null }) => ({
-              min: parseInt(t.min_aum || '0', 10),
-              max: t.max_aum,
-              fee: t.fee_pct!,
-            })));
-            return; // Don't set flat fee if we have tiers
-          }
-        }
-
-        // Fall back to flat fee from URL param
-        if (paramFee) {
-          const fee = parseFloat(paramFee);
-          if (!isNaN(fee) && fee > 0) {
-            setFeeMode('flat');
-            setRawFee(fee.toFixed(2));
-          }
-        }
-      })();
-    } else if (paramFee) {
-      // No CRD — just use the flat fee param
-      const fee = parseFloat(paramFee);
-      if (!isNaN(fee) && fee > 0) {
-        setFeeMode('flat');
-        setRawFee(fee.toFixed(2));
-      }
-    }
-  }, [searchParams]);
 
   // Animate bars when results revealed
   useEffect(() => {
@@ -584,19 +520,6 @@ export default function NegotiatePage() {
 
         {/* ── MAIN ─────────────────────────────────────────────────────────── */}
         <div className="ng-content-wrap" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
-
-          {/* Pre-fill banner when linked from a firm profile */}
-          {prefillFirmName && (
-            <div style={{
-              padding: '10px 16px', marginBottom: 16, borderRadius: 4,
-              border: '1px solid rgba(45,189,116,.2)', background: 'rgba(45,189,116,.04)',
-              fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#2E4438',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2DBD74', flexShrink: 0 }} />
-              Pre-filled with fee structure from <strong>{prefillFirmName}</strong>
-            </div>
-          )}
 
           {/* ── STEP 01: INPUT ─────────────────────────────────────────────── */}
           <div className="ng-step">
