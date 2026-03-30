@@ -9,6 +9,7 @@ import RegulatoryDisclosures from '@/components/firms/RegulatoryDisclosures';
 import FirmLogo from '@/components/firms/FirmLogo';
 import ScoreRing from '@/components/firms/ScoreRing';
 import AnimatedBarChart, { type BarData } from '@/components/firms/AnimatedBarChart';
+import AnimatedRows from '@/components/firms/AnimatedRows';
 import SectionNav from '@/components/firms/SectionNav';
 import ExpandableText from '@/components/firms/ExpandableText';
 import AnimatedBars from '@/components/firms/AnimatedBars';
@@ -563,45 +564,56 @@ const PAGE_CSS = `
   /* AUM chart wrap */
   .vfp-aum-wrap { background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden; }
   .vfp-aum-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--rule); }
-  .vfp-aum-stat { padding:11px 13px; border-right:1px solid var(--rule); background:var(--white); border-radius:0; text-align:center; }
+  .vfp-aum-stat { padding:11px 13px; border-right:1px solid var(--rule); background:#fff; border-radius:0; text-align:center; }
   .vfp-aum-stat:last-child { border-right:none; }
   .vfp-aum-stat-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
   .vfp-aum-stat-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; }
   .vfp-aum-stat-delta { display:inline-flex; align-items:center; gap:4px; font-size:10px; margin-top:4px; font-family:var(--mono); }
   .vfp-aum-stat-delta.up { color:var(--green); }
   .vfp-aum-stat-delta.dn { color:var(--red); }
-  .vfp-chart-divider { border-top:1px solid var(--rule); }
+  .vfp-chart-divider { border-top:0.5px solid var(--rule); }
   .vfp-aum-footer {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 24px; border-top:1px solid var(--rule);
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 24px; border-top:0.5px solid var(--rule);
     font-size:10px; color:var(--ink-3); font-family:var(--mono);
   }
 
   /* Clients */
-  .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
-  .vfp-client-card { padding:12px 0; border-bottom:0.5px solid var(--rule); text-align:center; }
-  .vfp-client-card:nth-child(odd) { padding-right:20px; border-right:0.5px solid var(--rule); }
-  .vfp-client-card:nth-child(even) { padding-left:20px; }
-  .vfp-client-card-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px; }
-  .vfp-client-card-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:3px; letter-spacing:-.02em; }
-  .vfp-client-card-sub { font-family:var(--mono); font-size:10px; color:var(--ink-3); line-height:1.6; }
-  .vfp-client-breakdown { margin-top:16px; overflow:hidden; }
+  .vfp-client-wrap {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden;
+  }
+  .vfp-client-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:0.5px solid var(--rule); }
+  .vfp-client-stat { padding:11px 13px; border-right:0.5px solid var(--rule); background:#fff; text-align:center; }
+  .vfp-client-stat:last-child { border-right:none; }
+  .vfp-client-stat-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
+  .vfp-client-stat-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
+  .vfp-client-stat-sub { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:4px; }
+  .vfp-client-breakdown { padding:16px 24px; }
   .vfp-client-bd-head { font-family:var(--sans); font-size:9px; font-weight:600; color:var(--ink-3); letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px; }
   .vfp-client-type-row {
-    display:grid; grid-template-columns:1fr auto 100px;
-    align-items:center; gap:12px;
-    padding:10px 4px; margin:0 -4px; border-bottom:0.5px solid rgba(0,0,0,.05);
-    transition:background .12s; border-radius:3px;
+    display:grid; grid-template-columns:1fr 40px 1fr;
+    align-items:center; gap:10px;
+    padding:8px 0; border-bottom:0.5px solid rgba(0,0,0,.05);
+    transition:background .12s;
   }
-  .vfp-client-type-row:hover { background:var(--white); }
   .vfp-client-type-row:last-child { border-bottom:none; }
+  .vfp-client-type-row:hover { background:rgba(45,189,116,.02); }
   .vfp-client-type-name { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
-  .vfp-client-type-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); }
-  .vfp-client-type-bar { height:3px; background:var(--rule); }
-  .vfp-client-type-fill { height:100%; background:var(--green-2); border-radius:1px; }
+  .vfp-client-type-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); text-align:right; }
+  .vfp-client-type-bar { height:4px; background:var(--rule); border-radius:2px; overflow:hidden; }
+  .vfp-client-type-fill { height:100%; background:var(--green-2); border-radius:2px; transition:width .6s ease; }
+  .vfp-client-footer {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 24px; border-top:0.5px solid var(--rule);
+    font-size:10px; color:var(--ink-3); font-family:var(--mono);
+  }
 
   /* Asset Allocation */
-  .vfp-alloc-bar { display:flex; height:8px; border-radius:4px; overflow:visible; gap:1px; margin-bottom:12px; }
+  .vfp-alloc-wrap {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:visible;
+  }
+  .vfp-alloc-inner { padding:16px 24px; }
+  .vfp-alloc-bar { display:flex; height:8px; border-radius:4px; overflow:visible; gap:1px; margin-bottom:14px; }
   .vfp-alloc-bar-seg { height:100%; transition:width .6s ease, opacity .15s; min-width:2px; position:relative; cursor:default; }
   .vfp-alloc-bar-seg:first-child { border-radius:4px 0 0 4px; }
   .vfp-alloc-bar-seg:last-child { border-radius:0 4px 4px 0; }
@@ -613,17 +625,52 @@ const PAGE_CSS = `
     padding:4px 8px; border-radius:3px; white-space:nowrap; pointer-events:none; z-index:10;
   }
   .vfp-alloc-row {
-    display:grid; grid-template-columns:10px 1fr auto;
+    display:grid; grid-template-columns:10px 1fr 40px 80px;
     align-items:center; gap:10px;
-    padding:8px 4px; margin:0 -4px; border-bottom:0.5px solid rgba(0,0,0,.05);
-    transition:background .12s; border-radius:3px; cursor:default;
+    padding:7px 0; border-bottom:0.5px solid rgba(0,0,0,.05);
+    transition:background .12s; cursor:default;
   }
   .vfp-alloc-row:last-child { border-bottom:none; }
-  .vfp-alloc-row:hover { background:var(--white); }
-  .vfp-alloc-row:hover .vfp-alloc-dot { transform:scale(1.4); transition:transform .15s; }
-  .vfp-alloc-dot { width:8px; height:8px; border-radius:2px; }
+  .vfp-alloc-row:hover { background:rgba(45,189,116,.02); }
+  .vfp-alloc-row:hover .vfp-alloc-dot { transform:scale(1.3); }
+  .vfp-alloc-dot { width:8px; height:8px; border-radius:50%; transition:transform .15s; }
   .vfp-alloc-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); }
   .vfp-alloc-pct { font-family:var(--mono); font-size:12px; color:var(--ink-3); text-align:right; }
+  .vfp-alloc-bar-mini { height:4px; background:var(--rule); border-radius:2px; overflow:hidden; }
+  .vfp-alloc-fill-mini { height:100%; border-radius:2px; transition:width .6s ease; }
+  .vfp-alloc-footer {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 24px; border-top:0.5px solid var(--rule);
+    font-size:10px; color:var(--ink-3); font-family:var(--mono);
+  }
+
+  /* Activity & News */
+  .vfp-news-wrap {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden;
+  }
+
+  /* Key Personnel */
+  .vfp-personnel-wrap {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden;
+  }
+  .vfp-personnel-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:0.5px solid var(--rule); }
+  .vfp-personnel-stat { padding:11px 13px; border-right:0.5px solid var(--rule); background:#fff; text-align:center; }
+  .vfp-personnel-stat:last-child { border-right:none; }
+  .vfp-personnel-stat-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
+  .vfp-personnel-stat-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
+  .vfp-personnel-stat-sub { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:4px; }
+  .vfp-personnel-coming {
+    display:flex; gap:12px; padding:14px 20px; border-bottom:0.5px solid var(--rule);
+    background:var(--white);
+  }
+  .vfp-personnel-coming-icon {
+    width:28px; height:28px; background:#fff; border:0.5px solid var(--rule);
+    display:grid; place-items:center; flex-shrink:0; border-radius:50%;
+  }
+  .vfp-personnel-footer {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 24px; font-size:10px; color:var(--ink-3); font-family:var(--mono);
+  }
 
   /* Tag hover states */
   .vfp-tag-class {
@@ -770,9 +817,12 @@ const PAGE_CSS = `
     .vfp-body { grid-template-columns:1fr; gap:32px; }
     .vfp-sidebar { position:static; }
     .vfp-fee-grid { grid-template-columns:1fr; }
-    .vfp-client-grid { grid-template-columns:1fr; }
-    .vfp-client-card:nth-child(odd) { border-right:none; padding-right:0; }
-    .vfp-client-card:nth-child(even) { padding-left:0; }
+    .vfp-client-head { grid-template-columns:1fr; }
+    .vfp-client-stat { border-right:none !important; border-bottom:0.5px solid var(--rule); }
+    .vfp-client-stat:last-child { border-bottom:none; }
+    .vfp-personnel-head { grid-template-columns:1fr; }
+    .vfp-personnel-stat { border-right:none !important; border-bottom:0.5px solid var(--rule); }
+    .vfp-personnel-stat:last-child { border-bottom:none; }
     .vfp-gate-cta { padding:28px 24px; width:calc(100% - 24px); top:40px; }
     .vfp-gate-nav { margin:0 -20px; }
     .vfp-gate-nav-inner { padding:0 20px; }
@@ -973,6 +1023,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     ].filter(e => e.count != null && e.count > 0) as Array<{ name: string; count: number }>;
     const entryTotal = entries.reduce((s, e) => s + e.count, 0) || 1;
     entries.forEach(e => clientTypeRows.push({ name: e.name, count: e.count, pct: e.count / entryTotal * 100 }));
+    clientTypeRows.sort((a, b) => b.pct - a.pct);
   }
 
   // ── Hero badges ──
@@ -1622,12 +1673,10 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <div className="vfp-aum-head">
                     <div className="vfp-aum-stat">
                       <div className="vfp-aum-stat-label">Current AUM</div>
-                      <div className="vfp-aum-stat-val">{formatAUM(aumStats.currentAum)}</div>
-                      {aumStats.fiveYearDeltaPct !== 0 && (
-                        <div className={`vfp-aum-stat-delta ${aumStats.fiveYearDeltaPct >= 0 ? 'up' : 'dn'}`}>
-                          {aumStats.fiveYearDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(aumStats.fiveYearDeltaPct).toFixed(1)}% over period
-                        </div>
-                      )}
+                      <div className="vfp-aum-stat-val">{formatAUM(firm.aum)}</div>
+                      <div className="vfp-aum-stat-delta" style={{ color: 'var(--ink-3)' }}>
+                        Total · latest filing
+                      </div>
                     </div>
                     <div className="vfp-aum-stat">
                       <div className="vfp-aum-stat-label">Total Growth (Period)</div>
@@ -1635,13 +1684,13 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                         {aumStats.fiveYearDeltaAbs >= 0 ? '+' : ''}{formatAUM(Math.abs(aumStats.fiveYearDeltaAbs))}
                       </div>
                       <div className={`vfp-aum-stat-delta ${aumStats.fiveYearDeltaPct >= 0 ? 'up' : 'dn'}`}>
-                        {aumStats.fiveYearDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(aumStats.fiveYearDeltaPct).toFixed(0)}% since start
+                        {aumStats.fiveYearDeltaPct >= 0 ? '↑' : '↓'} {Math.abs(aumStats.fiveYearDeltaPct).toFixed(0)}% over period
                       </div>
                     </div>
                     <div className="vfp-aum-stat">
                       <div className="vfp-aum-stat-label">Avg. Annual Growth</div>
                       <div className="vfp-aum-stat-val">{aumStats.avgAnnualPct.toFixed(1)}%</div>
-                      <div className={`vfp-aum-stat-delta ${aumStats.avgAnnualPct >= 0 ? 'up' : 'dn'}`}>
+                      <div className="vfp-aum-stat-delta" style={{ color: 'var(--ink-3)' }}>
                         CAGR over filing period
                       </div>
                     </div>
@@ -1667,7 +1716,6 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
                   <div className="vfp-aum-footer">
                     <span>Source: SEC Form ADV filings · Reported annually</span>
-                    <span>Discretionary AUM</span>
                   </div>
                 </div>
               </div>
@@ -1681,41 +1729,46 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <span className="vfp-section-meta">{totalClients > 0 ? `${totalClients.toLocaleString()} total · ` : ''}As of latest ADV filing</span>
                 </div>
 
-                <div className="vfp-client-grid">
-                  <div className="vfp-client-card">
-                    <div className="vfp-client-card-label">Total Clients</div>
-                    <div className="vfp-client-card-val">{totalClients.toLocaleString()}</div>
-                    <div className="vfp-client-card-sub">
-                      {avgClientSize
-                        ? `Avg. ${formatAUM(avgClientSize)} per client`
-                        : 'Based on SEC ADV filing'}
+                <div className="vfp-client-wrap">
+                  <div className="vfp-client-head">
+                    <div className="vfp-client-stat">
+                      <div className="vfp-client-stat-label">Total Clients</div>
+                      <div className="vfp-client-stat-val">{totalClients.toLocaleString()}</div>
+                      <div className="vfp-client-stat-sub">As of latest ADV filing</div>
+                    </div>
+                    <div className="vfp-client-stat">
+                      <div className="vfp-client-stat-label">AUM per Client</div>
+                      <div className="vfp-client-stat-val">{avgClientSize ? formatAUM(avgClientSize) : '—'}</div>
+                      <div className="vfp-client-stat-sub">Total AUM ÷ client count</div>
+                    </div>
+                    <div className="vfp-client-stat">
+                      <div className="vfp-client-stat-label">AUM per Inv. Pro</div>
+                      <div className="vfp-client-stat-val">{aumPerInvPro ? formatAUM(aumPerInvPro) : '—'}</div>
+                      <div className="vfp-client-stat-sub">{firm.employee_investment ? `${firm.employee_investment} investment staff` : 'Not reported'}</div>
                     </div>
                   </div>
-                  <div className="vfp-client-card">
-                    <div className="vfp-client-card-label">AUM per Client</div>
-                    <div className="vfp-client-card-val">
-                      {avgClientSize ? formatAUM(avgClientSize) : '—'}
-                    </div>
-                    <div className="vfp-client-card-sub">
-                      Total AUM divided by reported client count
-                    </div>
+
+                  {clientTypeRows.length > 0 && (
+                    <AnimatedRows>
+                      <div className="vfp-client-breakdown">
+                        <div className="vfp-client-bd-head">Client Type Breakdown</div>
+                        {clientTypeRows.map((row, i) => (
+                          <div key={i} className="vfp-client-type-row" style={{ transitionDelay: `${i * 60}ms` }}>
+                            <div className="vfp-client-type-name">{row.name}</div>
+                            <div className="vfp-client-type-pct">{row.pct.toFixed(0)}%</div>
+                            <div className="vfp-client-type-bar">
+                              <div className="vfp-client-type-fill" style={{ width: `${row.pct}%`, transitionDelay: `${i * 80 + 200}ms` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AnimatedRows>
+                  )}
+
+                  <div className="vfp-client-footer">
+                    <span>Source: SEC Form ADV · Reported by registrant</span>
                   </div>
                 </div>
-
-                {clientTypeRows.length > 0 && (
-                  <div className="vfp-client-breakdown">
-                    <div className="vfp-client-bd-head">Client Type Breakdown</div>
-                    {clientTypeRows.map((row, i) => (
-                      <div key={i} className="vfp-client-type-row">
-                        <div className="vfp-client-type-name">{row.name}</div>
-                        <div className="vfp-client-type-pct">{row.pct.toFixed(0)}%</div>
-                        <div className="vfp-client-type-bar">
-                          <div className="vfp-client-type-fill" style={{ width: `${row.pct}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
@@ -1727,26 +1780,39 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <span className="vfp-section-meta">Form ADV · Self-reported</span>
                 </div>
 
-                {/* Stacked bar */}
-                <div className="vfp-alloc-bar">
-                  {allocRows.map(r => (
-                    <div
-                      key={r.key}
-                      className="vfp-alloc-bar-seg"
-                      style={{ width: `${r.pct}%`, background: r.color }}
-                      data-tip={`${r.label}: ${r.pct.toFixed(1)}%`}
-                    />
-                  ))}
-                </div>
+                <div className="vfp-alloc-wrap">
+                  <div className="vfp-alloc-inner">
+                    {/* Stacked bar */}
+                    <div className="vfp-alloc-bar">
+                      {allocRows.map(r => (
+                        <div
+                          key={r.key}
+                          className="vfp-alloc-bar-seg"
+                          style={{ width: `${r.pct}%`, background: r.color }}
+                          data-tip={`${r.label}: ${r.pct.toFixed(1)}%`}
+                        />
+                      ))}
+                    </div>
 
-                {/* Legend rows */}
-                {allocRows.map(r => (
-                  <div key={r.key} className="vfp-alloc-row">
-                    <div className="vfp-alloc-dot" style={{ background: r.color }} />
-                    <div className="vfp-alloc-label">{r.label}</div>
-                    <div className="vfp-alloc-pct">{r.pct.toFixed(1)}%</div>
+                    {/* Legend rows with mini bars */}
+                    <AnimatedRows>
+                      {allocRows.map((r, i) => (
+                        <div key={r.key} className="vfp-alloc-row" style={{ transitionDelay: `${i * 60}ms` }}>
+                          <div className="vfp-alloc-dot" style={{ background: r.color }} />
+                          <div className="vfp-alloc-label">{r.label}</div>
+                          <div className="vfp-alloc-pct">{r.pct.toFixed(1)}%</div>
+                          <div className="vfp-alloc-bar-mini">
+                            <div className="vfp-alloc-fill-mini" style={{ width: `${r.pct}%`, background: r.color, transitionDelay: `${i * 80 + 200}ms` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </AnimatedRows>
                   </div>
-                ))}
+
+                  <div className="vfp-alloc-footer">
+                    <span>Source: Form ADV · Self-reported by registrant</span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1766,7 +1832,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 <span className="vfp-section-title">Activity &amp; News</span>
                 <span className="vfp-section-meta">SEC filings · Industry news</span>
               </div>
-              <FirmAlerts crd={firm.crd} />
+              <div className="vfp-news-wrap">
+                <FirmAlerts crd={firm.crd} />
+              </div>
             </div>
 
             {/* ── KEY PERSONNEL ── */}
@@ -1775,34 +1843,45 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 <span className="vfp-section-title">Key Personnel</span>
                 <span className="vfp-section-meta">{firm.employee_total ? `${firm.employee_total} employees · ` : ''}ADV Part 1 · Schedule A</span>
               </div>
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 20 }}>
-                  <div style={{ padding: '16px 24px 16px 0', borderRight: '0.5px solid var(--rule)', borderBottom: '0.5px solid var(--rule)' }}>
-                    <div className="vfp-client-card-label">Total Employees</div>
-                    <div className="vfp-client-card-val">{firm.employee_total ?? '—'}</div>
+              <div className="vfp-personnel-wrap">
+                <div className="vfp-personnel-head">
+                  <div className="vfp-personnel-stat">
+                    <div className="vfp-personnel-stat-label">Total Employees</div>
+                    <div className="vfp-personnel-stat-val">{firm.employee_total ?? '—'}</div>
+                    <div className="vfp-personnel-stat-sub">Firm-wide headcount</div>
                   </div>
-                  <div style={{ padding: '16px 0 16px 24px', borderBottom: '0.5px solid var(--rule)' }}>
-                    <div className="vfp-client-card-label">Investment Staff</div>
-                    <div className="vfp-client-card-val">{firm.employee_investment ?? '—'}</div>
+                  <div className="vfp-personnel-stat">
+                    <div className="vfp-personnel-stat-label">Investment Staff</div>
+                    <div className="vfp-personnel-stat-val">{firm.employee_investment ?? '—'}</div>
+                    <div className="vfp-personnel-stat-sub">Licensed investment professionals</div>
+                  </div>
+                  <div className="vfp-personnel-stat">
+                    <div className="vfp-personnel-stat-label">Clients per Inv. Pro</div>
+                    <div className="vfp-personnel-stat-val">
+                      {firm.employee_investment && firm.employee_investment > 0
+                        ? Math.round(totalClients / firm.employee_investment).toLocaleString()
+                        : '—'}
+                    </div>
+                    <div className="vfp-personnel-stat-sub">Total clients ÷ investment staff</div>
                   </div>
                 </div>
-                <div style={{ background: 'var(--white)', border: '0.5px dashed var(--rule-2)', borderRadius: 6, padding: '12px 13px', display: 'flex', gap: 12, marginTop: 16 }}>
-                  <div style={{
-                    width: 32, height: 32, background: '#fff', border: '0.5px solid var(--rule)',
-                    display: 'grid', placeItems: 'center', flexShrink: 0, borderRadius: 4,
-                  }}>
+                <div className="vfp-personnel-coming">
+                  <div className="vfp-personnel-coming-icon">
                     <svg width="12" height="12" fill="none" stroke="var(--ink-3)" strokeWidth="1.4" viewBox="0 0 12 12">
                       <circle cx="6" cy="6" r="5" /><path d="M6 4v2.5L7.5 8" />
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', marginBottom: 4 }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 500, color: 'var(--ink-2)', marginBottom: 2 }}>
                       Ownership &amp; principal data coming soon
                     </div>
-                    <div style={{ fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                    <div style={{ fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
                       Individual principal names, roles, and ownership percentages from ADV Schedule A will be available in an upcoming release.
                     </div>
                   </div>
+                </div>
+                <div className="vfp-personnel-footer">
+                  <span>Source: SEC Form ADV Part 1 · Schedule A</span>
                 </div>
               </div>
             </div>
