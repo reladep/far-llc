@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
 
 interface FeeTier {
   min_aum: string | null;
@@ -23,28 +22,30 @@ interface FeeCalculatorProps {
 }
 
 // ── Hardcoded industry averages ──────────────────────────────────────
+// Industry averages computed from Visor Index database (207 firms with disclosed fee tiers, 2026-03-29)
 const INDUSTRY_ALL = [
-  { breakpoint: 500_000, label: '$500K', avg: 1.205, p25: 1.00, median: 1.00, p75: 1.49 },
-  { breakpoint: 1_000_000, label: '$1M', avg: 1.058, p25: 0.90, median: 1.00, p75: 1.25 },
-  { breakpoint: 5_000_000, label: '$5M', avg: 0.717, p25: 0.50, median: 0.70, p75: 0.90 },
-  { breakpoint: 10_000_000, label: '$10M', avg: 0.581, p25: 0.40, median: 0.55, p75: 0.75 },
-  { breakpoint: 25_000_000, label: '$25M', avg: 0.528, p25: 0.35, median: 0.50, p75: 0.75 },
-  { breakpoint: 50_000_000, label: '$50M', avg: 0.505, p25: 0.30, median: 0.50, p75: 0.70 },
-  { breakpoint: 100_000_000, label: '$100M', avg: 0.489, p25: 0.25, median: 0.50, p75: 0.65 },
+  { breakpoint: 500_000, label: '$500K', avg: 1.262, p25: 1.00, median: 1.175, p75: 1.50 },
+  { breakpoint: 1_000_000, label: '$1M', avg: 1.213, p25: 1.00, median: 1.075, p75: 1.375 },
+  { breakpoint: 2_000_000, label: '$2M', avg: 1.108, p25: 0.90, median: 1.00, p75: 1.212 },
+  { breakpoint: 5_000_000, label: '$5M', avg: 0.954, p25: 0.79, median: 0.89, p75: 1.05 },
+  { breakpoint: 10_000_000, label: '$10M', avg: 0.801, p25: 0.637, median: 0.75, p75: 0.925 },
+  { breakpoint: 25_000_000, label: '$25M', avg: 0.637, p25: 0.46, median: 0.592, p75: 0.78 },
+  { breakpoint: 50_000_000, label: '$50M', avg: 0.562, p25: 0.376, median: 0.535, p75: 0.711 },
+  { breakpoint: 100_000_000, label: '$100M', avg: 0.517, p25: 0.315, median: 0.515, p75: 0.677 },
 ];
 
 const INDUSTRY_SMALL = [
-  { breakpoint: 500_000, avg: 1.237, median: 1.15 },
-  { breakpoint: 1_000_000, avg: 1.084, median: 1.00 },
-  { breakpoint: 5_000_000, avg: 0.782, median: 0.75 },
-  { breakpoint: 10_000_000, avg: 0.687, median: 0.60 },
+  { breakpoint: 500_000, avg: 1.273, median: 1.25 },
+  { breakpoint: 1_000_000, avg: 1.209, median: 1.125 },
+  { breakpoint: 5_000_000, avg: 0.925, median: 0.865 },
+  { breakpoint: 10_000_000, avg: 0.79, median: 0.722 },
 ];
 
 const INDUSTRY_MID = [
-  { breakpoint: 500_000, avg: 1.113, median: 1.00 },
-  { breakpoint: 1_000_000, avg: 1.004, median: 1.00 },
-  { breakpoint: 5_000_000, avg: 0.743, median: 0.75 },
-  { breakpoint: 10_000_000, avg: 0.664, median: 0.62 },
+  { breakpoint: 500_000, avg: 1.176, median: 1.00 },
+  { breakpoint: 1_000_000, avg: 1.149, median: 1.00 },
+  { breakpoint: 5_000_000, avg: 0.975, median: 0.935 },
+  { breakpoint: 10_000_000, avg: 0.839, median: 0.80 },
 ];
 
 function getClosestBreakpoint(amount: number) {
@@ -213,7 +214,7 @@ const CSS = `
     display:grid; grid-template-columns:1fr 1fr 1fr; gap:0;
     border:1px solid var(--rule); margin-top:16px; margin-bottom:16px; border-radius:4px; overflow:hidden;
   }
-  .fc-out-cell { padding:14px 16px; border-right:1px solid var(--rule); }
+  .fc-out-cell { padding:14px 16px; border-right:1px solid var(--rule); text-align:center; }
   .fc-out-cell:last-child { border-right:none; }
   .fc-out-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; font-family:var(--sans); }
   .fc-out-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
@@ -251,6 +252,12 @@ const CSS = `
     transition:background .2s; border-radius:4px;
   }
   .fc-cta:hover { background:var(--green-2); }
+  .fc-cta-secondary {
+    display:block; text-align:center; margin-top:8px;
+    font-family:var(--sans); font-size:13px; font-weight:600; color:var(--green);
+    text-decoration:none; transition:color .15s;
+  }
+  .fc-cta-secondary:hover { color:var(--green-2); }
 
   /* Zone 3: Tier schedule */
   .fc-tiers { border-top:0.5px solid var(--rule); }
@@ -262,9 +269,9 @@ const CSS = `
   .fc-tier {
     display:grid; grid-template-columns:1fr 1fr; align-items:center;
     padding:10px 20px; transition:background .12s;
-    min-height:40px;
+    min-height:40px; border-bottom:0.5px solid rgba(0,0,0,.05);
   }
-  .fc-tier:nth-child(odd) { background:var(--white); }
+  .fc-tier:last-child { border-bottom:none; }
   .fc-tier:hover { background:rgba(45,189,116,.03); }
   .fc-tier.active { background:rgba(45,189,116,.06); border-left:2px solid var(--green-3); padding-left:18px; }
   .fc-tier-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); text-align:center; }
@@ -520,12 +527,6 @@ export default function FeeCalculator({
               </>
             )}
 
-            <Link href={`/compare?add=${crd}`} className="fc-cta">
-              Compare This Firm
-              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
-                <path d="M2 5.5h7M6 2.5l3 3-3 3" />
-              </svg>
-            </Link>
           </>
         )}
       </div>
