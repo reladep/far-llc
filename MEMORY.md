@@ -1,6 +1,6 @@
 # MEMORY.md — Long-term memory for Maxwell
 
-_Last updated: 2026-03-25_
+_Last updated: 2026-03-29_
 
 ## System Info
 - OpenClaw version: **2026.3.2** (updated from 2026.2.14 on 3/5/2026)
@@ -51,7 +51,7 @@ _Last updated: 2026-03-25_
 
 ## Active Issues (March 2026)
 
-- **News Scraper Debugging:** Scraper runs but exits after 50/150 firms (consistent pattern). Also not creating alerts despite articles being stored. Investigating Supabase schema/RLS issues.
+- **News Scraper Debugging (RESOLVED 3/28):** Previously had SIGTERM issues (process killed mid-run). Now running successfully with M&A filtering. Still investigating fuzzy matching false positives.
   - Tiered bracket calculation, industry average comparison, growth projections
   - Industry averages computed from 207 firms / 5,412 fee tiers
 - **Alerts MVP complete** (built 2/20)

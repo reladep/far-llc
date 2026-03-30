@@ -27,8 +27,7 @@ Use the right model for the right job. Switch or spawn sub-agents accordingly.
 
 | Task | Model | Alias | Notes |
 |------|-------|-------|-------|
-| **Brain / Chat / Planning** | anthropic/claude-opus-4-6 | `opus` | Primary default |
-| **Brain Backup** | openrouter/minimax/minimax-m2.5 | `minimax` | Failover when Opus is rate limited |
+| **Brain / Chat / Planning** | openrouter/minimax/minimax-m2.5 | `minimax` | Primary default |
 | **Coding** | openai/gpt-5.1-codex | `GPT` | Spawn sub-agent for coding tasks |
 | **Web Search** | openrouter/minimax/minimax-m2.5 | `minimax` | Switch model before searching |
 | **Heartbeat** | google/gemini-2.5-flash | `gemini` | Configured in gateway heartbeat |
