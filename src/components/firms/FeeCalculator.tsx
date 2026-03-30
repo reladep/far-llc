@@ -104,25 +104,59 @@ function formatCurrency(value: number | string): string {
   return formatAUM(num);
 }
 
-function calcTieredFee(amount: number, tiers: FeeTier[]): number {
-  if (tiers.length === 0) return 0;
+interface CalcResult {
+  totalFee: number;
+  usedIndustryFallback: boolean;
+  fallbackTierMin: number | null;
+}
+
+function getIndustryMedianRate(amount: number): number {
+  // Find the closest breakpoint's median rate from INDUSTRY_ALL
+  let closest = INDUSTRY_ALL[0];
+  for (const bp of INDUSTRY_ALL) {
+    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) {
+      closest = bp;
+    }
+  }
+  return closest.median / 100;
+}
+
+function calcTieredFee(amount: number, tiers: FeeTier[]): CalcResult {
+  if (tiers.length === 0) return { totalFee: 0, usedIndustryFallback: false, fallbackTierMin: null };
   const sorted = [...tiers]
-    .filter((t) => t.fee_pct != null)
     .sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
-  if (sorted.length === 0) return 0;
-  if (sorted.length === 1) return amount * (sorted[0].fee_pct! / 100);
+  const validSorted = sorted.filter((t) => t.fee_pct != null);
+  if (validSorted.length === 0) return { totalFee: 0, usedIndustryFallback: false, fallbackTierMin: null };
+  if (validSorted.length === 1 && sorted.length === 1) {
+    return { totalFee: amount * (validSorted[0].fee_pct! / 100), usedIndustryFallback: false, fallbackTierMin: null };
+  }
+
   let totalFee = 0;
   let remaining = amount;
+  let usedIndustryFallback = false;
+  let fallbackTierMin: number | null = null;
+
   for (let i = 0; i < sorted.length && remaining > 0; i++) {
     const tierMin = parseInt(sorted[i].min_aum || '0');
     const tierMax = sorted[i].max_aum;
-    const pct = sorted[i].fee_pct! / 100;
+    const isNegotiated = sorted[i].fee_pct == null;
     const bracketSize = tierMax ? tierMax - tierMin : remaining;
     const taxable = Math.min(remaining, bracketSize);
-    totalFee += taxable * pct;
+
+    if (isNegotiated) {
+      // Fall back to industry median for the midpoint of this bracket
+      const midpoint = tierMin + taxable / 2;
+      const fallbackRate = getIndustryMedianRate(midpoint);
+      totalFee += taxable * fallbackRate;
+      usedIndustryFallback = true;
+      fallbackTierMin = tierMin;
+    } else {
+      totalFee += taxable * (sorted[i].fee_pct! / 100);
+    }
     remaining -= taxable;
   }
-  return totalFee;
+
+  return { totalFee, usedIndustryFallback, fallbackTierMin };
 }
 
 function projectGrowth(principal: number, annualFeeRate: number, years: number, returnRate: number = 0.07) {
@@ -219,30 +253,41 @@ const CSS = `
   .fc-out-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; font-family:var(--sans); }
   .fc-out-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; }
   .fc-out-sub { font-size:10px; color:var(--ink-3); margin-top:4px; font-family:var(--mono); }
-  .fc-compare-section { margin-bottom:16px; }
-  .fc-compare-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; font-family:var(--sans); }
-  .fc-compare-track { height:6px; background:var(--green-pale); position:relative; margin-bottom:6px; border-radius:3px; }
-  .fc-compare-median { position:absolute; top:-4px; height:14px; width:2px; background:var(--ink-3); }
-  .fc-compare-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:10px; height:10px; border-radius:50%; border:2px solid #fff; }
+  .fc-compare-section { margin-bottom:12px; }
+  .fc-compare-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; font-family:var(--sans); }
+  .fc-compare-track { height:8px; background:var(--green-pale); position:relative; margin-bottom:6px; border-radius:4px; }
+  .fc-compare-median { position:absolute; top:-3px; height:14px; width:2px; background:var(--ink-3); border-radius:1px; }
+  .fc-compare-dot { position:absolute; top:50%; transform:translate(-50%,-50%); width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.15); }
   .fc-compare-labels { display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--ink-3); }
-  .fc-seg-note { font-size:10px; color:var(--ink-3); margin-top:6px; font-family:var(--mono); }
-  .fc-proj-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; font-family:var(--sans); }
+  .fc-compare-verdict { font-size:13px; font-weight:600; margin-top:6px; font-family:var(--sans); display:flex; align-items:center; gap:6px; }
+  .fc-seg-note { font-size:10px; color:var(--ink-3); margin-top:4px; font-family:var(--mono); }
+  .fc-proj-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; font-family:var(--sans); }
   .fc-proj-table { border:1px solid var(--rule); border-radius:4px; overflow:hidden; }
-  .fc-proj-head { display:grid; grid-template-columns:80px 1fr 1fr 1fr; padding:8px 16px; border-bottom:1px solid var(--rule); background:var(--white); }
+  .fc-proj-head { display:grid; grid-template-columns:60px 1fr 1fr 1fr; padding:6px 14px; border-bottom:1px solid var(--rule); background:var(--white); }
   .fc-proj-head span { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-family:var(--sans); }
   .fc-proj-head span:not(:first-child) { text-align:right; }
-  .fc-proj-row { display:grid; grid-template-columns:80px 1fr 1fr 1fr; padding:10px 16px; border-bottom:1px solid var(--rule); align-items:center; }
+  .fc-proj-row { display:grid; grid-template-columns:60px 1fr 1fr 1fr; padding:7px 14px; border-bottom:0.5px solid rgba(0,0,0,.05); align-items:center; }
   .fc-proj-row:last-child { border-bottom:none; }
   .fc-proj-year { font-size:12px; font-weight:600; color:var(--ink-2); font-family:var(--mono); }
   .fc-proj-cell { font-family:var(--mono); font-size:12px; color:var(--ink-2); text-align:right; }
-  .fc-proj-cell.fees { color:var(--red); }
-  .fc-10bp { margin-top:16px; padding:14px 16px; border:1px solid rgba(26,122,74,.15); background:rgba(26,122,74,.03); border-radius:4px; }
-  .fc-10bp-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:4px; font-family:var(--sans); }
-  .fc-10bp-sub { font-size:10px; color:var(--ink-3); margin-bottom:10px; font-family:var(--mono); }
-  .fc-10bp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .fc-10bp-cell { padding:10px 12px; border:1px solid var(--rule); background:#fff; border-radius:4px; }
-  .fc-10bp-cell-label { font-size:9px; color:var(--ink-3); margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em; font-weight:600; font-family:var(--sans); }
-  .fc-10bp-cell-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--green); }
+  .fc-proj-cell.fees { color:#C53030; }
+  .fc-nego-section { margin-top:12px; padding:12px 14px; border:1px solid var(--rule); background:var(--white); border-radius:4px; }
+  .fc-nego-label { font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; font-family:var(--sans); }
+  .fc-nego-sub { font-size:10px; color:var(--ink-3); margin-bottom:8px; font-family:var(--mono); line-height:1.5; }
+  .fc-nego-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .fc-nego-cell { padding:8px 10px; border:0.5px solid var(--rule); background:#fff; border-radius:4px; text-align:center; }
+  .fc-nego-cell-label { font-size:9px; color:var(--ink-3); margin-bottom:2px; text-transform:uppercase; letter-spacing:.1em; font-weight:600; font-family:var(--sans); }
+  .fc-nego-cell-val { font-family:var(--serif); font-size:18px; font-weight:700; color:var(--green); }
+  .fc-nego-cta {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    margin-top:10px; padding:10px; border-radius:4px;
+    background:var(--green); color:#fff; text-decoration:none;
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    transition:background .15s;
+  }
+  .fc-nego-cta:hover { background:var(--green-2); }
+  .fc-nego-cta svg { transition:transform .15s; }
+  .fc-nego-cta:hover svg { transform:translateX(3px); }
   .fc-cta {
     display:flex; align-items:center; justify-content:center; gap:8px;
     width:100%; margin-top:16px;
@@ -301,12 +346,13 @@ export default function FeeCalculator({
   const isBelowMin = minAccount != null && amount > 0 && amount < minAccount;
   const useMinFeeFloor = isBelowMin && minFee != null;
 
-  const annualFee = useMemo(() => {
-    if (useMinFeeFloor) return minFee!;
+  const feeResult = useMemo((): CalcResult => {
+    if (useMinFeeFloor) return { totalFee: minFee!, usedIndustryFallback: false, fallbackTierMin: null };
     if (tiers.length > 0 && !industryOnly) return calcTieredFee(amount, tiers);
-    if (industryBp && amount > 0) return amount * (industryBp.median / 100);
-    return 0;
+    if (industryBp && amount > 0) return { totalFee: amount * (industryBp.median / 100), usedIndustryFallback: false, fallbackTierMin: null };
+    return { totalFee: 0, usedIndustryFallback: false, fallbackTierMin: null };
   }, [amount, tiers, industryOnly, industryBp, useMinFeeFloor, minFee]);
+  const annualFee = feeResult.totalFee;
   const effectiveRate = amount > 0 ? (annualFee / amount) * 100 : 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -371,7 +417,11 @@ export default function FeeCalculator({
               <div key={i} className={`fc-tier${i === activeTierIdx ? ' active' : ''}`}>
                 <span className="fc-tier-label">{tierLabel}</span>
                 <span className="fc-tier-rate">
-                  {tier.fee_pct != null ? `${tier.fee_pct}%` : 'Negotiated'}
+                  {tier.fee_pct != null
+                    ? `${tier.fee_pct}%`
+                    : feeResult.usedIndustryFallback && i === activeTierIdx
+                      ? `Negotiated · est. ${(getIndustryMedianRate(amount) * 100).toFixed(2)}%`
+                      : 'Negotiated'}
                 </span>
               </div>
             );
@@ -404,6 +454,12 @@ export default function FeeCalculator({
         )}
         {useMinFeeFloor && (
           <div className="fc-min-note">Minimum annual fee of {formatCurrency(minFee!)} applies for accounts below {formatAUM(minAccount)}</div>
+        )}
+
+        {feeResult.usedIndustryFallback && feeResult.fallbackTierMin != null && (
+          <div className="fc-min-note" style={{ color: 'var(--ink-3)' }}>
+            Rate above {formatAUM(feeResult.fallbackTierMin)} estimated from industry median — contact firm for negotiated rate
+          </div>
         )}
 
         {amount > 0 && (
@@ -456,8 +512,8 @@ export default function FeeCalculator({
             {showDetail && (
               <>
                 {industryBp && (
-                  <div className="fc-compare-section" style={{ marginTop: 16 }}>
-                    <div className="fc-compare-label">Industry Comparison · {industryBp.label} peer group</div>
+                  <div className="fc-compare-section" style={{ marginTop: 12 }}>
+                    <div className="fc-compare-label">Industry Comparison · {industryBp.label} Peer Group</div>
                     <div className="fc-compare-track">
                       <div className="fc-compare-median" style={{ left: `${Math.min((industryBp.median / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1, 0.01)) * 100, 98)}%` }} />
                       <div className="fc-compare-dot" style={{ left: `${Math.min((effectiveRate / Math.max(industryBp.p75 * 1.3, effectiveRate * 1.1, 0.01)) * 100, 98)}%`, background: verdictColor(effectiveRate, industryBp.median) }} />
@@ -468,12 +524,12 @@ export default function FeeCalculator({
                       <span>P75: {industryBp.p75.toFixed(2)}%</span>
                     </div>
                     {hasFirmFees && (
-                      <div style={{ fontSize: 13, fontWeight: 600, marginTop: 8, color: verdictColor(effectiveRate, industryBp.median), fontFamily: 'var(--sans)' }}>
+                      <div className="fc-compare-verdict" style={{ color: verdictColor(effectiveRate, industryBp.median) }}>
                         {effectiveRate < industryBp.median - 0.005
-                          ? `✓ ${(industryBp.median - effectiveRate).toFixed(2)}% below median — competitive`
+                          ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', flexShrink: 0 }} />{(industryBp.median - effectiveRate).toFixed(2)}% below median</>
                           : effectiveRate > industryBp.median + 0.005
-                          ? `⚠ ${(effectiveRate - industryBp.median).toFixed(2)}% above median`
-                          : '— At the industry median'}
+                          ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', flexShrink: 0 }} />{(effectiveRate - industryBp.median).toFixed(2)}% above median</>
+                          : <><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', flexShrink: 0 }} />At the industry median</>}
                       </div>
                     )}
                     {segmentMedian !== null && (
@@ -482,8 +538,8 @@ export default function FeeCalculator({
                   </div>
                 )}
 
-                <div style={{ marginTop: 16 }}>
-                  <div className="fc-proj-label">Portfolio Projection · 7% annual return assumed</div>
+                <div style={{ marginTop: 12 }}>
+                  <div className="fc-proj-label">Portfolio Projection · 7% Annual Return</div>
                   <div className="fc-proj-table">
                     <div className="fc-proj-head">
                       <span>Horizon</span><span>No Fees</span><span>With Fees</span><span>Fees Paid</span>
@@ -504,24 +560,33 @@ export default function FeeCalculator({
                 </div>
 
                 {effectiveRate > 0.10 && (
-                  <div className="fc-10bp">
-                    <div className="fc-10bp-title">What if fees were 10bp lower?</div>
-                    <div className="fc-10bp-sub">
-                      {effectiveRate.toFixed(2)}% → {lowerRate.toFixed(2)}% ({formatCompact(annualFee)} → {formatCompact(lowerFee)}/yr)
+                  <div className="fc-nego-section">
+                    <div className="fc-nego-label">Fee Negotiation Impact</div>
+                    <div className="fc-nego-sub">
+                      Estimated savings if you negotiated a 10bp reduction: {effectiveRate.toFixed(2)}% &rarr; {lowerRate.toFixed(2)}%
                     </div>
-                    <div className="fc-10bp-grid">
+                    <div className="fc-nego-grid">
                       {[5, 10, 20].map((y) => {
                         const current = projectGrowth(amount, effectiveRate / 100, y);
                         const lower = projectGrowth(amount, lowerRate / 100, y);
                         const savings = lower.value - current.value;
                         return (
-                          <div key={y} className="fc-10bp-cell">
-                            <div className="fc-10bp-cell-label">{y}yr savings</div>
-                            <div className="fc-10bp-cell-val">{formatCompact(savings)}</div>
+                          <div key={y} className="fc-nego-cell">
+                            <div className="fc-nego-cell-label">{y}yr Savings</div>
+                            <div className="fc-nego-cell-val">{formatCompact(savings)}</div>
                           </div>
                         );
                       })}
                     </div>
+                    <a
+                      href={`/negotiate?aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
+                      className="fc-nego-cta"
+                    >
+                      See your negotiation plan
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 14 14">
+                        <path d="M5 3l4 4-4 4" />
+                      </svg>
+                    </a>
                   </div>
                 )}
               </>
