@@ -563,7 +563,7 @@ const PAGE_CSS = `
   /* AUM chart wrap */
   .vfp-aum-wrap { background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden; }
   .vfp-aum-head { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--rule); }
-  .vfp-aum-stat { padding:11px 13px; border-right:1px solid var(--rule); background:var(--white); border-radius:0; }
+  .vfp-aum-stat { padding:11px 13px; border-right:1px solid var(--rule); background:var(--white); border-radius:0; text-align:center; }
   .vfp-aum-stat:last-child { border-right:none; }
   .vfp-aum-stat-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px; }
   .vfp-aum-stat-val { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); line-height:1; }
@@ -579,7 +579,7 @@ const PAGE_CSS = `
 
   /* Clients */
   .vfp-client-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
-  .vfp-client-card { padding:12px 0; border-bottom:0.5px solid var(--rule); }
+  .vfp-client-card { padding:12px 0; border-bottom:0.5px solid var(--rule); text-align:center; }
   .vfp-client-card:nth-child(odd) { padding-right:20px; border-right:0.5px solid var(--rule); }
   .vfp-client-card:nth-child(even) { padding-left:20px; }
   .vfp-client-card-label { font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px; }

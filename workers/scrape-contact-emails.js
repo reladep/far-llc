@@ -251,13 +251,24 @@ async function scoreAndFilterEmails(emailsWithSources, firmWebsite) {
 }
 
 async function getFirmsToScrape(limit) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/firmdata_website?website=not.is.null&select=crd,website,primary_business_name&limit=${limit * 3}`,
-    {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    }
-  );
-  let firms = await res.json();
+  // Paginate to get all firms (Supabase caps at 1000 per request)
+  let allFirms = [];
+  let offset = 0;
+  const pageSize = 1000;
+  
+  while (true) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/firmdata_website?website=not.is.null&select=crd,website,primary_business_name&offset=${offset}&limit=${pageSize}`,
+      {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      }
+    );
+    const firms = await res.json();
+    if (!firms || firms.length === 0) break;
+    allFirms.push(...firms);
+    offset += pageSize;
+    if (firms.length < pageSize) break;
+  }
 
   if (SAVE_JSON) {
     const jsonPath = path.join(__dirname, '..', 'data', 'contact_emails.json');
@@ -268,10 +279,10 @@ async function getFirmsToScrape(limit) {
         scrapedCrds = new Set(existing.map(e => e.crd));
       } catch (e) { }
     }
-    firms = firms.filter(f => !scrapedCrds.has(f.crd));
+    allFirms = allFirms.filter(f => !scrapedCrds.has(f.crd));
   }
 
-  return firms.slice(0, limit);
+  return allFirms.slice(0, limit);
 }
 
 async function main() {
@@ -315,6 +326,7 @@ async function main() {
 
       results.push(result);
       totalEmails += scoredEmails.length;
+      successCount++;
 
       console.log(`  ✓ Found ${scoredEmails.length} email(s):`);
       scoredEmails.forEach((e, i) => {
