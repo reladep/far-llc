@@ -579,7 +579,7 @@ export default function FeeCalculator({
                       })}
                     </div>
                     <a
-                      href={`/negotiate?aum=${amount}&fee=${effectiveRate.toFixed(2)}&crd=${crd}`}
+                      href={`/negotiate?aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
                       className="fc-nego-cta"
                     >
                       See your negotiation plan
