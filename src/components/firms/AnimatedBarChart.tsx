@@ -17,6 +17,51 @@ interface AnimatedBarChartProps {
   subtitle?: string;
 }
 
+const CSS = `
+  .abc-wrap { padding:20px 24px 14px; }
+  .abc-title {
+    font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-3); margin-bottom:16px;
+  }
+  .abc-title-sub { font-weight:400; text-transform:none; letter-spacing:0; margin-left:6px; }
+  .abc-chart { display:flex; align-items:flex-end; gap:0; height:140px; }
+  .abc-col {
+    flex:1; display:flex; flex-direction:column; align-items:center; height:100%;
+    position:relative; cursor:default; padding:0 2px;
+  }
+  .abc-col:hover .abc-bar-fill { filter:brightness(1.1); }
+  .abc-col:hover .abc-top { color:var(--ink); }
+  .abc-col:hover .abc-tooltip { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+  .abc-top {
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+    margin-bottom:4px; white-space:nowrap; transition:color .15s;
+  }
+  .abc-track { flex:1; width:100%; display:flex; align-items:flex-end; }
+  .abc-bar-fill {
+    width:100%; border-radius:1px 1px 0 0; transition:filter .15s;
+  }
+  .abc-year {
+    font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:6px;
+  }
+  .abc-delta {
+    font-family:var(--mono); font-size:10px; font-weight:500; margin-top:1px; height:14px;
+  }
+  .abc-delta-spacer { height:14px; margin-top:1px; }
+  .abc-delta.up { color:var(--green); }
+  .abc-delta.dn { color:#C53030; }
+  .abc-tooltip {
+    position:absolute; bottom:100%; left:50%; transform:translateX(-50%) translateY(4px);
+    background:var(--ink); color:#fff; padding:6px 10px; border-radius:4px;
+    font-family:var(--mono); font-size:10px; white-space:nowrap; z-index:10;
+    opacity:0; pointer-events:none; transition:opacity .15s, transform .15s;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .abc-tooltip::after {
+    content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:4px solid transparent; border-top-color:var(--ink);
+  }
+`;
+
 export default function AnimatedBarChart({ bars, title, subtitle }: AnimatedBarChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const revealed = useRef(false);
@@ -45,67 +90,53 @@ export default function AnimatedBarChart({ bars, title, subtitle }: AnimatedBarC
     return () => io.disconnect();
   }, []);
 
+  // Show delta for all bars except the first (no prior year to compare)
+  const showDelta = (bar: BarData, index: number) => {
+    if (!bar.delta) return false;
+    return index > 0;
+  };
+
   return (
-    <div ref={containerRef} style={{ padding: '28px 32px 20px' }}>
-      <div style={{
-        fontSize: 11, fontWeight: 600, color: 'var(--ink-2)',
-        letterSpacing: '0.06em', textTransform: 'uppercase',
-        marginBottom: 20,
-      }}>
+    <div ref={containerRef} className="abc-wrap">
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="abc-title">
         {title}
-        {subtitle && (
-          <span style={{
-            color: 'var(--ink-3)', fontWeight: 400,
-            textTransform: 'none', letterSpacing: 0, marginLeft: 8,
-          }}>
-            {subtitle}
-          </span>
-        )}
+        {subtitle && <span className="abc-title-sub">{subtitle}</span>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 160 }}>
-        {bars.map((bar, i) => (
-          <div key={i} style={{
-            flex: 1, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', height: '100%',
-          }}>
-            <div style={{
-              fontFamily: 'var(--mono)', fontSize: 10,
-              color: 'var(--ink-3)', marginBottom: 6, whiteSpace: 'nowrap',
-            }}>
-              {bar.topLabel}
-            </div>
-            <div style={{
-              flex: 1, width: '100%',
-              display: 'flex', alignItems: 'flex-end',
-              background: 'rgba(0,0,0,0.04)',
-            }}>
-              <div
-                data-bar-h={`${Math.max(bar.fraction * 100, 1)}%`}
-                style={{
-                  width: '100%',
-                  height: '0%',
-                  background: bar.color ?? '#22995E',
-                  borderRadius: '1px 1px 0 0',
-                }}
-              />
-            </div>
-            <div style={{
-              fontFamily: 'var(--mono)', fontSize: 10,
-              color: 'var(--ink-3)', marginTop: 8,
-            }}>
-              {bar.label}
-            </div>
-            {bar.delta && (
-              <div style={{
-                fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 500, marginTop: 2,
-                color: bar.deltaPositive !== false ? '#1A7A4A' : '#EF4444',
-              }}>
-                {bar.delta}
+      <div className="abc-chart">
+        {bars.map((bar, i) => {
+          const barColor = bar.color ?? '#22995E';
+
+          return (
+            <div key={i} className="abc-col">
+              <div className="abc-tooltip">
+                {bar.topLabel} · {bar.label}
+                {bar.delta && <> · {bar.delta} YoY</>}
               </div>
-            )}
-          </div>
-        ))}
+              <div className="abc-top">{bar.topLabel}</div>
+              <div className="abc-track">
+                <div
+                  className="abc-bar-fill"
+                  data-bar-h={`${Math.max(bar.fraction * 100, 1)}%`}
+                  style={{
+                    width: '100%',
+                    height: '0%',
+                    background: barColor,
+                  }}
+                />
+              </div>
+              <div className="abc-year">{bar.label}</div>
+              {showDelta(bar, i) && bar.delta ? (
+                <div className={`abc-delta ${bar.deltaPositive !== false ? 'up' : 'dn'}`}>
+                  {bar.delta}
+                </div>
+              ) : (
+                <div className="abc-delta-spacer" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

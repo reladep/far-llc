@@ -19,8 +19,8 @@ const faqColumns: { q: string; a: string }[][] = [
       a: 'We refresh from SEC filings monthly. Most firms file their ADV annually, with amendments filed on a rolling basis. Filing dates are shown on every profile so you always know the data vintage.',
     },
     {
-      q: "What's the Concierge session like?",
-      a: 'A 60-minute call with our research team where we walk through your situation — AUM, goals, advisor preferences, geography — and translate that into a shortlist of three vetted recommendations with written rationale and fee context for each.',
+      q: "What's included in the Concierge tier?",
+      a: 'Concierge is a customized engagement tailored to your situation. It can include advisor search and introductions, custom due diligence and background checks, fee benchmarking, and ongoing monitoring. You start by submitting a consultation request, and our team scopes the engagement to your needs.',
     },
   ],
   [
@@ -317,15 +317,15 @@ export default function PricingPage() {
                   Concierge
                 </div>
                 <div style={{ marginBottom: 6 }}>
-                  <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 52, fontWeight: 700, color: '#fff', letterSpacing: '-.03em', lineHeight: 1 }}>
-                    <sup style={{ fontSize: 22, verticalAlign: 'super', fontWeight: 400, marginRight: 1 }}>$</sup>599
+                  <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 44, fontWeight: 700, color: '#fff', letterSpacing: '-.03em', lineHeight: 1 }}>
+                    Custom
                   </span>
                 </div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.35)', marginBottom: 20 }}>one-time · includes annual access</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.35)', marginBottom: 20 }}>tailored engagement · includes annual access</div>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,.45)', lineHeight: 1.6, marginBottom: 24, minHeight: 52 }}>
-                  For investors who want expert eyes on their situation alongside the data.
+                  For investors who want expert due diligence, advisor vetting, and ongoing guidance beyond the data.
                 </p>
-                {/* Concierge call badge */}
+                {/* Concierge badge */}
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '14px 16px', background: 'rgba(255,255,255,.04)',
@@ -337,22 +337,23 @@ export default function PricingPage() {
                     display: 'grid', placeItems: 'center', flexShrink: 0,
                   }}>
                     <svg width="14" height="14" fill="none" stroke="rgba(45,189,116,.7)" strokeWidth="1.3" strokeLinecap="round" viewBox="0 0 14 14">
-                      <path d="M2 3C2 2.4 2.5 2 3 2h1.5l1 2.5-1.5 1.5s.5 2 2 3.5S9.5 11.5 9.5 11.5L11 10l2.5 1V12.5c0 .6-.5 1-1 1C5 13.5 2 8 2 3z" />
+                      <polygon points="7,1 13,4 13,10 7,13 1,10 1,4" fill="none" />
                     </svg>
                   </div>
                   <div>
-                    <strong style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.8)', marginBottom: 2 }}>1-on-1 Strategy Call</strong>
-                    <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.35)' }}>60-minute session with our research team</span>
+                    <strong style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.8)', marginBottom: 2 }}>Customized Analysis</strong>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,.35)' }}>Tailored to your specific situation</span>
                   </div>
                 </div>
                 <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '0 0 24px' }} />
                 <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32, flex: 1 }}>
                   {[
                     'Everything in Annual Access',
-                    '3 personalized advisor recommendations',
-                    'Custom shortlist with written rationale',
-                    'Fee negotiation benchmarking report',
-                    'Follow-up Q&A via email',
+                    'Custom due diligence & background checks',
+                    'Advisor search & introductions',
+                    'Fee negotiation benchmarking',
+                    'Ongoing monitoring & analysis',
+                    'Dedicated research team support',
                   ].map((f) => (
                     <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: 'rgba(255,255,255,.6)', lineHeight: 1.4 }}>
                       <CheckGreen />{f}
@@ -360,7 +361,7 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 <Link
-                  href="/contact"
+                  href="/deep-dive"
                   className="pc-cta-concierge"
                   style={{
                     display: 'block', textAlign: 'center', textDecoration: 'none',
@@ -370,7 +371,7 @@ export default function PricingPage() {
                     transition: 'all .15s', marginTop: 'auto',
                   }}
                 >
-                  Book Concierge
+                  Request a Consultation
                 </Link>
               </div>
 
@@ -453,7 +454,7 @@ export default function PricingPage() {
                     Annual<br /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#1A7A4A' }}>$199</span>
                   </th>
                   <th style={{ padding: '14px 20px', fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: '#5A7568', borderBottom: '2px solid #0C1810', textAlign: 'center' }}>
-                    Concierge<br /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>$599</span>
+                    Concierge<br /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>Custom</span>
                   </th>
                 </tr>
               </thead>
@@ -515,11 +516,11 @@ export default function PricingPage() {
                   </td>
                 </tr>
                 {[
-                  ['60-min 1-on-1 strategy call',            '—','—','✓'],
-                  ['3 personalized recommendations',         '—','—','✓'],
-                  ['Custom shortlist + written rationale',   '—','—','✓'],
-                  ['Fee negotiation benchmarking report',    '—','—','✓'],
-                  ['Follow-up Q&A via email',                '—','—','✓'],
+                  ['Custom due diligence & background checks','—','—','✓'],
+                  ['Advisor search & introductions',          '—','—','✓'],
+                  ['Fee negotiation benchmarking',            '—','—','✓'],
+                  ['Ongoing monitoring & analysis',           '—','—','✓'],
+                  ['Dedicated research team support',         '—','—','✓'],
                 ].map(([feature, c1, c2, c3]) => (
                   <tr key={feature} className="compare-tr">
                     <td style={{ padding: '13px 20px', fontSize: 13, color: '#2E4438', borderBottom: '1px solid #CAD8D0' }}>{feature}</td>

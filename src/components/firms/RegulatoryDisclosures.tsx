@@ -14,7 +14,7 @@ interface DisclosureItem {
 
 interface DisclosureCategory {
   label: string;
-  severity: 'critical' | 'serious' | 'moderate' | 'minor';
+  severity: 'critical' | 'serious' | 'moderate';
   items: DisclosureItem[];
 }
 
@@ -65,7 +65,7 @@ const CATEGORIES: DisclosureCategory[] = [
   },
   {
     label: 'Court Actions',
-    severity: 'minor',
+    severity: 'moderate',
     items: [
       { key: 'disclosure_firm_court_ruling_violation', label: 'Court Violation', description: 'A court has found the firm in violation of investment-related statutes or regulations.' },
       { key: 'disclosure_firm_court_ruling_investment', label: 'Investment-Related Ruling', description: 'A court has issued a ruling against the firm related to investment activities.' },
@@ -79,171 +79,264 @@ const SEVERITY_COLOR: Record<string, string> = {
   critical: '#EF4444',
   serious: '#F97316',
   moderate: '#F59E0B',
-  minor: '#CAD8D0',
+};
+
+const SEVERITY_LABEL: Record<string, string> = {
+  critical: 'Critical',
+  serious: 'Serious',
+  moderate: 'Moderate',
 };
 
 interface RegulatoryDisclosuresProps {
   firmData: FirmDisclosureData;
+  crd?: number;
 }
 
 const CSS = `
-  .rd-wrap {
-    --green:#1A7A4A; --green-3:#2DBD74; --green-pale:#E6F4ED;
-    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
-    --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+  .rd-card {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden;
   }
+
+  /* ── Summary strip (flagged state) ── */
+  .rd-summary {
+    display:flex; align-items:center; gap:16px;
+    padding:14px 20px; border-bottom:1px solid var(--rule);
+    background:rgba(239,68,68,.02);
+  }
+  .rd-summary-icon {
+    width:32px; height:32px; flex-shrink:0;
+    border-radius:50%; background:rgba(239,68,68,.08);
+    display:grid; place-items:center;
+  }
+  .rd-summary-title {
+    font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px;
+  }
+  .rd-summary-detail {
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .rd-summary-sev {
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  }
+  .rd-summary-sev-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+  /* ── Clean state ── */
   .rd-clean {
     display:flex; align-items:center; gap:16px;
-    padding:18px 22px; border-left:3px solid var(--green-3);
-    background:rgba(45,189,116,.04); border:1px solid rgba(45,189,116,.15);
-    border-left-width:3px;
+    padding:16px 20px;
+    background:rgba(45,189,116,.03);
   }
   .rd-clean-icon {
     width:32px; height:32px; flex-shrink:0;
     border-radius:50%; background:rgba(45,189,116,.12);
     display:grid; place-items:center;
   }
-  .rd-clean-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
-  .rd-clean-sub { font-size:11px; color:var(--ink-3); }
-  .rd-source { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:14px; }
-  .rd-table { }
+  .rd-clean-title { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
+  .rd-clean-sub { font-family:var(--sans); font-size:13px; color:var(--ink-3); line-height:1.5; }
+
+  /* ── Table rows ── */
+  .rd-table { padding:0 20px; }
   .rd-row {
-    display:grid; grid-template-columns:1fr 140px 100px;
+    display:grid; grid-template-columns:1fr auto 28px;
     align-items:center; border-bottom:1px solid var(--rule);
+    transition:background .12s; border-radius:0;
   }
   .rd-row:last-child { border-bottom:none; }
-  .rd-row-btn {
-    all:unset; width:100%; cursor:pointer; display:contents;
-  }
-  .rd-row-inner {
-    display:contents;
-  }
+  .rd-row.flagged:hover { background:rgba(239,68,68,.02); }
   .rd-cat {
-    display:flex; align-items:center; gap:10px; padding:14px 0;
+    display:flex; align-items:center; gap:10px; padding:12px 0;
   }
   .rd-dot {
     width:8px; height:8px; border-radius:50%; flex-shrink:0;
   }
-  .rd-cat-label { font-size:12px; color:var(--ink-2); font-weight:500; }
-  .rd-cat-count { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-left:4px; }
+  .rd-cat-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); font-weight:500; }
+  .rd-cat-count {
+    font-family:var(--mono); font-size:10px; font-weight:600; color:#fff;
+    background:var(--count-bg, var(--ink-3));
+    min-width:16px; height:16px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:0 5px; margin-left:6px;
+  }
   .rd-status {
-    padding:14px 0;
+    padding:12px 0;
   }
-  .rd-chip {
-    display:inline-block; font-family:var(--mono); font-size:10px; font-weight:600;
-    letter-spacing:.1em; text-transform:uppercase; padding:3px 9px;
-    border-radius:2px;
+  .rd-chip-none {
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+    letter-spacing:.05em;
   }
-  .rd-chip.none { background:var(--green-pale); color:var(--green); }
-  .rd-chip.flag { background:rgba(239,68,68,.08); color:var(--red); }
   .rd-chevron {
-    padding:14px 0; text-align:right;
-    font-size:10px; color:var(--ink-3); transition:transform .2s;
+    padding:12px 0; text-align:right;
+    font-size:10px; color:var(--ink-3);
     display:flex; align-items:center; justify-content:flex-end;
   }
+
+  /* ── Expanded detail ── */
   .rd-detail {
     grid-column:1/-1;
     border-top:1px solid var(--rule);
-    padding:14px 0 14px 28px;
+    padding:14px 0 14px 18px;
     background:var(--white);
   }
-  .rd-detail-item { margin-bottom:10px; }
+  .rd-detail-item {
+    display:flex; align-items:flex-start; gap:8px;
+    margin-bottom:10px;
+  }
   .rd-detail-item:last-child { margin-bottom:0; }
-  .rd-detail-label { font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:2px; }
-  .rd-detail-desc { font-size:11px; color:var(--ink-3); line-height:1.6; }
+  .rd-detail-bullet {
+    width:4px; height:4px; border-radius:50%; flex-shrink:0; margin-top:6px;
+  }
+  .rd-detail-label { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:2px; }
+  .rd-detail-desc { font-family:var(--sans); font-size:13px; color:var(--ink-3); line-height:1.6; }
+
+  /* ── Footer ── */
+  .rd-source {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:8px 24px; border-top:0.5px solid var(--rule);
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  }
+  .rd-source a {
+    color:var(--green); text-decoration:none;
+  }
+  .rd-source a:hover { text-decoration:underline; }
 `;
 
-export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosuresProps) {
+export default function RegulatoryDisclosures({ firmData, crd }: RegulatoryDisclosuresProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  const flaggedCategories = CATEGORIES.map(category => {
+  const categoriesWithFlags = CATEGORIES.map(category => {
     const flaggedItems = category.items.filter(item => {
       const val = firmData[item.key];
       return val === 'Y' || val === 'y';
     });
     return { ...category, flaggedItems };
-  }).filter(c => c.flaggedItems.length > 0);
+  });
 
+  const flaggedCategories = categoriesWithFlags.filter(c => c.flaggedItems.length > 0);
   const totalFlags = flaggedCategories.reduce((sum, c) => sum + c.flaggedItems.length, 0);
   const hasCleanRecord = totalFlags === 0;
 
-  return (
-    <div className="rd-wrap">
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+  // Build severity summary for the strip
+  const severityCounts: Record<string, number> = {};
+  flaggedCategories.forEach(c => {
+    const sev = c.severity;
+    severityCounts[sev] = (severityCounts[sev] || 0) + c.flaggedItems.length;
+  });
 
-      {hasCleanRecord ? (
-        <div className="rd-clean">
-          <div className="rd-clean-icon">
-            <svg width="14" height="14" fill="none" stroke="#2DBD74" strokeWidth="2" viewBox="0 0 14 14">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 7l3 3 6-6" />
-            </svg>
-          </div>
-          <div>
-            <div className="rd-clean-title">No disciplinary events on record</div>
-            <div className="rd-clean-sub">
-              No criminal, regulatory, SEC/CFTC, SRO, or court disclosures found in this firm&apos;s ADV filing.
+  const iapd = crd ? `https://adviserinfo.sec.gov/firm/summary/${crd}` : null;
+
+  return (
+    <div>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="rd-card">
+        {hasCleanRecord ? (
+          <div className="rd-clean">
+            <div className="rd-clean-icon">
+              <svg width="14" height="14" fill="none" stroke="#2DBD74" strokeWidth="2" viewBox="0 0 14 14">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 7l3 3 6-6" />
+              </svg>
+            </div>
+            <div>
+              <div className="rd-clean-title">No disciplinary events on record</div>
+              <div className="rd-clean-sub">
+                No criminal, regulatory, SEC/CFTC, SRO, or court disclosures found in this firm&apos;s ADV filing.
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="rd-table">
-          {CATEGORIES.map((category) => {
-            const flagged = flaggedCategories.find(c => c.label === category.label);
-            const hasFlagged = !!flagged && flagged.flaggedItems.length > 0;
-            const isExpanded = expandedCategory === category.label;
-            const dotColor = SEVERITY_COLOR[category.severity] || '#CAD8D0';
-
-            return (
-              <div key={category.label} className="rd-row" style={{ flexWrap: 'wrap' }}>
-                <button
-                  style={{ all: 'unset', display: 'contents', cursor: hasFlagged ? 'pointer' : 'default' }}
-                  onClick={() => hasFlagged && setExpandedCategory(isExpanded ? null : category.label)}
-                >
-                  <div className="rd-cat">
-                    <div className="rd-dot" style={{ background: dotColor }} />
-                    <span className="rd-cat-label">{category.label}</span>
-                    {hasFlagged && (
-                      <span className="rd-cat-count">{flagged.flaggedItems.length}</span>
-                    )}
-                  </div>
-                  <div className="rd-status">
-                    {hasFlagged ? (
-                      <span className="rd-chip flag">Flagged</span>
-                    ) : (
-                      <span className="rd-chip none">None found</span>
-                    )}
-                  </div>
-                  <div className="rd-chevron">
-                    {hasFlagged && (
-                      <svg
-                        width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
-                        viewBox="0 0 12 12"
-                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}
-                      >
-                        <path d="M2 4l4 4 4-4" />
-                      </svg>
-                    )}
-                  </div>
-                </button>
-
-                {isExpanded && flagged && (
-                  <div className="rd-detail">
-                    {flagged.flaggedItems.map((item) => (
-                      <div key={item.key} className="rd-detail-item">
-                        <div className="rd-detail-label">{item.label}</div>
-                        <div className="rd-detail-desc">{item.description}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        ) : (
+          <>
+            {/* Summary strip */}
+            <div className="rd-summary">
+              <div className="rd-summary-icon">
+                <svg width="14" height="14" fill="none" stroke="#EF4444" strokeWidth="2" viewBox="0 0 14 14">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 4v3M7 9.5v.5" />
+                  <circle cx="7" cy="7" r="6" />
+                </svg>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div>
+                <div className="rd-summary-title">
+                  {totalFlags} Disclosure{totalFlags !== 1 ? 's' : ''} Across {flaggedCategories.length} Categor{flaggedCategories.length !== 1 ? 'ies' : 'y'}
+                </div>
+                <div className="rd-summary-detail">
+                  {Object.entries(severityCounts).map(([sev, count]) => (
+                    <span key={sev} className="rd-summary-sev">
+                      <span className="rd-summary-sev-dot" style={{ background: SEVERITY_COLOR[sev] }} />
+                      {count} {SEVERITY_LABEL[sev]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-      <div className="rd-source">Source: SEC Form ADV · Reported by registrant</div>
+            {/* Category rows */}
+            <div className="rd-table">
+              {categoriesWithFlags.map((category) => {
+                const hasFlagged = category.flaggedItems.length > 0;
+                const isExpanded = expandedCategory === category.label;
+                const dotColor = SEVERITY_COLOR[category.severity] || '#CAD8D0';
+
+                return (
+                  <div key={category.label} className={`rd-row ${hasFlagged ? 'flagged' : ''}`}>
+                    <button
+                      style={{ all: 'unset', display: 'contents', cursor: hasFlagged ? 'pointer' : 'default' }}
+                      onClick={() => hasFlagged && setExpandedCategory(isExpanded ? null : category.label)}
+                    >
+                      <div className="rd-cat">
+                        <div className="rd-dot" style={{ background: dotColor }} />
+                        <span className="rd-cat-label">{category.label}</span>
+                        {hasFlagged && (
+                          <span className="rd-cat-count" style={{ '--count-bg': dotColor } as React.CSSProperties}>
+                            {category.flaggedItems.length}
+                          </span>
+                        )}
+                      </div>
+                      <div className="rd-status">
+                        {!hasFlagged && (
+                          <span className="rd-chip-none">None found</span>
+                        )}
+                      </div>
+                      <div className="rd-chevron">
+                        {hasFlagged && (
+                          <svg
+                            width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5"
+                            viewBox="0 0 12 12"
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}
+                          >
+                            <path d="M2 4l4 4 4-4" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="rd-detail">
+                        {category.flaggedItems.map((item) => (
+                          <div key={item.key} className="rd-detail-item">
+                            <div className="rd-detail-bullet" style={{ background: dotColor }} />
+                            <div>
+                              <div className="rd-detail-label">{item.label}</div>
+                              <div className="rd-detail-desc">{item.description}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="rd-source">
+          <span>Source: SEC Form ADV · Reported by registrant</span>
+          {iapd && (
+            <>
+              <span>·</span>
+              <a href={iapd} target="_blank" rel="noopener noreferrer">View on IAPD</a>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
