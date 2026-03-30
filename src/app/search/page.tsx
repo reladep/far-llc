@@ -1523,11 +1523,11 @@ export default function SearchPage() {
     if (filters.totalClientsMin) params.set('totalClients', filters.totalClientsMin);
     if (filters.aumPerAdvisorMin) params.set('aumPerAdvisor', filters.aumPerAdvisorMin);
     if (filters.clientsPerAdvisorMin) params.set('clientsPerAdvisor', filters.clientsPerAdvisorMin);
-    if (filters.feeStructure.size > 0) params.set('fee', [...filters.feeStructure].join(','));
-    if (filters.firmType.size > 0) params.set('type', [...filters.firmType].join(','));
-    if (filters.clientType.size > 0) params.set('client', [...filters.clientType].join(','));
+    if (filters.feeStructure.size > 0) params.set('fee', Array.from(filters.feeStructure).join(','));
+    if (filters.firmType.size > 0) params.set('type', Array.from(filters.firmType).join(','));
+    if (filters.clientType.size > 0) params.set('client', Array.from(filters.clientType).join(','));
     if (filters.hasAlternatives) params.set('alts', '1');
-    if (filters.tags.size > 0) params.set('tag', [...filters.tags].join(','));
+    if (filters.tags.size > 0) params.set('tag', Array.from(filters.tags).join(','));
     if (searchQuery) params.set('q', searchQuery);
     const qs = params.toString();
     const newUrl = qs ? `/search?${qs}` : '/search';

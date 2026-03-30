@@ -93,20 +93,26 @@ const CSS = `
     --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
     --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
   }
+  .rd-card {
+    background:#fff; border:0.5px solid var(--rule); border-radius:9px; overflow:hidden;
+  }
   .rd-clean {
     display:flex; align-items:center; gap:16px;
-    padding:18px 22px; border-left:3px solid var(--green-3);
-    background:rgba(45,189,116,.04); border:1px solid rgba(45,189,116,.15);
-    border-left-width:3px;
+    padding:16px 20px;
+    background:rgba(45,189,116,.03);
   }
   .rd-clean-icon {
     width:32px; height:32px; flex-shrink:0;
     border-radius:50%; background:rgba(45,189,116,.12);
     display:grid; place-items:center;
   }
-  .rd-clean-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px; }
-  .rd-clean-sub { font-size:11px; color:var(--ink-3); }
-  .rd-source { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:14px; }
+  .rd-clean-title { font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:3px; font-family:var(--sans); }
+  .rd-clean-sub { font-size:13px; color:var(--ink-3); line-height:1.5; font-family:var(--sans); }
+  .rd-source {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 24px; border-top:0.5px solid var(--rule);
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  }
   .rd-table { }
   .rd-row {
     display:grid; grid-template-columns:1fr 140px 100px;
@@ -171,7 +177,7 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
   return (
     <div className="rd-wrap">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-
+      <div className="rd-card">
       {hasCleanRecord ? (
         <div className="rd-clean">
           <div className="rd-clean-icon">
@@ -244,6 +250,7 @@ export default function RegulatoryDisclosures({ firmData }: RegulatoryDisclosure
       )}
 
       <div className="rd-source">Source: SEC Form ADV · Reported by registrant</div>
+      </div>
     </div>
   );
 }
