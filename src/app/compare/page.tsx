@@ -432,7 +432,40 @@ const PAGE_CSS = `
     .cp-gate-card { top: 120px !important; padding: 28px 20px !important; max-width: calc(100% - 32px) !important; }
     .cp-empty-state { padding: 48px 16px !important; }
     .cp-search-card { margin: 0 16px; }
+    .cp-similar-grid { grid-template-columns: 1fr !important; }
   }
+
+  /* ── Similar Firms ───────────────────────────────────────────────── */
+  .cp-similar-section { max-width: 1200px; margin: 0 auto 60px; padding: 0 48px; }
+  .cp-similar-card {
+    background: #fff; border: 0.5px solid var(--rule); border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+  }
+  .cp-similar-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  }
+  .cp-similar-item {
+    padding: 16px 20px; border-bottom: 0.5px solid var(--rule);
+    border-right: 0.5px solid var(--rule);
+    display: flex; align-items: center; gap: 14;
+    transition: background .15s;
+  }
+  .cp-similar-item:hover { background: rgba(26,122,74,.02); }
+  .cp-similar-item:nth-child(3n) { border-right: none; }
+  .cp-similar-info { flex: 1; min-width: 0; }
+  .cp-similar-name {
+    font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cp-similar-loc { font-family: var(--sans); font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .cp-similar-why { font-family: var(--mono); font-size: 9px; color: var(--green); margin-top: 3px; letter-spacing: .03em; }
+  .cp-similar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .cp-similar-add {
+    background: none; border: 1px solid var(--rule); border-radius: 4px;
+    font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--green);
+    padding: 5px 12px; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .cp-similar-add:hover { background: rgba(45,189,116,.06); border-color: var(--green); }
 `;
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
@@ -579,6 +612,7 @@ export default function ComparePage() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [activeSection, setActiveSection] = useState('vvs');
   const [showSearch, setShowSearch] = useState(false);
+  const [similarFirms, setSimilarFirms] = useState<{ crd: number; name: string; city: string | null; state: string; aum: number | null; score: number | null; reason: string }[]>([]);
 
   // Session
   useEffect(() => {
@@ -789,6 +823,82 @@ export default function ComparePage() {
   }, [selected]);
 
   useEffect(() => { fetchComparison(); }, [fetchComparison]);
+
+  // Fetch similar firms when comparison data changes
+  useEffect(() => {
+    if (comparisonData.length === 0 || selected.length >= 4) { setSimilarFirms([]); return; }
+    const anchor = comparisonData[0]; // base similarity on the first firm
+    if (!anchor.aumRaw) return;
+
+    const selectedCrds = selected.map(s => s.crd);
+    const aumLo = Math.round(anchor.aumRaw * 0.3);
+    const aumHi = Math.round(anchor.aumRaw * 3);
+
+    (async () => {
+      try {
+        // Same-state + out-of-state candidates
+        const [{ data: sameState }, { data: otherState }] = await Promise.all([
+          supabase.from('firmdata_current')
+            .select('crd, primary_business_name, main_office_city, main_office_state, aum')
+            .eq('main_office_state', anchor.location.split(', ').pop() || '')
+            .not('aum', 'is', null)
+            .gte('aum', aumLo).lte('aum', aumHi)
+            .order('aum', { ascending: false })
+            .limit(15),
+          supabase.from('firmdata_current')
+            .select('crd, primary_business_name, main_office_city, main_office_state, aum')
+            .neq('main_office_state', anchor.location.split(', ').pop() || '')
+            .not('aum', 'is', null)
+            .gte('aum', Math.round(anchor.aumRaw! * 0.5)).lte('aum', Math.round(anchor.aumRaw! * 2))
+            .order('aum', { ascending: false })
+            .limit(15),
+        ]);
+
+        const all = [...(sameState || []), ...(otherState || [])]
+          .filter(c => !selectedCrds.includes(c.crd));
+        if (!all.length) { setSimilarFirms([]); return; }
+
+        // Score by AUM proximity and geography
+        const anchorAum = anchor.aumRaw!;
+        const anchorState = anchor.location.split(', ').pop() || '';
+        const scored = all.map(c => {
+          const ratio = Math.min(c.aum, anchorAum) / Math.max(c.aum, anchorAum);
+          const geo = c.main_office_state === anchorState ? 0.15 : 0;
+          return { ...c, _score: ratio * 0.85 + geo };
+        }).sort((a, b) => b._score - a._score).slice(0, 8);
+
+        // Get display names and scores
+        const crds = scored.map(s => s.crd);
+        const [{ data: names }, { data: scores }] = await Promise.all([
+          supabase.from('firm_names').select('crd, display_name').in('crd', crds),
+          supabase.from('firm_scores').select('crd, final_score').in('crd', crds),
+        ]);
+        const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+        const scoreMap = new Map((scores || []).map(s => [s.crd, s.final_score]));
+
+        setSimilarFirms(scored.slice(0, 6).map(c => {
+          const sameState = c.main_office_state === anchorState;
+          const ratio = Math.min(c.aum, anchorAum) / Math.max(c.aum, anchorAum);
+          const reason = [
+            ratio > 0.6 ? 'Comparable AUM' : null,
+            sameState ? 'Same State' : null,
+          ].filter(Boolean).join(' · ') || 'Similar Scale';
+          return {
+            crd: c.crd,
+            name: nameMap.get(c.crd) || c.primary_business_name || 'Unknown',
+            city: c.main_office_city,
+            state: c.main_office_state,
+            aum: c.aum,
+            score: scoreMap.get(c.crd) ?? null,
+            reason,
+          };
+        }));
+      } catch (e) {
+        console.error('Similar firms error:', e);
+        setSimilarFirms([]);
+      }
+    })();
+  }, [comparisonData, selected]);
 
   // Handlers
   const addFirm = (firm: FirmBasic) => {
@@ -1105,6 +1215,58 @@ export default function ComparePage() {
                 )}
               </div>
             </div>
+
+            {/* ── SIMILAR FIRMS ──────────────────────────────────────── */}
+            {similarFirms.length > 0 && selected.length < 4 && !isGated && (
+              <div className="cp-similar-section">
+                <div className="cp-similar-card">
+                  <div className="cp-section-head">
+                    <span className="cp-section-title">Compare Similar Firms</span>
+                    <span className="cp-section-meta">Based on AUM, geography, and firm profile</span>
+                  </div>
+                  <div className="cp-similar-grid">
+                    {similarFirms.map(sf => {
+                      const titleName = sf.name.replace(/\b\w+/g, w => {
+                        const lower = w.toLowerCase();
+                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
+                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+                      });
+                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                      const scoreVal = sf.score != null ? Math.round(sf.score) : null;
+                      const col = scoreVal != null ? (scoreVal >= 80 ? 'var(--green)' : scoreVal >= 50 ? 'var(--amber)' : 'var(--red)') : 'var(--rule)';
+                      return (
+                        <div key={sf.crd} className="cp-similar-item">
+                          <div className="cp-similar-info">
+                            <div className="cp-similar-name">{titleName}</div>
+                            <div className="cp-similar-loc">{titleCity}, {sf.state} · {formatAUM(sf.aum)}</div>
+                            <div className="cp-similar-why">{sf.reason}</div>
+                          </div>
+                          <div className="cp-similar-right">
+                            {scoreVal != null && (() => {
+                              const circ = 2 * Math.PI * 13;
+                              const offset = circ * (1 - scoreVal / 100);
+                              return (
+                                <svg width="34" height="34" viewBox="0 0 34 34">
+                                  <circle cx="17" cy="17" r="13" fill="none" stroke="var(--rule)" strokeWidth="2.5" />
+                                  <circle cx="17" cy="17" r="13" fill="none" stroke={col} strokeWidth="2.5"
+                                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                                  <text x="17" y="17" textAnchor="middle" dominantBaseline="central"
+                                    style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, fill: col }}>{scoreVal}</text>
+                                </svg>
+                              );
+                            })()}
+                            <button
+                              className="cp-similar-add"
+                              onClick={() => addFirm({ crd: sf.crd, primary_business_name: sf.name })}
+                            >+ Add</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>{/* /gate-wrap */}
 
