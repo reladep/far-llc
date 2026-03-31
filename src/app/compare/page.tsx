@@ -21,6 +21,12 @@ interface FeeTier {
   fee_pct: number | null;
 }
 
+interface AssetAlloc {
+  label: string;
+  pct: number;
+  color: string;
+}
+
 interface FirmComparison {
   crd: number;
   name: string;
@@ -34,10 +40,14 @@ interface FirmComparison {
   minAccount: string;
   feeStructureType: string;
   feeMin: string;
+  feeRangeMin: string;
+  feeRangeMax: string;
+  minimumFee: string;
   wealthTier: string;
   clientBase: string;
   website: string;
   feeTiers: FeeTier[];
+  logoKey: string | null;
   // Scores
   finalScore: number | null;
   disclosureScore: number | null;
@@ -48,14 +58,35 @@ interface FirmComparison {
   clientGrowthScore: number | null;
   advisorBandwidthScore: number | null;
   derivativesScore: number | null;
-  // Growth
+  // Growth (from firmdata_growth_rate_rankings)
   aumGrowth1yr: string;
   aumGrowth5yr: string;
+  aumGrowth10yr: string;
+  clientGrowth1yr: string;
+  clientGrowth5yr: string;
   aumPerAdvisor: string;
   // Regulatory
   hasDisciplinary: string;
   privateFundAdvisor: string;
   legalStructure: string;
+  // Asset allocation
+  assetAllocation: AssetAlloc[];
+  // Client composition
+  clientBreakdown: { label: string; count: number }[];
+  // Services
+  services: Record<string, boolean>;
+  // AUM split
+  aumDiscretionary: number | null;
+  aumNonDiscretionary: number | null;
+  // Percentiles
+  aumPercentile: string | null;
+  // Filing freshness
+  latestFiling: string;
+  // Offices
+  numOffices: string;
+  // Philosophy
+  investmentPhilosophy: string;
+  firmCharacter: string;
 }
 
 // ─── CONSTANTS & HELPERS ─────────────────────────────────────────────────────
@@ -467,6 +498,68 @@ const PAGE_CSS = `
     padding: 5px 12px; cursor: pointer; transition: all .15s; white-space: nowrap;
   }
   .cp-similar-add:hover { background: rgba(45,189,116,.06); border-color: var(--green); }
+
+  /* ── Stacked bar (asset allocation) ────────────────────────── */
+  .cp-alloc-bar { display: flex; height: 20px; border-radius: 4px; overflow: hidden; width: 100%; }
+  .cp-alloc-seg { transition: width .6s cubic-bezier(.16,1,.3,1); }
+  .cp-alloc-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; }
+  .cp-alloc-legend-item {
+    display: flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 9px; color: var(--ink-3);
+  }
+  .cp-alloc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Services grid ─────────────────────────────────────────── */
+  .cp-svc-check { color: var(--green); font-weight: 700; font-size: 13px; }
+  .cp-svc-x { color: var(--rule); font-size: 13px; }
+
+  /* ── AUM split bar ─────────────────────────────────────────── */
+  .cp-split-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; background: var(--rule); }
+  .cp-split-disc { background: var(--green); transition: width .6s ease; }
+  .cp-split-nondisc { background: var(--amber); transition: width .6s ease; }
+  .cp-split-labels { display: flex; justify-content: space-between; margin-top: 4px; font-family: var(--mono); font-size: 9px; color: var(--ink-3); }
+
+  /* ── Percentile tag ────────────────────────────────────────── */
+  .cp-pctile {
+    font-family: var(--mono); font-size: 9px; font-weight: 600;
+    color: var(--green); background: rgba(45,189,116,.08);
+    padding: 1px 6px; border-radius: 3px; margin-left: 6px;
+    letter-spacing: .03em;
+  }
+
+  /* ── Philosophy truncate ───────────────────────────────────── */
+  .cp-philosophy {
+    font-family: var(--sans); font-size: 11px; color: var(--ink-2);
+    line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* ── Website link ──────────────────────────────────────────── */
+  .cp-web-link {
+    font-family: var(--mono); font-size: 11px; color: var(--green);
+    text-decoration: none; word-break: break-all;
+  }
+  .cp-web-link:hover { text-decoration: underline; }
+
+  /* ── Firm logo in header ───────────────────────────────────── */
+  .cp-firm-logo {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.1); overflow: hidden;
+    display: grid; place-items: center;
+  }
+  .cp-firm-logo img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+  .cp-firm-logo-fallback {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--serif); font-size: 11px; font-weight: 700;
+  }
+
+  /* ── Client comp bars ──────────────────────────────────────── */
+  .cp-client-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .cp-client-bar-label { font-family: var(--sans); font-size: 10px; color: var(--ink-3); width: 80px; flex-shrink: 0; text-align: right; }
+  .cp-client-bar-track { flex: 1; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+  .cp-client-bar-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width .5s ease; }
+  .cp-client-bar-count { font-family: var(--mono); font-size: 9px; color: var(--ink-3); width: 30px; }
 `;
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
@@ -681,14 +774,20 @@ export default function ComparePage() {
       { data: allScores },
       { data: allFeesAndMins },
       { data: allGrowth },
+      { data: allGrowthRank },
+      { data: allLogos },
+      { count: totalFirmCount },
     ] = await Promise.all([
-      supabase.from('firmdata_current').select('crd, aum, employee_total, employee_investment, main_office_city, main_office_state, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, legal_structure, private_fund_advisor, latest_adv_filing').in('crd', crds),
+      supabase.from('firmdata_current').select('crd, aum, aum_discretionary, aum_non_discretionary, employee_total, employee_investment, main_office_city, main_office_state, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, client_banks_number, client_bdc_number, client_govt_number, client_insurance_number, client_investment_cos_number, client_other_advisors_number, client_swf_number, legal_structure, private_fund_advisor, latest_adv_filing, number_of_offices, asset_allocation_cash, asset_allocation_derivatives, asset_allocation_ig_corp_bonds, asset_allocation_non_ig_corp_bonds, asset_allocation_public_equity_direct, asset_allocation_private_equity_direct, asset_allocation_us_govt_bonds, asset_allocation_us_muni_bonds, asset_allocation_other, services_financial_planning, services_mgr_selection, services_pension_consulting, services_port_management_individuals, services_port_management_institutional, services_port_management_pooled').in('crd', crds),
       supabase.from('firmdata_feetiers').select('crd, fee_pct, min_aum, max_aum').in('crd', crds),
-      supabase.from('firmdata_profile_text').select('crd, wealth_tier, client_base').in('crd', crds),
+      supabase.from('firmdata_profile_text').select('crd, wealth_tier, client_base, investment_philosophy, firm_character').in('crd', crds),
       supabase.from('firmdata_website').select('crd, website').in('crd', crds),
       supabase.from('firm_scores').select('*').in('crd', crds),
-      supabase.from('firmdata_feesandmins').select('crd, fee_structure_type, minimum_account_size').in('crd', crds),
+      supabase.from('firmdata_feesandmins').select('crd, fee_structure_type, minimum_account_size, fee_range_min, fee_range_max, minimum_fee').in('crd', crds),
       supabase.from('firmdata_growth').select('crd, aum, date_submitted').in('crd', crds).order('date_submitted', { ascending: true }),
+      supabase.from('firmdata_growth_rate_rankings').select('crd, aum_1y_growth_annualized, aum_5y_growth_annualized, aum_10y_growth_annualized, clients_1y_growth_annualized, clients_5y_growth_annualized, clients_10y_growth_annualized').in('crd', crds),
+      supabase.from('firm_logos').select('crd, logo_key').eq('has_logo', true).in('crd', crds),
+      supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).not('aum', 'is', null),
     ]);
 
     // Index by CRD
@@ -697,6 +796,25 @@ export default function ComparePage() {
     const webMap = new Map((allWeb || []).map(r => [r.crd, r]));
     const scoreMap = new Map((allScores || []).map(r => [r.crd, r]));
     const feesMinMap = new Map((allFeesAndMins || []).map(r => [r.crd, r]));
+    const growthRankMap = new Map((allGrowthRank || []).map(r => [r.crd, r]));
+    const logoMap = new Map((allLogos || []).map(r => [r.crd, r.logo_key]));
+
+    // AUM percentile — get count of all firms, then count below each firm's AUM
+    const totalPercentileFirms = totalFirmCount ?? 0;
+    const aumPercentileMap = new Map<number, string>();
+    if (totalPercentileFirms > 0) {
+      await Promise.all(selected.map(async (firm) => {
+        const c = currentMap.get(firm.crd);
+        const firmAum = c ? parseFloat(String(c.aum)) : NaN;
+        if (isNaN(firmAum)) return;
+        const { count } = await supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).lt('aum', firmAum).not('aum', 'is', null);
+        if (count != null) {
+          const pct = Math.round((count / totalPercentileFirms) * 100);
+          const topPct = Math.max(100 - pct, 1);
+          aumPercentileMap.set(firm.crd, `Top ${topPct}%`);
+        }
+      }));
+    }
 
     // Group fees and growth by CRD
     const feesByCrd = new Map<number, typeof allFees>();
@@ -746,16 +864,30 @@ export default function ComparePage() {
       const aumPerAdvisor = aum && empInv
         ? formatAUM(aum / empInv) : '—';
 
-      // Growth calculations
-      let aumGrowth1yr = '—', aumGrowth5yr = '—';
-      if (growthRows.length >= 2) {
+      // Growth from rankings table (preferred) or fallback to manual calculation
+      const gr = growthRankMap.get(firm.crd);
+      const fmtGrowth = (v: unknown): string => {
+        if (v == null) return '—';
+        const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+        if (isNaN(n)) return '—';
+        return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+      };
+
+      let aumGrowth1yr = fmtGrowth(gr?.aum_1y_growth_annualized);
+      let aumGrowth5yr = fmtGrowth(gr?.aum_5y_growth_annualized);
+      const aumGrowth10yr = fmtGrowth(gr?.aum_10y_growth_annualized);
+      const clientGrowth1yr = fmtGrowth(gr?.clients_1y_growth_annualized);
+      const clientGrowth5yr = fmtGrowth(gr?.clients_5y_growth_annualized);
+
+      // Fallback growth from firmdata_growth if rankings unavailable
+      if (aumGrowth1yr === '—' && growthRows.length >= 2) {
         const byYear = new Map<number, number>();
         growthRows.forEach(g => {
           const parts = (g.date_submitted || '').split('/');
           if (parts.length !== 3) return;
           const year = parseInt(parts[2]);
-          const aum = typeof g.aum === 'string' ? parseFloat(g.aum.replace(/[$,]/g, '')) : g.aum;
-          if (!isNaN(year) && aum > 0) byYear.set(year, aum);
+          const a = typeof g.aum === 'string' ? parseFloat(g.aum.replace(/[$,]/g, '')) : g.aum;
+          if (!isNaN(year) && a > 0) byYear.set(year, a);
         });
         const years = Array.from(byYear.entries()).sort((a, b) => a[0] - b[0]);
         if (years.length >= 2) {
@@ -763,7 +895,6 @@ export default function ComparePage() {
           const prev = years[years.length - 2][1];
           const pct1 = ((latest - prev) / prev * 100);
           aumGrowth1yr = `${pct1 >= 0 ? '+' : ''}${pct1.toFixed(1)}%`;
-
           if (years.length >= 6) {
             const fiveAgo = years[years.length - 6][1];
             const pct5 = ((latest - fiveAgo) / fiveAgo * 100);
@@ -777,9 +908,78 @@ export default function ComparePage() {
         ? (FEE_TYPE_LABELS[feesMin.fee_structure_type] || feesMin.fee_structure_type)
         : (fees.length > 1 ? 'Tiered' : fees.length === 1 ? 'Flat Fee' : '—');
 
-      const minFee = fees.length > 0
+      const minFeeRate = fees.length > 0
         ? Math.min(...fees.filter((f: { fee_pct: number | null }) => f.fee_pct != null).map((f: { fee_pct: number | null }) => f.fee_pct!))
         : null;
+
+      // Fee range from feesandmins
+      const feeRangeMinVal = parseNum(feesMin?.fee_range_min);
+      const feeRangeMaxVal = parseNum(feesMin?.fee_range_max);
+      const minimumFeeVal = parseNum(feesMin?.minimum_fee);
+
+      // Asset allocation
+      const ALLOC_COLORS = ['#2DBD74', '#1A7A4A', '#22995E', '#6BB8E0', '#A0A0CC', '#7DC8A0', '#80B0D0', '#B0A0C8', '#70C0B0'];
+      const ALLOC_FIELDS: [string, string][] = [
+        ['Public Equity', 'asset_allocation_public_equity_direct'],
+        ['US Gov Bonds', 'asset_allocation_us_govt_bonds'],
+        ['Corp Bonds (IG)', 'asset_allocation_ig_corp_bonds'],
+        ['Corp Bonds (HY)', 'asset_allocation_non_ig_corp_bonds'],
+        ['Muni Bonds', 'asset_allocation_us_muni_bonds'],
+        ['Private Equity', 'asset_allocation_private_equity_direct'],
+        ['Cash', 'asset_allocation_cash'],
+        ['Derivatives', 'asset_allocation_derivatives'],
+        ['Other', 'asset_allocation_other'],
+      ];
+      const assetAllocation: AssetAlloc[] = current
+        ? ALLOC_FIELDS.map(([label, field], i) => {
+            const raw = parseNum((current as Record<string, unknown>)[field]);
+            return raw && raw > 0 ? { label, pct: raw, color: ALLOC_COLORS[i] } : null;
+          }).filter((a): a is AssetAlloc => a != null)
+        : [];
+
+      // Client composition — all 14 client type fields
+      const CLIENT_FIELDS: [string, string][] = [
+        ['High Net Worth', 'client_hnw_number'],
+        ['Non-HNW Individuals', 'client_non_hnw_number'],
+        ['Pension Plans', 'client_pension_number'],
+        ['Charitable Orgs', 'client_charitable_number'],
+        ['Corporations', 'client_corporations_number'],
+        ['Pooled Vehicles', 'client_pooled_vehicles_number'],
+        ['Banks', 'client_banks_number'],
+        ['Insurance Cos', 'client_insurance_number'],
+        ['Investment Cos', 'client_investment_cos_number'],
+        ['Government', 'client_govt_number'],
+        ['Other Advisors', 'client_other_advisors_number'],
+        ['Sovereign Wealth', 'client_swf_number'],
+        ['BDCs', 'client_bdc_number'],
+        ['Other', 'client_other_number'],
+      ];
+      const clientBreakdown = current
+        ? CLIENT_FIELDS.map(([label, field]) => {
+            const count = parseNum((current as Record<string, unknown>)[field]) || 0;
+            return { label, count };
+          }).filter(c => c.count > 0).sort((a, b) => b.count - a.count).slice(0, 5)
+        : [];
+
+      // Services
+      const services: Record<string, boolean> = {
+        'Financial Planning': current?.services_financial_planning === 'Y',
+        'Manager Selection': current?.services_mgr_selection === 'Y',
+        'Pension Consulting': current?.services_pension_consulting === 'Y',
+        'Individual Portfolios': current?.services_port_management_individuals === 'Y',
+        'Institutional Mgmt': current?.services_port_management_institutional === 'Y',
+        'Pooled Vehicles': current?.services_port_management_pooled === 'Y',
+      };
+
+      // AUM split
+      const aumDisc = parseNum(current?.aum_discretionary);
+      const aumNonDisc = parseNum(current?.aum_non_discretionary);
+
+      // Filing freshness
+      const latestFiling = current?.latest_adv_filing || '—';
+
+      // Offices
+      const offices = parseNum(current?.number_of_offices);
 
       return {
         crd: firm.crd,
@@ -793,12 +993,16 @@ export default function ComparePage() {
         avgClientSize,
         minAccount: minAcct ? formatAUM(minAcct) : '—',
         feeStructureType: feeType,
-        feeMin: minFee != null ? `${minFee}%` : '—',
+        feeMin: minFeeRate != null ? `${minFeeRate}%` : '—',
+        feeRangeMin: feeRangeMinVal != null ? `${feeRangeMinVal}%` : '—',
+        feeRangeMax: feeRangeMaxVal != null ? `${feeRangeMaxVal}%` : '—',
+        minimumFee: minimumFeeVal != null ? formatCompact(minimumFeeVal) : '—',
         wealthTier: profile?.wealth_tier || '—',
         clientBase: profile?.client_base || '—',
         website: web?.website || '—',
         feeTiers: fees as FeeTier[],
-        // Scores — final_score is 0-100, sub-scores are 0-10 (scaled visually in ScoreRow)
+        logoKey: logoMap.get(firm.crd) ?? null,
+        // Scores
         finalScore: score?.final_score ?? null,
         disclosureScore: score?.disclosure_score ?? null,
         feeTransparencyScore: score?.fee_transparency_score ?? null,
@@ -811,11 +1015,25 @@ export default function ComparePage() {
         // Growth
         aumGrowth1yr,
         aumGrowth5yr,
+        aumGrowth10yr,
+        clientGrowth1yr,
+        clientGrowth5yr,
         aumPerAdvisor,
         // Regulatory
         hasDisciplinary: '—',
-        privateFundAdvisor: current?.private_fund_advisor ? 'Yes' : 'No',
+        privateFundAdvisor: current?.private_fund_advisor === 'Y' ? 'Yes' : 'No',
         legalStructure: current?.legal_structure || '—',
+        // New fields
+        assetAllocation,
+        clientBreakdown,
+        services,
+        aumDiscretionary: aumDisc,
+        aumNonDiscretionary: aumNonDisc,
+        aumPercentile: aumPercentileMap.get(firm.crd) || null,
+        latestFiling,
+        numOffices: offices ? offices.toLocaleString() : '—',
+        investmentPhilosophy: profile?.investment_philosophy || '—',
+        firmCharacter: profile?.firm_character || '—',
       };
     });
 
@@ -911,7 +1129,7 @@ export default function ComparePage() {
 
   // IntersectionObserver for jump nav
   useEffect(() => {
-    const ids = ['vvs', 'aum', 'clients', 'regulatory', 'fees'];
+    const ids = ['vvs', 'aum', 'allocation', 'clients', 'services', 'regulatory', 'fees'];
     const observer = new IntersectionObserver(
       (entries) => entries.forEach(entry => { if (entry.isIntersecting) setActiveSection(entry.target.id); }),
       { threshold: 0.1, rootMargin: '-100px 0px -60% 0px' }
@@ -930,7 +1148,9 @@ export default function ComparePage() {
   const jumpLinks = [
     { id: 'vvs', label: 'Visor Index™' },
     { id: 'aum', label: 'AUM & Growth' },
+    { id: 'allocation', label: 'Allocation' },
     { id: 'clients', label: 'Client Profile' },
+    { id: 'services', label: 'Services' },
     { id: 'regulatory', label: 'Regulatory' },
     { id: 'fees', label: 'Fee Calculator' },
   ];
@@ -980,9 +1200,17 @@ export default function ComparePage() {
                   if (firm || sel) {
                     const displayName = firm?.name || sel?.display_name || sel?.primary_business_name || '';
                     const crd = firm?.crd || sel?.crd;
+                    const lk = firm?.logoKey;
+                    const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
                     return (
                       <div key={col} className="cp-firm-slot">
-                        <div className="cp-firm-avatar">{displayName.slice(0, 2).toUpperCase()}</div>
+                        {lk ? (
+                          <div className="cp-firm-logo">
+                            <img src={`${supaUrl}/storage/v1/object/public/firm-logos/${lk}`} alt="" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<span style="font-family:var(--serif);font-size:11px;font-weight:700;color:rgba(255,255,255,.5)">${displayName.slice(0, 2).toUpperCase()}</span>`; }} />
+                          </div>
+                        ) : (
+                          <div className="cp-firm-avatar">{displayName.slice(0, 2).toUpperCase()}</div>
+                        )}
                         <span className="cp-firm-name" title={displayName}>
                           <Link href={`/firm/${crd}`}>{displayName}</Link>
                         </span>
@@ -1082,16 +1310,100 @@ export default function ComparePage() {
                 </SectionCard>
 
                 {/* AUM & GROWTH */}
-                <SectionCard id="aum" title="AUM & Growth" meta="SEC ADV · Annual filings">
+                <SectionCard id="aum" title="AUM & Growth" meta="SEC ADV · Growth Rate Rankings">
                   {loading ? (
                     <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
                   ) : (
                     <>
-                      <DataRow label="Current AUM" strong values={comparisonData.map(f => f.aum)} />
-                      <DataRow label="1-Year Growth" values={comparisonData.map(f => f.aumGrowth1yr)} serif={false} />
-                      <DataRow label="5-Year Growth" values={comparisonData.map(f => f.aumGrowth5yr)} serif={false} />
+                      {/* Current AUM with percentile */}
+                      <div className="cp-row">
+                        <div className="cp-row-label strong">Current AUM</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          return (
+                            <div key={col} className="cp-row-cell">
+                              {f ? (
+                                <span>
+                                  <span className="val-serif">{f.aum}</span>
+                                  {f.aumPercentile && <span className="cp-pctile">{f.aumPercentile}</span>}
+                                </span>
+                              ) : <span className="val-dash">—</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <DataRow label="AUM Growth (1yr)" values={comparisonData.map(f => f.aumGrowth1yr)} serif={false} />
+                      <DataRow label="AUM Growth (5yr)" values={comparisonData.map(f => f.aumGrowth5yr)} serif={false} />
+                      <DataRow label="AUM Growth (10yr)" values={comparisonData.map(f => f.aumGrowth10yr)} serif={false} />
+                      <DataRow label="Client Growth (1yr)" values={comparisonData.map(f => f.clientGrowth1yr)} serif={false} />
+                      <DataRow label="Client Growth (5yr)" values={comparisonData.map(f => f.clientGrowth5yr)} serif={false} />
+                      {/* Discretionary / Non-Discretionary split */}
+                      <div className="cp-row">
+                        <div className="cp-row-label">AUM Split</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          if (!f || (f.aumDiscretionary == null && f.aumNonDiscretionary == null)) {
+                            return <div key={col} className="cp-row-cell"><span className="val-dash">—</span></div>;
+                          }
+                          const disc = f.aumDiscretionary || 0;
+                          const nonDisc = f.aumNonDiscretionary || 0;
+                          const total = disc + nonDisc;
+                          const discPct = total > 0 ? (disc / total) * 100 : 0;
+                          return (
+                            <div key={col} className="cp-row-cell" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2 }}>
+                              <div className="cp-split-bar">
+                                <div className="cp-split-disc" style={{ width: `${discPct}%` }} />
+                                <div className="cp-split-nondisc" style={{ width: `${100 - discPct}%` }} />
+                              </div>
+                              <div className="cp-split-labels">
+                                <span>Disc. {discPct.toFixed(0)}%</span>
+                                <span>Non-D. {(100 - discPct).toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <DataRow label="AUM per Advisor" values={comparisonData.map(f => f.aumPerAdvisor)} />
                       <DataRow label="Employees" values={comparisonData.map(f => f.employees)} serif={false} />
+                      <DataRow label="Offices" values={comparisonData.map(f => f.numOffices)} serif={false} />
+                      <ViewProfileRow firms={comparisonData} />
+                    </>
+                  )}
+                </SectionCard>
+
+                {/* ASSET ALLOCATION */}
+                <SectionCard id="allocation" title="Asset Allocation" meta="ADV Part 1 · Item 5.D">
+                  {loading ? (
+                    <>{Array.from({ length: 2 }).map((_, i) => <SkeletonRow key={i} />)}</>
+                  ) : (
+                    <>
+                      <div className="cp-row" style={{ borderBottom: 'none' }}>
+                        <div className="cp-row-label strong">Breakdown</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          if (!f || f.assetAllocation.length === 0) {
+                            return <div key={col} className="cp-row-cell"><span className="val-dash">—</span></div>;
+                          }
+                          return (
+                            <div key={col} className="cp-row-cell" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4, padding: '14px 16px' }}>
+                              <div className="cp-alloc-bar">
+                                {f.assetAllocation.map(a => (
+                                  <div key={a.label} className="cp-alloc-seg" title={`${a.label}: ${a.pct.toFixed(1)}%`}
+                                    style={{ width: `${a.pct}%`, background: a.color }} />
+                                ))}
+                              </div>
+                              <div className="cp-alloc-legend">
+                                {f.assetAllocation.map(a => (
+                                  <span key={a.label} className="cp-alloc-legend-item">
+                                    <span className="cp-alloc-dot" style={{ background: a.color }} />
+                                    {a.label} {a.pct.toFixed(0)}%
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <ViewProfileRow firms={comparisonData} />
                     </>
                   )}
@@ -1109,22 +1421,110 @@ export default function ComparePage() {
                       <DataRow label="Wealth Tier" values={comparisonData.map(f => f.wealthTier)} serif={false} />
                       <DataRow label="Client Base" values={comparisonData.map(f => f.clientBase)} serif={false} />
                       <DataRow label="Location" values={comparisonData.map(f => f.location)} serif={false} />
+                      {/* Client composition breakdown */}
+                      <div className="cp-row" style={{ borderBottom: 'none' }}>
+                        <div className="cp-row-label">Top Client Types</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          if (!f || f.clientBreakdown.length === 0) {
+                            return <div key={col} className="cp-row-cell"><span className="val-dash">—</span></div>;
+                          }
+                          const maxCount = Math.max(...f.clientBreakdown.map(c => c.count));
+                          return (
+                            <div key={col} className="cp-row-cell" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 2, padding: '10px 14px' }}>
+                              {f.clientBreakdown.slice(0, 4).map(c => (
+                                <div key={c.label} className="cp-client-bar">
+                                  <span className="cp-client-bar-label">{c.label}</span>
+                                  <div className="cp-client-bar-track">
+                                    <div className="cp-client-bar-fill" style={{ width: `${(c.count / maxCount) * 100}%` }} />
+                                  </div>
+                                  <span className="cp-client-bar-count">{c.count.toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
                       <ViewProfileRow firms={comparisonData} />
                     </>
                   )}
                 </SectionCard>
 
-                {/* REGULATORY */}
-                <SectionCard id="regulatory" title="Regulatory & Conflicts" meta="IAPD · SEC EDGAR · ADV Part 2A">
+                {/* SERVICES OFFERED */}
+                <SectionCard id="services" title="Services Offered" meta="ADV Part 1 · Item 5.G">
+                  {loading ? (
+                    <>{Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}</>
+                  ) : (
+                    <>
+                      {['Financial Planning', 'Manager Selection', 'Pension Consulting', 'Individual Portfolios', 'Institutional Mgmt', 'Pooled Vehicles'].map(svc => (
+                        <div key={svc} className="cp-row">
+                          <div className="cp-row-label">{svc}</div>
+                          {Array.from({ length: 4 }).map((_, col) => {
+                            const f = col < comparisonData.length ? comparisonData[col] : null;
+                            return (
+                              <div key={col} className="cp-row-cell">
+                                {f ? (
+                                  f.services[svc]
+                                    ? <span className="cp-svc-check">✓</span>
+                                    : <span className="cp-svc-x">—</span>
+                                ) : <span className="val-dash">—</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                      <ViewProfileRow firms={comparisonData} />
+                    </>
+                  )}
+                </SectionCard>
+
+                {/* FEES & REGULATORY */}
+                <SectionCard id="regulatory" title="Fees & Regulatory" meta="IAPD · SEC EDGAR · ADV Part 2A">
                   {loading ? (
                     <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
                   ) : (
                     <>
                       <DataRow label="Fee Structure" values={comparisonData.map(f => f.feeStructureType)} serif={false} />
-                      <DataRow label="Min Fee Rate" values={comparisonData.map(f => f.feeMin)} serif={false} />
+                      <DataRow label="Fee Range (Min)" values={comparisonData.map(f => f.feeRangeMin)} serif={false} />
+                      <DataRow label="Fee Range (Max)" values={comparisonData.map(f => f.feeRangeMax)} serif={false} />
+                      <DataRow label="Minimum Fee" values={comparisonData.map(f => f.minimumFee)} />
+                      <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} />
                       <DataRow label="Disciplinary History" values={comparisonData.map(f => f.hasDisciplinary)} tag />
                       <DataRow label="Private Fund Advisor" values={comparisonData.map(f => f.privateFundAdvisor)} serif={false} />
                       <DataRow label="Legal Structure" values={comparisonData.map(f => f.legalStructure)} serif={false} />
+                      <DataRow label="Latest Filing" values={comparisonData.map(f => f.latestFiling)} serif={false} />
+                      {/* Website */}
+                      <div className="cp-row">
+                        <div className="cp-row-label">Website</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          const web = f?.website;
+                          return (
+                            <div key={col} className="cp-row-cell">
+                              {web && web !== '—' ? (
+                                <a href={web.startsWith('http') ? web : `https://${web}`} target="_blank" rel="noopener noreferrer" className="cp-web-link">
+                                  {web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                                </a>
+                              ) : <span className="val-dash">—</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Investment Philosophy */}
+                      <div className="cp-row" style={{ borderBottom: 'none' }}>
+                        <div className="cp-row-label">Philosophy</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          const text = f?.investmentPhilosophy;
+                          return (
+                            <div key={col} className="cp-row-cell">
+                              {text && text !== '—' ? (
+                                <div className="cp-philosophy">{text}</div>
+                              ) : <span className="val-dash">—</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
                       <ViewProfileRow firms={comparisonData} />
                     </>
                   )}
