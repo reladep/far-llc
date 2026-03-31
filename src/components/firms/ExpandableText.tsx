@@ -6,9 +6,10 @@ interface ExpandableTextProps {
   text: string;
   maxLines?: number;
   style?: React.CSSProperties;
+  children?: React.ReactNode;
 }
 
-export default function ExpandableText({ text, maxLines = 4, style }: ExpandableTextProps) {
+export default function ExpandableText({ text, maxLines = 4, style, children }: ExpandableTextProps) {
   const [expanded, setExpanded] = useState(false);
   const [needsTruncation, setNeedsTruncation] = useState(false);
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -42,7 +43,7 @@ export default function ExpandableText({ text, maxLines = 4, style }: Expandable
           position: 'relative',
           marginTop: -20,
           paddingTop: 20,
-          background: 'linear-gradient(to bottom, rgba(246,248,247,0), var(--white) 60%)',
+          background: 'linear-gradient(to bottom, rgba(255,255,255,0), #fff 60%)',
         }}>
           <button
             onClick={() => setExpanded(true)}
@@ -57,6 +58,7 @@ export default function ExpandableText({ text, maxLines = 4, style }: Expandable
           </button>
         </div>
       )}
+      {(expanded || !needsTruncation) && children}
       {needsTruncation && expanded && (
         <button
           onClick={() => setExpanded(false)}

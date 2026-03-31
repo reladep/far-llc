@@ -288,15 +288,15 @@ function dominantReason(
   clientSim: number, aumSim: number, serviceSim: number, avgClientSim: number, sameState: boolean
 ): string {
   const parts: string[] = [];
-  if (clientSim > 0.7) parts.push('Similar client base');
+  if (clientSim > 0.7) parts.push('Similar Client Base');
   if (aumSim > 0.6) parts.push('Comparable AUM');
-  if (avgClientSim > 0.6) parts.push('Similar avg. client size');
-  if (serviceSim > 0.7) parts.push('Same services');
-  if (sameState) parts.push('Same state');
+  if (avgClientSim > 0.6) parts.push('Similar Avg. Client Size');
+  if (serviceSim > 0.7) parts.push('Same Services');
+  if (sameState) parts.push('Same State');
   if (parts.length === 0) {
     if (aumSim >= clientSim && aumSim >= serviceSim) parts.push('Comparable AUM');
-    else if (clientSim >= serviceSim) parts.push('Similar client base');
-    else parts.push('Same services');
+    else if (clientSim >= serviceSim) parts.push('Similar Client Base');
+    else parts.push('Same Services');
   }
   return parts.slice(0, 2).join(' · ');
 }
@@ -641,6 +641,13 @@ const PAGE_CSS = `
   }
   .vfp-section-meta { font-size:10px; color:var(--ink-3); font-family:var(--mono); }
 
+  /* About card */
+  .vfp-about-card {
+    background:#fff; border:0.5px solid var(--rule); border-radius:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+    overflow:hidden; padding:20px;
+  }
+
   /* VVS Score section */
   .vfp-vvs-card {
     background:#fff; border:0.5px solid var(--rule); border-radius:10px;
@@ -826,43 +833,80 @@ const PAGE_CSS = `
 
   /* Sidebar */
   .vfp-sidebar { position:sticky; top:108px; display:flex; flex-direction:column; gap:16px; align-self:start; }
-  .vfp-scard { overflow:hidden; }
-  .vfp-scard-head {
-    padding-bottom:8px; border-bottom:0.5px solid var(--rule);
-    font-family:var(--sans); font-size:9px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
-    margin-bottom:10px;
+  .vfp-scard {
+    background:#fff; border:0.5px solid var(--rule); border-radius:10px;
+    overflow:hidden;
   }
-  .vfp-scard-body { padding:0; }
-  .vfp-scard-elevated { background:#fff; border:0.5px solid var(--rule); border-radius:10px; padding:12px 20px; }
+  .vfp-scard-head {
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:14px 16px 10px; border-bottom:0.5px solid var(--rule);
+  }
+  .vfp-scard-title {
+    font-family:var(--sans); font-size:14px; font-weight:700; color:var(--ink); letter-spacing:-.01em;
+  }
+  .vfp-scard-meta {
+    font-family:var(--mono); font-size:9px; color:var(--ink-3); letter-spacing:.02em;
+  }
+  .vfp-scard-body { padding:4px 16px 12px; }
   .vfp-sfield {
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:8px 0; border-bottom:0.5px solid var(--rule);
+    display:flex; flex-direction:column; gap:2px;
+    padding:9px 0; border-bottom:0.5px solid var(--rule);
   }
   .vfp-sfield:last-child { border-bottom:none; }
-  .vfp-sfield-label { font-family:var(--sans); font-size:13px; color:var(--ink-3); }
-  .vfp-sfield-val { font-family:var(--mono); font-size:12px; color:var(--ink-2); font-weight:500; text-align:right; }
+  .vfp-sfield-label { font-family:var(--mono); font-size:9px; font-weight:600; color:var(--ink-3); text-transform:uppercase; letter-spacing:.08em; }
+  .vfp-sfield-val { font-family:var(--sans); font-size:13px; color:var(--ink); font-weight:500; line-height:1.5; }
   .vfp-sfield-val a { color:var(--green); text-decoration:none; transition:color .15s; }
-  .vfp-sfield-val a:hover { color:var(--green-2); }
+  .vfp-sfield-val a:hover { color:var(--green-2); text-decoration:underline; }
+  /* Inline variant for short key-value pairs */
+  .vfp-sfield-inline {
+    flex-direction:row; justify-content:space-between; align-items:baseline; gap:0;
+  }
+  .vfp-sfield-inline .vfp-sfield-label { text-transform:none; font-family:var(--sans); font-size:12px; font-weight:400; letter-spacing:0; }
+  .vfp-sfield-inline .vfp-sfield-val { font-family:var(--mono); font-size:11px; color:var(--ink-2); text-align:right; }
 
-  .vfp-similar { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:0.5px solid var(--rule); text-decoration:none; transition:opacity .15s; position:relative; }
-  .vfp-similar:last-child { border-bottom:none; }
-  .vfp-similar:hover { opacity:.85; }
-  .vfp-similar::after {
-    content:'→'; position:absolute; right:0; top:50%; transform:translateY(-50%);
-    font-size:12px; color:var(--ink-3); opacity:0; transition:opacity .15s, right .15s;
+  .vfp-similar-table { width:100%; border-collapse:collapse; }
+  .vfp-similar-row { cursor:pointer; transition:background .15s; }
+  .vfp-similar-row:hover { background:rgba(0,0,0,.015); }
+  .vfp-similar-row td { border-top:0.5px solid var(--rule); padding:12px 0; vertical-align:middle; }
+  .vfp-similar-row:first-child td { border-top:none; }
+  .vfp-similar-cell-info { padding-left:16px !important; padding-right:12px !important; position:relative; }
+  .vfp-similar-cell-score {
+    width:56px; text-align:center; padding-right:12px !important; padding-left:8px !important;
+    border-left:0.5px solid var(--rule);
   }
-  .vfp-similar:hover::after { opacity:1; right:-2px; }
-  .vfp-similar-initials {
-    width:32px; height:32px; flex-shrink:0; border-radius:6px;
-    background:var(--white); border:0.5px solid var(--rule);
-    display:grid; place-items:center;
-    font-family:var(--serif); font-size:12px; font-weight:700; color:var(--ink-3);
+  .vfp-mini-ring {
+    position:relative; width:38px; height:38px; display:inline-block;
   }
-  .vfp-similar-info { flex:1; min-width:0; }
-  .vfp-similar-name { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .vfp-similar-meta { font-family:var(--mono); font-size:10px; color:var(--ink-3); margin-top:1px; }
-  .vfp-similar-reason { font-family:var(--mono); font-size:9px; color:var(--green); margin-top:2px; letter-spacing:.04em; }
-  .vfp-similar-score { font-family:var(--serif); font-size:18px; font-weight:700; flex-shrink:0; color:var(--ink-3); }
+  .vfp-mini-ring svg { transform:rotate(-90deg); }
+  .vfp-mini-ring-label {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--serif); font-size:13px; font-weight:700; line-height:1;
+  }
+  .vfp-similar-name { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--ink); line-height:1.35; }
+  .vfp-similar-loc { font-family:var(--sans); font-size:11px; color:var(--ink-3); margin-top:2px; }
+  .vfp-similar-why { font-family:var(--mono); font-size:9px; color:var(--green); margin-top:3px; letter-spacing:.03em; }
+
+  /* Contact quick actions (mobile) */
+  .vfp-contact-actions {
+    display:none; padding:12px 16px; border-bottom:0.5px solid var(--rule);
+  }
+  .vfp-contact-actions-row { display:flex; gap:8px; }
+  .vfp-contact-action {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:10px 8px; border-radius:8px; border:0.5px solid var(--rule);
+    text-decoration:none; color:var(--ink-2); font-family:var(--sans); font-size:10px; font-weight:500;
+    transition:background .15s, border-color .15s;
+  }
+  .vfp-contact-action:hover { background:rgba(45,189,116,.04); border-color:var(--green); }
+  .vfp-contact-action svg { flex-shrink:0; }
+
+  /* Filing link */
+  .vfp-filing-link {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:10px 0 2px; font-family:var(--mono); font-size:11px; color:var(--green);
+    text-decoration:none; transition:color .15s;
+  }
+  .vfp-filing-link:hover { color:var(--green-2); text-decoration:underline; }
 
   .vfp-cta-card { background:var(--navy); border:none; border-radius:10px; overflow:hidden; }
   .vfp-cta-body { padding:24px; }
@@ -958,6 +1002,9 @@ const PAGE_CSS = `
     .vfp-stats-row { grid-template-columns:repeat(3,1fr); }
     .vfp-body { grid-template-columns:1fr; gap:32px; }
     .vfp-sidebar { position:static; }
+    .vfp-sidebar-contact { order:-1; }
+    .vfp-contact-actions { display:block; }
+    .vfp-contact-fields-desktop { display:none; }
     .vfp-fee-grid { grid-template-columns:1fr; }
     .vfp-client-grid { grid-template-columns:1fr; }
     .vfp-client-card:nth-child(odd) { border-right:none; padding-right:0; }
@@ -1671,71 +1718,72 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   <span className="vfp-section-title">About</span>
                   <span className="vfp-section-meta">Derived from ADV Part 2A</span>
                 </div>
-                <div>
+                <div className="vfp-about-card">
                   {profileText.business_profile && (
                     <ExpandableText
                       text={profileText.business_profile}
                       maxLines={4}
                       style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.9, margin: 0, fontFamily: 'var(--sans)' }}
-                    />
+                    >
+                      {/* Firm Classification */}
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{
+                          fontSize: 8, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const,
+                          color: 'var(--ink-3)', marginBottom: 6, fontFamily: 'var(--sans)',
+                        }}>
+                          Firm Classification
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                          {heroBadges.map((b, i) => b.href ? (
+                            <Link key={`b-${i}`} href={b.href} className="vfp-tag-class" style={{
+                              fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                              padding: '3px 8px', borderRadius: 3, textDecoration: 'none',
+                              background: b.green ? 'var(--green-pale)' : 'rgba(26,122,74,.04)',
+                              color: b.green ? 'var(--green)' : 'var(--green)',
+                              border: '0.5px solid rgba(26,122,74,.2)',
+                            }}>{b.label}</Link>
+                          ) : (
+                            <span key={`b-${i}`} className="vfp-tag-class" style={{
+                              fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                              padding: '3px 8px', borderRadius: 3,
+                              background: 'rgba(26,122,74,.04)', color: 'var(--green)',
+                              border: '0.5px solid rgba(26,122,74,.2)',
+                            }}>{b.label}</span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Specialties & Client Focus */}
+                      {(profileText.specialty_strategies || profileText.client_base || profileText.wealth_tier) && (
+                        <div style={{ marginTop: 12 }}>
+                          <div style={{
+                            fontSize: 8, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const,
+                            color: 'var(--ink-3)', marginBottom: 6, fontFamily: 'var(--sans)',
+                          }}>
+                            Specialties &amp; Client Focus
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                            {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
+                              .filter(Boolean)
+                              .flatMap(s => s!.split(',').map(t => t.trim()))
+                              .slice(0, 6)
+                              .map((tag, i) => {
+                                const slug = tag.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+$/, '');
+                                return (
+                                  <Link key={`t-${i}`} href={`/search?tag=${slug}`} className="vfp-tag-spec" style={{
+                                    fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
+                                    padding: '3px 8px', border: '0.5px solid var(--rule)', color: 'var(--ink-3)', borderRadius: 3,
+                                    textDecoration: 'none', transition: 'border-color .15s, color .15s',
+                                  }}>{tag}</Link>
+                                );
+                              })
+                            }
+                          </div>
+                        </div>
+                      )}
+                    </ExpandableText>
                   )}
                 </div>
-                {/* Firm Classification */}
-                <div style={{ marginTop: 16 }}>
-                  <div style={{
-                    fontSize: 8, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const,
-                    color: 'var(--ink-3)', marginBottom: 6, fontFamily: 'var(--sans)',
-                  }}>
-                    Firm Classification
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {heroBadges.map((b, i) => b.href ? (
-                      <Link key={`b-${i}`} href={b.href} className="vfp-tag-class" style={{
-                        fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
-                        padding: '3px 8px', borderRadius: 3, textDecoration: 'none',
-                        background: b.green ? 'var(--green-pale)' : 'rgba(26,122,74,.04)',
-                        color: b.green ? 'var(--green)' : 'var(--green)',
-                        border: '0.5px solid rgba(26,122,74,.2)',
-                      }}>{b.label}</Link>
-                    ) : (
-                      <span key={`b-${i}`} className="vfp-tag-class" style={{
-                        fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
-                        padding: '3px 8px', borderRadius: 3,
-                        background: 'rgba(26,122,74,.04)', color: 'var(--green)',
-                        border: '0.5px solid rgba(26,122,74,.2)',
-                      }}>{b.label}</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Specialties & Client Focus */}
-                {(profileText.specialty_strategies || profileText.client_base || profileText.wealth_tier) && (
-                  <div style={{ marginTop: 12 }}>
-                    <div style={{
-                      fontSize: 8, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const,
-                      color: 'var(--ink-3)', marginBottom: 6, fontFamily: 'var(--sans)',
-                    }}>
-                      Specialties &amp; Client Focus
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                      {[profileText.specialty_strategies, profileText.client_base, profileText.wealth_tier]
-                        .filter(Boolean)
-                        .flatMap(s => s!.split(',').map(t => t.trim()))
-                        .slice(0, 6)
-                        .map((tag, i) => {
-                          const slug = tag.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+$/, '');
-                          return (
-                            <Link key={`t-${i}`} href={`/search?tag=${slug}`} className="vfp-tag-spec" style={{
-                              fontFamily: 'var(--sans)', fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const,
-                              padding: '3px 8px', border: '0.5px solid var(--rule)', color: 'var(--ink-3)', borderRadius: 3,
-                              textDecoration: 'none', transition: 'border-color .15s, color .15s',
-                            }}>{tag}</Link>
-                          );
-                        })
-                      }
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -2053,53 +2101,48 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* Similar firms */}
-            <div className="vfp-scard">
-              <div className="vfp-scard-head">Similar Firms</div>
-              <div className="vfp-scard-body">
-                {similarFirms.length > 0 ? similarFirms.map((sf) => (
-                  <Link key={sf.crd} href={`/firm/${sf.crd}`} className="vfp-similar">
-                    <div className="vfp-similar-initials">{sf.name.slice(0, 2).toUpperCase()}</div>
-                    <div className="vfp-similar-info">
-                      <div className="vfp-similar-name">{sf.name}</div>
-                      <div className="vfp-similar-meta">{sf.city}, {sf.state} · {formatAUM(sf.aum)}</div>
-                      <div className="vfp-similar-reason">{sf.reason}</div>
-                    </div>
-                    {sf.score != null && (
-                      <div className="vfp-similar-score" style={{ color: scoreColor(sf.score) }}>
-                        {Math.round(sf.score)}
-                      </div>
-                    )}
-                  </Link>
-                )) : (
-                  <>
-                    {[
-                      { label: 'Explore by state', meta: `${firm.main_office_state} · Similar AUM`, href: `/search?state=${firm.main_office_state}` },
-                      { label: 'Explore by size', meta: `AUM range · ${feeTypeDisplay}`, href: `/search` },
-                    ].map((item, i) => (
-                      <Link key={i} href={item.href} className="vfp-similar">
-                        <div className="vfp-similar-initials">→</div>
-                        <div className="vfp-similar-info">
-                          <div className="vfp-similar-name">{item.label}</div>
-                          <div className="vfp-similar-meta">{item.meta}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </>
-                )}
+            {/* Contact */}
+            <div className="vfp-scard vfp-sidebar-contact">
+              <div className="vfp-scard-head">
+                <span className="vfp-scard-title">Contact</span>
+                <span className="vfp-scard-meta">Main office</span>
               </div>
-            </div>
-
-            {/* Contact — flat */}
-            <div className="vfp-scard">
-              <div className="vfp-scard-head">Contact</div>
-              <div className="vfp-scard-body">
+              {/* Quick actions — visible on mobile only */}
+              <div className="vfp-contact-actions">
+                <div className="vfp-contact-actions-row">
+                  {firm.main_phone_number && (
+                    <a href={`tel:${firm.main_phone_number}`} className="vfp-contact-action">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                      Call
+                    </a>
+                  )}
+                  {website?.website && (
+                    <a href={website.website.startsWith('http') ? website.website : `https://${website.website}`} target="_blank" rel="noopener noreferrer" className="vfp-contact-action">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                      Website
+                    </a>
+                  )}
+                  {(firm.main_office_street_1 || firm.main_office_city) && (
+                    <a href={`https://maps.google.com/?q=${encodeURIComponent([firm.main_office_street_1, firm.main_office_city, firm.main_office_state, firm.main_office_zip].filter(Boolean).join(', '))}`} target="_blank" rel="noopener noreferrer" className="vfp-contact-action">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Directions
+                    </a>
+                  )}
+                </div>
+              </div>
+              {/* Full contact fields — hidden on mobile */}
+              <div className="vfp-scard-body vfp-contact-fields-desktop">
                 {(firm.main_office_street_1 || firm.main_office_city) && (
                   <div className="vfp-sfield">
                     <span className="vfp-sfield-label">Address</span>
-                    <span className="vfp-sfield-val" style={{ lineHeight: 1.6 }}>
-                      {firm.main_office_street_1 && <>{firm.main_office_street_1}<br /></>}
-                      {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
+                    <span className="vfp-sfield-val">
+                      <a
+                        href={`https://maps.google.com/?q=${encodeURIComponent([firm.main_office_street_1, firm.main_office_city, firm.main_office_state, firm.main_office_zip].filter(Boolean).join(', '))}`}
+                        target="_blank" rel="noopener noreferrer"
+                      >
+                        {firm.main_office_street_1 && <>{firm.main_office_street_1}, </>}
+                        {firm.main_office_city}, {firm.main_office_state} {firm.main_office_zip}
+                      </a>
                     </span>
                   </div>
                 )}
@@ -2127,38 +2170,107 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
               </div>
             </div>
 
-            {/* Filing details — flat */}
+            {/* Similar firms */}
             <div className="vfp-scard">
-              <div className="vfp-scard-head">Filing Details</div>
+              <div className="vfp-scard-head">
+                <span className="vfp-scard-title">Similar Firms</span>
+                <span className="vfp-scard-meta">Visor Index</span>
+              </div>
+              {similarFirms.length > 0 ? (
+                <table className="vfp-similar-table">
+                  <tbody>
+                    {similarFirms.map((sf) => {
+                      const titleName = sf.name.replace(/\b\w+/g, w => {
+                        const lower = w.toLowerCase();
+                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
+                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+                      });
+                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                      return (
+                        <tr key={sf.crd} className="vfp-similar-row">
+                          <td className="vfp-similar-cell-info">
+                            <Link href={`/firm/${sf.crd}`} style={{ textDecoration: 'none', display: 'block' }}>
+                              <div className="vfp-similar-name">{titleName}</div>
+                              <div className="vfp-similar-loc">{titleCity}, {sf.state} · {formatAUM(sf.aum)}</div>
+                              {sf.reason && <div className="vfp-similar-why">{sf.reason}</div>}
+                            </Link>
+                          </td>
+                          <td className="vfp-similar-cell-score">
+                            <Link href={`/firm/${sf.crd}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                              {sf.score != null ? (() => {
+                                const s = Math.round(sf.score!);
+                                const col = s >= 70 ? '#2DBD74' : s >= 50 ? '#F59E0B' : '#EF4444';
+                                const circ = 2 * Math.PI * 15;
+                                const offset = circ * (1 - s / 100);
+                                return (
+                                  <span className="vfp-mini-ring">
+                                    <svg width="38" height="38" viewBox="0 0 38 38">
+                                      <circle cx="19" cy="19" r="15" fill="none" stroke="rgba(0,0,0,.06)" strokeWidth="3" />
+                                      <circle cx="19" cy="19" r="15" fill="none" stroke={col} strokeWidth="3"
+                                        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                                    </svg>
+                                    <span className="vfp-mini-ring-label" style={{ color: col }}>{s}</span>
+                                  </span>
+                                );
+                              })() : <span style={{ color: 'var(--ink-3)', fontFamily: 'var(--serif)', fontSize: 13 }}>—</span>}
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="vfp-scard-body">
+                  {[
+                    { label: 'Explore by state', meta: `${firm.main_office_state} · Similar AUM`, href: `/search?state=${firm.main_office_state}` },
+                    { label: 'Explore by size', meta: `AUM range · ${feeTypeDisplay}`, href: `/search` },
+                  ].map((item, i) => (
+                    <div key={i} style={{ padding: '12px 0', borderTop: i > 0 ? '0.5px solid var(--rule)' : 'none' }}>
+                      <Link href={item.href} style={{ textDecoration: 'none' }}>
+                        <div className="vfp-similar-name">{item.label}</div>
+                        <div className="vfp-similar-loc">{item.meta}</div>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Filing details */}
+            <div className="vfp-scard">
+              <div className="vfp-scard-head">
+                <span className="vfp-scard-title">Filing Details</span>
+                <span className="vfp-scard-meta">SEC EDGAR</span>
+              </div>
               <div className="vfp-scard-body">
-                <div className="vfp-sfield">
+                <div className="vfp-sfield vfp-sfield-inline">
                   <span className="vfp-sfield-label">CRD Number</span>
                   <span className="vfp-sfield-val">{firm.crd}</span>
                 </div>
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">Filing type</span>
-                  <span className="vfp-sfield-val">Form ADV</span>
-                </div>
                 {firm.latest_adv_filing && (
-                  <div className="vfp-sfield">
+                  <div className="vfp-sfield vfp-sfield-inline">
                     <span className="vfp-sfield-label">Last amended</span>
                     <span className="vfp-sfield-val">{firm.latest_adv_filing}</span>
                   </div>
                 )}
-                <div className="vfp-sfield">
-                  <span className="vfp-sfield-label">Registration</span>
-                  <span className="vfp-sfield-val">SEC (federal)</span>
-                </div>
                 {firm.legal_structure && (
-                  <div className="vfp-sfield">
+                  <div className="vfp-sfield vfp-sfield-inline">
                     <span className="vfp-sfield-label">Legal structure</span>
                     <span className="vfp-sfield-val">{firm.legal_structure}</span>
                   </div>
                 )}
-                <div className="vfp-sfield">
+                <div className="vfp-sfield vfp-sfield-inline">
                   <span className="vfp-sfield-label">Private fund advisor</span>
                   <span className="vfp-sfield-val">{firm.private_fund_advisor === 'Y' ? 'Yes' : 'No'}</span>
                 </div>
+                <a
+                  href={`https://advfm.sec.gov/IAPD/Content/Common/crd_iapd_Brochure.aspx?BRCHR_VRSN_ID=${firm.crd}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="vfp-filing-link"
+                >
+                  View on SEC EDGAR ↗
+                </a>
               </div>
             </div>
 
