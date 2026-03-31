@@ -65,6 +65,7 @@ interface FirmComparison {
   clientGrowth1yr: string;
   clientGrowth5yr: string;
   aumPerAdvisor: string;
+  clientsPerAdvisor: string;
   // Regulatory
   hasDisciplinary: string;
   privateFundAdvisor: string;
@@ -80,10 +81,20 @@ interface FirmComparison {
   aumNonDiscretionary: number | null;
   // Percentiles
   aumPercentile: string | null;
+  employeePercentile: string | null;
+  invStaffPercentile: string | null;
+  totalClientsPercentile: string | null;
+  avgClientPercentile: string | null;
+  clientsPerAdvisorPercentile: string | null;
+  aumGrowth1yrPercentile: string | null;
+  aumGrowth5yrPercentile: string | null;
+  clientGrowth1yrPercentile: string | null;
   // Filing freshness
   latestFiling: string;
   // Offices
   numOffices: string;
+  // State registrations
+  registeredStates: number;
   // Philosophy
   investmentPhilosophy: string;
   firmCharacter: string;
@@ -285,10 +296,11 @@ const PAGE_CSS = `
   }
   .cp-row-label.strong { color: var(--ink); font-weight: 600; }
   .cp-row-cell {
-    padding: 12px 20px; display: flex; align-items: center;
-    border-right: 0.5px solid rgba(0,0,0,.04);
+    padding: 12px 20px; display: flex; align-items: center; justify-content: center;
+    border-right: 0.5px solid rgba(0,0,0,.04); text-align: center;
   }
   .cp-row-cell:last-child { border-right: none; }
+  .cp-row-cell.text-left { justify-content: flex-start; text-align: left; }
   .cp-row-cell .val-serif {
     font-family: var(--serif); font-size: 17px; font-weight: 700; color: var(--ink);
   }
@@ -521,11 +533,12 @@ const PAGE_CSS = `
 
   /* ── Percentile tag ────────────────────────────────────────── */
   .cp-pctile {
-    font-family: var(--mono); font-size: 9px; font-weight: 600;
-    color: var(--green); background: rgba(45,189,116,.08);
-    padding: 1px 6px; border-radius: 3px; margin-left: 6px;
-    letter-spacing: .03em;
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    color: var(--ink-3); letter-spacing: .02em;
+    white-space: nowrap; display: block; margin-top: 2px;
   }
+  .cp-pctile-high { color: var(--green); }
+  .cp-val-stack { display: flex; flex-direction: column; align-items: center; }
 
   /* ── Philosophy truncate ───────────────────────────────────── */
   .cp-philosophy {
@@ -543,16 +556,11 @@ const PAGE_CSS = `
 
   /* ── Firm logo in header ───────────────────────────────────── */
   .cp-firm-logo {
-    width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
-    border: 1px solid rgba(255,255,255,.1); overflow: hidden;
-    display: grid; place-items: center;
+    height: 26px; max-width: 56px; flex-shrink: 0; border-radius: 4px;
+    background: rgba(255,255,255,.95); border: 1px solid rgba(255,255,255,.15);
+    overflow: hidden; display: grid; place-items: center; padding: 2px 4px;
   }
-  .cp-firm-logo img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
-  .cp-firm-logo-fallback {
-    width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%;
-    display: grid; place-items: center;
-    font-family: var(--serif); font-size: 11px; font-weight: 700;
-  }
+  .cp-firm-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
   /* ── Client comp bars ──────────────────────────────────────── */
   .cp-client-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
@@ -560,6 +568,9 @@ const PAGE_CSS = `
   .cp-client-bar-track { flex: 1; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
   .cp-client-bar-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width .5s ease; }
   .cp-client-bar-count { font-family: var(--mono); font-size: 9px; color: var(--ink-3); width: 30px; }
+
+  /* ── Firm Overview ─────────────────────────────────────────── */
+  /* Uses standard row/column table layout (DataRow, ScoreRow, etc.) */
 `;
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
@@ -640,8 +651,8 @@ function MiniRing({ score }: { score: number }) {
   );
 }
 
-function DataRow({ label, values, strong, serif, tag }: {
-  label: string; values: string[]; strong?: boolean; serif?: boolean; tag?: boolean;
+function DataRow({ label, values, strong, serif, tag, textLeft }: {
+  label: string; values: string[]; strong?: boolean; serif?: boolean; tag?: boolean; textLeft?: boolean;
 }) {
   return (
     <div className="cp-row">
@@ -650,7 +661,7 @@ function DataRow({ label, values, strong, serif, tag }: {
         const val = col < values.length ? values[col] : null;
         const isEmpty = val == null || val === '—' || val === 'N/A' || val === '';
         return (
-          <div key={col} className="cp-row-cell">
+          <div key={col} className={`cp-row-cell${textLeft && !isEmpty ? ' text-left' : ''}`}>
             {isEmpty ? (
               <span className="val-dash">—</span>
             ) : tag ? (
@@ -659,6 +670,39 @@ function DataRow({ label, values, strong, serif, tag }: {
               <span className="val-serif">{val}</span>
             ) : (
               <span className="val-mono">{val}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DataRowWithPctile({ label, values, percentiles, strong, serif }: {
+  label: string; values: string[]; percentiles: (string | null)[]; strong?: boolean; serif?: boolean;
+}) {
+  return (
+    <div className="cp-row">
+      <div className={`cp-row-label${strong ? ' strong' : ''}`}>{label}</div>
+      {Array.from({ length: 4 }).map((_, col) => {
+        const val = col < values.length ? values[col] : null;
+        const pctile = col < percentiles.length ? percentiles[col] : null;
+        const isEmpty = val == null || val === '—' || val === 'N/A' || val === '';
+        // Decile >= 70th is "high"
+        const isHigh = pctile ? parseInt(pctile) >= 70 : false;
+        return (
+          <div key={col} className="cp-row-cell">
+            {isEmpty ? (
+              <span className="val-dash">—</span>
+            ) : (
+              <div className="cp-val-stack">
+                {serif !== false ? (
+                  <span className="val-serif">{val}</span>
+                ) : (
+                  <span className="val-mono">{val}</span>
+                )}
+                {pctile && <span className={`cp-pctile${isHigh ? ' cp-pctile-high' : ''}`}>{pctile}</span>}
+              </div>
             )}
           </div>
         );
@@ -778,16 +822,16 @@ export default function ComparePage() {
       { data: allLogos },
       { count: totalFirmCount },
     ] = await Promise.all([
-      supabase.from('firmdata_current').select('crd, aum, aum_discretionary, aum_non_discretionary, employee_total, employee_investment, main_office_city, main_office_state, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, client_banks_number, client_bdc_number, client_govt_number, client_insurance_number, client_investment_cos_number, client_other_advisors_number, client_swf_number, legal_structure, private_fund_advisor, latest_adv_filing, number_of_offices, asset_allocation_cash, asset_allocation_derivatives, asset_allocation_ig_corp_bonds, asset_allocation_non_ig_corp_bonds, asset_allocation_public_equity_direct, asset_allocation_private_equity_direct, asset_allocation_us_govt_bonds, asset_allocation_us_muni_bonds, asset_allocation_other, services_financial_planning, services_mgr_selection, services_pension_consulting, services_port_management_individuals, services_port_management_institutional, services_port_management_pooled').in('crd', crds),
+      supabase.from('firmdata_current').select('crd, aum, aum_discretionary, aum_non_discretionary, employee_total, employee_investment, main_office_city, main_office_state, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, client_banks_number, client_bdc_number, client_govt_number, client_insurance_number, client_investment_cos_number, client_other_advisors_number, client_swf_number, legal_structure, private_fund_advisor, latest_adv_filing, number_of_offices, asset_allocation_cash, asset_allocation_derivatives, asset_allocation_ig_corp_bonds, asset_allocation_non_ig_corp_bonds, asset_allocation_public_equity_direct, asset_allocation_private_equity_direct, asset_allocation_us_govt_bonds, asset_allocation_us_muni_bonds, asset_allocation_other, services_financial_planning, services_mgr_selection, services_pension_consulting, services_port_management_individuals, services_port_management_institutional, services_port_management_pooled, state_ak, state_al, state_ar, state_az, state_ca, state_co, state_ct, state_dc, state_de, state_fl, state_ga, state_hi, state_ia, state_id, state_il, state_in, state_ks, state_ky, state_la, state_ma, state_md, state_me, state_mi, state_mn, state_mo, state_ms, state_mt, state_nc, state_nd, state_ne, state_nh, state_nj, state_nm, state_nv, state_ny, state_oh, state_ok, state_or, state_pa, state_ri, state_sc, state_sd, state_tn, state_tx, state_ut, state_va, state_vt, state_wa, state_wi, state_wv').in('crd', crds),
       supabase.from('firmdata_feetiers').select('crd, fee_pct, min_aum, max_aum').in('crd', crds),
       supabase.from('firmdata_profile_text').select('crd, wealth_tier, client_base, investment_philosophy, firm_character').in('crd', crds),
       supabase.from('firmdata_website').select('crd, website').in('crd', crds),
       supabase.from('firm_scores').select('*').in('crd', crds),
       supabase.from('firmdata_feesandmins').select('crd, fee_structure_type, minimum_account_size, fee_range_min, fee_range_max, minimum_fee').in('crd', crds),
       supabase.from('firmdata_growth').select('crd, aum, date_submitted').in('crd', crds).order('date_submitted', { ascending: true }),
-      supabase.from('firmdata_growth_rate_rankings').select('crd, aum_1y_growth_annualized, aum_5y_growth_annualized, aum_10y_growth_annualized, clients_1y_growth_annualized, clients_5y_growth_annualized, clients_10y_growth_annualized').in('crd', crds),
+      supabase.from('firmdata_growth_rate_rankings').select('crd, aum_1y_growth_annualized, aum_5y_growth_annualized, aum_10y_growth_annualized, clients_1y_growth_annualized, clients_5y_growth_annualized, clients_10y_growth_annualized, rank_current_aum, rank_current_employees, rank_current_invest_employees, rank_current_clients, rank_aum_1y_growth_annualized, rank_aum_5y_growth_annualized, rank_clients_1y_growth_annualized').in('crd', crds),
       supabase.from('firm_logos').select('crd, logo_key').eq('has_logo', true).in('crd', crds),
-      supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).not('aum', 'is', null),
+      supabase.from('firmdata_growth_rate_rankings').select('*', { count: 'exact', head: true }),
     ]);
 
     // Index by CRD
@@ -799,22 +843,24 @@ export default function ComparePage() {
     const growthRankMap = new Map((allGrowthRank || []).map(r => [r.crd, r]));
     const logoMap = new Map((allLogos || []).map(r => [r.crd, r.logo_key]));
 
-    // AUM percentile — get count of all firms, then count below each firm's AUM
-    const totalPercentileFirms = totalFirmCount ?? 0;
-    const aumPercentileMap = new Map<number, string>();
-    if (totalPercentileFirms > 0) {
-      await Promise.all(selected.map(async (firm) => {
-        const c = currentMap.get(firm.crd);
-        const firmAum = c ? parseFloat(String(c.aum)) : NaN;
-        if (isNaN(firmAum)) return;
-        const { count } = await supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).lt('aum', firmAum).not('aum', 'is', null);
-        if (count != null) {
-          const pct = Math.round((count / totalPercentileFirms) * 100);
-          const topPct = Math.max(100 - pct, 1);
-          aumPercentileMap.set(firm.crd, `Top ${topPct}%`);
-        }
-      }));
-    }
+    // Percentile helper: rank 1 = best → "Top 1%", using non-null totals
+    const totalFirmsInRankings = totalFirmCount ?? 0;
+    // Get non-null counts for specific rank columns (run in parallel)
+    const rankCols = ['rank_current_aum', 'rank_current_employees', 'rank_current_invest_employees', 'rank_current_clients', 'rank_aum_1y_growth_annualized', 'rank_aum_5y_growth_annualized', 'rank_clients_1y_growth_annualized'] as const;
+    const rankTotals = new Map<string, number>();
+    await Promise.all(rankCols.map(async (col) => {
+      const { count } = await supabase.from('firmdata_growth_rate_rankings').select('*', { count: 'exact', head: true }).not(col, 'is', null);
+      if (count != null) rankTotals.set(col, count);
+    }));
+    const rankToDecile = (rank: unknown, col: string): string | null => {
+      const r = typeof rank === 'string' ? parseInt(rank) : Number(rank);
+      const total = rankTotals.get(col);
+      if (isNaN(r) || !total || total === 0) return null;
+      const pct = (r / total) * 100;
+      // Round to nearest decile (10th, 20th, ... 90th)
+      const decile = Math.min(Math.max(Math.round((100 - pct) / 10) * 10, 10), 90);
+      return `${decile}th percentile`;
+    };
 
     // Group fees and growth by CRD
     const feesByCrd = new Map<number, typeof allFees>();
@@ -827,6 +873,41 @@ export default function ComparePage() {
       if (!growthByCrd.has(g.crd)) growthByCrd.set(g.crd, []);
       growthByCrd.get(g.crd)!.push(g);
     });
+
+    // Pre-compute derived percentiles (clients_per_advisor, avg_client_size) from firmdata_percentiles
+    const derivedPctileMap = new Map<number, { clientsPerAdvisor: string | null; avgClient: string | null }>();
+    await Promise.all(selected.map(async (firm) => {
+      const c = currentMap.get(firm.crd);
+      if (!c) return;
+      const pn = (v: unknown): number | null => { if (v == null) return null; const n = typeof v === 'string' ? parseFloat(v) : Number(v); return isNaN(n) ? null : n; };
+      const empInv = pn(c.employee_investment);
+      const aumVal = pn(c.aum);
+      const clientFields = ['client_hnw_number', 'client_non_hnw_number', 'client_pension_number', 'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number', 'client_other_number'];
+      const tc = clientFields.reduce((sum, f) => sum + (pn((c as Record<string, unknown>)[f]) || 0), 0);
+
+      const cpa = (tc > 0 && empInv && empInv > 0) ? tc / empInv : null;
+      const avgCs = (aumVal && tc > 0) ? aumVal / tc : null;
+
+      const result: { clientsPerAdvisor: string | null; avgClient: string | null } = { clientsPerAdvisor: null, avgClient: null };
+
+      const queries: Array<{ key: 'clientsPerAdvisor' | 'avgClient'; col: string; val: number | null; invert?: boolean }> = [
+        { key: 'clientsPerAdvisor', col: 'clients_per_advisor', val: cpa, invert: true },
+      ];
+      await Promise.all(queries.map(async (q) => {
+        if (q.val == null) return;
+        const [{ count: below }, { count: total }] = await Promise.all([
+          supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).lt(q.col, q.val).not(q.col, 'is', null),
+          supabase.from('firmdata_percentiles').select('*', { count: 'exact', head: true }).not(q.col, 'is', null),
+        ]);
+        if (total && total > 0) {
+          const rawPct = Math.round(((below ?? 0) / total) * 100);
+          const pct = q.invert ? (100 - rawPct) : rawPct;
+          const decile = Math.min(Math.max(Math.round(pct / 10) * 10, 10), 90);
+          result[q.key] = `${decile}th percentile`;
+        }
+      }));
+      derivedPctileMap.set(firm.crd, result);
+    }));
 
     const data: FirmComparison[] = selected.map(firm => {
       const current = currentMap.get(firm.crd);
@@ -860,9 +941,11 @@ export default function ComparePage() {
       const avgClientSize = aum && totalClients > 0
         ? formatAUM(aum / totalClients) : '—';
 
-      // AUM per advisor
+      // AUM per advisor & clients per advisor
       const aumPerAdvisor = aum && empInv
         ? formatAUM(aum / empInv) : '—';
+      const clientsPerAdvisor = totalClients > 0 && empInv
+        ? Math.round(totalClients / empInv).toLocaleString() : '—';
 
       // Growth from rankings table (preferred) or fallback to manual calculation
       const gr = growthRankMap.get(firm.crd);
@@ -1019,6 +1102,7 @@ export default function ComparePage() {
         clientGrowth1yr,
         clientGrowth5yr,
         aumPerAdvisor,
+        clientsPerAdvisor,
         // Regulatory
         hasDisciplinary: '—',
         privateFundAdvisor: current?.private_fund_advisor === 'Y' ? 'Yes' : 'No',
@@ -1029,9 +1113,18 @@ export default function ComparePage() {
         services,
         aumDiscretionary: aumDisc,
         aumNonDiscretionary: aumNonDisc,
-        aumPercentile: aumPercentileMap.get(firm.crd) || null,
+        aumPercentile: rankToDecile(gr?.rank_current_aum, 'rank_current_aum'),
+        employeePercentile: rankToDecile(gr?.rank_current_employees, 'rank_current_employees'),
+        invStaffPercentile: rankToDecile(gr?.rank_current_invest_employees, 'rank_current_invest_employees'),
+        totalClientsPercentile: rankToDecile(gr?.rank_current_clients, 'rank_current_clients'),
+        avgClientPercentile: null,
+        clientsPerAdvisorPercentile: derivedPctileMap.get(firm.crd)?.clientsPerAdvisor ?? null,
+        aumGrowth1yrPercentile: rankToDecile(gr?.rank_aum_1y_growth_annualized, 'rank_aum_1y_growth_annualized'),
+        aumGrowth5yrPercentile: rankToDecile(gr?.rank_aum_5y_growth_annualized, 'rank_aum_5y_growth_annualized'),
+        clientGrowth1yrPercentile: rankToDecile(gr?.rank_clients_1y_growth_annualized, 'rank_clients_1y_growth_annualized'),
         latestFiling,
         numOffices: offices ? offices.toLocaleString() : '—',
+        registeredStates: current ? ['ak','al','ar','az','ca','co','ct','dc','de','fl','ga','hi','ia','id','il','in','ks','ky','la','ma','md','me','mi','mn','mo','ms','mt','nc','nd','ne','nh','nj','nm','nv','ny','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','va','vt','wa','wi','wv'].filter(s => (current as Record<string, unknown>)[`state_${s}`] === 'Y').length : 0,
         investmentPhilosophy: profile?.investment_philosophy || '—',
         firmCharacter: profile?.firm_character || '—',
       };
@@ -1146,6 +1239,7 @@ export default function ComparePage() {
   function growNet(a: number, g: number, fr: number, y: number) { return a * Math.pow(1 + g - fr, y); }
   const isGated = session === null;
   const jumpLinks = [
+    { id: 'overview', label: 'Overview' },
     { id: 'vvs', label: 'Visor Index™' },
     { id: 'aum', label: 'AUM & Growth' },
     { id: 'allocation', label: 'Allocation' },
@@ -1233,61 +1327,46 @@ export default function ComparePage() {
               </div>
             </div>
 
-            {/* ── SIMILAR FIRMS (top discovery strip) ─────────────────── */}
-            {similarFirms.length > 0 && selected.length < 4 && !isGated && (
-              <div className="cp-similar-section">
-                <div className="cp-similar-card">
-                  <div className="cp-section-head">
-                    <span className="cp-section-title">Compare Similar Firms</span>
-                    <span className="cp-section-meta">Based on AUM, geography, and firm profile · Click + Add to compare</span>
-                  </div>
-                  <div className="cp-similar-grid">
-                    {similarFirms.map(sf => {
-                      const titleName = sf.name.replace(/\b\w+/g, w => {
-                        const lower = w.toLowerCase();
-                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
-                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-                      });
-                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
-                      const scoreVal = sf.score != null ? Math.round(sf.score) : null;
-                      const col = scoreVal != null ? (scoreVal >= 80 ? 'var(--green)' : scoreVal >= 50 ? 'var(--amber)' : 'var(--red)') : 'var(--rule)';
-                      return (
-                        <div key={sf.crd} className="cp-similar-item">
-                          <div className="cp-similar-info">
-                            <div className="cp-similar-name">{titleName}</div>
-                            <div className="cp-similar-loc">{titleCity}, {sf.state} · {formatAUM(sf.aum)}</div>
-                            <div className="cp-similar-why">{sf.reason}</div>
-                          </div>
-                          <div className="cp-similar-right">
-                            {scoreVal != null && (() => {
-                              const circ = 2 * Math.PI * 13;
-                              const offset = circ * (1 - scoreVal / 100);
-                              return (
-                                <svg width="34" height="34" viewBox="0 0 34 34">
-                                  <circle cx="17" cy="17" r="13" fill="none" stroke="var(--rule)" strokeWidth="2.5" />
-                                  <circle cx="17" cy="17" r="13" fill="none" stroke={col} strokeWidth="2.5"
-                                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                                  <text x="17" y="17" textAnchor="middle" dominantBaseline="central"
-                                    style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, fill: col }}>{scoreVal}</text>
-                                </svg>
-                              );
-                            })()}
-                            <button
-                              className="cp-similar-add"
-                              onClick={() => addFirm({ crd: sf.crd, primary_business_name: sf.name })}
-                            >+ Add</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* ── COMPARISON TABLE ────────────────────────────────────── */}
             <div className="cp-table-wrap">
               <div className="cp-table-inner">
+
+                {/* ── FIRM OVERVIEW ─────────────────────────────────────── */}
+                <SectionCard id="overview" title="Firm Overview" meta="SEC ADV · IAPD">
+                  {loading ? (
+                    <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
+                  ) : (
+                    <>
+                      <ScoreRow label="Visor Index Score" ring scores={comparisonData.map(f => f.finalScore)} />
+                      <DataRow label="Headquarters" values={comparisonData.map(f => f.location)} serif={false} />
+                      <DataRowWithPctile label="AUM" values={comparisonData.map(f => f.aum)} percentiles={comparisonData.map(f => f.aumPercentile)} serif={false} />
+                      <DataRowWithPctile label="Employees" values={comparisonData.map(f => f.employees)} percentiles={comparisonData.map(f => f.employeePercentile)} serif={false} />
+                      <DataRowWithPctile label="Total Clients" values={comparisonData.map(f => f.totalClients.toLocaleString())} percentiles={comparisonData.map(f => f.totalClientsPercentile)} serif={false} />
+                      <DataRow label="Fee Structure" values={comparisonData.map(f => f.feeStructureType)} serif={false} />
+                      <DataRow label="Wealth Tier" values={comparisonData.map(f => f.wealthTier)} serif={false} />
+                      <DataRow label="Offices" values={comparisonData.map(f => f.numOffices)} serif={false} />
+                      <DataRow label="Registered States" values={comparisonData.map(f => f.registeredStates > 0 ? f.registeredStates.toString() : '—')} serif={false} />
+                      {/* Website */}
+                      <div className="cp-row" style={{ borderBottom: 'none' }}>
+                        <div className="cp-row-label">Website</div>
+                        {Array.from({ length: 4 }).map((_, col) => {
+                          const f = col < comparisonData.length ? comparisonData[col] : null;
+                          const web = f?.website;
+                          return (
+                            <div key={col} className={`cp-row-cell${web && web !== '—' ? ' text-left' : ''}`}>
+                              {web && web !== '—' ? (
+                                <a href={web.startsWith('http') ? web : `https://${web}`} target="_blank" rel="noopener noreferrer" className="cp-web-link">
+                                  {web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                                </a>
+                              ) : <span className="val-dash">—</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <ViewProfileRow firms={comparisonData} />
+                    </>
+                  )}
+                </SectionCard>
 
                 {/* VISOR INDEX SCORE */}
                 <SectionCard id="vvs" title="Visor Index Score™" meta="Based on SEC ADV · Updated 2025">
@@ -1316,26 +1395,11 @@ export default function ComparePage() {
                   ) : (
                     <>
                       {/* Current AUM with percentile */}
-                      <div className="cp-row">
-                        <div className="cp-row-label strong">Current AUM</div>
-                        {Array.from({ length: 4 }).map((_, col) => {
-                          const f = col < comparisonData.length ? comparisonData[col] : null;
-                          return (
-                            <div key={col} className="cp-row-cell">
-                              {f ? (
-                                <span>
-                                  <span className="val-serif">{f.aum}</span>
-                                  {f.aumPercentile && <span className="cp-pctile">{f.aumPercentile}</span>}
-                                </span>
-                              ) : <span className="val-dash">—</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <DataRow label="AUM Growth (1yr)" values={comparisonData.map(f => f.aumGrowth1yr)} serif={false} />
-                      <DataRow label="AUM Growth (5yr)" values={comparisonData.map(f => f.aumGrowth5yr)} serif={false} />
+                      <DataRowWithPctile label="Current AUM" values={comparisonData.map(f => f.aum)} percentiles={comparisonData.map(f => f.aumPercentile)} serif={false} />
+                      <DataRowWithPctile label="AUM Growth (1yr)" values={comparisonData.map(f => f.aumGrowth1yr)} percentiles={comparisonData.map(f => f.aumGrowth1yrPercentile)} serif={false} />
+                      <DataRowWithPctile label="AUM Growth (5yr)" values={comparisonData.map(f => f.aumGrowth5yr)} percentiles={comparisonData.map(f => f.aumGrowth5yrPercentile)} serif={false} />
                       <DataRow label="AUM Growth (10yr)" values={comparisonData.map(f => f.aumGrowth10yr)} serif={false} />
-                      <DataRow label="Client Growth (1yr)" values={comparisonData.map(f => f.clientGrowth1yr)} serif={false} />
+                      <DataRowWithPctile label="Client Growth (1yr)" values={comparisonData.map(f => f.clientGrowth1yr)} percentiles={comparisonData.map(f => f.clientGrowth1yrPercentile)} serif={false} />
                       <DataRow label="Client Growth (5yr)" values={comparisonData.map(f => f.clientGrowth5yr)} serif={false} />
                       {/* Discretionary / Non-Discretionary split */}
                       <div className="cp-row">
@@ -1363,9 +1427,7 @@ export default function ComparePage() {
                           );
                         })}
                       </div>
-                      <DataRow label="AUM per Advisor" values={comparisonData.map(f => f.aumPerAdvisor)} />
-                      <DataRow label="Employees" values={comparisonData.map(f => f.employees)} serif={false} />
-                      <DataRow label="Offices" values={comparisonData.map(f => f.numOffices)} serif={false} />
+                      <DataRowWithPctile label="Employees" values={comparisonData.map(f => f.employees)} percentiles={comparisonData.map(f => f.employeePercentile)} serif={false} />
                       <ViewProfileRow firms={comparisonData} />
                     </>
                   )}
@@ -1415,12 +1477,13 @@ export default function ComparePage() {
                     <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
                   ) : (
                     <>
-                      <DataRow label="Total Clients" strong values={comparisonData.map(f => f.totalClients > 0 ? f.totalClients.toLocaleString() : '—')} />
-                      <DataRow label="Avg. Client Size" values={comparisonData.map(f => f.avgClientSize)} />
-                      <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} />
+                      <DataRowWithPctile label="Total Clients" values={comparisonData.map(f => f.totalClients > 0 ? f.totalClients.toLocaleString() : '—')} percentiles={comparisonData.map(f => f.totalClientsPercentile)} serif={false} />
+                      <DataRow label="Avg. Client Size" values={comparisonData.map(f => f.avgClientSize)} serif={false} />
+                      <DataRowWithPctile label="AUM per Investment Professional" values={comparisonData.map(f => f.aumPerAdvisor)} percentiles={comparisonData.map(f => f.invStaffPercentile)} serif={false} />
+                      <DataRowWithPctile label="Clients per Investment Professional" values={comparisonData.map(f => f.clientsPerAdvisor)} percentiles={comparisonData.map(f => f.clientsPerAdvisorPercentile)} serif={false} />
+                      <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} serif={false} />
                       <DataRow label="Wealth Tier" values={comparisonData.map(f => f.wealthTier)} serif={false} />
                       <DataRow label="Client Base" values={comparisonData.map(f => f.clientBase)} serif={false} />
-                      <DataRow label="Location" values={comparisonData.map(f => f.location)} serif={false} />
                       {/* Client composition breakdown */}
                       <div className="cp-row" style={{ borderBottom: 'none' }}>
                         <div className="cp-row-label">Top Client Types</div>
@@ -1487,29 +1550,12 @@ export default function ComparePage() {
                       <DataRow label="Fee Structure" values={comparisonData.map(f => f.feeStructureType)} serif={false} />
                       <DataRow label="Fee Range (Min)" values={comparisonData.map(f => f.feeRangeMin)} serif={false} />
                       <DataRow label="Fee Range (Max)" values={comparisonData.map(f => f.feeRangeMax)} serif={false} />
-                      <DataRow label="Minimum Fee" values={comparisonData.map(f => f.minimumFee)} />
-                      <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} />
+                      <DataRow label="Minimum Fee" values={comparisonData.map(f => f.minimumFee)} serif={false} />
+                      <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} serif={false} />
                       <DataRow label="Disciplinary History" values={comparisonData.map(f => f.hasDisciplinary)} tag />
                       <DataRow label="Private Fund Advisor" values={comparisonData.map(f => f.privateFundAdvisor)} serif={false} />
-                      <DataRow label="Legal Structure" values={comparisonData.map(f => f.legalStructure)} serif={false} />
-                      <DataRow label="Latest Filing" values={comparisonData.map(f => f.latestFiling)} serif={false} />
-                      {/* Website */}
-                      <div className="cp-row">
-                        <div className="cp-row-label">Website</div>
-                        {Array.from({ length: 4 }).map((_, col) => {
-                          const f = col < comparisonData.length ? comparisonData[col] : null;
-                          const web = f?.website;
-                          return (
-                            <div key={col} className="cp-row-cell">
-                              {web && web !== '—' ? (
-                                <a href={web.startsWith('http') ? web : `https://${web}`} target="_blank" rel="noopener noreferrer" className="cp-web-link">
-                                  {web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
-                                </a>
-                              ) : <span className="val-dash">—</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <DataRow label="Legal Structure" values={comparisonData.map(f => f.legalStructure)} serif={false} textLeft />
+                      <DataRow label="Latest Filing" values={comparisonData.map(f => f.latestFiling)} serif={false} textLeft />
                       {/* Investment Philosophy */}
                       <div className="cp-row" style={{ borderBottom: 'none' }}>
                         <div className="cp-row-label">Philosophy</div>
@@ -1517,7 +1563,7 @@ export default function ComparePage() {
                           const f = col < comparisonData.length ? comparisonData[col] : null;
                           const text = f?.investmentPhilosophy;
                           return (
-                            <div key={col} className="cp-row-cell">
+                            <div key={col} className={`cp-row-cell${text && text !== '—' ? ' text-left' : ''}`}>
                               {text && text !== '—' ? (
                                 <div className="cp-philosophy">{text}</div>
                               ) : <span className="val-dash">—</span>}
@@ -1534,6 +1580,67 @@ export default function ComparePage() {
             </div>
 
             {/* ── FEE CALCULATOR ──────────────────────────────────────── */}
+            {/* ── FEE SCHEDULE COMPARISON ────────────────────────── */}
+            {!loading && comparisonData.length > 0 && (
+              <div className="cp-fee-section" style={{ marginBottom: 0, paddingBottom: 0 }}>
+                <div className="cp-fee-card" style={{ marginBottom: 24 }}>
+                  <div className="cp-section-head">
+                    <span className="cp-section-title">Fee Schedule Comparison</span>
+                    <span className="cp-section-meta">Side-by-side tier schedules from ADV Part 2A</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(comparisonData.length, 4)}, 1fr)`, borderTop: '0.5px solid var(--rule)' }}>
+                    {comparisonData.map(firm => {
+                      const sortedTiers = [...firm.feeTiers].filter(t => t.fee_pct != null).sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
+                      return (
+                        <div key={firm.crd} style={{ borderRight: '0.5px solid var(--rule)', padding: '16px 20px' }}>
+                          <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>{firm.name}</div>
+                          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginBottom: 12 }}>
+                            {firm.feeStructureType} {firm.feeRangeMin !== '—' || firm.feeRangeMax !== '—' ? `· ${firm.feeRangeMin !== '—' ? firm.feeRangeMin : ''} – ${firm.feeRangeMax !== '—' ? firm.feeRangeMax : ''}` : ''}
+                          </div>
+                          {sortedTiers.length > 0 ? (
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                              <thead>
+                                <tr>
+                                  <th style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', padding: '4px 0', borderBottom: '0.5px solid var(--rule)', textAlign: 'left' }}>AUM Range</th>
+                                  <th style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', padding: '4px 0', borderBottom: '0.5px solid var(--rule)', textAlign: 'right' }}>Rate</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sortedTiers.map((tier, i) => {
+                                  const min = parseInt(tier.min_aum || '0');
+                                  const max = tier.max_aum;
+                                  const isActive = feeAmount >= min && (max == null || feeAmount <= max);
+                                  return (
+                                    <tr key={i} style={{ background: isActive ? 'rgba(45,189,116,.06)' : 'transparent' }}>
+                                      <td style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', padding: '6px 0', borderBottom: '0.5px solid var(--rule)' }}>
+                                        {formatCompact(min)} – {max ? formatCompact(max) : '∞'}
+                                      </td>
+                                      <td style={{ fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, color: isActive ? 'var(--green)' : 'var(--ink)', padding: '6px 0', borderBottom: '0.5px solid var(--rule)', textAlign: 'right' }}>
+                                        {tier.fee_pct}%
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', padding: '12px 0' }}>
+                              {firm.minimumFee !== '—' ? `Minimum fee: ${firm.minimumFee}` : 'No tier schedule disclosed'}
+                            </div>
+                          )}
+                          {firm.minimumFee !== '—' && sortedTiers.length > 0 && (
+                            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 8 }}>
+                              Min. annual fee: {firm.minimumFee}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div id="fees" className="cp-fee-section" style={{ scrollMarginTop: 140 }}>
               <div className="cp-fee-card">
                 <div className="cp-section-head">
@@ -1747,7 +1854,7 @@ export default function ComparePage() {
           </div>
         )}
 
-        {/* ── SEARCH MODAL ───────────────────────────────────────────── */}
+        {/* ── SEARCH MODAL (with suggestions) ──────────────────────── */}
         {showSearch && !isGated && (
           <div className="cp-search-overlay"
             onClick={e => { if (e.target === e.currentTarget) { setShowSearch(false); setQuery(''); setResults([]); } }}
@@ -1781,6 +1888,61 @@ export default function ComparePage() {
               {query.length >= 2 && results.length === 0 && (
                 <p style={{ fontSize: 12, color: 'var(--ink-3)', padding: '10px 0' }}>No results for &ldquo;{query}&rdquo;</p>
               )}
+
+              {/* Suggested similar firms — shown when not actively searching */}
+              {query.length < 2 && similarFirms.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 1, background: 'var(--rule)', display: 'inline-block' }} />
+                    Suggested
+                    <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>based on {comparisonData[0]?.name || 'selected firms'}</span>
+                  </div>
+                  <div style={{ border: '0.5px solid var(--rule)', borderRadius: 4, overflow: 'hidden' }}>
+                    {similarFirms.slice(0, 5).map(sf => {
+                      const titleName = sf.name.replace(/\b\w+/g, w => {
+                        const lower = w.toLowerCase();
+                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
+                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+                      });
+                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                      const scoreVal = sf.score != null ? Math.round(sf.score) : null;
+                      const col = scoreVal != null ? (scoreVal >= 80 ? 'var(--green)' : scoreVal >= 50 ? 'var(--amber)' : 'var(--red)') : 'var(--rule)';
+                      return (
+                        <button
+                          key={sf.crd}
+                          className="cp-search-result"
+                          onClick={() => { addFirm({ crd: sf.crd, primary_business_name: sf.name }); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}
+                        >
+                          {scoreVal != null && (() => {
+                            const circ = 2 * Math.PI * 10;
+                            const offset = circ * (1 - scoreVal / 100);
+                            return (
+                              <svg width="24" height="24" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="var(--rule)" strokeWidth="2" />
+                                <circle cx="12" cy="12" r="10" fill="none" stroke={col} strokeWidth="2"
+                                  strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+                                  style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                                <text x="12" y="12" textAnchor="middle" dominantBaseline="central"
+                                  style={{ fontFamily: 'var(--serif)', fontSize: 8, fontWeight: 700, fill: col }}>{scoreVal}</text>
+                              </svg>
+                            );
+                          })()}
+                          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{titleName}</div>
+                            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 1 }}>
+                              {titleCity}, {sf.state} · {formatAUM(sf.aum)}
+                              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--green)', marginLeft: 8 }}>{sf.reason}</span>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>+ Add</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 {selected.map(firm => (
                   <div key={firm.crd} className="cp-search-chip">
