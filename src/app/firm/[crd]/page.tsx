@@ -373,7 +373,7 @@ async function getSimilarFirms(crd: number, state: string, aum: number | null, f
     scored.sort((a, b) => b._composite - a._composite);
     const top = scored.slice(0, 8);
 
-    const crds = top.map(f => f.crd);
+    const crds = top.map(f => (f as any).crd as number);
     const [{ data: names }, scoreMap] = await Promise.all([
       supabase.from('firm_names').select('crd, display_name').in('crd', crds),
       getFirmScores(crds),
@@ -382,15 +382,18 @@ async function getSimilarFirms(crd: number, state: string, aum: number | null, f
       names?.map((n: { crd: number; display_name: string | null }) => [n.crd, n.display_name]) ?? []
     );
 
-    return top.slice(0, 4).map(f => ({
-      crd: f.crd,
-      name: (nameMap.get(f.crd) as string | null) || f.primary_business_name || 'Unknown',
-      city: f.main_office_city,
-      state: f.main_office_state,
-      aum: f.aum,
-      score: (scoreMap.get(f.crd) as { final_score?: number } | undefined)?.final_score ?? null,
-      reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
-    }));
+    return top.slice(0, 4).map(f => {
+      const fa = f as any;
+      return {
+        crd: fa.crd,
+        name: (nameMap.get(fa.crd) as string | null) || fa.primary_business_name || 'Unknown',
+        city: fa.main_office_city,
+        state: fa.main_office_state,
+        aum: fa.aum,
+        score: (scoreMap.get(fa.crd) as { final_score?: number } | undefined)?.final_score ?? null,
+        reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
+      };
+    });
   } catch (e) {
     console.error('getSimilarFirms error:', e);
     return [];
