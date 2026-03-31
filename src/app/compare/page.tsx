@@ -120,7 +120,13 @@ function formatAUM(value: number | null): string {
 
 function scoreColor(score: number | null): string {
   if (score == null) return 'var(--rule)';
-  return score >= 70 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+  return score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+}
+
+/** Convert score to 0-100 range for visual display (bar width, color threshold) */
+function toPercent(score: number | null): number {
+  if (score == null) return 0;
+  return score <= 10 ? score * 10 : score;
 }
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
@@ -464,7 +470,8 @@ function ScoreRow({
       </div>
       {Array.from({ length: 4 }).map((_, col) => {
         const score = col < scores.length ? scores[col] : null;
-        const color = scoreColor(score);
+        const pct = toPercent(score);
+        const color = scoreColor(pct);
         const isBest = !allSame && score != null && score === best;
         const isWorst = !allSame && score != null && score === worst;
         return (
@@ -474,9 +481,9 @@ function ScoreRow({
                 <MiniRing score={score} />
               ) : (
                 <div className="cp-score-bar">
-                  <span className="cp-score-num" style={{ fontSize: strong ? 19 : 15, color }}>{score}</span>
+                  <span className="cp-score-num" style={{ fontSize: strong ? 19 : 15, color }}>{Math.round(score)}</span>
                   <div className="cp-score-track">
-                    <div className="cp-score-fill" style={{ width: `${score}%`, background: color }} />
+                    <div className="cp-score-fill" style={{ width: `${pct}%`, background: color }} />
                   </div>
                 </div>
               )
@@ -756,7 +763,7 @@ export default function ComparePage() {
         clientBase: profile?.client_base || '—',
         website: web?.website || '—',
         feeTiers: fees as FeeTier[],
-        // Scores
+        // Scores — final_score is 0-100, sub-scores are 0-10 (scaled visually in ScoreRow)
         finalScore: score?.final_score ?? null,
         disclosureScore: score?.disclosure_score ?? null,
         feeTransparencyScore: score?.fee_transparency_score ?? null,
