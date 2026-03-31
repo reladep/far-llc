@@ -198,9 +198,10 @@ const PAGE_CSS = `
     color: rgba(255,255,255,.5);
   }
   .cp-firm-name {
-    font-size: 13px; font-weight: 600; color: #fff;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    min-width: 0; flex: 1;
+    font-size: 12px; font-weight: 600; color: #fff;
+    min-width: 0; flex: 1; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .cp-firm-name a { color: inherit; text-decoration: none; }
   .cp-firm-name a:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -436,7 +437,7 @@ const PAGE_CSS = `
   }
 
   /* ── Similar Firms ───────────────────────────────────────────────── */
-  .cp-similar-section { max-width: 1200px; margin: 0 auto 60px; padding: 0 48px; }
+  .cp-similar-section { max-width: 1200px; margin: 0 auto; padding: 0 48px 24px; }
   .cp-similar-card {
     background: #fff; border: 0.5px solid var(--rule); border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
@@ -1004,6 +1005,58 @@ export default function ComparePage() {
               </div>
             </div>
 
+            {/* ── SIMILAR FIRMS (top discovery strip) ─────────────────── */}
+            {similarFirms.length > 0 && selected.length < 4 && !isGated && (
+              <div className="cp-similar-section">
+                <div className="cp-similar-card">
+                  <div className="cp-section-head">
+                    <span className="cp-section-title">Compare Similar Firms</span>
+                    <span className="cp-section-meta">Based on AUM, geography, and firm profile · Click + Add to compare</span>
+                  </div>
+                  <div className="cp-similar-grid">
+                    {similarFirms.map(sf => {
+                      const titleName = sf.name.replace(/\b\w+/g, w => {
+                        const lower = w.toLowerCase();
+                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
+                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+                      });
+                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
+                      const scoreVal = sf.score != null ? Math.round(sf.score) : null;
+                      const col = scoreVal != null ? (scoreVal >= 80 ? 'var(--green)' : scoreVal >= 50 ? 'var(--amber)' : 'var(--red)') : 'var(--rule)';
+                      return (
+                        <div key={sf.crd} className="cp-similar-item">
+                          <div className="cp-similar-info">
+                            <div className="cp-similar-name">{titleName}</div>
+                            <div className="cp-similar-loc">{titleCity}, {sf.state} · {formatAUM(sf.aum)}</div>
+                            <div className="cp-similar-why">{sf.reason}</div>
+                          </div>
+                          <div className="cp-similar-right">
+                            {scoreVal != null && (() => {
+                              const circ = 2 * Math.PI * 13;
+                              const offset = circ * (1 - scoreVal / 100);
+                              return (
+                                <svg width="34" height="34" viewBox="0 0 34 34">
+                                  <circle cx="17" cy="17" r="13" fill="none" stroke="var(--rule)" strokeWidth="2.5" />
+                                  <circle cx="17" cy="17" r="13" fill="none" stroke={col} strokeWidth="2.5"
+                                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+                                  <text x="17" y="17" textAnchor="middle" dominantBaseline="central"
+                                    style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, fill: col }}>{scoreVal}</text>
+                                </svg>
+                              );
+                            })()}
+                            <button
+                              className="cp-similar-add"
+                              onClick={() => addFirm({ crd: sf.crd, primary_business_name: sf.name })}
+                            >+ Add</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── COMPARISON TABLE ────────────────────────────────────── */}
             <div className="cp-table-wrap">
               <div className="cp-table-inner">
@@ -1216,57 +1269,6 @@ export default function ComparePage() {
               </div>
             </div>
 
-            {/* ── SIMILAR FIRMS ──────────────────────────────────────── */}
-            {similarFirms.length > 0 && selected.length < 4 && !isGated && (
-              <div className="cp-similar-section">
-                <div className="cp-similar-card">
-                  <div className="cp-section-head">
-                    <span className="cp-section-title">Compare Similar Firms</span>
-                    <span className="cp-section-meta">Based on AUM, geography, and firm profile</span>
-                  </div>
-                  <div className="cp-similar-grid">
-                    {similarFirms.map(sf => {
-                      const titleName = sf.name.replace(/\b\w+/g, w => {
-                        const lower = w.toLowerCase();
-                        return ['and','of','the','for','in','on','at','to','by','llc','llp'].includes(lower)
-                          ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-                      });
-                      const titleCity = sf.city?.replace(/\b\w+/g, w => w.charAt(0) + w.slice(1).toLowerCase());
-                      const scoreVal = sf.score != null ? Math.round(sf.score) : null;
-                      const col = scoreVal != null ? (scoreVal >= 80 ? 'var(--green)' : scoreVal >= 50 ? 'var(--amber)' : 'var(--red)') : 'var(--rule)';
-                      return (
-                        <div key={sf.crd} className="cp-similar-item">
-                          <div className="cp-similar-info">
-                            <div className="cp-similar-name">{titleName}</div>
-                            <div className="cp-similar-loc">{titleCity}, {sf.state} · {formatAUM(sf.aum)}</div>
-                            <div className="cp-similar-why">{sf.reason}</div>
-                          </div>
-                          <div className="cp-similar-right">
-                            {scoreVal != null && (() => {
-                              const circ = 2 * Math.PI * 13;
-                              const offset = circ * (1 - scoreVal / 100);
-                              return (
-                                <svg width="34" height="34" viewBox="0 0 34 34">
-                                  <circle cx="17" cy="17" r="13" fill="none" stroke="var(--rule)" strokeWidth="2.5" />
-                                  <circle cx="17" cy="17" r="13" fill="none" stroke={col} strokeWidth="2.5"
-                                    strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-                                  <text x="17" y="17" textAnchor="middle" dominantBaseline="central"
-                                    style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, fill: col }}>{scoreVal}</text>
-                                </svg>
-                              );
-                            })()}
-                            <button
-                              className="cp-similar-add"
-                              onClick={() => addFirm({ crd: sf.crd, primary_business_name: sf.name })}
-                            >+ Add</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
 
           </div>{/* /gate-wrap */}
 
