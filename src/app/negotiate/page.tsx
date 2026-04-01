@@ -2,49 +2,19 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Session } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
-
-// ── Protected constants / helpers ────────────────────────────────────────────
-const INDUSTRY_ALL = [
-  { breakpoint: 500_000,     label: '$500K',  avg: 1.205, p25: 1.00, median: 1.00, p75: 1.49 },
-  { breakpoint: 1_000_000,   label: '$1M',    avg: 1.058, p25: 0.90, median: 1.00, p75: 1.25 },
-  { breakpoint: 5_000_000,   label: '$5M',    avg: 0.717, p25: 0.50, median: 0.70, p75: 0.90 },
-  { breakpoint: 10_000_000,  label: '$10M',   avg: 0.581, p25: 0.40, median: 0.55, p75: 0.75 },
-  { breakpoint: 25_000_000,  label: '$25M',   avg: 0.528, p25: 0.35, median: 0.50, p75: 0.75 },
-  { breakpoint: 50_000_000,  label: '$50M',   avg: 0.505, p25: 0.30, median: 0.50, p75: 0.70 },
-  { breakpoint: 100_000_000, label: '$100M',  avg: 0.489, p25: 0.25, median: 0.50, p75: 0.65 },
-];
-
-function getClosestBreakpoint(amount: number) {
-  let closest = INDUSTRY_ALL[0];
-  for (const bp of INDUSTRY_ALL) {
-    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) closest = bp;
-  }
-  return closest;
-}
-
-function formatDollar(n: number): string {
-  return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
-}
-
-function formatCompact(n: number): string {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return formatDollar(n);
-}
-
-function projectGrowth(principal: number, annualFeeRate: number, years: number, returnRate = 0.07) {
-  let value = principal;
-  let totalFees = 0;
-  for (let y = 0; y < years; y++) {
-    const fee = value * annualFeeRate;
-    totalFees += fee;
-    value = (value - fee) * (1 + returnRate);
-  }
-  return { value, totalFees };
-}
+import {
+  INDUSTRY_ALL,
+  getClosestBreakpoint,
+  calcTieredFeeSimple,
+  synthesizeRangeTiers,
+  formatDollar,
+  formatCompact,
+  projectGrowth,
+  type FeeTier,
+} from '@/lib/fee-utils';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type FeeMode = 'flat' | 'tiered' | 'dollar' | 'unknown';
@@ -52,15 +22,37 @@ type ClientStatus = 'existing' | 'prospective' | 'exploring';
 
 interface PlaybookItem {
   type: 'primary' | 'rebuttal';
-  emoji: string;
   tag: string;
   head: string;
   text: string;
   quote?: string;
 }
 
+// ── Firm data types ──────────────────────────────────────────────────────────
+interface FirmData {
+  crd: number;
+  name: string;
+  logoKey: string | null;
+  aum: number | null;
+  employees: number | null;
+  clientTotal: number | null;
+  feeStructureType: string | null;
+  feeRangeMin: number | null;
+  feeRangeMax: number | null;
+  feeNotes: string | null;
+  tiers: FeeTier[];
+  score: number | null;
+  website: string | null;
+  privateFundAdvisor: boolean;
+  disciplinaryHistory: boolean;
+  conflictFlags: string[];
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function NegotiatePage() {
+  const searchParams = useSearchParams();
+  const crdParam = searchParams.get('crd');
+
   // ── PROTECTED STATE ──────────────────────────────────────────────────────
   const [rawAum, setRawAum] = useState('');
   const [rawFee, setRawFee] = useState('');
@@ -75,10 +67,19 @@ export default function NegotiatePage() {
   const [showMinAumWarning, setShowMinAumWarning] = useState(false);
   const [showDollarFeeWarning, setShowDollarFeeWarning] = useState(false);
 
+  // ── FIRM STATE ─────────────────────────────────────────────────────────
+  const [firmData, setFirmData] = useState<FirmData | null>(null);
+  const [firmLoading, setFirmLoading] = useState(false);
+  const [firmPrefilled, setFirmPrefilled] = useState(false);
+
+  // ── FIRM SEARCH STATE ──────────────────────────────────────────────────
+  const [firmQuery, setFirmQuery] = useState('');
+  const [firmResults, setFirmResults] = useState<{ crd: number; name: string }[]>([]);
+  const [firmSelectedIndex, setFirmSelectedIndex] = useState(-1);
+
   // ── PRESENTATION STATE ───────────────────────────────────────────────────
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [clientStatus, setClientStatus] = useState<ClientStatus>('existing');
-  const [firmPanelOpen, setFirmPanelOpen] = useState(false);
   const [showGate, setShowGate] = useState(false);
   const [gateEmail, setGateEmail] = useState('');
   const [gateError, setGateError] = useState(false);
@@ -90,6 +91,146 @@ export default function NegotiatePage() {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
   }, []);
+
+  // ── FIRM DATA FETCH (reusable) ───────────────────────────────────────────
+  const loadFirm = useCallback((crd: number) => {
+    setFirmLoading(true);
+    setFirmPrefilled(false);
+    const supabase = createSupabaseBrowserClient();
+
+    Promise.all([
+      supabase.from('firm_names').select('display_name').eq('crd', crd).maybeSingle(),
+      supabase.from('firmdata_current').select('aum, employees, client_total, private_fund_advisor, disciplinary_disclosure, regulatory_disclosure, civil_judicial_disclosure').eq('crd', crd).maybeSingle(),
+      supabase.from('firmdata_feetiers').select('min_aum, max_aum, fee_pct').eq('crd', crd).order('min_aum', { ascending: true }),
+      supabase.from('firmdata_feesandmins').select('fee_structure_type, fee_range_min, fee_range_max, notes').eq('crd', crd).maybeSingle(),
+      supabase.from('firm_scores').select('final_score').eq('crd', crd).maybeSingle(),
+      supabase.from('firm_logos').select('logo_key').eq('crd', crd).maybeSingle(),
+      supabase.from('firmdata_website').select('website').eq('crd', crd).maybeSingle(),
+    ]).then(([nameRes, currentRes, tiersRes, feesRes, scoreRes, logoRes, webRes]) => {
+      const cur = currentRes.data;
+      const conflicts: string[] = [];
+      if (cur?.disciplinary_disclosure) conflicts.push('Disciplinary Disclosure');
+      if (cur?.regulatory_disclosure) conflicts.push('Regulatory Disclosure');
+      if (cur?.civil_judicial_disclosure) conflicts.push('Civil/Judicial Disclosure');
+
+      setFirmData({
+        crd,
+        name: nameRes.data?.display_name || `CRD #${crd}`,
+        logoKey: logoRes.data?.logo_key || null,
+        aum: cur?.aum || null,
+        employees: cur?.employees || null,
+        clientTotal: cur?.client_total || null,
+        feeStructureType: feesRes.data?.fee_structure_type || null,
+        feeRangeMin: feesRes.data?.fee_range_min || null,
+        feeRangeMax: feesRes.data?.fee_range_max || null,
+        feeNotes: feesRes.data?.notes || null,
+        tiers: (tiersRes.data || []) as FeeTier[],
+        score: scoreRes.data?.final_score || null,
+        website: webRes.data?.website || null,
+        privateFundAdvisor: !!cur?.private_fund_advisor,
+        disciplinaryHistory: !!cur?.disciplinary_disclosure,
+        conflictFlags: conflicts,
+      });
+      setFirmLoading(false);
+    });
+  }, []);
+
+  // Load from URL param on mount
+  useEffect(() => {
+    if (!crdParam) return;
+    const crd = parseInt(crdParam, 10);
+    if (!isNaN(crd)) loadFirm(crd);
+  }, [crdParam, loadFirm]);
+
+  // ── FIRM SEARCH (debounced) ────────────────────────────────────────────
+  useEffect(() => {
+    if (firmQuery.length < 2) { setFirmResults([]); return; }
+    const timer = setTimeout(async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('firmdata_current')
+        .select('crd, primary_business_name')
+        .ilike('primary_business_name', `%${firmQuery}%`)
+        .limit(8);
+      if (!data) { setFirmResults([]); return; }
+      const crds = data.map(d => d.crd);
+      const { data: names } = await supabase
+        .from('firm_names')
+        .select('crd, display_name')
+        .in('crd', crds);
+      const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+      setFirmResults(data.filter(d => d.primary_business_name).map(d => ({
+        crd: d.crd,
+        name: nameMap.get(d.crd) || d.primary_business_name!,
+      })));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [firmQuery]);
+
+  // ── FIRM SELECT / CLEAR ────────────────────────────────────────────────
+  const selectFirm = useCallback((crd: number) => {
+    setFirmQuery('');
+    setFirmResults([]);
+    setFirmSelectedIndex(-1);
+    loadFirm(crd);
+  }, [loadFirm]);
+
+  const clearFirm = useCallback(() => {
+    setFirmData(null);
+    setFirmPrefilled(false);
+    setFirmQuery('');
+    setFirmResults([]);
+    // Reset fee inputs to defaults
+    setFeeMode('flat');
+    setRawFee('');
+    setFeeTiers([
+      { min: 0, max: 500000, fee: 1.0 },
+      { min: 500000, max: null, fee: 0.8 },
+    ]);
+    setShowResults(false);
+    setShowGate(false);
+  }, []);
+
+  // ── PRE-FILL from firm data ────────────────────────────────────────────
+  useEffect(() => {
+    if (!firmData || firmPrefilled) return;
+    setFirmPrefilled(true);
+
+    const type = firmData.feeStructureType;
+
+    if (type === 'tiered' && firmData.tiers.length > 0) {
+      setFeeMode('tiered');
+      const mapped = firmData.tiers.map((t, i) => ({
+        min: parseInt(t.min_aum || '0'),
+        max: t.max_aum,
+        fee: t.fee_pct ?? 0,
+      }));
+      setFeeTiers(mapped);
+    } else if (type === 'flat_percentage' && firmData.feeRangeMax) {
+      setFeeMode('flat');
+      setRawFee(firmData.feeRangeMax.toString());
+    } else if (type === 'range' && firmData.feeRangeMin != null && firmData.feeRangeMax != null) {
+      // Synthesize tiers from range
+      const avgClientSize = (firmData.aum && firmData.clientTotal && firmData.clientTotal > 0)
+        ? firmData.aum / firmData.clientTotal
+        : 1_000_000;
+      const synthTiers = synthesizeRangeTiers(firmData.feeRangeMin, firmData.feeRangeMax, avgClientSize);
+      if (synthTiers.length > 0) {
+        setFeeMode('tiered');
+        setFeeTiers(synthTiers.map(t => ({
+          min: parseInt(t.min_aum || '0'),
+          max: t.max_aum,
+          fee: t.fee_pct ?? 0,
+        })));
+      } else {
+        setFeeMode('flat');
+        setRawFee(firmData.feeRangeMax.toString());
+      }
+    } else if (type === 'maximum_only' && firmData.feeRangeMax) {
+      setFeeMode('flat');
+      setRawFee(firmData.feeRangeMax.toString());
+    }
+  }, [firmData, firmPrefilled]);
 
   // Animate bars when results revealed
   useEffect(() => {
@@ -272,13 +413,13 @@ export default function NegotiatePage() {
     const targetRate = askRate.toFixed(2);
 
     items.push({
-      type: 'primary', emoji: '📊', tag: 'Opening Move', head: 'Lead with the data',
+      type: 'primary', tag: 'Opening Move', head: 'Lead with the data',
       text: `Reference real benchmarks when you open the conversation — it reframes this as research, not a complaint.`,
       quote: `"I've been reviewing fee data from SEC ADV filings for advisors managing portfolios near ${formatCompact(aum)}. The industry median for comparable clients is ${bracket.median.toFixed(2)}% — I'm currently paying ${feePercent.toFixed(2)}%."`,
     });
 
     items.push({
-      type: 'primary', emoji: '🎯', tag: 'The Ask', head: 'Make a specific ask',
+      type: 'primary', tag: 'The Ask', head: 'Make a specific ask',
       text: isOverpaying
         ? `Be direct. Advisors expect this conversation. Specificity signals confidence — "I'd like to discuss" is weaker than naming a number.`
         : `Your fee is competitive, but locking in a confirmation is still valuable for long-term certainty.`,
@@ -289,19 +430,19 @@ export default function NegotiatePage() {
 
     if (clientStatus === 'existing') {
       items.push({
-        type: 'primary', emoji: '🤝', tag: 'Relationship Leverage', head: 'Reference your tenure',
+        type: 'primary', tag: 'Relationship Leverage', head: 'Reference your tenure',
         text: `Long-standing clients have leverage. Loyalty has real economic value for an advisor — use that.`,
         quote: `"I've been a client for several years. As my relationship deepens and my assets grow, I'd expect the fee structure to reflect that."`,
       });
     } else if (clientStatus === 'prospective') {
       items.push({
-        type: 'primary', emoji: '📈', tag: 'Prospective Leverage', head: 'You haven\'t signed yet',
+        type: 'primary', tag: 'Prospective Leverage', head: 'You haven\'t signed yet',
         text: `As a prospective client you have maximum negotiating power. This is the moment to set the right terms.`,
         quote: `"Before I commit, I'd like to confirm the fee structure. My current portfolio is ${formatCompact(aum)} — I'd expect a rate in line with the ${bracket.p25.toFixed(2)}–${bracket.median.toFixed(2)}% range I've seen from comparable firms."`,
       });
     } else {
       items.push({
-        type: 'primary', emoji: '🔎', tag: 'Comparison Leverage', head: 'Use your research as a signal',
+        type: 'primary', tag: 'Comparison Leverage', head: 'Use your research as a signal',
         text: `Even exploratory conversations signal seriousness. Letting them know you're comparing firms creates urgency.`,
         quote: `"I'm currently evaluating a few advisory relationships. Fee structure is a key variable for me — and the data I've reviewed suggests ${targetRate}% is a competitive rate for my AUM."`,
       });
@@ -309,7 +450,7 @@ export default function NegotiatePage() {
 
     if (isOverpaying) {
       items.push({
-        type: 'rebuttal', emoji: '💬', tag: 'Handle the Pushback',
+        type: 'rebuttal', tag: 'Handle the Pushback',
         head: `If they say your fee covers comprehensive planning…`,
         text: `Separate the fee components. Planning and asset management are distinct services — each can be negotiated independently.`,
         quote: `"I understand the value of the planning services. What I'm asking is whether the asset management fee specifically can be priced closer to the ${bracket.median.toFixed(2)}% benchmark — that's what comparable firms charge for the investment management component."`,
@@ -318,7 +459,7 @@ export default function NegotiatePage() {
 
     if (isSignificantlyOver) {
       items.push({
-        type: 'primary', emoji: '🔍', tag: 'Nuclear Option', head: 'Name the competition',
+        type: 'primary', tag: 'Nuclear Option', head: 'Name the competition',
         text: `If they won't move, introducing a competitive alternative creates urgency. You don't need to be bluffing — advisors at the P25 rate are plentiful.`,
         quote: `"I've spoken with other fee-only advisors managing similar portfolios — several have quoted rates near ${bracket.p25.toFixed(2)}%. I'd prefer to stay, but I need this to be competitive."`,
       });
@@ -326,14 +467,70 @@ export default function NegotiatePage() {
 
     if (compoundingCost > 1000) {
       items.push({
-        type: 'primary', emoji: '📅', tag: 'Long-Term Framing', head: 'Show them the 20-year cost',
+        type: 'primary', tag: 'Long-Term Framing', head: 'Show them the 20-year cost',
         text: `Quantifying the compounding impact of even a small fee difference makes the stakes concrete — for both of you.`,
         quote: `"A ${(feePercent - bracket.median).toFixed(2)}% fee difference compounds to roughly ${formatCompact(compoundingCost)} in lost portfolio value over 10 years. That's not a small ask — it's a structural issue."`,
       });
     }
 
+    // ── FIRM-SPECIFIC PLAYBOOK ITEMS ──────────────────────────────────────
+    if (firmData) {
+      const fn = firmData.name;
+
+      // If firm has conflict/disclosure flags
+      if (firmData.conflictFlags.length > 0) {
+        const flagList = firmData.conflictFlags.join(', ');
+        items.push({
+          type: 'primary', tag: 'ADV Disclosure Flag', head: `${fn} has filed disclosures`,
+          text: `According to their ADV filing, ${fn} has disclosed: ${flagList}. This doesn't mean wrongdoing, but you should understand what it means for your relationship.`,
+          quote: `"I noticed your ADV filing includes a ${firmData.conflictFlags[0].toLowerCase()}. Can you walk me through what that involves and how it might affect my account?"`,
+        });
+      }
+
+      // If firm is a private fund advisor
+      if (firmData.privateFundAdvisor) {
+        items.push({
+          type: 'rebuttal', tag: 'Private Fund Advisor', head: `${fn} manages private funds`,
+          text: `This firm is registered as a private fund advisor, which can create conflicts of interest — they may steer assets toward their own funds.`,
+          quote: `"I see you also manage private funds. How do you ensure there's no conflict between your fund's interests and mine as a separate account client?"`,
+        });
+      }
+
+      // If firm's fee is above median for the bracket and they have a score
+      if (firmData.score && isOverpaying) {
+        items.push({
+          type: 'primary', tag: 'Score vs. Fee', head: `Use ${fn}'s Visor Index Score`,
+          text: `${fn} scores ${firmData.score}/100 on the Visor Index. ${firmData.score >= 80 ? 'A strong score — but a high fee should still be justified.' : 'A score below 80 combined with above-median fees gives you clear leverage.'}`,
+          quote: firmData.score >= 80
+            ? `"Your Visor Index Score is ${firmData.score}/100 — I value the quality. But the fee data shows I'm paying above the median for my portfolio size. Can we bring this closer to ${targetRate}%?"`
+            : `"I've reviewed your Visor Index Score of ${firmData.score}/100 alongside peer benchmarks. Given the score and the fee premium, I'd like to discuss adjusting to ${targetRate}%."`,
+        });
+      }
+
+      // If firm has disclosed fee tiers — cite their own schedule
+      if (firmData.tiers.length > 0 && firmData.feeStructureType === 'tiered') {
+        const topTier = firmData.tiers[firmData.tiers.length - 1];
+        if (topTier.fee_pct != null) {
+          items.push({
+            type: 'primary', tag: 'Their Own Schedule', head: `Reference ${fn}'s published tiers`,
+            text: `${fn}'s ADV Part 2A discloses a tiered fee schedule. Their highest tier starts at ${formatCompact(parseInt(topTier.min_aum || '0'))} at ${topTier.fee_pct}%. Use this as a floor for your negotiation.`,
+            quote: `"Your own fee schedule shows ${topTier.fee_pct}% for accounts above ${formatCompact(parseInt(topTier.min_aum || '0'))}. I'd like to discuss how we can get closer to that rate given my portfolio trajectory."`,
+          });
+        }
+      }
+
+      // If firm has a fee range — cite it
+      if (firmData.feeRangeMin != null && firmData.feeRangeMax != null && firmData.feeRangeMin < firmData.feeRangeMax) {
+        items.push({
+          type: 'primary', tag: 'ADV Fee Range', head: `${fn} discloses a fee range`,
+          text: `According to their ADV filing, ${fn} charges between ${firmData.feeRangeMin}% and ${firmData.feeRangeMax}%. If you're near the top of that range, there's room to negotiate down.`,
+          quote: `"Your filing shows fees ranging from ${firmData.feeRangeMin}% to ${firmData.feeRangeMax}%. Given my portfolio size of ${formatCompact(aum)}, I'd like to discuss where I fall within that range and whether we can move toward the lower end."`,
+        });
+      }
+    }
+
     return items;
-  }, [bracket, hasValidInput, aum, feePercent, clientStatus, askRate, isOverpaying, isSignificantlyOver, compoundingCost]);
+  }, [bracket, hasValidInput, aum, feePercent, clientStatus, askRate, isOverpaying, isSignificantlyOver, compoundingCost, firmData]);
 
   // ── HELPERS FOR RENDER ───────────────────────────────────────────────────
   const feeColor   = isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A';
@@ -363,7 +560,7 @@ export default function NegotiatePage() {
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <>
-      <title>Fee Negotiation Tool — Are You Overpaying? | Visor Index</title>
+      <title>{firmData ? `Negotiate Fees with ${firmData.name}` : 'Fee Negotiation Tool — Are You Overpaying?'} | Visor Index</title>
       <meta name="description" content="Benchmark your advisory fees against SEC filing data and get a personalized negotiation playbook." />
 
       <style suppressHydrationWarning>{`
@@ -441,10 +638,8 @@ export default function NegotiatePage() {
         .ask-savings-sub { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 2px; }
 
         .playbook-items { display: flex; flex-direction: column; gap: 18px; }
-        .pb-item { display: flex; gap: 18px; padding: 20px 24px; border: 1px solid #CAD8D0; border-left: 3px solid #1A7A4A; background: #fff; }
+        .pb-item { padding: 20px 24px; border: 1px solid #CAD8D0; border-left: 3px solid #1A7A4A; background: #fff; }
         .pb-item.rebuttal { border-left-color: #F59E0B; }
-        .pb-icon { width: 32px; height: 32px; background: #E6F4ED; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
-        .pb-item.rebuttal .pb-icon { background: rgba(245,158,11,.08); }
         .pb-tag  { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #1A7A4A; margin-bottom: 4px; }
         .pb-item.rebuttal .pb-tag { color: #F59E0B; }
         .pb-head { font-size: 14px; font-weight: 600; color: #0C1810; margin-bottom: 6px; }
@@ -471,6 +666,24 @@ export default function NegotiatePage() {
         .gc-submit:hover { background: #22995E; }
         .gc-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; border: 1px solid #CAD8D0; color: #0C1810; padding: 11px; font-size: 13px; cursor: pointer; transition: border-color .15s; margin-bottom: 14px; font-family: 'DM Sans', sans-serif; }
         .gc-google:hover { border-color: #5A7568; }
+        .ng-firm-chip { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(45,189,116,.06); border: 1px solid rgba(26,122,74,.2); }
+        .ng-fc-logo { width: 32px; height: 32px; background: #0A1C2A; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.5); }
+        .ng-fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 20px; padding: 0 4px; transition: color .15s; flex-shrink: 0; }
+        .ng-fc-remove:hover { color: #EF4444; }
+        .ng-firm-input { width: 100%; border: 1px solid #CAD8D0; background: #F6F8F7; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #0C1810; outline: none; transition: border-color .15s; }
+        .ng-firm-input:focus { border-color: #2DBD74; }
+        .ng-firm-input::placeholder { color: #CAD8D0; }
+        .ng-firm-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; border: 1px solid #CAD8D0; border-top: none; max-height: 240px; overflow-y: auto; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+        .ng-firm-result { display: block; width: 100%; text-align: left; padding: 10px 14px; background: #fff; border: none; border-bottom: 1px solid #F6F8F7; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #0C1810; transition: background .1s; }
+        .ng-firm-result:hover, .ng-firm-result.active { background: rgba(26,122,74,.06); }
+        .firm-banner { display: flex; align-items: center; gap: 16px; padding: 16px 24px; background: #fff; border: 1px solid #CAD8D0; border-left: 3px solid #2DBD74; margin-bottom: 32px; flex-wrap: wrap; }
+        .fb-logo { width: 40px; height: 40px; background: #0A1C2A; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700; color: rgba(255,255,255,.5); }
+        .fb-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #0C1810; }
+        .fb-meta { display: flex; gap: 12px; font-size: 11px; color: #5A7568; margin-top: 2px; }
+        .fb-meta span { text-transform: capitalize; }
+        .fb-flags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .fb-flag { font-size: 10px; font-weight: 600; letter-spacing: .08em; padding: 3px 10px; color: #EF4444; background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.15); }
+        .fb-flag.pfa { color: #F59E0B; background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.15); }
         .firm-selector-row { display: flex; border: 1px solid #CAD8D0; cursor: pointer; transition: border-color .15s; margin-bottom: 8px; }
         .firm-selector-row:hover { border-color: #2DBD74; }
         .fs-logo { width: 40px; height: 40px; background: #0A1C2A; display: grid; place-items: center; font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.45); flex-shrink: 0; }
@@ -510,10 +723,16 @@ export default function NegotiatePage() {
               Fee Negotiation Tool
             </div>
             <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0 }}>
-              Are you paying <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>too much?</em>
+              {firmData
+                ? <>Negotiate with <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>{firmData.name}</em></>
+                : <>Are you paying <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>too much?</em></>
+              }
             </h1>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
-              Enter your portfolio value and what you pay — we&rsquo;ll benchmark it against real SEC filing data from thousands of registered advisors and build your negotiation playbook.
+              {firmData
+                ? `We've pre-filled ${firmData.name}'s disclosed fee schedule from their SEC ADV filing. Enter your portfolio value to benchmark and build your personalized playbook.`
+                : `Enter your portfolio value and what you pay — we'll benchmark it against real SEC filing data from thousands of registered advisors and build your negotiation playbook.`
+              }
             </p>
           </div>
         </div>
@@ -521,11 +740,47 @@ export default function NegotiatePage() {
         {/* ── MAIN ─────────────────────────────────────────────────────────── */}
         <div className="ng-content-wrap" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
 
+          {/* ── FIRM BANNER (when ?crd= is present) ──────────────────────── */}
+          {firmData && (
+            <div className="firm-banner">
+              <div className="fb-logo">
+                {firmData.logoKey ? (
+                  <img
+                    src={`https://visorindex.com/logos/${firmData.logoKey}`}
+                    alt={firmData.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = firmData!.name.charAt(0); }}
+                  />
+                ) : (
+                  <span>{firmData.name.charAt(0)}</span>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="fb-name">Negotiating with {firmData.name}</div>
+                <div className="fb-meta">
+                  {firmData.feeStructureType && <span>{firmData.feeStructureType.replace(/_/g, ' ')}</span>}
+                  {firmData.score && <span>Visor Score: {firmData.score}/100</span>}
+                  {firmData.aum && <span>AUM: {formatCompact(firmData.aum)}</span>}
+                </div>
+              </div>
+              {firmData.conflictFlags.length > 0 && (
+                <div className="fb-flags">
+                  {firmData.conflictFlags.map(f => (
+                    <span key={f} className="fb-flag">⚠ {f}</span>
+                  ))}
+                </div>
+              )}
+              {firmData.privateFundAdvisor && (
+                <span className="fb-flag pfa">Private Fund Advisor</span>
+              )}
+            </div>
+          )}
           {/* ── STEP 01: INPUT ─────────────────────────────────────────────── */}
           <div className="ng-step">
             <div className="ng-step-hd">
               <div className="step-n">01</div>
               <div className="step-title">Your portfolio &amp; fee</div>
+              {firmData && <div className="step-meta">{firmData.name} fees pre-filled from ADV</div>}
             </div>
             <div style={{ padding: 24 }}>
 
@@ -693,50 +948,63 @@ export default function NegotiatePage() {
                 Analyze My Fee <span className="analyze-btn-arrow">→</span>
               </button>
 
-              {/* Firm upgrade panel */}
-              <div className="firm-upgrade" style={{ marginTop: 20 }}>
-                <div className="firm-upgrade-hd" onClick={() => setFirmPanelOpen(!firmPanelOpen)}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 28, height: 28, background: '#E6F4ED', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                      <svg width="14" height="14" fill="none" stroke="#1A7A4A" strokeWidth="1.5" viewBox="0 0 14 14">
-                        <circle cx="7" cy="7" r="5.5" /><line x1="7" y1="4" x2="7" y2="10" /><line x1="4" y1="7" x2="10" y2="7" />
-                      </svg>
+              {/* ── Firm search / chip ────────────────────────────────── */}
+              <div style={{ marginTop: 20 }}>
+                {firmData ? (
+                  <div className="ng-firm-chip">
+                    <div className="ng-fc-logo">
+                      {firmData.logoKey ? (
+                        <img
+                          src={`https://visorindex.com/logos/${firmData.logoKey}`}
+                          alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = firmData!.name.charAt(0); }}
+                        />
+                      ) : firmData.name.charAt(0)}
                     </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0C1810' }}>Add your advisor firm</div>
-                      <div style={{ fontSize: 10, color: '#5A7568' }}>Enriches results</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0C1810' }}>{firmData.name}</div>
+                      <div style={{ fontSize: 10, color: '#5A7568' }}>Fees pre-filled from ADV · CRD #{firmData.crd}</div>
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1A7A4A', background: '#E6F4ED', padding: '3px 8px', marginLeft: 4 }}>Optional</span>
+                    <button onClick={clearFirm} className="ng-fc-remove" title="Remove firm">×</button>
                   </div>
-                  <svg
-                    width="14" height="14" fill="none" stroke="#5A7568" strokeWidth="1.5"
-                    style={{ transition: 'transform .3s', transform: firmPanelOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
-                    viewBox="0 0 14 14"
-                  >
-                    <polyline points="2,4 7,10 12,4" />
-                  </svg>
-                </div>
-                <div className={`firm-upgrade-body${firmPanelOpen ? ' open' : ''}`}>
-                  <p style={{ fontSize: 12, color: '#5A7568', lineHeight: 1.65, marginBottom: 14 }}>
-                    Get firm-specific talking points, ADV-sourced fee tier data, and peer group matching.
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                    {[
-                      'Peer group matched to firm type & AUM',
-                      'Firm\'s own ADV fee tiers used in playbook',
-                      'Conflict & ownership flags surfaced',
-                      'Verbatim talking points citing their filings',
-                    ].map(item => (
-                      <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#5A7568' }}>
-                        <span style={{ color: '#1A7A4A', fontWeight: 700, flexShrink: 0 }}>✓</span>
-                        {item}
-                      </div>
-                    ))}
+                ) : (
+                  <div className="ng-firm-search">
+                    <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 8, fontFamily: 'DM Mono, monospace', display: 'flex', justifyContent: 'space-between' }}>
+                      Your Advisor Firm
+                      <span style={{ fontSize: 10, fontWeight: 400, letterSpacing: 0, textTransform: 'none', color: '#CAD8D0' }}>optional — enriches playbook</span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={firmQuery}
+                        onChange={e => { setFirmQuery(e.target.value); setFirmSelectedIndex(-1); }}
+                        onKeyDown={e => {
+                          if (e.key === 'ArrowDown') { e.preventDefault(); setFirmSelectedIndex(prev => Math.min(prev + 1, firmResults.length - 1)); }
+                          else if (e.key === 'ArrowUp') { e.preventDefault(); setFirmSelectedIndex(prev => Math.max(prev - 1, -1)); }
+                          else if (e.key === 'Enter' && firmSelectedIndex >= 0 && firmResults[firmSelectedIndex]) { e.preventDefault(); selectFirm(firmResults[firmSelectedIndex].crd); }
+                          else if (e.key === 'Escape') { setFirmQuery(''); setFirmResults([]); }
+                        }}
+                        placeholder="Search by firm name…"
+                        className="ng-firm-input"
+                      />
+                      {firmResults.length > 0 && (
+                        <div className="ng-firm-dropdown">
+                          {firmResults.map((r, idx) => (
+                            <button
+                              key={r.crd}
+                              onClick={() => selectFirm(r.crd)}
+                              className={`ng-firm-result${idx === firmSelectedIndex ? ' active' : ''}`}
+                            >
+                              {r.name}
+                              <span style={{ color: '#CAD8D0', fontSize: 11, marginLeft: 8 }}>#{r.crd}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {firmLoading && <div style={{ fontSize: 11, color: '#5A7568', marginTop: 6 }}>Loading firm data…</div>}
+                    </div>
                   </div>
-                  <Link href="/search" style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#1A7A4A', textDecoration: 'none', borderBottom: '1px solid rgba(26,122,74,.3)' }}>
-                    Search firms on Visor Index →
-                  </Link>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -771,6 +1039,7 @@ export default function NegotiatePage() {
                     twentyYearCurrent={twentyYearCurrent}
                     max20yr={max20yr}
                     animated={false}
+                    firmData={firmData}
                   />
                 </div>
               )}
@@ -873,6 +1142,7 @@ export default function NegotiatePage() {
                   twentyYearCurrent={twentyYearCurrent}
                   max20yr={max20yr}
                   animated={animated}
+                  firmData={firmData}
                 />
               )}
             </div>
@@ -908,6 +1178,7 @@ interface ResultsProps {
   twentyYearCurrent: { value: number; totalFees: number };
   max20yr: number;
   animated: boolean;
+  firmData?: FirmData | null;
 }
 
 function ResultsPreview({
@@ -915,6 +1186,7 @@ function ResultsPreview({
   feeColor, feeLabel, pctPos, bps, medianBps, isOverpaying, isSignificantlyOver,
   askRate, askSavings, playbookItems,
   twentyYearP25, twentyYearMedian, twentyYearCurrent, max20yr, animated,
+  firmData,
 }: ResultsProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -954,7 +1226,7 @@ function ResultsPreview({
           </div>
 
           {/* Stat row */}
-          <div className="stat-row">
+          <div className="stat-row" style={firmData ? { gridTemplateColumns: 'repeat(4, 1fr)' } : undefined}>
             <div className="stat-cell">
               <div className="stat-label">P25 — Best Quartile</div>
               <div className="stat-val" style={{ color: '#1A7A4A' }}>{bracket.p25.toFixed(2)}%</div>
@@ -963,6 +1235,17 @@ function ResultsPreview({
               <div className="stat-label">Peer Median</div>
               <div className="stat-val">{bracket.median.toFixed(2)}%</div>
             </div>
+            {firmData && firmData.feeRangeMax != null && (
+              <div className="stat-cell">
+                <div className="stat-label">{firmData.name}</div>
+                <div className="stat-val" style={{ color: '#0A1C2A' }}>
+                  {firmData.feeStructureType === 'range' || firmData.feeStructureType === 'tiered'
+                    ? `${firmData.feeRangeMin ?? '—'}–${firmData.feeRangeMax}%`
+                    : `${firmData.feeRangeMax}%`
+                  }
+                </div>
+              </div>
+            )}
             <div className="stat-cell">
               <div className="stat-label">Your Fee</div>
               <div className="stat-val" style={{ color: feeColor }}>{feePercent.toFixed(2)}%</div>
@@ -1087,7 +1370,6 @@ function ResultsPreview({
           <div className="playbook-items" style={{ marginBottom: 24 }}>
             {playbookItems.map((item, i) => (
               <div key={i} className={`pb-item${item.type === 'rebuttal' ? ' rebuttal' : ''}`}>
-                <div className="pb-icon">{item.emoji}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="pb-tag">{item.tag}</div>
                   <div className="pb-head">{item.head}</div>
@@ -1098,13 +1380,22 @@ function ResultsPreview({
             ))}
           </div>
 
-          {/* Enrich nudge (if no firm added) */}
-          <div className="enrich-nudge" style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
-              <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
+          {/* Enrich nudge (if no firm added) / firm badge (if firm loaded) */}
+          {firmData ? (
+            <div className="enrich-nudge" style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+                <strong style={{ color: '#2DBD74' }}>✓ Firm-specific playbook</strong> — includes ADV data, conflict flags, and verbatim citations for {firmData.name}.
+              </div>
+              <Link href={`/firm/${firmData.crd}`} className="en-btn" style={{ textDecoration: 'none' }}>View Firm Profile</Link>
             </div>
-            <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
-          </div>
+          ) : (
+            <div className="enrich-nudge" style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+                <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
+              </div>
+              <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
+            </div>
+          )}
         </div>
 
         {/* CTA card */}

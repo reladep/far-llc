@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Session } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import { type FeeTier, calcTieredFeeSimple, getClosestBreakpoint, synthesizeRangeTiers } from '@/lib/fee-utils';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -13,12 +14,6 @@ interface FirmBasic {
   crd: number;
   primary_business_name: string;
   display_name?: string | null;
-}
-
-interface FeeTier {
-  min_aum: string | null;
-  max_aum: number | null;
-  fee_pct: number | null;
 }
 
 interface AssetAlloc {
@@ -130,16 +125,6 @@ const DISC_CATEGORIES = [
 const SEV_COLOR: Record<string, string> = { critical: '#EF4444', serious: '#F97316', moderate: '#F59E0B' };
 
 // ─── CONSTANTS & HELPERS ─────────────────────────────────────────────────────
-const INDUSTRY_MEDIANS = [
-  { breakpoint: 500_000, median: 1.00 },
-  { breakpoint: 1_000_000, median: 1.00 },
-  { breakpoint: 5_000_000, median: 0.70 },
-  { breakpoint: 10_000_000, median: 0.55 },
-  { breakpoint: 25_000_000, median: 0.50 },
-  { breakpoint: 50_000_000, median: 0.50 },
-  { breakpoint: 100_000_000, median: 0.50 },
-];
-
 const FEE_TYPE_LABELS: Record<string, string> = {
   range: 'AUM-Based',
   tiered: 'Tiered',
@@ -149,30 +134,6 @@ const FEE_TYPE_LABELS: Record<string, string> = {
   capped: 'Capped',
   not_disclosed: 'Negotiated',
 };
-
-function getIndustryMedian(amount: number): number {
-  let closest = INDUSTRY_MEDIANS[0];
-  for (const bp of INDUSTRY_MEDIANS) {
-    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) closest = bp;
-  }
-  return closest.median;
-}
-
-function calcTieredFee(amount: number, tiers: FeeTier[]): number {
-  if (tiers.length === 0) return 0;
-  const sorted = [...tiers].filter(t => t.fee_pct != null).sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
-  let totalFee = 0, remaining = amount;
-  for (const tier of sorted) {
-    if (remaining <= 0) break;
-    const tierMin = parseInt(tier.min_aum || '0');
-    const tierMax = tier.max_aum;
-    const bracketSize = tierMax ? tierMax - tierMin : remaining;
-    const taxable = Math.min(remaining, bracketSize);
-    totalFee += taxable * (tier.fee_pct! / 100);
-    remaining -= taxable;
-  }
-  return totalFee;
-}
 
 function formatCompact(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
@@ -211,33 +172,27 @@ const PAGE_CSS = `
     --serif:'Cormorant Garamond',serif;
     --sans:'DM Sans',sans-serif;
     --mono:'DM Mono',monospace;
-    background: var(--bg); color: var(--ink); min-height: 100vh;
+    background: var(--bg); color: var(--ink); min-height: 100vh; padding-bottom: 48px;
   }
 
   /* Header */
-  .cp-hero { background: var(--navy); padding: 32px 48px 0; }
-  .cp-hero-inner { max-width: 1200px; margin: 0 auto; }
-  .cp-hero-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--green); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
-  }
-  .cp-hero-eyebrow::before { content: ''; width: 16px; height: 1px; background: var(--green); }
-  .cp-hero h1 {
-    font-family: var(--serif); font-size: 34px; font-weight: 700;
-    color: #fff; letter-spacing: -.02em; margin-bottom: 4px;
-  }
-  .cp-hero-sub { font-size: 12px; color: rgba(255,255,255,.3); margin-bottom: 22px; }
 
-  /* Jump nav — sticky below firm bar */
+  /* Jump nav — sticky below breadcrumb */
   .cp-jump-bar {
-    position: sticky; top: 142px; z-index: 499;
+    position: sticky; top: 61px; z-index: 500;
     background: var(--navy-2); border-bottom: 1px solid rgba(255,255,255,.07);
     overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .cp-jump-bar::-webkit-scrollbar { display: none; }
   .cp-jump-nav {
-    display: flex; max-width: 1200px; margin: 0 auto; padding: 0 48px;
+    display: flex; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 48px;
   }
+  .cp-jump-nav-links {
+    display: flex; flex: 1; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cp-jump-nav-links::-webkit-scrollbar { display: none; }
+  .cp-jump-actions { flex-shrink: 0; padding-left: 12px; }
   .cp-jn-link {
     font-size: 11px; font-weight: 500; color: rgba(255,255,255,.3);
     padding: 10px 20px 10px 0; margin-right: 4px; white-space: nowrap;
@@ -247,9 +202,9 @@ const PAGE_CSS = `
   .cp-jn-link:hover { color: rgba(255,255,255,.65); }
   .cp-jn-link.on { color: var(--green-3); border-bottom-color: var(--green-3); }
 
-  /* Sticky firm header */
+  /* Sticky firm header — below jump nav */
   .cp-firm-bar {
-    position: sticky; top: 86px; z-index: 500;
+    position: sticky; top: 101px; z-index: 499;
     background: var(--navy); border-bottom: 2px solid rgba(255,255,255,.07);
     box-shadow: 0 4px 20px rgba(0,0,0,.15); overflow-x: auto;
   }
@@ -264,7 +219,7 @@ const PAGE_CSS = `
   .cp-firm-slot:last-child { border-right: none; }
   .cp-firm-slot-label {
     font-size: 10px; font-weight: 600; letter-spacing: .18em;
-    text-transform: uppercase; color: rgba(255,255,255,.2);
+    text-transform: uppercase; color: rgba(255,255,255,.65);
   }
   .cp-firm-avatar {
     width: 28px; height: 28px; flex-shrink: 0;
@@ -289,14 +244,14 @@ const PAGE_CSS = `
   .cp-remove-btn:hover { color: rgba(255,255,255,.7); }
   .cp-add-slot {
     padding: 14px 20px; display: flex; align-items: center;
-    justify-content: center; gap: 6px; cursor: pointer; opacity: .3;
+    justify-content: center; gap: 6px; cursor: pointer; opacity: .75;
     border-right: 1px solid rgba(255,255,255,.07); transition: opacity .2s;
   }
   .cp-add-slot:last-child { border-right: none; }
-  .cp-add-slot:hover { opacity: .65; }
+  .cp-add-slot:hover { opacity: .85; }
 
   /* Table body */
-  .cp-table-wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px 48px; overflow-x: auto; }
+  .cp-table-wrap { max-width: 1200px; margin: 0 auto; padding: 0 48px 8px; overflow-x: auto; }
   .cp-table-inner { min-width: 700px; }
 
   /* Section cards */
@@ -392,7 +347,7 @@ const PAGE_CSS = `
   .cp-view-profile a:last-child { border-right: none; }
 
   /* Fee calculator */
-  .cp-fee-section { max-width: 1200px; margin: 0 auto 80px; padding: 0 48px; }
+  .cp-fee-section { max-width: 1200px; margin: 0 auto 24px; padding: 0 48px; }
   .cp-fee-card {
     background: #fff; border: 0.5px solid var(--rule); border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
@@ -472,8 +427,28 @@ const PAGE_CSS = `
   }
   .cp-gate-cta:hover { background: #22995E; }
 
-  /* Empty state */
-  .cp-empty-state { max-width: 1200px; margin: 0 auto; padding: 80px 48px; text-align: center; }
+  /* Empty state banner */
+  .cp-empty-banner {
+    max-width: 1200px; margin: 0 auto; padding: 0 48px;
+  }
+  .cp-empty-banner-inner {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: rgba(45,189,116,.04); border: 1px solid rgba(45,189,116,.15);
+    border-radius: 8px; padding: 16px 20px;
+  }
+  .cp-empty-banner-title {
+    font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px;
+  }
+  .cp-empty-banner-sub {
+    font-family: var(--sans); font-size: 12px; color: var(--ink-3); line-height: 1.5;
+  }
+  .cp-empty-banner-btn {
+    display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--green);
+    background: none; border: 1px solid var(--green); border-radius: 4px;
+    padding: 8px 16px; cursor: pointer; white-space: nowrap; transition: all .15s;
+  }
+  .cp-empty-banner-btn:hover { background: rgba(45,189,116,.06); }
 
   /* Loading skeleton */
   @keyframes cp-shimmer { to { background-position: -200% 0; } }
@@ -534,8 +509,6 @@ const PAGE_CSS = `
   /* ── Mobile ─────────────────────────────────────────────────────────── */
   /* ── Tablet (≤ 960px) ──────────────────────────────────────────── */
   @media (max-width: 960px) {
-    .cp-hero { padding: 24px 24px 0; }
-    .cp-hero h1 { font-size: 30px; }
     .cp-jump-nav { padding: 0 24px; }
     .cp-breadcrumb-inner { padding: 10px 24px; }
     .cp-firm-bar-inner { padding: 0 16px; }
@@ -551,12 +524,10 @@ const PAGE_CSS = `
 
   /* ── Mobile (≤ 768px) ──────────────────────────────────────────── */
   @media (max-width: 768px) {
-    .cp-hero { padding: 20px 16px 0; }
-    .cp-hero h1 { font-size: 26px; }
     .cp-jump-nav { padding: 0 16px; }
     .cp-breadcrumb-inner { padding: 8px 16px; }
-    .cp-firm-bar { top: 80px; }
-    .cp-jump-bar { top: 134px; }
+    .cp-jump-bar { top: 55px; }
+    .cp-firm-bar { top: 95px; }
     .cp-breadcrumb-trail { font-size: 11px; }
     .cp-firm-bar-inner { padding: 0 8px; gap: 4px; }
     .cp-firm-slot { min-width: 0; padding: 8px 6px; }
@@ -570,11 +541,12 @@ const PAGE_CSS = `
     .cp-section-head { flex-wrap: wrap; gap: 4px; }
     .cp-section-title { font-size: 16px; }
     .cp-section-meta { font-size: 10px; }
-    .cp-fee-section { padding: 0 8px; margin-bottom: 40px; }
+    .cp-fee-section { padding: 0 8px; }
     .cp-fee-input-row { flex-direction: column; gap: 12px; padding: 16px; }
     .cp-fee-input-row .cp-slider-wrap { width: 100%; }
     .cp-gate-card { top: 120px; padding: 28px 20px; max-width: calc(100% - 32px); }
-    .cp-empty-state { padding: 48px 16px; }
+    .cp-empty-banner { padding: 0 16px; }
+    .cp-empty-banner-inner { flex-direction: column; text-align: center; }
     .cp-search-card { margin: 0 16px; }
     .cp-similar-grid { grid-template-columns: 1fr; }
     .cp-share-btn span { display: none; }
@@ -865,11 +837,117 @@ export default function ComparePage() {
   const [copied, setCopied] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [similarFirms, setSimilarFirms] = useState<{ crd: number; name: string; city: string | null; state: string; aum: number | null; score: number | null; reason: string }[]>([]);
+  const [popularFirms, setPopularFirms] = useState<{ crd: number; name: string; city: string | null; state: string | null; aum: number | null; score: number | null }[]>([]);
+  const [savedFirms, setSavedFirms] = useState<{ crd: number; name: string; city: string | null; state: string | null; aum: number | null; score: number | null }[]>([]);
+  const [emptyQuery, setEmptyQuery] = useState('');
+  const [emptyResults, setEmptyResults] = useState<FirmBasic[]>([]);
+  const [emptySelectedIdx, setEmptySelectedIdx] = useState(-1);
 
   // Session
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
   }, []);
+
+  // Fetch popular firms (top-scored) for empty state
+  useEffect(() => {
+    if (selected.length > 0) return;
+    (async () => {
+      const { data: topScores } = await supabase
+        .from('firm_scores')
+        .select('crd, final_score')
+        .not('final_score', 'is', null)
+        .order('final_score', { ascending: false })
+        .limit(6);
+      if (!topScores || topScores.length === 0) return;
+      const crds = topScores.map(s => s.crd);
+      const [{ data: firmData }, { data: nameData }] = await Promise.all([
+        supabase.from('firmdata_current').select('crd, primary_business_name, main_office_city, main_office_state, aum').in('crd', crds),
+        supabase.from('firm_names').select('crd, display_name').in('crd', crds),
+      ]);
+      const firmMap = new Map((firmData || []).map(f => [f.crd, f]));
+      const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
+      const merged = topScores.map(s => {
+        const f = firmMap.get(s.crd);
+        const titleCase = (str: string | null) => str?.replace(/\b\w+/g, w => {
+            const lower = w.toLowerCase();
+            if (w.length <= 3 && w === w.toUpperCase() && /[A-Z]/.test(w)) return w;
+            return ['and','of','the','for','in','on','at','to','by','llc','llp','inc'].includes(lower)
+              ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+          }) || null;
+        return {
+          crd: s.crd,
+          name: titleCase(nameMap.get(s.crd) || f?.primary_business_name || null) || `CRD #${s.crd}`,
+          city: titleCase(f?.main_office_city as string | null),
+          state: f?.main_office_state as string | null,
+          aum: (f?.aum as number | null) ?? null,
+          score: s.final_score != null ? Math.round(s.final_score) : null,
+        };
+      }).filter(f => f.score != null);
+      setPopularFirms(merged);
+    })();
+  }, [selected.length]);
+
+  // Fetch saved firms for empty state (if logged in)
+  useEffect(() => {
+    if (selected.length > 0 || !session) return;
+    (async () => {
+      const { data: favs } = await supabase
+        .from('user_favorites')
+        .select('crd')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (!favs || favs.length === 0) { setSavedFirms([]); return; }
+      const crds = favs.map(f => f.crd);
+      const [{ data: firmData }, { data: nameData }, { data: scoreData }] = await Promise.all([
+        supabase.from('firmdata_current').select('crd, primary_business_name, main_office_city, main_office_state, aum').in('crd', crds),
+        supabase.from('firm_names').select('crd, display_name').in('crd', crds),
+        supabase.from('firm_scores').select('crd, final_score').in('crd', crds),
+      ]);
+      const firmMap = new Map((firmData || []).map(f => [f.crd, f]));
+      const nameMap = new Map((nameData || []).map(n => [n.crd, n.display_name]));
+      const scoreMap = new Map((scoreData || []).map(s => [s.crd, s.final_score]));
+      const titleCase = (str: string | null) => str?.replace(/\b\w+/g, w => {
+            const lower = w.toLowerCase();
+            if (w.length <= 3 && w === w.toUpperCase() && /[A-Z]/.test(w)) return w;
+            return ['and','of','the','for','in','on','at','to','by','llc','llp','inc'].includes(lower)
+              ? lower : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+          }) || null;
+      const merged = crds.map(crd => {
+        const f = firmMap.get(crd);
+        return {
+          crd,
+          name: titleCase(nameMap.get(crd) || f?.primary_business_name || null) || `CRD #${crd}`,
+          city: titleCase(f?.main_office_city as string | null),
+          state: f?.main_office_state as string | null,
+          aum: (f?.aum as number | null) ?? null,
+          score: scoreMap.get(crd) != null ? Math.round(scoreMap.get(crd)!) : null,
+        };
+      });
+      setSavedFirms(merged);
+    })();
+  }, [selected.length, session]);
+
+  // Debounced search for empty state inline search
+  useEffect(() => {
+    if (emptyQuery.length < 2) { setEmptyResults([]); return; }
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('firmdata_current')
+        .select('crd, primary_business_name')
+        .ilike('primary_business_name', `%${emptyQuery}%`)
+        .limit(8);
+      if (!data) { setEmptyResults([]); return; }
+      const crds = data.map(d => d.crd);
+      const { data: names } = await supabase.from('firm_names').select('crd, display_name').in('crd', crds);
+      const nameMap = new Map((names || []).map(n => [n.crd, n.display_name]));
+      setEmptyResults(data.filter(d => d.primary_business_name).map(d => ({
+        crd: d.crd,
+        primary_business_name: d.primary_business_name!,
+        display_name: nameMap.get(d.crd) || null,
+      })) as FirmBasic[]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [emptyQuery]);
 
   // Handle ?add=CRD or ?crds=CRD1,CRD2 or ?firms=CRD1,CRD2
   useEffect(() => {
@@ -1005,6 +1083,10 @@ export default function ComparePage() {
     });
 
     // Pre-compute derived percentiles (clients_per_advisor, avg_client_size) from firmdata_percentiles
+    // Fetch all firms' aum + client_total for avg client size ranking
+    const { data: allPctRows } = await supabase.from('firmdata_percentiles').select('aum, client_total').not('aum', 'is', null).not('client_total', 'is', null).gt('client_total', 0);
+    const allAvgClients = (allPctRows || []).map(r => r.aum / r.client_total).sort((a, b) => a - b);
+
     const derivedPctileMap = new Map<number, { clientsPerAdvisor: string | null; avgClient: string | null }>();
     await Promise.all(selected.map(async (firm) => {
       const c = currentMap.get(firm.crd);
@@ -1019,6 +1101,14 @@ export default function ComparePage() {
       const avgCs = (aumVal && tc > 0) ? aumVal / tc : null;
 
       const result: { clientsPerAdvisor: string | null; avgClient: string | null } = { clientsPerAdvisor: null, avgClient: null };
+
+      // Avg client size percentile (computed client-side from pre-fetched data)
+      if (avgCs != null && allAvgClients.length > 0) {
+        const below = allAvgClients.filter(v => v < avgCs).length;
+        const rawPct = Math.round((below / allAvgClients.length) * 100);
+        const decile = Math.min(Math.max(Math.round(rawPct / 10) * 10, 10), 90);
+        result.avgClient = `${decile}th percentile`;
+      }
 
       const queries: Array<{ key: 'clientsPerAdvisor' | 'avgClient'; col: string; val: number | null; invert?: boolean }> = [
         { key: 'clientsPerAdvisor', col: 'clients_per_advisor', val: cpa, invert: true },
@@ -1068,8 +1158,8 @@ export default function ComparePage() {
         (parseNum(current.client_other_number) || 0)
       ) : 0;
 
-      const avgClientSize = aum && totalClients > 0
-        ? formatAUM(aum / totalClients) : '—';
+      const avgClientRaw = aum && totalClients > 0 ? aum / totalClients : null;
+      const avgClientSize = avgClientRaw ? formatAUM(avgClientRaw) : '—';
 
       // AUM per advisor & clients per advisor
       const aumPerAdvisor = aum && empInv
@@ -1133,14 +1223,14 @@ export default function ComparePage() {
       // Asset allocation
       const ALLOC_COLORS = ['#2DBD74', '#1A7A4A', '#22995E', '#6BB8E0', '#A0A0CC', '#7DC8A0', '#80B0D0', '#B0A0C8', '#70C0B0'];
       const ALLOC_FIELDS: [string, string][] = [
-        ['Public Equity', 'asset_allocation_public_equity_direct'],
-        ['US Gov Bonds', 'asset_allocation_us_govt_bonds'],
-        ['Corp Bonds (IG)', 'asset_allocation_ig_corp_bonds'],
-        ['Corp Bonds (HY)', 'asset_allocation_non_ig_corp_bonds'],
-        ['Muni Bonds', 'asset_allocation_us_muni_bonds'],
+        ['Individual Stocks', 'asset_allocation_public_equity_direct'],
+        ['US Treasury Bonds', 'asset_allocation_us_govt_bonds'],
+        ['IG Corp Bonds', 'asset_allocation_ig_corp_bonds'],
+        ['Non-IG Corp Bonds', 'asset_allocation_non_ig_corp_bonds'],
+        ['US Municipal Bonds', 'asset_allocation_us_muni_bonds'],
         ['Private Equity', 'asset_allocation_private_equity_direct'],
-        ['Cash', 'asset_allocation_cash'],
-        ['Derivatives', 'asset_allocation_derivatives'],
+        ['Cash & Equivalents', 'asset_allocation_cash'],
+        ['Funds, ETFs, and Alternatives', 'asset_allocation_derivatives'],
         ['Other', 'asset_allocation_other'],
       ];
       const assetAllocation: AssetAlloc[] = current
@@ -1213,7 +1303,13 @@ export default function ComparePage() {
         wealthTier: profile?.wealth_tier || '—',
         clientBase: profile?.client_base || '—',
         website: web?.website || '—',
-        feeTiers: fees as FeeTier[],
+        feeTiers: fees.length > 0
+          ? fees as FeeTier[]
+          : (feeRangeMinVal != null && feeRangeMaxVal != null && avgClientRaw
+            ? synthesizeRangeTiers(feeRangeMinVal, feeRangeMaxVal, avgClientRaw)
+            : feeRangeMaxVal != null
+              ? [{ min_aum: '0', max_aum: null, fee_pct: feeRangeMaxVal }]
+              : []),
         logoKey: logoMap.get(firm.crd) ?? null,
         // Scores
         finalScore: score?.final_score ?? null,
@@ -1262,7 +1358,7 @@ export default function ComparePage() {
         aumGrowth10yrPercentile: rankToDecile(gr?.rank_aum_10y_growth_annualized, 'rank_aum_10y_growth_annualized'),
         clientGrowth1yrPercentile: rankToDecile(gr?.rank_clients_1y_growth_annualized, 'rank_clients_1y_growth_annualized'),
         clientGrowth5yrPercentile: rankToDecile(gr?.rank_clients_5y_growth_annualized, 'rank_clients_5y_growth_annualized'),
-        avgClientPercentile: null, // rank_avg_account_size column does not exist yet
+        avgClientPercentile: derivedPctileMap.get(firm.crd)?.avgClient ?? null,
         latestFiling,
         numOffices: offices ? offices.toLocaleString() : '—',
         registeredStates: current ? ['ak','al','ar','az','ca','co','ct','dc','de','fl','ga','hi','ia','id','il','in','ks','ky','la','ma','md','me','mi','mn','mo','ms','mt','nc','nd','ne','nh','nj','nm','nv','ny','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','va','vt','wa','wi','wv'].filter(s => (current as Record<string, unknown>)[`state_${s}`] === 'Y').length : 0,
@@ -1359,6 +1455,11 @@ export default function ComparePage() {
     setSelected([...selected, firm]);
     setQuery(''); setResults([]); setShowSearch(false);
   };
+  const addFirmFromEmpty = (firm: FirmBasic) => {
+    if (selected.length >= 4 || selected.some(s => s.crd === firm.crd)) return;
+    setSelected([...selected, firm]);
+    setEmptyQuery(''); setEmptyResults([]);
+  };
   const removeFirm = (crd: number) => setSelected(selected.filter(s => s.crd !== crd));
 
   // IntersectionObserver for jump nav
@@ -1374,7 +1475,7 @@ export default function ComparePage() {
 
   // Fee calculator
   const feeAmount = parseInt(feeInput.replace(/[^0-9]/g, ''), 10) || 0;
-  const industryMedian = getIndustryMedian(feeAmount || 10_000_000);
+  const industryMedian = getClosestBreakpoint(feeAmount || 10_000_000).median;
   const PEER_RATE = 0.0102;
   const GROSS_RETURN = 0.07;
   function growNet(a: number, g: number, fr: number, y: number) { return a * Math.pow(1 + g - fr, y); }
@@ -1401,16 +1502,18 @@ export default function ComparePage() {
 
       <div className="cp-page">
 
-        {/* ── BREADCRUMB ────────────────────────────────────────────── */}
-        <div className="cp-breadcrumb">
-          <div className="cp-breadcrumb-inner">
-            <div className="cp-breadcrumb-trail">
-              <Link href="/search">Search</Link>
-              <span className="sep">›</span>
-              <span className="current">Compare{selected.length > 0 ? ` (${selected.length})` : ''}</span>
+        {/* ── STICKY JUMP NAV ──────────────────────────────────────── */}
+        <div className="cp-jump-bar">
+          <div className="cp-jump-nav">
+            <div className="cp-jump-nav-links">
+              {jumpLinks.map(link => (
+                <a key={link.id} href={`#${link.id}`}
+                  className={`cp-jn-link${activeSection === link.id ? ' on' : ''}`}
+                >{link.label}</a>
+              ))}
             </div>
-            <div className="cp-breadcrumb-actions">
-              {selected.length > 0 && (
+            {selected.length > 0 && (
+              <div className="cp-jump-actions">
                 <button
                   className={`cp-share-btn${copied ? ' copied' : ''}`}
                   onClick={() => {
@@ -1426,28 +1529,8 @@ export default function ComparePage() {
                   </svg>
                   <span>{copied ? 'Link copied!' : 'Save Comparison'}</span>
                 </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── HERO ────────────────────────────────────────────────────── */}
-        <div className="cp-hero">
-          <div className="cp-hero-inner">
-            <div className="cp-hero-eyebrow">Side-by-Side Comparison</div>
-            <h1>Compare Firms</h1>
-            <p className="cp-hero-sub">Up to 4 firms · Scores, fees, growth, and client profile</p>
-          </div>
-        </div>
-
-        {/* ── STICKY JUMP NAV ──────────────────────────────────────── */}
-        <div className="cp-jump-bar">
-          <div className="cp-jump-nav">
-            {jumpLinks.map(link => (
-              <a key={link.id} href={`#${link.id}`}
-                className={`cp-jn-link${activeSection === link.id ? ' on' : ''}`}
-              >{link.label}</a>
-            ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1504,7 +1587,7 @@ export default function ComparePage() {
             </div>
 
             {/* ── COMPARISON TABLE ────────────────────────────────────── */}
-            {selected.length > 0 && <div className="cp-table-wrap">
+            {<div className="cp-table-wrap">
               <div className="cp-table-inner">
 
                 {/* ── FIRM OVERVIEW ─────────────────────────────────────── */}
@@ -1519,10 +1602,9 @@ export default function ComparePage() {
                       <DataRowWithPctile label="Employees" values={comparisonData.map(f => f.employees)} percentiles={comparisonData.map(f => f.employeePercentile)} serif={false} />
                       <DataRowWithPctile label="Investment Professionals" values={comparisonData.map(f => f.employeeInvestment != null ? f.employeeInvestment.toLocaleString() : '—')} percentiles={comparisonData.map(f => f.invStaffPercentile)} serif={false} />
                       <DataRowWithPctile label="Total Clients" values={comparisonData.map(f => f.totalClients.toLocaleString())} percentiles={comparisonData.map(f => f.totalClientsPercentile)} serif={false} />
-                      <DataRow label="Avg. Client Size" values={comparisonData.map(f => f.avgClientSize)} serif={false} />
+                      <DataRowWithPctile label="Avg. Client Size" values={comparisonData.map(f => f.avgClientSize)} percentiles={comparisonData.map(f => f.avgClientPercentile)} serif={false} />
                       <DataRow label="Minimum Account" values={comparisonData.map(f => f.minAccount)} serif={false} />
                       <DataRow label="Minimum Fee" values={comparisonData.map(f => f.minimumFee)} serif={false} />
-                      <DataRow label="Wealth Tier" values={comparisonData.map(f => f.wealthTier)} serif={false} />
                       <DataRow label="Offices" values={comparisonData.map(f => f.numOffices)} serif={false} />
                       <DataRow label="Registered States" values={comparisonData.map(f => f.registeredStates > 0 ? f.registeredStates.toString() : '—')} serif={false} />
                       {/* Website */}
@@ -1532,10 +1614,10 @@ export default function ComparePage() {
                           const f = col < comparisonData.length ? comparisonData[col] : null;
                           const web = f?.website;
                           return (
-                            <div key={col} className={`cp-row-cell${web && web !== '—' ? ' text-left' : ''}`}>
-                              {web && web !== '—' ? (
+                            <div key={col} className="cp-row-cell">
+                              {web && web !== '—' && f ? (
                                 <a href={web.startsWith('http') ? web : `https://${web}`} target="_blank" rel="noopener noreferrer" className="cp-web-link">
-                                  {web.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                                  {f.name}
                                 </a>
                               ) : <span className="val-dash">—</span>}
                             </div>
@@ -1645,7 +1727,7 @@ export default function ComparePage() {
                       {(() => {
                         const allLabels = new Set<string>();
                         comparisonData.forEach(f => f.assetAllocation.forEach(a => allLabels.add(a.label)));
-                        const labelOrder = ['Public Equity', 'Private Equity', 'US Gov Bonds', 'IG Corp Bonds', 'Non-IG Corp Bonds', 'Muni Bonds', 'Cash', 'Derivatives', 'Other'];
+                        const labelOrder = ['Individual Stocks', 'Private Equity', 'US Treasury Bonds', 'IG Corp Bonds', 'Non-IG Corp Bonds', 'US Municipal Bonds', 'Cash & Equivalents', 'Funds, ETFs, and Alternatives', 'Other'];
                         const sorted = labelOrder.filter(l => allLabels.has(l));
                         // Add any remaining labels not in the predefined order
                         allLabels.forEach(l => { if (!sorted.includes(l)) sorted.push(l); });
@@ -1792,8 +1874,8 @@ export default function ComparePage() {
             {/* ── FEE CALCULATOR ──────────────────────────────────────── */}
             {/* ── FEE SCHEDULE COMPARISON ────────────────────────── */}
             {!loading && comparisonData.length > 0 && (
-              <div className="cp-fee-section" style={{ marginBottom: 0, paddingBottom: 0 }}>
-                <div className="cp-fee-card" style={{ marginBottom: 24 }}>
+              <div className="cp-fee-section">
+                <div className="cp-fee-card">
                   <div className="cp-section-head">
                     <span className="cp-section-title">Fee Schedule Comparison</span>
                     <span className="cp-section-meta">Side-by-side tier schedules from ADV Part 2A</span>
@@ -1897,7 +1979,9 @@ export default function ComparePage() {
                         Annual Fee by Firm
                       </div>
                       {comparisonData.map(firm => {
-                        const annual = firm.feeTiers.length > 0 ? calcTieredFee(feeAmount, firm.feeTiers) : feeAmount * (industryMedian / 100);
+                        const annual = firm.feeTiers.length > 0
+                          ? calcTieredFeeSimple(feeAmount, firm.feeTiers)
+                          : feeAmount * (industryMedian / 100);
                         const rate = feeAmount > 0 ? annual / feeAmount : 0;
                         const above = rate > PEER_RATE;
                         const barW = Math.min((rate * 100) / 1.6 * 100, 100);
@@ -1940,7 +2024,9 @@ export default function ComparePage() {
                       {[10, 20].map(yr => {
                         const noFeeValue = feeAmount * Math.pow(1 + GROSS_RETURN, yr);
                         const projRows = comparisonData.map(firm => {
-                          const annual = firm.feeTiers.length > 0 ? calcTieredFee(feeAmount, firm.feeTiers) : feeAmount * (industryMedian / 100);
+                          const annual = firm.feeTiers.length > 0
+                            ? calcTieredFeeSimple(feeAmount, firm.feeTiers)
+                            : feeAmount * (industryMedian / 100);
                           const rate = feeAmount > 0 ? annual / feeAmount : 0;
                           return { firm, annual, value: growNet(feeAmount, GROSS_RETURN, rate, yr) };
                         });
@@ -1994,7 +2080,7 @@ export default function ComparePage() {
             <>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '54%', background: 'var(--bg)', pointerEvents: 'none', zIndex: 5 }} />
               <div className="cp-gate-card">
-                <div className="cp-hero-eyebrow" style={{ justifyContent: 'center' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase' as const, color: 'var(--green)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
                   <span style={{ width: 20, height: 1, background: 'var(--green)', display: 'inline-block' }} />
                   Free to join
                   <span style={{ width: 20, height: 1, background: 'var(--green)', display: 'inline-block' }} />
@@ -2048,34 +2134,20 @@ export default function ComparePage() {
           )}
         </div>
 
-        {/* ── EMPTY STATE ────────────────────────────────────────────── */}
+        {/* ── EMPTY STATE BANNER ─────────────────────────────────────── */}
         {!isGated && session !== undefined && selected.length === 0 && !showSearch && (
-          <div className="cp-empty-state">
-            <div style={{ width: 56, height: 56, border: '0.5px solid var(--rule)', display: 'grid', placeItems: 'center', margin: '0 auto 24px', opacity: 0.5, borderRadius: 10 }}>
-              <svg width="22" height="22" fill="none" stroke="var(--ink-3)" strokeWidth="1.5" viewBox="0 0 22 22">
-                <circle cx="11" cy="11" r="9" /><line x1="11" y1="7" x2="11" y2="15" /><line x1="7" y1="11" x2="15" y2="11" />
-              </svg>
-            </div>
-            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 8 }}>No firms selected</h2>
-            <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.75, marginBottom: 28, maxWidth: 420, margin: '0 auto 28px' }}>
-              Search for up to 4 firms to compare their scores, fees, and client profile side by side.
-            </p>
-            <button
-              onClick={() => setShowSearch(true)}
-              style={{ fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--green)', border: 'none', padding: '12px 28px', cursor: 'pointer', borderRadius: 6, marginBottom: 32 }}
-            >Search Firms →</button>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 8 }}>
-              {[
-                { icon: '📊', label: 'Visor Index Score', desc: '8 sub-metrics, side by side' },
-                { icon: '💰', label: 'Fee Impact', desc: '10 & 20-year compounding' },
-                { icon: '📈', label: 'Growth & Clients', desc: 'AUM trends and client profile' },
-              ].map(item => (
-                <div key={item.label} style={{ textAlign: 'center', maxWidth: 140 }}>
-                  <div style={{ fontSize: 20, marginBottom: 6 }}>{item.icon}</div>
-                  <div style={{ fontFamily: 'var(--sans)', fontSize: 12, fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{item.label}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{item.desc}</div>
-                </div>
-              ))}
+          <div className="cp-empty-banner">
+            <div className="cp-empty-banner-inner">
+              <div>
+                <div className="cp-empty-banner-title">Add a firm to get started</div>
+                <div className="cp-empty-banner-sub">Click any &ldquo;Add a firm&rdquo; slot above to compare scores, fees, and growth side by side.</div>
+              </div>
+              <button className="cp-empty-banner-btn" onClick={() => setShowSearch(true)}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 12 12">
+                  <line x1="6" y1="1" x2="6" y2="11" /><line x1="1" y1="6" x2="11" y2="6" />
+                </svg>
+                Search Firms
+              </button>
             </div>
           </div>
         )}

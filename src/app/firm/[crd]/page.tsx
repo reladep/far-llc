@@ -1262,15 +1262,15 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── Active sections for nav (filter out unavailable sections) ──
   // ── Allocation rows ──
   const ALLOC_LABELS: Record<string, { label: string; color: string }> = {
-    public_equity:    { label: 'Public Equity',       color: '#22995E' },
-    private_equity:   { label: 'Private Equity',      color: '#1A7A4A' },
-    ig_corp_bonds:    { label: 'IG Corporate Bonds',  color: '#4B8ECC' },
-    non_ig_corp_bonds:{ label: 'Non-IG Corp Bonds',   color: '#7AA8D4' },
-    us_govt_bonds:    { label: 'US Government Bonds',  color: '#2E6BAD' },
-    us_muni_bonds:    { label: 'Municipal Bonds',     color: '#5BA0D9' },
-    cash:             { label: 'Cash & Equivalents',   color: '#B0C4BA' },
-    derivatives:      { label: 'Derivatives',          color: '#F59E0B' },
-    other:            { label: 'Other',                color: '#8FA69A' },
+    public_equity:    { label: 'Individual Stocks',                    color: '#22995E' },
+    private_equity:   { label: 'Private Equity',                      color: '#1A7A4A' },
+    ig_corp_bonds:    { label: 'IG Corporate Bonds',                  color: '#4B8ECC' },
+    non_ig_corp_bonds:{ label: 'Non-IG Corp Bonds',                   color: '#7AA8D4' },
+    us_govt_bonds:    { label: 'US Treasury Bonds',                   color: '#2E6BAD' },
+    us_muni_bonds:    { label: 'US Municipal Bonds',                  color: '#5BA0D9' },
+    cash:             { label: 'Cash & Equivalents',                  color: '#B0C4BA' },
+    derivatives:      { label: 'Funds, ETFs, and Alternatives', color: '#F59E0B' },
+    other:            { label: 'Other',                               color: '#8FA69A' },
   };
 
   const allocRows: Array<{ key: string; label: string; pct: number; color: string }> = [];
@@ -1847,12 +1847,15 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 feeTiers={feeTiers}
                 crd={String(firm.crd)}
                 firmAum={firm.aum}
-                industryOnly={!feeTiers || feeTiers.length === 0}
+                industryOnly={(!feeTiers || feeTiers.length === 0) && !(feesAndMins?.fee_range_min && feesAndMins?.fee_range_max && avgClientSize)}
                 feeTypeDisplay={feeTypeDisplay}
                 feeNotes={feesAndMins?.notes ?? null}
                 minAccount={minAccount}
                 minFee={minFee}
                 sortedFeeTiers={sortedFeeTiers}
+                feeRangeMin={feesAndMins?.fee_range_min ? parseFloat(feesAndMins.fee_range_min) : null}
+                feeRangeMax={feesAndMins?.fee_range_max ? parseFloat(feesAndMins.fee_range_max) : null}
+                avgClientSize={avgClientSize}
               />
             </div>
 
