@@ -2121,9 +2121,6 @@ export default function ComparePage() {
                   ))}
                 </div>
                 <Link href="/auth/signup" className="cp-gate-cta">Create Free Account <span style={{ fontSize: 16 }}>→</span></Link>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 8 }}>
-                  Free forever · No credit card required
-                </div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
                   Already have an account?{' '}
                   <Link href="/auth/login" style={{ color: 'var(--ink)', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid var(--rule)' }}>Sign in</Link>

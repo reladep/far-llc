@@ -935,10 +935,6 @@ export default function MatchResultsPage() {
                         <Link href="/auth/signup" className="mr-gate-btn-primary">Get Started Free</Link>
                         <Link href="/auth/login" className="mr-gate-btn-secondary">Sign In</Link>
                       </div>
-                      <p className="mr-gate-trust">
-                        <span className="mr-gate-trust-dot" />
-                        Free forever &middot; No credit card required
-                      </p>
                     </div>
                   </div>
                 )}

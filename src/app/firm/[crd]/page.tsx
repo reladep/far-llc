@@ -1462,13 +1462,6 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 Unlock {firmDisplayName.split(' ').slice(0, 3).join(' ')}&apos;s full profile
               </h2>
 
-              <p style={{
-                fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)',
-                marginTop: 6, textAlign: 'center', letterSpacing: '.03em',
-              }}>
-                Free forever · No credit card required
-              </p>
-
               {/* Feature list */}
               <div className="vfp-gate-list">
                 <div className="vfp-gate-list-item">
@@ -1556,12 +1549,10 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 Continue with Google
               </Link>
 
-              {/* Trust line */}
               <p style={{
                 fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)',
                 textAlign: 'center', marginTop: 14, letterSpacing: '.02em',
               }}>
-                Free forever · No credit card ·{' '}
                 <Link href="/terms" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Terms</Link>
                 {' · '}
                 <Link href="/privacy" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Privacy</Link>

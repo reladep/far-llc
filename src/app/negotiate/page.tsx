@@ -1107,10 +1107,9 @@ export default function NegotiatePage() {
                     </button>
 
                     <p style={{ fontSize: 10, color: '#CAD8D0', lineHeight: 1.6 }}>
-                      Free forever. No credit card.{' '}
                       <Link href="/terms" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Terms</Link>
                       {' '}and{' '}
-                      <Link href="/privacy" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Privacy Policy</Link>.
+                      <Link href="/privacy" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Privacy Policy</Link>
                     </p>
                   </div>
                   <div style={{ height: 340 }} />

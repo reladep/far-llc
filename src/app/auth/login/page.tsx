@@ -1,6 +1,6 @@
 import { LoginForm } from '@/components/auth/LoginForm';
 
-export const metadata = { title: 'Sign In — Visor Index' };
+export const metadata = { title: 'Sign In' };
 
 export default function LoginPage() {
   return <LoginForm />;

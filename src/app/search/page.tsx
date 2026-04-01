@@ -898,62 +898,108 @@ function FilterCheckbox({
 
 // ─── Gate Box ─────────────────────────────────────────────────────────────────
 
+const FILLER_FIRMS = [
+  { initials: 'MW', name: 'Meridian Wealth Partners', loc: 'Chicago, IL', aum: '$2.1B', score: 84, color: '#2DBD74' },
+  { initials: 'HG', name: 'Harborview Group', loc: 'Boston, MA', aum: '$890M', score: 77, color: '#2DBD74' },
+  { initials: 'SA', name: 'Sterling Advisory', loc: 'New York, NY', aum: '$4.3B', score: 91, color: '#2DBD74' },
+  { initials: 'PC', name: 'Pacific Capital Management', loc: 'San Francisco, CA', aum: '$1.6B', score: 68, color: '#F59E0B' },
+  { initials: 'BF', name: 'Beacon Financial Group', loc: 'Denver, CO', aum: '$520M', score: 82, color: '#2DBD74' },
+  { initials: 'RP', name: 'Ridgeline Partners', loc: 'Seattle, WA', aum: '$3.2B', score: 73, color: '#F59E0B' },
+  { initials: 'CV', name: 'Crestview Capital Advisors', loc: 'Austin, TX', aum: '$1.1B', score: 79, color: '#2DBD74' },
+  { initials: 'NP', name: 'Northpoint Financial', loc: 'Minneapolis, MN', aum: '$640M', score: 86, color: '#2DBD74' },
+];
+
+function FillerRow({ initials, name, loc, aum, score, color }: {
+  initials: string; name: string; loc: string; aum: string; score: number; color: string;
+}) {
+  return (
+    <div className="grid grid-cols-[56px_1fr_auto_auto] border border-[#CAD8D0] bg-white" style={{ filter: 'blur(5px)' }}>
+      <div className="grid place-items-center border-r border-[#CAD8D0]" style={{ height: 56, width: 56 }}>
+        <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
+          {initials}
+        </div>
+      </div>
+      <div className="px-5 py-[14px] min-w-0">
+        <p className="font-serif text-[16px] font-semibold text-[#0C1810] truncate mb-1">{name}</p>
+        <span className="text-[11px] text-[#5A7568]">{loc}</span>
+      </div>
+      <div className="px-5 py-[14px] text-right" style={{ minWidth: 100 }}>
+        <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{aum}</p>
+        <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
+      </div>
+      <div className="px-5 py-[14px] text-center" style={{ minWidth: 80 }}>
+        <p className="font-serif text-[28px] font-bold leading-none" style={{ color }}>{score}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Shuffle array using a simple deterministic seed (so it's stable per page load but different each visit) */
+function shuffled<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  let seed = Date.now() % 2147483647;
+  for (let i = copy.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+const PREVIEW_ROWS = 8;
+
 function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
-  const previewFirms = firms.slice(0, 6);
-  const count = loading ? '—' : firms.length.toLocaleString();
+  const randomFirms = useMemo(() => shuffled(firms).slice(0, PREVIEW_ROWS), [firms]);
+  const fillCount = Math.max(0, PREVIEW_ROWS - randomFirms.length);
+  const fillers = FILLER_FIRMS.slice(0, fillCount);
 
   return (
     <div>
-      {/* Results count header */}
-      <div className="flex items-baseline gap-2.5 mb-4">
-        <span className="font-serif text-[22px] font-bold text-[#0C1810]">{count}</span>
-        <span className="text-[12px] text-[#5A7568]">firms match your filters</span>
-      </div>
-
-      {/* Blurred cards + CTA overlay */}
+      {/* Preview cards + CTA overlay */}
       <div className="relative">
-        {/* Blurred firm cards */}
-        <div className="pointer-events-none select-none" style={{ filter: 'blur(6px)' }}>
+        {/* Firm cards — real firm names visible, fillers + data blurred */}
+        <div className="pointer-events-none select-none">
           <div className="flex flex-col gap-[1px]">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-[56px] bg-white border border-[#CAD8D0] animate-pulse" />
               ))
-            ) : previewFirms.length > 0 ? (
-              previewFirms.map((firm) => {
-                const score = firm.final_score ?? null;
-                const scoreColor = score == null ? '#CAD8D0' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
-                return (
-                  <div key={firm.crd} className="grid grid-cols-[56px_1fr_auto_auto] border border-[#CAD8D0] bg-white">
-                    <div className="grid place-items-center border-r border-[#CAD8D0]" style={{ height: 56, width: 56 }}>
-                      <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
-                        {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
+            ) : (
+              <>
+                {randomFirms.map((firm) => {
+                  const score = firm.final_score ?? null;
+                  const scoreColor = score == null ? '#CAD8D0' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
+                  return (
+                    <div key={firm.crd} className="grid grid-cols-[56px_1fr_auto_auto] border border-[#CAD8D0] bg-white">
+                      <div className="grid place-items-center border-r border-[#CAD8D0]" style={{ height: 56, width: 56 }}>
+                        <div className="h-8 w-8 bg-[#F6F8F7] border border-[#CAD8D0] grid place-items-center font-serif text-[13px] font-bold text-[#CAD8D0]">
+                          {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
+                        </div>
+                      </div>
+                      <div className="px-5 py-[14px] min-w-0">
+                        <p className="font-serif text-[16px] font-semibold text-[#0C1810] truncate mb-1">
+                          {firm.display_name || firm.primary_business_name}
+                        </p>
+                        <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
+                      </div>
+                      <div className="px-5 py-[14px] text-right" style={{ minWidth: 100, filter: 'blur(6px)' }}>
+                        <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
+                        <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
+                      </div>
+                      <div className="px-5 py-[14px] text-center" style={{ minWidth: 80, filter: 'blur(6px)' }}>
+                        {score != null ? (
+                          <p className="font-serif text-[28px] font-bold leading-none" style={{ color: scoreColor }}>{score}</p>
+                        ) : (
+                          <p className="text-[11px] text-[#CAD8D0]">N/A</p>
+                        )}
                       </div>
                     </div>
-                    <div className="px-5 py-[14px] min-w-0">
-                      <p className="font-serif text-[16px] font-semibold text-[#0C1810] truncate mb-1">
-                        {firm.display_name || firm.primary_business_name}
-                      </p>
-                      <span className="text-[11px] text-[#5A7568]">{firm.main_office_city}, {firm.main_office_state}</span>
-                    </div>
-                    <div className="px-5 py-[14px] text-right" style={{ minWidth: 100 }}>
-                      <p className="font-serif text-[18px] font-bold text-[#0C1810] leading-none mb-1">{formatAUM(firm.aum)}</p>
-                      <p className="text-[9px] uppercase tracking-[0.1em] text-[#5A7568]">AUM</p>
-                    </div>
-                    <div className="px-5 py-[14px] text-center" style={{ minWidth: 80 }}>
-                      {score != null ? (
-                        <p className="font-serif text-[28px] font-bold leading-none" style={{ color: scoreColor }}>{score}</p>
-                      ) : (
-                        <p className="text-[11px] text-[#CAD8D0]">N/A</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-[56px] bg-white border border-[#CAD8D0]" />
-              ))
+                  );
+                })}
+                {fillers.map((f, i) => (
+                  <FillerRow key={`filler-${i}`} {...f} />
+                ))}
+              </>
             )}
           </div>
         </div>
@@ -977,16 +1023,16 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
 
             {/* Headline */}
             <h2 className="font-serif text-[clamp(22px,2.5vw,30px)] font-bold leading-[1.2] tracking-[-0.02em] text-white mb-3">
-              See scores, fees, and conflicts for every advisor that matches.
+              Deep, unbiased intelligence buried in the footnotes.
             </h2>
 
             {/* Subtitle */}
             <p className="text-[13px] text-white/55 leading-[1.7] border-t border-white/[0.06] pt-4 mb-6">
-              Search and filter freely. Full profiles with Visor Indexs, fee breakdowns, and regulatory history require an account.
+              See Visor Index scores, fee schedules, regulatory flags, and more — tailored just for you.
             </p>
 
             {/* CTAs */}
-            <div className="flex gap-3 flex-wrap mb-4">
+            <div className="flex gap-3 flex-wrap">
               <Link
                 href="/auth/signup"
                 className="inline-flex items-center px-7 py-3 bg-[#1A7A4A] hover:bg-[#22995E] text-white text-[13px] font-semibold transition-colors"
@@ -1000,12 +1046,6 @@ function GateBox({ firms, loading }: { firms: Firm[]; loading: boolean }) {
                 View Pricing
               </Link>
             </div>
-
-            {/* Trust line */}
-            <p className="flex items-center gap-2 text-[11px] text-white/40">
-              <span className="h-[5px] w-[5px] rounded-full bg-[#2DBD74] shrink-0" />
-              Free forever · No credit card required
-            </p>
           </div>
         </div>
       </div>
@@ -2092,9 +2132,11 @@ export default function SearchPage() {
             Search
           </button>
 
-          <span className="font-mono text-[12px] text-white/50 shrink-0 hidden sm:block whitespace-nowrap">
-            {loading ? '…' : `${firms.length.toLocaleString()} results`}
-          </span>
+          {session && (
+            <span className="font-mono text-[12px] text-white/50 shrink-0 hidden sm:block whitespace-nowrap">
+              {loading ? '…' : `${firms.length.toLocaleString()} results`}
+            </span>
+          )}
         </div>
 
         {/* Quick filter tags */}

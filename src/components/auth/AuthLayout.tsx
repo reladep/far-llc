@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ReactNode } from 'react';
+import { ReactNode, useCallback } from 'react';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
 const GOOGLE_SVG = (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -13,67 +14,111 @@ const GOOGLE_SVG = (
 );
 
 const CSS = `
-  .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 64px); }
-  .auth-brand {
-    background: #0a1c2a; position: relative; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: center; padding: 64px 56px;
+  :root {
+    --navy: #172438; --navy-2: #0A1C2A;
+    --green: #1A7A4A; --green-2: #22995E; --green-3: #2DBD74;
+    --bg: #F6F8F7; --ink: #0C1810; --ink-2: #2E4438; --ink-3: #5A7568; --rule: #CAD8D0;
+    --serif: 'Cormorant Garamond', serif; --sans: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
   }
-  .auth-brand::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 72px 72px;
-  }
-  .auth-brand-inner { position: relative; max-width: 420px; }
-  .auth-brand-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 48px; text-decoration: none; }
-  .auth-brand-logo svg { flex-shrink: 0; }
-  .auth-brand-logo span { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
-  .auth-brand-logo .green { color: #2DBD74; margin-left: 2px; font-weight: 700; }
-  .auth-quote {
-    font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 3vw, 38px);
-    font-weight: 300; color: #fff; line-height: 1.25; margin: 0 0 40px;
-  }
-  .auth-quote em { font-style: italic; color: #2DBD74; }
-  .auth-bullets { list-style: none; padding: 0; margin: 0 0 40px; display: flex; flex-direction: column; gap: 14px; }
-  .auth-bullet { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.6); }
-  .auth-check { width: 18px; height: 18px; border-radius: 50%; background: rgba(45,189,116,0.15); display: grid; place-items: center; flex-shrink: 0; }
-  .auth-trust { font-size: 11px; color: rgba(255,255,255,0.3); line-height: 1.5; }
 
-  .auth-form-panel {
-    display: flex; align-items: center; justify-content: center; padding: 48px 40px;
-    background: #fff;
+  .auth-page {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 64px); background: var(--bg); padding: 48px 20px;
   }
-  .auth-form-wrap { width: 100%; max-width: 380px; }
-  .auth-form-title { font-size: 24px; font-weight: 700; color: #0a1c2a; margin: 0 0 4px; }
-  .auth-form-sub { font-size: 14px; color: #5A7568; margin: 0 0 32px; }
+
+  .auth-form-wrap { width: 100%; max-width: 400px; }
+
+  .auth-form-card {
+    background: #fff; border: 0.5px solid var(--rule); border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+    padding: 36px 32px;
+  }
+  .auth-form-title {
+    font-family: var(--serif); font-size: 28px; font-weight: 700;
+    color: var(--ink); margin: 0 0 4px; letter-spacing: -.02em;
+  }
+  .auth-form-sub {
+    font-size: 13px; color: var(--ink-3); margin: 0 0 28px;
+    font-family: var(--sans);
+  }
+
+  /* Override ui/Input styles inside auth */
+  .auth-form-card .flex.flex-col.gap-1\\.5 label {
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .auth-form-card input[type="email"],
+  .auth-form-card input[type="password"],
+  .auth-form-card input[type="text"] {
+    border-radius: 0 !important; border: 1px solid var(--rule) !important;
+    background: var(--bg) !important; font-family: var(--mono) !important;
+    font-size: 13px !important; color: var(--ink) !important;
+    padding: 10px 14px !important; height: auto !important;
+    transition: border-color .15s !important;
+  }
+  .auth-form-card input:focus {
+    border-color: var(--green-3) !important;
+    box-shadow: none !important; outline: none !important;
+    ring: none !important;
+  }
+  .auth-form-card input::placeholder { color: var(--rule) !important; }
+
+  /* Override ui/Button styles inside auth */
+  .auth-form-card button[type="submit"] {
+    border-radius: 0 !important; background: var(--green) !important;
+    font-family: var(--sans) !important; font-size: 12px !important;
+    font-weight: 600 !important; letter-spacing: .1em !important;
+    text-transform: uppercase !important; height: 46px !important;
+    transition: background .15s !important;
+  }
+  .auth-form-card button[type="submit"]:hover:not(:disabled) {
+    background: var(--green-2) !important;
+  }
 
   .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
-  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #E5E7EB; }
-  .auth-divider span { font-size: 12px; color: #94A3B8; }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+  .auth-divider span { font-size: 11px; color: var(--ink-3); font-family: var(--sans); }
 
   .auth-google {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: #fff; border: 1px solid #CAD8D0; color: #0C1810; padding: 11px;
-    font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    background: #fff; border: 1px solid var(--rule); color: var(--ink); padding: 11px;
+    font-size: 13px; font-family: var(--sans); font-weight: 500;
     cursor: pointer; transition: border-color 0.15s; text-decoration: none;
   }
-  .auth-google:hover { border-color: #5A7568; }
+  .auth-google:hover { border-color: var(--ink-3); }
 
-  .auth-footer { text-align: center; margin-top: 24px; font-size: 13px; color: #5A7568; }
-  .auth-footer a { color: #1A7A4A; font-weight: 500; text-decoration: none; }
+  .auth-footer {
+    text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink-3);
+    font-family: var(--sans);
+  }
+  .auth-footer a { color: var(--green); font-weight: 600; text-decoration: none; }
   .auth-footer a:hover { text-decoration: underline; }
 
+  .auth-legal {
+    text-align: center; margin-top: 16px; font-size: 10px; color: var(--rule);
+    font-family: var(--sans); line-height: 1.6;
+  }
+  .auth-legal a { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid var(--rule); }
+
+  /* Forgot password link */
+  .auth-form-card .flex.justify-end a {
+    font-family: var(--sans); font-size: 11px; color: var(--green);
+    text-decoration: none; font-weight: 500;
+  }
+  .auth-form-card .flex.justify-end a:hover { text-decoration: underline; }
+
+  /* Error text */
+  .auth-form-card .text-sm.text-error,
+  .auth-form-card .text-error {
+    font-family: var(--sans); font-size: 12px;
+  }
+
+  /* ── Mobile ────────────────────────────────────────────────── */
   @media (max-width: 768px) {
-    .auth-split { grid-template-columns: 1fr; }
-    .auth-brand { padding: 32px 24px; min-height: auto; }
-    .auth-quote { font-size: 24px; margin-bottom: 24px; }
-    .auth-bullets { margin-bottom: 24px; }
-    .auth-form-panel { padding: 32px 24px; }
+    .auth-page { padding: 32px 16px; }
+    .auth-form-card { padding: 28px 20px; }
   }
 `;
-
-const CHECK_ICON = (
-  <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#2DBD74" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-);
 
 interface AuthLayoutProps {
   variant: 'login' | 'signup';
@@ -83,59 +128,41 @@ interface AuthLayoutProps {
 export function AuthLayout({ variant, children }: AuthLayoutProps) {
   const isLogin = variant === 'login';
 
+  const handleGoogleLogin = useCallback(async () => {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  }, []);
+
   return (
     <>
       <style suppressHydrationWarning>{CSS}</style>
-      <div className="auth-split">
-        {/* Brand panel */}
-        <div className="auth-brand">
-          <div className="auth-brand-inner">
-            <Link href="/" className="auth-brand-logo">
-              <svg width="32" height="36" viewBox="0 0 20 22" fill="none">
-                <path d="M10 1L1 4.5V10C1 15.5 4.8 19.7 10 21C15.2 19.7 19 15.5 19 10V4.5L10 1Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" opacity="0.35" />
-                <path d="M10 3.5L3 6.2V10.5C3 14.8 6.1 18.2 10 19.2C13.9 18.2 17 14.8 17 10.5V6.2L10 3.5Z" stroke="white" strokeWidth="1.2" strokeLinejoin="round" fill="none" opacity="0.2" />
-                <path d="M6.5 7L10 14.5L13.5 7" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </svg>
-              <span>Visor<span className="green">Index</span></span>
-            </Link>
-
-            <h2 className="auth-quote">
-              {isLogin
-                ? <>Know the score before you hand over your <em>life savings.</em></>
-                : <>Start finding the <em>right advisor</em> for your situation.</>
-              }
-            </h2>
-
-            <ul className="auth-bullets">
-              <li className="auth-bullet"><span className="auth-check">{CHECK_ICON}</span> 40,000+ advisors indexed</li>
-              <li className="auth-bullet"><span className="auth-check">{CHECK_ICON}</span> 500+ data points per firm</li>
-              <li className="auth-bullet"><span className="auth-check">{CHECK_ICON}</span> Zero paid placements</li>
-              <li className="auth-bullet"><span className="auth-check">{CHECK_ICON}</span> Free to search, free to compare</li>
-            </ul>
-
-            <p className="auth-trust">No advisor has ever paid to appear here or influence their score.</p>
-          </div>
-        </div>
-
-        {/* Form panel */}
-        <div className="auth-form-panel">
-          <div className="auth-form-wrap">
+      <div className="auth-page">
+        <div className="auth-form-wrap">
+          <div className="auth-form-card">
             {children}
+          </div>
 
-            <div className="auth-divider"><span>or</span></div>
+          <div className="auth-divider"><span>or</span></div>
 
-            <Link href="/auth/signup" className="auth-google">
-              {GOOGLE_SVG}
-              Continue with Google
-            </Link>
+          <button onClick={handleGoogleLogin} className="auth-google" type="button">
+            {GOOGLE_SVG}
+            Continue with Google
+          </button>
 
-            <div className="auth-footer">
-              {isLogin ? (
-                <p>Don&apos;t have an account? <Link href="/auth/signup">Sign up</Link></p>
-              ) : (
-                <p>Already have an account? <Link href="/auth/login">Sign in</Link></p>
-              )}
-            </div>
+          <div className="auth-footer">
+            {isLogin ? (
+              <p>Don&apos;t have an account? <Link href="/auth/signup">Sign up</Link></p>
+            ) : (
+              <p>Already have an account? <Link href="/auth/login">Sign in</Link></p>
+            )}
+          </div>
+
+          <div className="auth-legal">
+            <Link href="/terms">Terms</Link> and{' '}
+            <Link href="/privacy">Privacy Policy</Link>
           </div>
         </div>
       </div>
