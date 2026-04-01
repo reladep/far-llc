@@ -66,6 +66,8 @@ export default function NegotiatePage() {
   const [tierFeeRaw, setTierFeeRaw] = useState<Record<number, string>>({});
   const [showMinAumWarning, setShowMinAumWarning] = useState(false);
   const [showDollarFeeWarning, setShowDollarFeeWarning] = useState(false);
+  const [showFeeCapWarning, setShowFeeCapWarning] = useState(false);
+  const [showAumCapWarning, setShowAumCapWarning] = useState(false);
 
   // ── FIRM STATE ─────────────────────────────────────────────────────────
   const [firmData, setFirmData] = useState<FirmData | null>(null);
@@ -346,7 +348,11 @@ export default function NegotiatePage() {
     if (!digits) { setRawAum(''); setShowResults(false); setShowGate(false); return; }
     let num = parseInt(digits, 10);
     const maxAum = feeMode === 'dollar' ? 30_000_000 : 1_000_000_000;
-    if (num > maxAum) num = maxAum;
+    if (num > maxAum) {
+      num = maxAum;
+      setShowAumCapWarning(true);
+      setTimeout(() => setShowAumCapWarning(false), 4000);
+    }
     setRawAum(num.toLocaleString('en-US'));
     setShowResults(false);
     setShowGate(false);
@@ -372,7 +378,12 @@ export default function NegotiatePage() {
     if (feeMode === 'flat') {
       if (val !== '' && !/^\d*\.?\d{0,2}$/.test(val)) return;
       const num = parseFloat(val);
-      if (!isNaN(num) && num > 3) { setRawFee('3'); return; }
+      if (!isNaN(num) && num > 3) {
+        setRawFee('3');
+        setShowFeeCapWarning(true);
+        setTimeout(() => setShowFeeCapWarning(false), 4000);
+        return;
+      }
     }
     setRawFee(val);
   }, [feeMode, aum]);
@@ -576,10 +587,17 @@ export default function NegotiatePage() {
         .tog-btn.on { background: #0A1C2A; color: #fff; border-color: #0A1C2A; z-index: 1; }
         .tog-btn:hover:not(.on) { color: #0C1810; border-color: #5A7568; }
 
-        .fee-tab { flex: 1; padding: 8px 10px; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; border: none; background: #fff; transition: all .15s; border-right: 1px solid #CAD8D0; text-align: center; }
+        .fee-tab { flex: 1; padding: 8px 10px; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; border: none; background: #fff; transition: all .15s; border-right: 1px solid #CAD8D0; text-align: center; white-space: nowrap; }
         .fee-tab:last-child { border-right: none; }
         .fee-tab.on { background: #0A1C2A; color: #fff; }
         .fee-tab:hover:not(.on) { color: #0C1810; }
+
+        .ng-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+        .ng-tier-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .ng-tier-range { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+        .ng-tier-range .money-input-wrap { flex: 1; min-width: 0; }
+        .ng-tier-fee { display: flex; align-items: center; gap: 4px; width: 72px; flex-shrink: 0; }
 
         .money-input-wrap { display: flex; border: 1px solid #CAD8D0; background: #F6F8F7; transition: border-color .15s; }
         .money-input-wrap:focus-within { border-color: #2DBD74; }
@@ -656,16 +674,17 @@ export default function NegotiatePage() {
         .cta-sec { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #CAD8D0; color: #5A7568; padding: 12px 22px; font-size: 12px; font-weight: 500; text-decoration: none; transition: border-color .15s; background: #fff; cursor: pointer; }
         .cta-sec:hover { border-color: #5A7568; }
 
-        .gate-preview-wrap { pointer-events: none; user-select: none; filter: blur(5px); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.4) 45%, rgba(0,0,0,0) 65%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.4) 45%, rgba(0,0,0,0) 65%); }
-        .gate-card { position: absolute; top: 180px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 560px; background: #fff; border: 1px solid #CAD8D0; border-top: 2px solid #0A1C2A; box-shadow: 0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07); padding: 36px 40px; text-align: center; z-index: 50; }
-        .gc-lock { width: 44px; height: 44px; background: #0A1C2A; display: grid; place-items: center; margin: 0 auto 16px; }
-        .gc-email-row { display: flex; border: 1px solid #CAD8D0; margin-bottom: 12px; }
-        .gc-email-row.error { border-color: #EF4444; }
-        .gc-email-input { flex: 1; border: none; background: #F6F8F7; outline: none; font-family: 'DM Mono', monospace; font-size: 13px; color: #0C1810; padding: 12px 14px; }
-        .gc-submit { background: #1A7A4A; color: #fff; border: none; padding: 12px 20px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background .15s; white-space: nowrap; }
-        .gc-submit:hover { background: #22995E; }
-        .gc-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; border: 1px solid #CAD8D0; color: #0C1810; padding: 11px; font-size: 13px; cursor: pointer; transition: border-color .15s; margin-bottom: 14px; font-family: 'DM Sans', sans-serif; }
-        .gc-google:hover { border-color: #5A7568; }
+        .gate-preview-wrap { pointer-events: none; user-select: none; filter: blur(2px); max-height: 500px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%); mask-image: linear-gradient(to bottom, #000 40%, transparent 100%); }
+        .gate-card { position: absolute; top: 180px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 480px; background: #0F2538; border: 1px solid rgba(255,255,255,.09); border-top: 2px solid #1A7A4A; box-shadow: 0 8px 48px rgba(0,0,0,0.5); padding: 36px 40px; text-align: left; z-index: 30; }
+        .gc-eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #2DBD74; }
+        .gc-eyebrow svg { width: 12px; height: 12px; }
+        .gc-headline { font-family: 'Cormorant Garamond', serif; font-size: clamp(22px, 2.5vw, 30px); font-weight: 700; line-height: 1.2; letter-spacing: -.02em; color: #fff; margin-bottom: 12px; }
+        .gc-sub { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7; border-top: 1px solid rgba(255,255,255,.06); padding-top: 16px; margin-bottom: 24px; }
+        .gc-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+        .gc-cta-primary { display: inline-flex; align-items: center; padding: 12px 28px; background: #1A7A4A; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .15s; }
+        .gc-cta-primary:hover { background: #22995E; }
+        .gc-cta-secondary { display: inline-flex; align-items: center; padding: 12px 28px; border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.6); font-size: 13px; text-decoration: none; transition: all .15s; }
+        .gc-cta-secondary:hover { border-color: rgba(255,255,255,.3); color: #fff; }
         .ng-firm-chip { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(45,189,116,.06); border: 1px solid rgba(26,122,74,.2); }
         .ng-fc-logo { width: 32px; height: 32px; background: #0A1C2A; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.5); }
         .ng-fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 20px; padding: 0 4px; transition: color .15s; flex-shrink: 0; }
@@ -691,6 +710,13 @@ export default function NegotiatePage() {
         .fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 16px; transition: color .15s; margin-left: auto; padding: 0 2px; }
         .fc-remove:hover { color: #0A1C2A; }
         @media (max-width: 640px) {
+          .gate-card { top: 120px; padding: 28px 20px; max-width: calc(100% - 32px); }
+          .gc-ctas { flex-wrap: nowrap; }
+          .gc-cta-primary, .gc-cta-secondary { padding: 12px 16px; font-size: 12px; white-space: nowrap; }
+          .ng-input-grid { grid-template-columns: 1fr; }
+          .ng-tier-range .money-input-wrap input { font-size: 11px; padding: 9px 6px; }
+          .bps-hint { font-size: 10px !important; padding: 0 6px !important; }
+          .fee-tab { font-size: 10px; padding: 8px 6px; }
           .impact-grid { grid-template-columns: 1fr; }
           .cmp-lbl { width: 100px; font-size: 10px; }
           .ask-banner { flex-direction: column; gap: 12px; }
@@ -722,7 +748,7 @@ export default function NegotiatePage() {
               <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
               Fee Negotiation Tool
             </div>
-            <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0 }}>
+            <h1 className="ng-hero-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0, whiteSpace: 'nowrap' }}>
               {firmData
                 ? <>Negotiate with <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>{firmData.name}</em></>
                 : <>Are you paying <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>too much?</em></>
@@ -731,7 +757,7 @@ export default function NegotiatePage() {
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
               {firmData
                 ? `We've pre-filled ${firmData.name}'s disclosed fee schedule from their SEC ADV filing. Enter your portfolio value to benchmark and build your personalized playbook.`
-                : `Enter your portfolio value and what you pay — we'll benchmark it against real SEC filing data from thousands of registered advisors and build your negotiation playbook.`
+                : `Enter your portfolio value and what you pay — we'll benchmark it against thousands of fee structures and build your negotiation playbook.`
               }
             </p>
           </div>
@@ -785,7 +811,7 @@ export default function NegotiatePage() {
             <div style={{ padding: 24 }}>
 
               {/* Input grid: AUM + Status */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="ng-input-grid">
                 {/* AUM */}
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase', color: '#5A7568', marginBottom: 8, fontFamily: 'DM Mono, monospace' }}>
@@ -804,6 +830,9 @@ export default function NegotiatePage() {
                   </div>
                   {showMinAumWarning && (
                     <p style={{ fontSize: 11, color: '#F59E0B', marginTop: 6 }}>Minimum portfolio value is $10,000</p>
+                  )}
+                  {showAumCapWarning && (
+                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max portfolio size is $1B. For larger portfolios, fee structures vary significantly — reach out and let&rsquo;s talk!</p>
                   )}
                 </div>
 
@@ -853,20 +882,17 @@ export default function NegotiatePage() {
               ) : feeMode === 'tiered' ? (
                 <div style={{ marginBottom: 4 }}>
                   {feeTiers.map((tier, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#5A7568', width: 32, flexShrink: 0 }}>From</span>
+                    <div key={index} className="ng-tier-row">
+                      <div className="ng-tier-range">
                         <div className="money-input-wrap" style={{ flex: 1 }}>
                           <span style={{ padding: '0 8px', fontFamily: 'Cormorant Garamond, serif', fontSize: 17, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '40px', flexShrink: 0 }}>$</span>
                           <input type="text" value={tier.min === 0 ? '0' : tier.min.toLocaleString()} readOnly style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', padding: '9px 10px', cursor: 'not-allowed' }} />
                         </div>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#5A7568', width: 20, flexShrink: 0 }}>To</span>
+                        <span style={{ fontSize: 11, color: '#5A7568', flexShrink: 0 }}>–</span>
                         <div className="money-input-wrap" style={{ flex: 1 }}>
                           <span style={{ padding: '0 8px', fontFamily: 'Cormorant Garamond, serif', fontSize: 17, color: '#5A7568', borderRight: '1px solid #CAD8D0', lineHeight: '40px', flexShrink: 0 }}>$</span>
                           {index === feeTiers.length - 1 ? (
-                            <input type="text" value="∞" readOnly style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', padding: '9px 10px', cursor: 'not-allowed' }} />
+                            <input type="text" value="∞" readOnly style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 18, color: '#5A7568', padding: '6px 10px', cursor: 'not-allowed' }} />
                           ) : (
                             <input
                               type="text" inputMode="numeric" placeholder="Enter max"
@@ -877,7 +903,7 @@ export default function NegotiatePage() {
                           )}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: 72 }}>
+                      <div className="ng-tier-fee">
                         <input
                           type="text" inputMode="decimal" placeholder="0.00"
                           value={tierFeeRaw[index] !== undefined ? tierFeeRaw[index] : (tier.fee > 0 ? tier.fee.toString() : '')}
@@ -886,24 +912,34 @@ export default function NegotiatePage() {
                           onChange={(e) => {
                             const raw = e.target.value;
                             if (raw === '' || /^\d*\.?\d{0,2}$/.test(raw)) {
-                              setTierFeeRaw(p => ({ ...p, [index]: raw }));
                               const val = parseFloat(raw);
+                              if (!isNaN(val) && val > 3) {
+                                setTierFeeRaw(p => ({ ...p, [index]: '3' }));
+                                updateFeeTier(index, 'fee', 3);
+                                setShowFeeCapWarning(true);
+                                setTimeout(() => setShowFeeCapWarning(false), 4000);
+                                return;
+                              }
+                              setTierFeeRaw(p => ({ ...p, [index]: raw }));
                               updateFeeTier(index, 'fee', isNaN(val) ? 0 : val);
                             }
                           }}
                           style={{ width: '100%', border: '1px solid #CAD8D0', background: '#F6F8F7', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#0C1810', padding: '9px 8px', textAlign: 'right' }}
                         />
                         <span style={{ fontSize: 12, color: '#5A7568', flexShrink: 0 }}>%</span>
+                        {feeTiers.length > 2 && (
+                          <button onClick={() => removeFeeTier(index)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
+                        )}
                       </div>
-                      {feeTiers.length > 2 && (
-                        <button onClick={() => removeFeeTier(index)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
-                      )}
                     </div>
                   ))}
                   {feeTiers.length < 7 && (
                     <button onClick={addFeeTier} style={{ fontSize: 12, color: '#1A7A4A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}>+ Add Tier</button>
                   )}
-                  {aum > 0 && feePercent > 0 && (
+                  {showFeeCapWarning && (
+                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max fee is 3% of your portfolio. If you're paying more than that, please contact us ASAP.</p>
+                  )}
+                  {session && aum > 0 && feePercent > 0 && (
                     <p style={{ fontSize: 11, color: '#5A7568', marginTop: 8 }}>
                       Blended effective rate: <strong style={{ color: '#0C1810' }}>{feePercent.toFixed(2)}%</strong> on {formatCompact(aum)}
                     </p>
@@ -924,13 +960,16 @@ export default function NegotiatePage() {
                       style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#0C1810', padding: '11px 14px' }}
                     />
                     {feeMode === 'flat' && rawFee && (
-                      <span style={{ padding: '0 12px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', borderLeft: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0 }}>
+                      <span className="bps-hint" style={{ padding: '0 10px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', borderLeft: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0, whiteSpace: 'nowrap' }}>
                         {bps > 0 ? `${bps} bps` : ''}
                       </span>
                     )}
                   </div>
                   {showDollarFeeWarning && (
-                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max fee is 3% of portfolio ({formatDollar(Math.floor(aum * 0.03))})</p>
+                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max fee is 3% of your portfolio. If you're paying more than that, please contact us ASAP.</p>
+                  )}
+                  {showFeeCapWarning && feeMode === 'flat' && (
+                    <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>Max fee is 3% of your portfolio. If you're paying more than that, please contact us ASAP.</p>
                   )}
                   {feeMode === 'dollar' && aum > 0 && feePercent > 0 && (
                     <p style={{ fontSize: 11, color: '#5A7568', marginTop: 6 }}>= {feePercent.toFixed(2)}% of your portfolio</p>
@@ -948,8 +987,8 @@ export default function NegotiatePage() {
                 Analyze My Fee <span className="analyze-btn-arrow">→</span>
               </button>
 
-              {/* ── Firm search / chip ────────────────────────────────── */}
-              <div style={{ marginTop: 20 }}>
+              {/* ── Firm search / chip (paid users only) ────────────── */}
+              {session && <div style={{ marginTop: 20 }}>
                 {firmData ? (
                   <div className="ng-firm-chip">
                     <div className="ng-fc-logo">
@@ -1005,7 +1044,7 @@ export default function NegotiatePage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
           </div>
 
@@ -1046,74 +1085,22 @@ export default function NegotiatePage() {
 
               {/* Gate card */}
               {showGate && (
-                <>
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: '#F6F8F7', pointerEvents: 'none', zIndex: 5 }} />
-                  <div className="gate-card">
-                    <div className="gc-lock">
-                      <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.5" viewBox="0 0 18 18">
-                        <rect x="3" y="8" width="12" height="9" rx="1.5" />
-                        <path d="M6 8V6a3 3 0 016 0v2" />
-                      </svg>
-                    </div>
-                    <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 26, fontWeight: 700, color: '#0C1810', marginBottom: 8 }}>Unlock your analysis</h2>
-                    <p style={{ fontSize: 13, color: '#5A7568', lineHeight: 1.75, maxWidth: 400, margin: '0 auto 20px' }}>
-                      Your results are ready. Create a free account to see your full benchmark, 20-year compounding impact, and personalized negotiation playbook.
-                    </p>
-
-                    {/* Blurred preview stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#CAD8D0', border: '1px solid #CAD8D0', marginBottom: 20 }}>
-                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Your fee</div>
-                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(annualFee)}</div>
-                      </div>
-                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Peer median</div>
-                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#0C1810', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(medianFee)}</div>
-                      </div>
-                      <div style={{ background: '#fff', padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#5A7568', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.12em' }}>Annual overage</div>
-                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 700, color: '#EF4444', filter: 'blur(5px)', userSelect: 'none', background: 'rgba(0,0,0,.04)', borderRadius: 2 }}>{formatCompact(Math.abs(feeDiff))}</div>
-                      </div>
-                    </div>
-
-                    {/* Email row */}
-                    <div className={`gc-email-row${gateError ? ' error' : ''}`}>
-                      <input
-                        type="email"
-                        className="gc-email-input"
-                        placeholder="your@email.com"
-                        value={gateEmail}
-                        onChange={e => { setGateEmail(e.target.value); setGateError(false); }}
-                        onKeyDown={e => { if (e.key === 'Enter') handleGateUnlock(); }}
-                      />
-                      <button className="gc-submit" onClick={handleGateUnlock}>View Results →</button>
-                    </div>
-                    {gateError && <p style={{ fontSize: 11, color: '#EF4444', marginBottom: 12 }}>Please enter a valid email address.</p>}
-
-                    <div style={{ fontSize: 11, color: '#5A7568', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ flex: 1, height: 1, background: '#CAD8D0', display: 'inline-block' }} />
-                      or
-                      <span style={{ flex: 1, height: 1, background: '#CAD8D0', display: 'inline-block' }} />
-                    </div>
-
-                    <button className="gc-google">
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.185l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
-                        <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05" />
-                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335" />
-                      </svg>
-                      Continue with Google
-                    </button>
-
-                    <p style={{ fontSize: 10, color: '#CAD8D0', lineHeight: 1.6 }}>
-                      <Link href="/terms" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Terms</Link>
-                      {' '}and{' '}
-                      <Link href="/privacy" style={{ color: '#5A7568', textDecoration: 'none', borderBottom: '1px solid #CAD8D0' }}>Privacy Policy</Link>
-                    </p>
+                <div className="gate-card">
+                  <div className="gc-eyebrow">
+                    <svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
+                    Unlock Full Analysis
                   </div>
-                  <div style={{ height: 340 }} />
-                </>
+                  <h2 className="gc-headline">
+                    See how your fees stack up.
+                  </h2>
+                  <p className="gc-sub">
+                    Your results are ready. Get your full benchmark, 20-year compounding impact, and personalized negotiation playbook.
+                  </p>
+                  <div className="gc-ctas">
+                    <Link href="/auth/signup" className="gc-cta-primary">Get Full Access →</Link>
+                    <Link href="/pricing" className="gc-cta-secondary">View Pricing</Link>
+                  </div>
+                </div>
               )}
 
               {/* Full results */}

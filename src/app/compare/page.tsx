@@ -373,17 +373,14 @@ const PAGE_CSS = `
 
   /* Gate */
   .cp-gate-wrap { pointer-events: none; user-select: none; position: relative; }
-  .cp-gate-wrap::after {
-    content: ''; position: absolute; inset: 0; backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    -webkit-mask-image: linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 12%,rgba(0,0,0,1) 28%,rgba(0,0,0,1) 100%);
-    mask-image: linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.5) 12%,rgba(0,0,0,1) 28%,rgba(0,0,0,1) 100%);
-    pointer-events: none; z-index: 2;
+  .cp-gate-wrap .cp-table-wrap {
+    filter: blur(1.5px); max-height: 600px; overflow: hidden;
+    mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
   }
-  .cp-gate-wrap {
-    -webkit-mask-image: linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 22%,rgba(0,0,0,.4) 45%,rgba(0,0,0,0) 65%);
-    mask-image: linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 22%,rgba(0,0,0,.4) 45%,rgba(0,0,0,0) 65%);
-  }
+  .cp-gate-wrap .cp-firm-bar { position: static; }
+  .cp-jump-bar-gated { position: static; pointer-events: none; }
+  .cp-jump-bar-gated .cp-jn-link { color: rgba(255,255,255,.7); }
 
   /* Search modal */
   .cp-search-overlay {
@@ -411,21 +408,37 @@ const PAGE_CSS = `
 
   /* Gate card */
   .cp-gate-card {
-    position: absolute; top: 220px; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 520px; z-index: 50;
-    background: #fff; border: 0.5px solid var(--rule); border-top: 2px solid var(--navy);
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07);
-    padding: 40px 44px; text-align: center;
+    width: 100%; max-width: 480px; position: absolute; top: 200px; left: 50%; transform: translateX(-50%); z-index: 30;
+    background: #0F2538; border: 1px solid rgba(255,255,255,.09); border-top: 2px solid var(--green);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.5);
+    padding: 36px 40px 32px; text-align: left;
   }
-  .cp-gate-cta {
-    display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px;
-    background: var(--green); color: #fff; padding: 15px; border-radius: 6px;
-    font-family: var(--sans); font-size: 13px; font-weight: 600;
-    letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
-    transition: background .15s; margin-bottom: 12px;
+  .cp-gate-eyebrow {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--green-3);
   }
-  .cp-gate-cta:hover { background: #22995E; }
+  .cp-gate-eyebrow svg { width: 12px; height: 12px; }
+  .cp-gate-headline {
+    font-family: var(--serif); font-size: clamp(22px, 2.5vw, 30px); font-weight: 700;
+    line-height: 1.2; letter-spacing: -.02em; color: #fff; margin-bottom: 12px;
+  }
+  .cp-gate-sub {
+    font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7;
+    border-top: 1px solid rgba(255,255,255,.06); padding-top: 16px; margin-bottom: 24px;
+  }
+  .cp-gate-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .cp-gate-cta-primary {
+    display: inline-flex; align-items: center; padding: 12px 28px;
+    background: var(--green); color: #fff; font-size: 13px; font-weight: 600;
+    text-decoration: none; transition: background .15s;
+  }
+  .cp-gate-cta-primary:hover { background: #22995E; }
+  .cp-gate-cta-secondary {
+    display: inline-flex; align-items: center; padding: 12px 28px;
+    border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.6);
+    font-size: 13px; text-decoration: none; transition: all .15s;
+  }
+  .cp-gate-cta-secondary:hover { border-color: rgba(255,255,255,.3); color: #fff; }
 
   /* Empty state banner */
   .cp-empty-banner {
@@ -544,7 +557,9 @@ const PAGE_CSS = `
     .cp-fee-section { padding: 0 8px; }
     .cp-fee-input-row { flex-direction: column; gap: 12px; padding: 16px; }
     .cp-fee-input-row .cp-slider-wrap { width: 100%; }
-    .cp-gate-card { top: 120px; padding: 28px 20px; max-width: calc(100% - 32px); }
+    .cp-gate-card { top: 140px; padding: 28px 20px; max-width: calc(100% - 32px); }
+    .cp-gate-ctas { flex-wrap: nowrap; }
+    .cp-gate-cta-primary, .cp-gate-cta-secondary { padding: 12px 16px; font-size: 12px; white-space: nowrap; }
     .cp-empty-banner { padding: 0 16px; }
     .cp-empty-banner-inner { flex-direction: column; text-align: center; }
     .cp-search-card { margin: 0 16px; }
@@ -1503,12 +1518,13 @@ export default function ComparePage() {
       <div className="cp-page">
 
         {/* ── STICKY JUMP NAV ──────────────────────────────────────── */}
-        <div className="cp-jump-bar">
+        <div className={`cp-jump-bar${isGated ? ' cp-jump-bar-gated' : ''}`}>
           <div className="cp-jump-nav">
             <div className="cp-jump-nav-links">
               {jumpLinks.map(link => (
-                <a key={link.id} href={`#${link.id}`}
+                <a key={link.id} href={isGated ? undefined : `#${link.id}`}
                   className={`cp-jn-link${activeSection === link.id ? ' on' : ''}`}
+                  onClick={isGated ? (e: React.MouseEvent) => e.preventDefault() : undefined}
                 >{link.label}</a>
               ))}
             </div>
@@ -2077,57 +2093,22 @@ export default function ComparePage() {
 
           {/* Gate overlay */}
           {isGated && (
-            <>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '54%', background: 'var(--bg)', pointerEvents: 'none', zIndex: 5 }} />
-              <div className="cp-gate-card">
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase' as const, color: 'var(--green)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                  <span style={{ width: 20, height: 1, background: 'var(--green)', display: 'inline-block' }} />
-                  Free to join
-                  <span style={{ width: 20, height: 1, background: 'var(--green)', display: 'inline-block' }} />
-                </div>
-                <h2 style={{ fontFamily: 'var(--serif)', fontSize: 30, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-.02em', lineHeight: 1.1, marginBottom: 10 }}>
-                  Unlock the full comparison
-                </h2>
-                <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.75, maxWidth: 380, margin: '0 auto 24px' }}>
-                  See scores, fees, AUM growth, client profile, regulatory history, and fee impact across all firms — side by side.
-                </p>
-                <div style={{ display: 'flex', border: '0.5px solid var(--rule)', marginBottom: 24, borderRadius: 6, overflow: 'hidden' }}>
-                  {selected.length > 0 ? selected.slice(0, 4).map((firm, i) => (
-                    <div key={firm.crd} style={{ flex: 1, padding: '12px 14px', borderRight: i < selected.length - 1 ? '0.5px solid var(--rule)' : 'none', textAlign: 'center' }}>
-                      <div style={{ width: 26, height: 26, background: 'var(--navy)', display: 'grid', placeItems: 'center', fontFamily: 'var(--serif)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.45)', margin: '0 auto 5px' }}>
-                        {(firm.display_name || firm.primary_business_name).slice(0, 2).toUpperCase()}
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {(firm.display_name || firm.primary_business_name).split(' ')[0]}
-                      </div>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--green)' }}>Score —</div>
-                    </div>
-                  )) : (
-                    <div style={{ flex: 1, padding: '16px 14px', textAlign: 'center', color: 'var(--rule)', fontSize: 12 }}>
-                      Search for firms to compare
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, textAlign: 'left', marginBottom: 24, padding: '14px 18px', background: 'var(--bg)', border: '0.5px solid var(--rule)', borderRadius: 6 }}>
-                  {[
-                    'Full Visor Index Score™ breakdown across 8 sub-metrics',
-                    'AUM growth, client profile, and advisor bandwidth data',
-                    'Regulatory history, conflict flags, and ownership structure',
-                    'Fee Calculator — 10 & 20-year compounding impact side by side',
-                  ].map(perk => (
-                    <div key={perk} style={{ fontSize: 12, color: 'var(--ink-3)', display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5 }}>
-                      <span style={{ color: 'var(--green)', fontWeight: 700, flexShrink: 0 }}>✓</span>{perk}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/auth/signup" className="cp-gate-cta">Create Free Account <span style={{ fontSize: 16 }}>→</span></Link>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                  Already have an account?{' '}
-                  <Link href="/auth/login" style={{ color: 'var(--ink)', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid var(--rule)' }}>Sign in</Link>
-                </div>
+            <div className="cp-gate-card">
+              <div className="cp-gate-eyebrow">
+                <svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
+                Unlock Full Comparison
               </div>
-              <div style={{ height: 580 }} />
-            </>
+              <h2 className="cp-gate-headline">
+                Differentiate firms on the factors that matter.
+              </h2>
+              <p className="cp-gate-sub">
+                Compare client types, growth rates, fees, and more across wealth management firms.
+              </p>
+              <div className="cp-gate-ctas">
+                <Link href="/auth/signup" className="cp-gate-cta-primary">Get Full Access →</Link>
+                <Link href="/pricing" className="cp-gate-cta-secondary">View Pricing</Link>
+              </div>
+            </div>
           )}
         </div>
 

@@ -9,9 +9,11 @@ interface DashboardShellProps {
   userEmail: string;
   savedCount: number;
   alertCount: number;
+  matchCount: number;
 }
 
 const NAV = [
+  { label: 'Matches',           href: '/dashboard/matches',     icon: '◇', countKey: 'match' as const },
   { label: 'Saved Firms',       href: '/dashboard/saved-firms', icon: '◈', countKey: 'saved' as const },
   { label: 'Alerts',            href: '/dashboard/alerts',      icon: '◯', countKey: 'alert' as const },
   { label: 'Account & Billing', href: '/dashboard/billing',     icon: '◎', countKey: null },
@@ -125,6 +127,7 @@ export default function DashboardShell({
   userEmail,
   savedCount,
   alertCount,
+  matchCount,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -134,9 +137,10 @@ export default function DashboardShell({
     ? userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : 'My Account';
 
-  const countFor = (key: 'saved' | 'alert' | null) => {
+  const countFor = (key: 'saved' | 'alert' | 'match' | null) => {
     if (key === 'saved') return savedCount;
     if (key === 'alert') return alertCount;
+    if (key === 'match') return matchCount;
     return null;
   };
 

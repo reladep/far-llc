@@ -16,13 +16,17 @@ export default async function DashboardLayout({
   }
 
   // Sidebar badge counts (parallel)
-  const [{ count: savedCount }, { count: alertCount }] = await Promise.all([
+  const [{ count: savedCount }, { count: alertCount }, { count: matchCount }] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id),
     supabaseAdmin
       .from('alert_subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+    supabaseAdmin
+      .from('user_match_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id),
   ]);
@@ -32,6 +36,7 @@ export default async function DashboardLayout({
       userEmail={user.email ?? ''}
       savedCount={savedCount ?? 0}
       alertCount={alertCount ?? 0}
+      matchCount={matchCount ?? 0}
     >
       {children}
     </DashboardShell>

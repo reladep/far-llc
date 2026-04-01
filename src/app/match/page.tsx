@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface Answers {
   netWorth: string;
@@ -129,7 +130,7 @@ const CSS = `
 
   .mx-progress-track {
     position:fixed; top:52px; left:0; right:0; height:2px;
-    background:var(--rule); z-index:40;
+    background:var(--rule); z-index:35;
   }
   .mx-progress-fill {
     height:2px; background:var(--green-3);
@@ -147,7 +148,7 @@ const CSS = `
     color:rgba(45,189,116,.7); margin-bottom:16px;
   }
   .mx-question {
-    font-family:var(--serif); font-size:clamp(22px,4vw,34px);
+    font-family:var(--serif); font-size:clamp(24px,5vw,36px);
     font-weight:700; color:#fff; max-width:640px;
     margin:0 auto 10px; line-height:1.18; padding:0 12px;
   }
@@ -213,6 +214,15 @@ const CSS = `
     text-align:center; font-family:var(--sans);
     font-size:11px; color:var(--ink-3); padding-bottom:40px;
   }
+
+  @media(max-width:640px){
+    .mx-hero { padding:40px 16px 32px; }
+    .mx-question { padding:0 4px; }
+    .mx-body { padding:24px 16px 0; }
+    .mx-option { padding:16px 16px; min-height:44px; }
+    .mx-nav { padding:20px 16px 48px; }
+    .mx-btn-back, .mx-btn-next { padding:12px 24px; min-height:44px; }
+  }
 `;
 
 function CheckSVG() {
@@ -253,11 +263,28 @@ export default function MatchPage() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
       sessionStorage.setItem('matchAnswers', JSON.stringify(answers));
+
+      // Persist to Supabase for signed-in users
+      try {
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('user_match_profiles')
+            .upsert({ user_id: user.id, answers, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        }
+      } catch {
+        // Non-blocking — sessionStorage is the primary store for the current flow
+      }
+
       router.push('/match/results');
     }
   };
