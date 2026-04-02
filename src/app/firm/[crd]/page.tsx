@@ -555,6 +555,7 @@ const PAGE_CSS = `
     transition:background .2s; letter-spacing:.04em; text-decoration:none;
   }
   .vfp-bc-compare:hover { background:var(--green-2); }
+  .vfp-hero-actions { display:none; }
 
   .vfp-page {
     padding-top:40px; max-width:1200px; margin:0 auto;
@@ -1017,8 +1018,6 @@ const PAGE_CSS = `
     .vfp-stat-label { font-size:7px; letter-spacing:.06em; }
     .vfp-stat-val { font-size:20px; }
     .vfp-stat-sub { font-size:8px; }
-    .vfp-tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; gap:0; }
-    .vfp-tab { white-space:nowrap; flex-shrink:0; }
     .vfp-score-grid { grid-template-columns:1fr 1fr; }
     .vfp-aum-stats { grid-template-columns:1fr 1fr; }
     .vfp-client-grid { grid-template-columns:1fr; }
@@ -1031,9 +1030,21 @@ const PAGE_CSS = `
     .vfp-breadcrumb { padding:0 12px; }
     .vfp-breadcrumb-i { gap:4px; }
     .vfp-bc-trail { font-size:10px; gap:4px; }
-    .vfp-bc-actions { gap:4px; }
+    .vfp-bc-sep, .vfp-bc-current { display:none; }
+    .vfp-bc-trail a:not(:first-child) { display:none; }
+    .vfp-bc-actions { display:none; }
+    .vfp-hero-actions { display:flex; align-items:center; gap:10px; margin-top:12px; }
     .vfp-gate-nav { margin:0 -16px; }
     .vfp-gate-nav-inner { padding:0 16px; }
+
+    /* AUM & Client stat headers: stack on mobile */
+    .vfp-aum-head, .vfp-client-head { grid-template-columns:1fr; }
+    .vfp-aum-stat, .vfp-client-stat { border-right:none; border-bottom:1px solid var(--rule); }
+    .vfp-aum-stat:last-child, .vfp-client-stat:last-child { border-bottom:none; }
+    .vfp-aum-stat-val, .vfp-client-card-val { font-size:22px; }
+
+    /* Chart overflow */
+    .vfp-chart-body { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   }
 `;
 
@@ -1573,6 +1584,17 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   </svg>
                   CRD #{firm.crd}
                 </span>
+              </div>
+
+              {/* Mobile action buttons — hidden on desktop where breadcrumb has them */}
+              <div className="vfp-hero-actions">
+                <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
+                <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                    <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
+                  </svg>
+                  Add to Compare
+                </Link>
               </div>
             </div>
 

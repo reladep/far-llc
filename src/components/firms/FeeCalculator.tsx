@@ -232,6 +232,15 @@ const CSS = `
   .fc-tier.active { background:rgba(45,189,116,.06); border-left:2px solid var(--green-3); padding-left:18px; }
   .fc-tier-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); text-align:center; }
   .fc-tier-rate { font-family:var(--mono); font-size:13px; font-weight:400; color:var(--ink-2); text-align:center; }
+
+  @media (max-width:640px) {
+    .fc-output-grid { grid-template-columns:1fr; }
+    .fc-out-cell { border-right:none; border-bottom:1px solid var(--rule); }
+    .fc-out-cell:last-child { border-bottom:none; }
+    .fc-out-val { font-size:22px; }
+    .fc-proj-head { grid-template-columns:50px 1fr 1fr 1fr; padding:6px 10px; }
+    .fc-proj-row { grid-template-columns:50px 1fr 1fr 1fr; padding:6px 10px; }
+  }
 `;
 
 export default function FeeCalculator({
