@@ -15,6 +15,7 @@ const allNavLinks = [
   { label: 'Guide', href: '/guide' },
   { label: 'Directory', href: '/directory' },
   { label: 'Pricing', href: '/pricing' },
+  { label: 'About', href: '/about' },
 ];
 
 export function MobileNav() {
@@ -102,27 +103,52 @@ export function MobileNav() {
         </nav>
 
         <div className="px-4 pb-4">
-          <Link
-            href="/auth/signup"
-            onClick={() => setOpen(false)}
-            className="block w-full rounded-md bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_1px_8px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_2px_16px_rgba(45,189,116,0.3)]"
-          >
-            Get Access
-          </Link>
-          <Link
-            href="/auth/login"
-            onClick={() => setOpen(false)}
-            className="mt-3 block w-full rounded-md border border-white/15 px-4 py-3 text-center text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
-          >
-            Sign In
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="block w-full rounded-md bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_1px_8px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_2px_16px_rgba(45,189,116,0.3)]"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={async () => {
+                  const supabase = createSupabaseBrowserClient();
+                  await supabase.auth.signOut();
+                  setOpen(false);
+                  window.location.href = '/';
+                }}
+                className="mt-3 block w-full rounded-md border border-white/15 px-4 py-3 text-center text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/signup"
+                onClick={() => setOpen(false)}
+                className="block w-full rounded-md bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_1px_8px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_2px_16px_rgba(45,189,116,0.3)]"
+              >
+                Get Access
+              </Link>
+              <Link
+                href="/auth/login"
+                onClick={() => setOpen(false)}
+                className="mt-3 block w-full rounded-md border border-white/15 px-4 py-3 text-center text-sm font-medium text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                Sign In
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </>
   );
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       {/* Hamburger Button */}
       <button
         onClick={() => setOpen(!open)}

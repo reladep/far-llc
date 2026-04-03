@@ -52,7 +52,7 @@ export function LoginForm() {
           <p className="text-sm text-error">{auth.error}</p>
         )}
 
-        <Button type="submit" className="w-full" disabled={auth.loading}>
+        <Button type="submit" className="w-full !rounded-none !bg-[#1A7A4A] hover:!bg-[#22995E] !h-[46px] !text-[12px] !font-semibold !tracking-[0.1em] !uppercase !font-[var(--sans)]" disabled={auth.loading}>
           {auth.loading ? 'Signing in...' : 'Sign In'}
         </Button>
       </form>

@@ -13,7 +13,8 @@ import SectionNav from '@/components/firms/SectionNav';
 import ExpandableText from '@/components/firms/ExpandableText';
 import AnimatedBars from '@/components/firms/AnimatedBars';
 import AnimatedRows from '@/components/firms/AnimatedRows';
-import { getFirmScore, getFirmScores } from '@/lib/scores';
+import { getFirmScore } from '@/lib/scores';
+import { getSimilarFirms, type SimilarFirm } from '@/lib/similar-firms';
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -214,191 +215,8 @@ async function getFirmData(crd: string) {
 }
 
 // ─── New types ────────────────────────────────────────────────────────────────
-interface SimilarFirm {
-  crd: number;
-  name: string;
-  city: string | null;
-  state: string;
-  aum: number | null;
-  score: number | null;
-  reason: string;
-}
-
-// ─── Similar Firms: multi-dimensional similarity ─────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FirmRow = Record<string, any>;
-
-function clientVector(f: FirmRow | null | undefined): number[] {
-  if (!f) return Array(12).fill(0);
-  const keys = [
-    'client_hnw_number', 'client_non_hnw_number', 'client_pension_number',
-    'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number',
-    'client_other_number', 'client_banks_number', 'client_govt_number',
-    'client_insurance_number', 'client_investment_cos_number', 'client_other_advisors_number',
-  ];
-  return keys.map(k => Number(f[k]) || 0);
-}
-
-function serviceVector(f: FirmRow | null | undefined): number[] {
-  if (!f) return Array(6).fill(0);
-  const keys = [
-    'services_financial_planning', 'services_mgr_selection', 'services_pension_consulting',
-    'services_port_management_individuals', 'services_port_management_institutional',
-    'services_port_management_pooled',
-  ];
-  return keys.map(k => f[k] === 'Y' ? 1 : 0);
-}
-
-function cosineSim(a: number[], b: number[]): number {
-  let dot = 0, magA = 0, magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
-  }
-  const denom = Math.sqrt(magA) * Math.sqrt(magB);
-  return denom === 0 ? 0 : dot / denom;
-}
-
-function aumProximity(a: number, b: number): number {
-  if (!a || !b) return 0;
-  const ratio = Math.min(a, b) / Math.max(a, b);
-  return ratio; // 1.0 = identical, 0.0 = very far
-}
-
-function totalClientsFromRow(f: FirmRow | null | undefined): number {
-  if (!f) return 0;
-  const keys = [
-    'client_hnw_number', 'client_non_hnw_number', 'client_pension_number',
-    'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number',
-    'client_other_number', 'client_banks_number', 'client_govt_number',
-    'client_insurance_number', 'client_investment_cos_number', 'client_other_advisors_number',
-  ];
-  return keys.reduce((sum, k) => sum + (Number(f[k]) || 0), 0);
-}
-
-function avgClientAum(f: FirmRow | null | undefined): number {
-  if (!f) return 0;
-  const total = totalClientsFromRow(f);
-  const aum = Number(f.aum) || 0;
-  return total > 0 && aum > 0 ? aum / total : 0;
-}
-
-function dominantReason(
-  clientSim: number, aumSim: number, serviceSim: number, avgClientSim: number, sameState: boolean
-): string {
-  const parts: string[] = [];
-  if (clientSim > 0.7) parts.push('Similar Client Base');
-  if (aumSim > 0.6) parts.push('Comparable AUM');
-  if (avgClientSim > 0.6) parts.push('Similar Avg. Client Size');
-  if (serviceSim > 0.7) parts.push('Same Services');
-  if (sameState) parts.push('Same State');
-  if (parts.length === 0) {
-    if (aumSim >= clientSim && aumSim >= serviceSim) parts.push('Comparable AUM');
-    else if (clientSim >= serviceSim) parts.push('Similar Client Base');
-    else parts.push('Same Services');
-  }
-  return parts.slice(0, 2).join(' · ');
-}
-
-async function getSimilarFirms(crd: number, state: string, aum: number | null, firm: FirmData): Promise<SimilarFirm[]> {
-  try {
-    const selectFields = 'crd, primary_business_name, main_office_city, main_office_state, aum, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, client_banks_number, client_govt_number, client_insurance_number, client_investment_cos_number, client_other_advisors_number, services_financial_planning, services_mgr_selection, services_pension_consulting, services_port_management_individuals, services_port_management_institutional, services_port_management_pooled';
-
-    const queries = [];
-
-    // Same-state candidates (AUM range 0.3x–3x)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let qState: any = supabase.from('firmdata_current')
-      .select(selectFields)
-      .eq('main_office_state', state)
-      .neq('crd', crd)
-      .not('aum', 'is', null)
-      .order('aum', { ascending: false })
-      .limit(20);
-    if (aum) qState = qState.gte('aum', Math.round(aum * 0.3)).lte('aum', Math.round(aum * 3));
-    queries.push(qState);
-
-    // Out-of-state candidates (tighter AUM range 0.5x–2x)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let qOther: any = supabase.from('firmdata_current')
-      .select(selectFields)
-      .neq('main_office_state', state)
-      .neq('crd', crd)
-      .not('aum', 'is', null)
-      .order('aum', { ascending: false })
-      .limit(20);
-    if (aum) qOther = qOther.gte('aum', Math.round(aum * 0.5)).lte('aum', Math.round(aum * 2));
-    queries.push(qOther);
-
-    const results = await Promise.all(queries);
-    const stateData = results[0]?.data;
-    const otherData = results[1]?.data;
-    const allCandidates: FirmRow[] = [...(stateData || []), ...(otherData || [])].filter(Boolean);
-    if (!allCandidates.length) return [];
-
-    // Compute similarity scores
-    const firmClientVec = clientVector(firm as unknown as FirmRow);
-    const firmServiceVec = serviceVector(firm as unknown as FirmRow);
-    const firmAum = aum || 0;
-    const firmAvgClient = avgClientAum(firm as unknown as FirmRow);
-
-    const scored = allCandidates.map(c => {
-      const clientSim = cosineSim(firmClientVec, clientVector(c));
-      const serviceSim = cosineSim(firmServiceVec, serviceVector(c));
-      const aumSim = aumProximity(firmAum, c.aum || 0);
-      const avgClientSim = aumProximity(firmAvgClient, avgClientAum(c));
-      const sameState = c.main_office_state === state;
-
-      // Weighted composite: client 30%, AUM 20%, avg client AUM 15%, service 15%, geography 10%, diversity 10%
-      const composite =
-        clientSim * 0.30 +
-        aumSim * 0.20 +
-        avgClientSim * 0.15 +
-        serviceSim * 0.15 +
-        (sameState ? 1 : 0) * 0.10 +
-        (aumSim > 0.3 && aumSim < 0.95 ? 0.10 : 0);
-
-      return {
-        ...c,
-        _clientSim: clientSim,
-        _serviceSim: serviceSim,
-        _aumSim: aumSim,
-        _avgClientSim: avgClientSim,
-        _sameState: sameState,
-        _composite: composite,
-      };
-    });
-
-    scored.sort((a, b) => b._composite - a._composite);
-    const top = scored.slice(0, 8);
-
-    const crds = top.map(f => (f as any).crd as number);
-    const [{ data: names }, scoreMap] = await Promise.all([
-      supabase.from('firm_names').select('crd, display_name').in('crd', crds),
-      getFirmScores(crds),
-    ]);
-    const nameMap = new Map(
-      names?.map((n: { crd: number; display_name: string | null }) => [n.crd, n.display_name]) ?? []
-    );
-
-    return top.slice(0, 4).map(f => {
-      const fa = f as any;
-      return {
-        crd: fa.crd,
-        name: (nameMap.get(fa.crd) as string | null) || fa.primary_business_name || 'Unknown',
-        city: fa.main_office_city,
-        state: fa.main_office_state,
-        aum: fa.aum,
-        score: (scoreMap.get(fa.crd) as { final_score?: number } | undefined)?.final_score ?? null,
-        reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
-      };
-    });
-  } catch (e) {
-    console.error('getSimilarFirms error:', e);
-    return [];
-  }
-}
+// ─── Similar Firms: uses shared multi-dimensional similarity algorithm ───────
+// (see lib/similar-firms.ts)
 
 // ─── New: Score percentile query ──────────────────────────────────────────────
 async function getScorePercentile(score: number): Promise<{ rank: number; total: number } | null> {
@@ -558,7 +376,7 @@ const PAGE_CSS = `
   .vfp-hero-actions { display:none; }
 
   .vfp-page {
-    padding-top:40px; max-width:1200px; margin:0 auto;
+    padding-top:48px; max-width:1200px; margin:0 auto;
     padding-left:56px; padding-right:56px; padding-bottom:0;
     overflow-x:hidden; background:var(--navy);
   }
@@ -610,7 +428,7 @@ const PAGE_CSS = `
   .vfp-stat {
     padding:12px 18px; border-right:0.5px solid rgba(255,255,255,.08);
     transition:background .15s;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
   }
   .vfp-stat:hover { background:rgba(255,255,255,.04); }
   .vfp-stat:last-child { border-right:none; }
@@ -624,7 +442,7 @@ const PAGE_CSS = `
     min-height:56px; display:flex; align-items:center; justify-content:center;
   }
   .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
-  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.55); margin-top:6px; font-family:var(--mono); }
+  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.55); margin-top:auto; padding-top:6px; font-family:var(--mono); }
   .vfp-stat-sub em { font-style:normal; color:var(--green-3); }
 
   .vfp-body {
@@ -1055,12 +873,16 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     profileText, website, growth, clientBreakdown, assetAllocation, firmScore, error,
   } = await getFirmData(params.crd);
 
-  const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
-  const firmTitleCase = firmDisplayName.replace(/\b\w+/g, w => {
-    const lower = w.toLowerCase();
-    if (['llc', 'llp', 'inc', 'lp', 'pc'].includes(lower)) return lower.toUpperCase();
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
-  }).replace(/,\s*(LLC|LLP|INC|LP|PC)$/i, '');
+  const rawFirmName = displayName || firmData?.primary_business_name || 'Unknown Firm';
+  const firmDisplayName = rawFirmName === rawFirmName.toUpperCase()
+    ? rawFirmName
+        .replace(/,?\s*(LLC|LLP|INC|LP|CO|CORP|PC)\.?$/i, '')
+        .split(/\s+/)
+        .map(w => w.length <= 3 ? w.toUpperCase() : w.charAt(0) + w.slice(1).toLowerCase())
+        .join(' ')
+        .trim()
+    : rawFirmName;
+  const firmTitleCase = firmDisplayName;
 
   // ── Not found ──
   if (error || !firmData) {
@@ -1240,7 +1062,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── New: Similar firms + score percentile + stat percentiles (parallel) ──
   const [similarFirms, scoreRank, statPct] = await Promise.all([
     firm.main_office_state
-      ? getSimilarFirms(firm.crd, firm.main_office_state, firm.aum, firm)
+      ? getSimilarFirms({ supabase, crd: firm.crd, state: firm.main_office_state, aum: firm.aum, firmRow: firm as unknown as Record<string, any> })
       : Promise.resolve([]),
     finalScore > 0 ? getScorePercentile(finalScore) : Promise.resolve(null),
     getStatPercentiles(firm, totalClients, avgClientSize, aumPerInvPro, minAccount),
@@ -1616,7 +1438,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <div className="vfp-stat">
               <div className="vfp-stat-label">Min. Account</div>
               <div className="vfp-stat-val">{minAccount ? formatAUM(minAccount) : '—'}</div>
-              <div className="vfp-stat-sub">{minFee ? `Min fee ${formatCurrency(minFee)}` : 'No minimum disclosed'}</div>
+              <div className="vfp-stat-sub">{minFee ? `Min fee ${formatCurrency(minFee)}` : minAccount ? 'No minimum fee disclosed' : 'No minimum disclosed'}</div>
             </div>
             <div className="vfp-stat">
               <div className="vfp-stat-label">Avg. Client Size</div>

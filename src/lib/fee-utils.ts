@@ -122,6 +122,8 @@ export function calcTieredFeeSimple(amount: number, tiers: FeeTier[]): number {
 // ── Synthetic tier generation for range-type firms ──────────────────────────
 // For firms that disclose a fee range (min–max) but no tier breakpoints,
 // synthesize 5 tiers anchored on the firm's average client size.
+// Wider breakpoint multipliers push the min rate to truly large clients,
+// and an industry p25 floor prevents unrealistically low rates.
 export function synthesizeRangeTiers(
   feeRangeMin: number,
   feeRangeMax: number,
@@ -129,24 +131,113 @@ export function synthesizeRangeTiers(
 ): FeeTier[] {
   if (feeRangeMax <= 0 || avgClientSize <= 0) return [];
 
-  const multipliers = [1, 0.75, 0.5, 0.25];
-  const breakpoints = [0, 0.5, 1, 1.5, 2]; // × avg client size
+  const MAX_AUM = 1_000_000_000; // $1B cap
+
+  // Wider breakpoints: min rate only applies at 5× avg client (truly large clients)
+  const bpMultipliers = [0, 0.5, 1, 2, 5];
+  const breakpoints = bpMultipliers.map(m => {
+    const raw = m * avgClientSize;
+    return Math.min(Math.round(raw / 1_000_000) * 1_000_000, MAX_AUM);
+  });
+
+  // Deduplicate breakpoints that collapsed to the same value after rounding/capping
+  const uniqueBps = [breakpoints[0]];
+  for (let i = 1; i < breakpoints.length; i++) {
+    if (breakpoints[i] > uniqueBps[uniqueBps.length - 1]) uniqueBps.push(breakpoints[i]);
+  }
+
+  // Institutional firms (avg client > $50M) get pure interpolation;
+  // retail/wealth firms get an industry p25 floor to prevent unrealistic rates.
+  const isInstitutional = avgClientSize > 50_000_000;
 
   const tiers: FeeTier[] = [];
+  for (let i = 0; i < uniqueBps.length; i++) {
+    const t = i / (uniqueBps.length - 1); // 0 → 1
+    const interpolated = feeRangeMax - t * (feeRangeMax - feeRangeMin);
 
-  for (let i = 0; i < 5; i++) {
-    const minAum = Math.round(breakpoints[i] * avgClientSize);
-    const maxAum = i < 4 ? Math.round(breakpoints[i + 1] * avgClientSize) : null;
-    const rate = i < 4
-      ? Math.max(feeRangeMax * multipliers[i], feeRangeMin)
-      : feeRangeMin;
+    let rate = interpolated;
+    if (!isInstitutional) {
+      // Industry p25 floor: use the midpoint of this tier's AUM range
+      const tierMin = uniqueBps[i];
+      const tierMax = i < uniqueBps.length - 1 ? uniqueBps[i + 1] : tierMin * 2;
+      const midpoint = tierMin + (tierMax - tierMin) / 2;
+      const p25Floor = getClosestBreakpoint(midpoint).p25;
+      rate = Math.max(interpolated, p25Floor);
+    }
+
+    const maxAum = i < uniqueBps.length - 1 ? uniqueBps[i + 1] : null;
 
     tiers.push({
-      min_aum: String(minAum),
+      min_aum: String(uniqueBps[i]),
       max_aum: maxAum,
-      fee_pct: Math.round(rate * 10000) / 10000, // 4 decimal precision
+      fee_pct: Math.round(rate * 10000) / 10000,
     });
   }
 
   return tiers;
+}
+
+/**
+ * Compute the blended effective p25 rate for a given AUM.
+ * Walks INDUSTRY_ALL as a tiered fee schedule — applies each band's p25
+ * to the portion of AUM in that band, then returns the weighted effective rate.
+ */
+export function computeEffectiveP25(aum: number): number {
+  if (aum <= 0) return 0;
+  const bands: { min: number; max: number; p25: number }[] = [];
+  for (let i = 0; i < INDUSTRY_ALL.length; i++) {
+    const min = i === 0 ? 0 : (INDUSTRY_ALL[i - 1].breakpoint + INDUSTRY_ALL[i].breakpoint) / 2;
+    const max = i === INDUSTRY_ALL.length - 1 ? Infinity : (INDUSTRY_ALL[i].breakpoint + INDUSTRY_ALL[i + 1].breakpoint) / 2;
+    bands.push({ min, max, p25: INDUSTRY_ALL[i].p25 });
+  }
+  let totalFee = 0;
+  let remaining = aum;
+  for (const band of bands) {
+    if (remaining <= 0) break;
+    const bandSize = band.max === Infinity ? remaining : band.max - band.min;
+    const taxable = Math.min(remaining, bandSize);
+    totalFee += taxable * (band.p25 / 100);
+    remaining -= taxable;
+  }
+  return (totalFee / aum) * 100;
+}
+
+/** Recommended negotiation ask rate = the p25 for the closest AUM bracket. */
+export function computeAskRate(aum: number): number {
+  if (aum <= 0) return 0;
+  return getClosestBreakpoint(aum).p25;
+}
+
+/** Client leverage level based on absolute AUM tier + firm-relative weight. */
+export type LeverageLevel = 'low' | 'moderate' | 'high' | 'very-high';
+
+export function computeLeverage(
+  aum: number,
+  firmAum?: number | null,
+  firmClientTotal?: number | null,
+): LeverageLevel {
+  const tier = aum < 2_000_000 ? 'retail'
+    : aum < 10_000_000 ? 'mid'
+    : aum < 20_000_000 ? 'large'
+    : aum < 50_000_000 ? 'hnw'
+    : 'uhnw';
+
+  let relativeBoost = 0;
+  if (firmAum && firmClientTotal && firmClientTotal > 0) {
+    const avgClient = firmAum / firmClientTotal;
+    const ratio = aum / avgClient;
+    if (ratio >= 3) relativeBoost = 2;
+    else if (ratio >= 1.5) relativeBoost = 1;
+    else if (ratio < 0.5) relativeBoost = -1;
+  }
+
+  const levels: LeverageLevel[] = ['low', 'moderate', 'high', 'very-high'];
+  const baseIndex = tier === 'retail' ? 0 : tier === 'mid' ? 1 : tier === 'large' ? 2 : 3;
+  const finalIndex = Math.max(0, Math.min(3, baseIndex + relativeBoost));
+  return levels[finalIndex];
+}
+
+/** Get the next INDUSTRY_ALL breakpoint above the given AUM, or null. */
+export function getNextBreakpoint(aum: number) {
+  return INDUSTRY_ALL.find(bp => bp.breakpoint > aum) ?? null;
 }

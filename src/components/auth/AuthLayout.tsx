@@ -35,11 +35,11 @@ const CSS = `
   }
   .auth-form-title {
     font-family: var(--serif); font-size: 28px; font-weight: 700;
-    color: var(--ink); margin: 0 0 4px; letter-spacing: -.02em;
+    color: var(--ink); margin: 0 0 4px; letter-spacing: -.02em; text-align: center;
   }
   .auth-form-sub {
     font-size: 13px; color: var(--ink-3); margin: 0 0 28px;
-    font-family: var(--sans);
+    font-family: var(--sans); text-align: center;
   }
 
   /* Override ui/Input styles inside auth */
@@ -88,7 +88,7 @@ const CSS = `
   .auth-google:hover { border-color: var(--ink-3); }
 
   .auth-footer {
-    text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink-3);
+    text-align: center; margin-top: 20px; font-size: 15px; color: var(--ink-3);
     font-family: var(--sans);
   }
   .auth-footer a { color: var(--green); font-weight: 600; text-decoration: none; }
@@ -144,13 +144,6 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
           <div className="auth-form-card">
             {children}
           </div>
-
-          <div className="auth-divider"><span>or</span></div>
-
-          <button onClick={handleGoogleLogin} className="auth-google" type="button">
-            {GOOGLE_SVG}
-            Continue with Google
-          </button>
 
           <div className="auth-footer">
             {isLogin ? (
