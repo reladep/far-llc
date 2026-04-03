@@ -788,16 +788,19 @@ export default function NegotiatePage() {
         .stat-label { font-size: 10px; color: #5A7568; margin-bottom: 5px; }
         .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: #0C1810; }
 
-        .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-        .impact-cell { padding: 18px 20px; border: 1px solid #CAD8D0; background: #fff; }
-        .impact-cell.hl-red  { border-color: rgba(239,68,68,.2); background: rgba(239,68,68,.03); }
-        .impact-cell.hl-grn  { border-color: rgba(26,122,74,.2); background: rgba(26,122,74,.03); }
-        .ic-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #5A7568; margin-bottom: 8px; }
-        .ic-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: #0C1810; line-height: 1; margin-bottom: 4px; }
-        .ic-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 8px; display: inline-flex; }
-        .ic-badge.over  { color: #EF4444; background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.2); }
-        .ic-badge.under { color: #1A7A4A; background: rgba(45,189,116,.07); border: 1px solid rgba(45,189,116,.2); }
-        .ic-badge.even  { color: #5A7568; background: rgba(90,117,104,.07); border: 1px solid rgba(90,117,104,.2); }
+        .cost-card { border: 1px solid #CAD8D0; background: #fff; }
+        .cost-compare { display: grid; grid-template-columns: 1fr 1fr; }
+        .cost-col { padding: 20px 24px; text-align: center; }
+        .cost-col:first-child { border-right: 1px solid #CAD8D0; }
+        .cost-col-label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #5A7568; margin-bottom: 6px; }
+        .cost-col-val { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: #0C1810; line-height: 1; }
+        .cost-col-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: #8BA89B; margin-top: 4px; }
+        .cost-diff { border-top: 1px solid #CAD8D0; padding: 14px 24px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .cost-diff-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; line-height: 1; }
+        .cost-diff-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 8px; display: inline-flex; }
+        .cost-diff-badge.over  { color: #EF4444; background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.2); }
+        .cost-diff-badge.under { color: #1A7A4A; background: rgba(45,189,116,.07); border: 1px solid rgba(45,189,116,.2); }
+        .cost-diff-badge.even  { color: #5A7568; background: rgba(90,117,104,.07); border: 1px solid rgba(90,117,104,.2); }
 
         .cmp-section-label { font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #5A7568; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
         .cmp-section-label::after { content: ''; flex: 1; height: 1px; background: #CAD8D0; }
@@ -878,18 +881,25 @@ export default function NegotiatePage() {
           .ng-tier-range .money-input-wrap input { font-size: 11px; padding: 9px 6px; }
           .bps-hint { font-size: 10px !important; padding: 0 6px !important; }
           .fee-tab { font-size: 10px; padding: 8px 6px; }
-          .impact-grid { grid-template-columns: 1fr; }
+          .cost-col { padding: 16px 14px; }
+          .cost-col-val { font-size: 24px; }
+          .cost-diff { padding: 12px 14px; gap: 8px; }
+          .cost-diff-val { font-size: 18px; }
           .sf-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .cmp-lbl { width: 100px; font-size: 10px; }
-          .ask-banner { flex-direction: column; gap: 12px; }
+          .ask-banner { flex-direction: column; gap: 16px; align-items: center; text-align: center; }
+          .ask-banner > div { text-align: center !important; }
           .cta-card { flex-direction: column; align-items: stretch; }
         }
         @media (max-width: 480px) {
           .ng-page { padding: 0; }
           .ng-page > div[style*="padding: '44px 48px"] { padding: 28px 16px 36px !important; }
           .ng-hero-wrap { padding: 28px 16px 36px !important; }
-          .ng-content-wrap { padding: 0 16px 40px !important; }
-          .bm-dot-label { font-size: 10px; }
+          .ng-content-wrap { padding: 0 16px 16px !important; }
+          .bm-dot-label { font-size: 9px; }
+          .bm-track { margin: 32px 0 32px; }
+          .bm-dot.p25 .bm-dot-label { top: auto !important; bottom: calc(100% + 6px) !important; transform: translateX(-90%) !important; }
+          .bm-dot.peer .bm-dot-label { top: auto !important; bottom: calc(100% + 6px) !important; transform: translateX(-10%) !important; }
           .step-row { gap: 8px; }
           .fc-bar { height: 28px; }
           .fc-val { font-size: 13px; }
@@ -899,6 +909,18 @@ export default function NegotiatePage() {
           .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
           .stat-cell { padding: 12px 10px; }
           .stat-val { font-size: 18px; }
+          .ng-tier-range .money-input-wrap input { font-size: 10px !important; padding: 9px 4px !important; }
+          .ng-tier-range .money-input-wrap span { padding: 0 5px !important; font-size: 14px !important; }
+          .ng-tier-fee { width: 72px !important; }
+          .ng-tier-fee input { font-size: 11px !important; padding: 9px 4px !important; }
+          .cost-compare { grid-template-columns: 1fr 1fr; }
+          .cost-col { padding: 12px 10px; }
+          .cost-col-val { font-size: 20px; }
+          .cost-diff-val { font-size: 16px; }
+          .cmp-row { flex-wrap: wrap; gap: 6px; }
+          .cmp-lbl { width: 100%; font-size: 10px; }
+          .cmp-val { width: auto; font-size: 11px; }
+          .cmp-delta { width: auto; font-size: 10px; }
         }
       ` }} />
 
@@ -1369,7 +1391,8 @@ function ResultsPreview({
     const p25P = pctPos(bracket.p25);
     const medP = pctPos(bracket.median);
     const youP = pctPos(feePercent);
-    const T = 8;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
+    const T = isMobile ? 16 : 8;
     let p25L: 'above' | 'below' = 'below';
     let medL: 'above' | 'below' = 'below';
     if (Math.abs(medP - youP) < T) medL = 'above';
@@ -1462,26 +1485,27 @@ function ResultsPreview({
         </div>
         <div style={{ padding: 24 }}>
 
-          {/* Impact grid */}
-          <div className="impact-grid">
-            <div className="impact-cell">
-              <div className="ic-label">You pay annually</div>
-              <div className="ic-val">{formatCompact(annualFee)}</div>
-              <div className="ic-badge even">{feePercent.toFixed(2)}% of AUM</div>
-            </div>
-            <div className="impact-cell">
-              <div className="ic-label">Peer median pays</div>
-              <div className="ic-val">{formatCompact(medianFee)}</div>
-              <div className="ic-badge even">{bracket.median.toFixed(2)}% of AUM</div>
-            </div>
-            <div className={`impact-cell${feeDiff > 0 ? ' hl-red' : feeDiff < 0 ? ' hl-grn' : ''}`}>
-              <div className="ic-label">Annual difference</div>
-              <div className="ic-val" style={{ color: feeDiff > 0 ? '#EF4444' : feeDiff < 0 ? '#1A7A4A' : '#0C1810' }}>
-                {feeDiff === 0 ? '$0' : formatCompact(Math.abs(feeDiff))}
+          {/* Cost comparison card */}
+          <div className="cost-card">
+            <div className="cost-compare">
+              <div className="cost-col">
+                <div className="cost-col-label">You pay annually</div>
+                <div className="cost-col-val">{formatCompact(annualFee)}</div>
+                <div className="cost-col-sub">{feePercent.toFixed(2)}% of AUM</div>
               </div>
-              {feeDiff > 0 && <div className="ic-badge over">You overpay by this</div>}
-              {feeDiff < 0 && <div className="ic-badge under">You save this</div>}
-              {feeDiff === 0 && <div className="ic-badge even">At median</div>}
+              <div className="cost-col">
+                <div className="cost-col-label">Peer median pays</div>
+                <div className="cost-col-val">{formatCompact(medianFee)}</div>
+                <div className="cost-col-sub">{bracket.median.toFixed(2)}% of AUM</div>
+              </div>
+            </div>
+            <div className="cost-diff">
+              <div className="cost-diff-val" style={{ color: feeDiff > 0 ? '#EF4444' : feeDiff < 0 ? '#1A7A4A' : '#0C1810' }}>
+                {feeDiff === 0 ? '$0' : (feeDiff > 0 ? '+' : '-') + formatCompact(Math.abs(feeDiff))}
+              </div>
+              {feeDiff > 0 && <div className="cost-diff-badge over">You overpay by this</div>}
+              {feeDiff < 0 && <div className="cost-diff-badge under">You save this</div>}
+              {feeDiff === 0 && <div className="cost-diff-badge even">At median</div>}
             </div>
           </div>
 
