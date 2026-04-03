@@ -11,7 +11,8 @@ import type { FirmTableColumn, MobileDataItem, SortState, GateConfig } from '@/c
 
 interface MatchAnswer {
   netWorth: string;
-  lifeTrigger: string;
+  lifeTrigger: string | string[];
+  lifeTriggerText?: string;
   location: string;
   priorities: string[];
   feeSensitivity: string;
@@ -448,7 +449,7 @@ export default function MatchResultsPage() {
     try {
       const params = new URLSearchParams({
         netWorth: matchAnswers.netWorth,
-        lifeTrigger: matchAnswers.lifeTrigger,
+        lifeTrigger: Array.isArray(matchAnswers.lifeTrigger) ? matchAnswers.lifeTrigger.join(',') : matchAnswers.lifeTrigger,
         location: matchAnswers.location,
         priorities: matchAnswers.priorities.join(','),
         feeSensitivity: matchAnswers.feeSensitivity,
@@ -508,12 +509,23 @@ export default function MatchResultsPage() {
 
   const chips: string[] = [];
   if (answers) {
-    const nw = LABEL_MAP.netWorth[answers.netWorth];
-    const lt = LABEL_MAP.lifeTrigger[answers.lifeTrigger];
-    const loc = LABEL_MAP.location[answers.location];
+    // Net worth: handle exact amounts and bucket values
+    const nw = answers.netWorth.startsWith('exact_')
+      ? `$${Number(answers.netWorth.replace('exact_', '')).toLocaleString('en-US')}`
+      : LABEL_MAP.netWorth[answers.netWorth];
     if (nw) chips.push(nw);
-    if (lt) chips.push(lt);
-    if (loc) chips.push(loc);
+
+    // Life trigger: now an array
+    const triggers = Array.isArray(answers.lifeTrigger) ? answers.lifeTrigger : [answers.lifeTrigger];
+    for (const t of triggers.slice(0, 2)) {
+      const lt = LABEL_MAP.lifeTrigger[t];
+      if (lt) chips.push(lt);
+    }
+
+    // Location: now a free-text string like "Boston, MA" or "outside_us"
+    if (answers.location === 'outside_us') chips.push('Outside US');
+    else if (answers.location && !LABEL_MAP.location[answers.location]) chips.push(answers.location);
+    else if (LABEL_MAP.location[answers.location]) chips.push(LABEL_MAP.location[answers.location]);
   }
 
   const avgMatch = firms.length > 0

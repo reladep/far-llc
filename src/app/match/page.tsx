@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import { getUSCities } from '@/lib/geo';
 
 interface Answers {
   netWorth: string;
-  lifeTrigger: string;
+  lifeTrigger: string[];
+  lifeTriggerText: string;
   location: string;
   priorities: string[];
   feeSensitivity: string;
@@ -18,8 +20,8 @@ interface Answers {
 const STEPS = [
   {
     key: 'netWorth',
-    question: 'What is your approximate investable assets?',
-    subtitle: 'This helps us match you with advisors who typically work with clients at your wealth level.',
+    question: 'What are your investable assets?',
+    subtitle: 'This helps us match you with firms who typically work with clients at your wealth level.',
     options: [
       { value: 'under_250k', label: 'Under $250K' },
       { value: '250k_1m', label: '$250K – $1M' },
@@ -47,15 +49,7 @@ const STEPS = [
     key: 'location',
     question: 'Where are you located?',
     subtitle: "We'll match you with advisors in your area or who serve clients remotely.",
-    options: [
-      { value: 'ny', label: 'New York' },
-      { value: 'ca', label: 'California' },
-      { value: 'fl', label: 'Florida' },
-      { value: 'tx', label: 'Texas' },
-      { value: 'il', label: 'Illinois' },
-      { value: 'ma', label: 'Massachusetts' },
-      { value: 'other', label: 'Other / Nationwide' },
-    ],
+    options: [],
   },
   {
     key: 'priorities',
@@ -118,6 +112,23 @@ const STEPS = [
   },
 ];
 
+const allCities = getUSCities();
+
+function searchLocations(query: string): string[] {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results: string[] = [];
+  for (const c of allCities) {
+    const label = `${c.city}, ${c.state}`;
+    const labelLower = label.toLowerCase();
+    if (labelLower.startsWith(q) || c.city.toLowerCase().startsWith(q)) {
+      results.push(label);
+      if (results.length >= 8) break;
+    }
+  }
+  return results;
+}
+
 const CSS = `
   :root {
     --navy:#0A1C2A; --navy-2:#0F2538;
@@ -139,27 +150,52 @@ const CSS = `
 
   .mx-hero {
     background:var(--navy);
-    padding:52px 24px 44px;
-    text-align:center;
+    padding:44px 48px 52px;
+    position:relative; overflow:hidden;
   }
-  .mx-step-label {
-    font-family:var(--mono); font-size:10px; font-weight:600;
-    letter-spacing:.18em; text-transform:uppercase;
-    color:rgba(45,189,116,.7); margin-bottom:16px;
+  .mx-hero::after {
+    content:''; position:absolute; top:-60px; right:-80px;
+    width:400px; height:400px;
+    background:radial-gradient(circle, rgba(45,189,116,.12) 0%, transparent 65%);
+    pointer-events:none;
   }
-  .mx-question {
-    font-family:var(--serif); font-size:clamp(24px,5vw,36px);
-    font-weight:700; color:#fff; max-width:640px;
-    margin:0 auto 10px; line-height:1.18; padding:0 12px;
+  .mx-hero-inner { max-width:800px; margin:0 auto; position:relative; z-index:1; }
+  .mx-hero-eyebrow {
+    font-family:var(--mono); font-size:10px; font-weight:700;
+    letter-spacing:.22em; text-transform:uppercase;
+    color:#2DBD74; margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
   }
-  .mx-subtitle {
-    font-family:var(--sans); font-size:13px;
-    color:rgba(246,248,247,.5); margin:0;
+  .mx-hero-eyebrow::before {
+    content:''; width:16px; height:1px; background:#2DBD74; display:inline-block;
+  }
+  .mx-hero-h1 {
+    font-family:var(--serif); font-size:clamp(28px,7vw,42px);
+    font-weight:700; color:#fff; letter-spacing:-.025em;
+    line-height:1.06; margin-bottom:0;
+  }
+  .mx-hero-sub {
+    font-size:14px; color:rgba(255,255,255,.38);
+    line-height:1.75; max-width:500; margin-top:12px;
   }
 
   .mx-body {
     max-width:560px; margin:0 auto;
-    padding:32px 20px 0;
+    padding:40px 20px 0;
+  }
+  .mx-step-label {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase;
+    color:var(--green-3); margin-bottom:10px;
+  }
+  .mx-question {
+    font-family:var(--serif); font-size:clamp(22px,4vw,30px);
+    font-weight:700; color:var(--ink); max-width:560px;
+    margin:0 0 6px; line-height:1.15;
+  }
+  .mx-subtitle {
+    font-family:var(--sans); font-size:13px;
+    color:var(--ink-3); margin:0 0 24px; line-height:1.6;
   }
   .mx-multi-hint {
     display:block; font-family:var(--mono); font-size:10px; font-weight:600;
@@ -191,7 +227,7 @@ const CSS = `
 
   .mx-nav {
     max-width:560px; margin:0 auto;
-    padding:24px 20px 60px;
+    padding:24px 20px 40px;
     display:flex; justify-content:space-between; align-items:center;
   }
   .mx-btn-back {
@@ -210,17 +246,108 @@ const CSS = `
   .mx-btn-next:hover { background:var(--green-2); border-color:var(--green-2); }
   .mx-btn-next:disabled { opacity:.35; cursor:default; pointer-events:none; }
 
-  .mx-note {
-    text-align:center; font-family:var(--sans);
-    font-size:11px; color:var(--ink-3); padding-bottom:40px;
+  .mx-or-divider {
+    display:flex; align-items:center; gap:12px;
+    margin:16px 0;
   }
+  .mx-or-divider::before, .mx-or-divider::after {
+    content:''; flex:1; height:1px; background:var(--rule);
+  }
+  .mx-or-divider span {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .mx-exact-input {
+    display:flex; align-items:center; gap:0;
+    border:1px solid var(--rule); background:#fff;
+    padding:0; transition:border-color .15s;
+  }
+  .mx-exact-input:focus-within { border-color:var(--green-2); }
+  .mx-exact-input .mx-dollar {
+    font-family:var(--mono); font-size:14px; font-weight:500;
+    color:var(--ink-3); padding:14px 0 14px 16px;
+    line-height:1;
+  }
+  .mx-exact-input input {
+    flex:1; border:none; outline:none; background:transparent;
+    font-family:var(--sans); font-size:14px; font-weight:500;
+    color:var(--ink); padding:14px 16px 14px 4px;
+  }
+  .mx-exact-input input::placeholder { color:var(--rule); }
+  .mx-freetext {
+    width:100%; border:1px solid var(--rule); background:#fff;
+    font-family:var(--sans); font-size:14px; font-weight:400;
+    color:var(--ink); padding:14px 16px; resize:vertical;
+    min-height:80px; max-height:160px; outline:none;
+    transition:border-color .15s; margin-top:12px;
+  }
+  .mx-freetext:focus { border-color:var(--green-2); }
+  .mx-freetext::placeholder { color:var(--rule); }
+  .mx-freetext-meta {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:6px;
+  }
+  .mx-freetext-label {
+    font-family:var(--sans); font-size:11px; color:var(--ink-3);
+  }
+  .mx-freetext-count {
+    font-family:var(--mono); font-size:10px; color:var(--ink-3);
+  }
+  .mx-freetext-count.over { color:#EF4444; }
+
+  .mx-location-wrap { position:relative; }
+  .mx-location-input {
+    width:100%; border:1px solid var(--rule); background:#fff;
+    font-family:var(--sans); font-size:14px; font-weight:500;
+    color:var(--ink); padding:14px 16px; outline:none;
+    transition:border-color .15s;
+  }
+  .mx-location-input:focus { border-color:var(--green-2); }
+  .mx-location-input::placeholder { color:var(--rule); }
+  .mx-location-dropdown {
+    position:absolute; left:0; right:0; top:100%;
+    background:#fff; border:1px solid var(--rule); border-top:none;
+    z-index:10; max-height:240px; overflow-y:auto;
+  }
+  .mx-location-item {
+    display:block; width:100%; text-align:left;
+    padding:12px 16px; font-family:var(--sans); font-size:14px;
+    color:var(--ink); background:none; border:none; cursor:pointer;
+    border-bottom:1px solid rgba(202,216,208,.4);
+    transition:background .1s;
+  }
+  .mx-location-item:last-child { border-bottom:none; }
+  .mx-location-item:hover { background:var(--green-pale); color:var(--green); }
+  .mx-location-clear {
+    position:absolute; right:12px; top:50%;
+    transform:translateY(-50%);
+    background:none; border:none; color:var(--ink-3);
+    cursor:pointer; font-size:18px; line-height:1; padding:2px;
+    opacity:.5; transition:opacity .15s;
+  }
+  .mx-location-clear:hover { opacity:1; }
+  .mx-outside-link {
+    display:inline-block; margin-top:16px;
+    font-family:var(--sans); font-size:12px; font-weight:500;
+    color:var(--ink-3); cursor:pointer; background:none; border:none;
+    padding:0; transition:color .15s;
+    text-decoration:underline; text-underline-offset:2px;
+  }
+  .mx-outside-link:hover { color:var(--green); }
+  .mx-outside-link.selected { color:var(--green); }
+
+  .mx-min-hint {
+    font-family:var(--sans); font-size:12px; color:#EF4444;
+    margin-top:8px; opacity:0; transition:opacity .3s;
+  }
+  .mx-min-hint.visible { opacity:1; }
 
   @media(max-width:640px){
-    .mx-hero { padding:40px 16px 32px; }
-    .mx-question { padding:0 4px; }
-    .mx-body { padding:24px 16px 0; }
+    .mx-hero { padding:28px 16px 36px; }
+    .mx-body { padding:28px 16px 0; }
     .mx-option { padding:16px 16px; min-height:44px; }
-    .mx-nav { padding:20px 16px 48px; }
+    .mx-nav { padding:20px 16px 28px; }
     .mx-btn-back, .mx-btn-next { padding:12px 24px; min-height:44px; }
   }
 `;
@@ -236,9 +363,16 @@ function CheckSVG() {
 export default function MatchPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [exactAmount, setExactAmount] = useState('');
+  const [showMinHint, setShowMinHint] = useState(false);
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationResults, setLocationResults] = useState<string[]>([]);
+  const [locationFocused, setLocationFocused] = useState(false);
+  const minHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [answers, setAnswers] = useState<Answers>({
     netWorth: '',
-    lifeTrigger: '',
+    lifeTrigger: [],
+    lifeTriggerText: '',
     location: '',
     priorities: [],
     feeSensitivity: '',
@@ -250,16 +384,41 @@ export default function MatchPage() {
   const currentStep = STEPS[step];
   const progress = ((step + 1) / STEPS.length) * 100;
 
+  const MULTI_KEYS = ['priorities', 'lifeTrigger'];
+
   const handleSelect = (value: string) => {
     const key = currentStep.key as keyof Answers;
-    if (key === 'priorities') {
-      const current = answers.priorities as unknown as string[];
-      const newPriorities = current.includes(value)
+    if (MULTI_KEYS.includes(key)) {
+      const current = (answers[key] as string[]);
+      const updated = current.includes(value)
         ? current.filter((p) => p !== value)
         : [...current, value];
-      setAnswers({ ...answers, priorities: newPriorities as unknown as Answers['priorities'] });
+      setAnswers({ ...answers, [key]: updated });
     } else {
+      if (key === 'netWorth') setExactAmount('');
       setAnswers({ ...answers, [key]: value });
+    }
+  };
+
+  const handleExactAmount = (raw: string) => {
+    const digits = raw.replace(/[^0-9]/g, '');
+    let num = Number(digits);
+    if (num > 10_000_000_000) num = 10_000_000_000;
+    const formatted = num ? num.toLocaleString('en-US') : '';
+    setExactAmount(formatted);
+
+    if (minHintTimer.current) clearTimeout(minHintTimer.current);
+
+    if (num >= 10_000) {
+      setShowMinHint(false);
+      setAnswers((prev) => ({ ...prev, netWorth: `exact_${num}` }));
+    } else {
+      setAnswers((prev) => ({ ...prev, netWorth: '' }));
+      if (num > 0) {
+        minHintTimer.current = setTimeout(() => setShowMinHint(true), 1200);
+      } else {
+        setShowMinHint(false);
+      }
     }
   };
 
@@ -291,21 +450,24 @@ export default function MatchPage() {
 
   const canProceed = () => {
     const key = currentStep.key;
-    if (key === 'priorities') {
-      return (answers.priorities as unknown as string[]).length > 0;
+    if (MULTI_KEYS.includes(key)) {
+      const arr = answers[key as keyof Answers] as string[];
+      // lifeTrigger: text alone is enough, or at least one option
+      if (key === 'lifeTrigger') return arr.length > 0 || answers.lifeTriggerText.trim().length > 0;
+      return arr.length > 0;
     }
     return !!answers[key as keyof Answers];
   };
 
   const isSelected = (value: string) => {
     const key = currentStep.key;
-    if (key === 'priorities') {
-      return (answers.priorities as unknown as string[]).includes(value);
+    if (MULTI_KEYS.includes(key)) {
+      return (answers[key as keyof Answers] as string[]).includes(value);
     }
     return answers[key as keyof Answers] === value;
   };
 
-  const isMulti = currentStep.key === 'priorities';
+  const isMulti = MULTI_KEYS.includes(currentStep.key);
 
   return (
     <div className="mx-page">
@@ -318,35 +480,159 @@ export default function MatchPage() {
 
       {/* Navy hero */}
       <div className="mx-hero">
-        <div className="mx-step-label">
-          Step {step + 1} of {STEPS.length} &middot; Advisor Match
+        <div className="mx-hero-inner">
+          <div className="mx-hero-eyebrow">Advisor Match</div>
+          <h1 className="mx-hero-h1">Find your ideal <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>wealth partner</em></h1>
+          <p className="mx-hero-sub">Answer a few questions and we&rsquo;ll match you with firms personalized to you. No conflicts. No commissions.</p>
         </div>
-        <h1 className="mx-question">{currentStep.question}</h1>
-        <p className="mx-subtitle">{currentStep.subtitle}</p>
       </div>
 
-      {/* Options */}
+      {/* Question + Options */}
       <div className="mx-body">
-        {isMulti && (
-          <span className="mx-multi-hint">Select all that apply</span>
-        )}
-        {currentStep.options.map((option) => {
-          const selected = isSelected(option.value);
-          return (
-            <button
-              key={option.value}
-              className={`mx-option${selected ? ' selected' : ''}`}
-              onClick={() => handleSelect(option.value)}
-            >
-              <span>{option.label}</span>
-              {isMulti && (
-                <span className="mx-check">
-                  {selected && <CheckSVG />}
-                </span>
+        <div className="mx-step-label">
+          Step {step + 1} of {STEPS.length}
+        </div>
+        <h2 className="mx-question">{currentStep.question}</h2>
+        <p className="mx-subtitle">{currentStep.subtitle}</p>
+        {/* Location step: searchable city/state input */}
+        {currentStep.key === 'location' ? (
+          <>
+            <div className="mx-location-wrap">
+              <input
+                className="mx-location-input"
+                type="text"
+                placeholder="Start typing your city or state..."
+                value={answers.location && answers.location !== 'outside_us' ? answers.location : locationQuery}
+                onChange={(e) => {
+                  if (answers.location && answers.location !== 'outside_us') {
+                    setAnswers({ ...answers, location: '' });
+                  }
+                  setLocationQuery(e.target.value);
+                  setLocationResults(searchLocations(e.target.value));
+                }}
+                onFocus={() => {
+                  setLocationFocused(true);
+                  if (answers.location && answers.location !== 'outside_us') {
+                    // If there's a selected value, clear it on focus so they can re-search
+                    setLocationQuery(answers.location);
+                    setLocationResults(searchLocations(answers.location));
+                    setAnswers({ ...answers, location: '' });
+                  }
+                }}
+                onBlur={() => setTimeout(() => setLocationFocused(false), 200)}
+              />
+              {answers.location && answers.location !== 'outside_us' && (
+                <button
+                  className="mx-location-clear"
+                  onClick={() => { setAnswers({ ...answers, location: '' }); setLocationQuery(''); }}
+                  aria-label="Clear"
+                >&times;</button>
               )}
+              {locationFocused && locationResults.length > 0 && (
+                <div className="mx-location-dropdown">
+                  {locationResults.map((loc) => (
+                    <button
+                      key={loc}
+                      className="mx-location-item"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setAnswers({ ...answers, location: loc });
+                        setLocationQuery('');
+                        setLocationResults([]);
+                        setLocationFocused(false);
+                      }}
+                    >
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className={`mx-outside-link${answers.location === 'outside_us' ? ' selected' : ''}`}
+              onClick={() => {
+                setAnswers({ ...answers, location: answers.location === 'outside_us' ? '' : 'outside_us' });
+                setLocationQuery('');
+                setLocationResults([]);
+              }}
+            >
+              I&rsquo;m outside the United States
             </button>
-          );
-        })}
+          </>
+        ) : currentStep.key === 'netWorth' ? (
+          <>
+            <div className="mx-exact-input">
+              <span className="mx-dollar">$</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Enter exact amount"
+                value={exactAmount}
+                onChange={(e) => handleExactAmount(e.target.value)}
+              />
+            </div>
+            <div className={`mx-min-hint${showMinHint ? ' visible' : ''}`}>
+              Please enter at least $10,000
+            </div>
+            <div className="mx-or-divider"><span>Or select a range</span></div>
+            {currentStep.options.map((option) => {
+              const selected = isSelected(option.value);
+              return (
+                <button
+                  key={option.value}
+                  className={`mx-option${selected ? ' selected' : ''}`}
+                  onClick={() => handleSelect(option.value)}
+                >
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            {isMulti && (
+              <span className="mx-multi-hint">Select all that apply</span>
+            )}
+            {currentStep.options.map((option) => {
+              const selected = isSelected(option.value);
+              return (
+                <button
+                  key={option.value}
+                  className={`mx-option${selected ? ' selected' : ''}`}
+                  onClick={() => handleSelect(option.value)}
+                >
+                  <span>{option.label}</span>
+                  {isMulti && (
+                    <span className="mx-check">
+                      {selected && <CheckSVG />}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            {currentStep.key === 'lifeTrigger' && (
+              <>
+                <textarea
+                  className="mx-freetext"
+                  placeholder="Anything else you'd like us to know? (optional)"
+                  value={answers.lifeTriggerText}
+                  onChange={(e) => {
+                    const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                    if (words.length <= 150 || e.target.value.length < answers.lifeTriggerText.length) {
+                      setAnswers({ ...answers, lifeTriggerText: e.target.value });
+                    }
+                  }}
+                />
+                <div className="mx-freetext-meta">
+                  <span className="mx-freetext-label">Optional — helps us personalize your matches</span>
+                  <span className={`mx-freetext-count${answers.lifeTriggerText.trim().split(/\s+/).filter(Boolean).length >= 140 ? ' over' : ''}`}>
+                    {answers.lifeTriggerText.trim() ? answers.lifeTriggerText.trim().split(/\s+/).filter(Boolean).length : 0}/150 words
+                  </span>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
 
       {/* Navigation */}
@@ -367,7 +653,6 @@ export default function MatchPage() {
         </button>
       </div>
 
-      <p className="mx-note">Your answers are confidential and never shared.</p>
     </div>
   );
 }

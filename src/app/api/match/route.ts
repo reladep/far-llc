@@ -42,9 +42,23 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    // Get firms matching location
-    const locationStates = LOCATION_MAP[params.location] || [];
-    
+    // Parse location — could be old format ("ny"), new format ("Boston, MA"), or "outside_us"
+    let locationStates: string[] = [];
+    const loc = params.location;
+    if (LOCATION_MAP[loc]) {
+      locationStates = LOCATION_MAP[loc];
+    } else if (loc && loc !== 'outside_us') {
+      // Parse "City, ST" format — extract state abbreviation
+      const stateMatch = loc.match(/,\s*([A-Z]{2})$/);
+      if (stateMatch) {
+        locationStates = [stateMatch[1]];
+      } else {
+        // Could be "StateName (ST)" format
+        const parenMatch = loc.match(/\(([A-Z]{2})\)$/);
+        if (parenMatch) locationStates = [parenMatch[1]];
+      }
+    }
+
     let query = supabase
       .from('firmdata_current')
       .select('crd, primary_business_name, main_office_city, main_office_state, aum, employee_total, employee_investment')
