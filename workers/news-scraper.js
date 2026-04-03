@@ -38,12 +38,13 @@ const NOISE_TERMS = [
 ];
 
 async function getAllFirms() {
-  // Limit to 150 firms per run to complete in time (rotate through firms)
+  // Limit to 50 firms per run to complete in time (rotate through firms)
+  // With ~3s per firm (news + M&A search), 50 firms takes ~2.5min
   const { data, error } = await supabase
     .from('firmdata_current')
     .select('crd, primary_business_name')
     .order('crd', { ascending: true })
-    .range(0, 149); // Process first 150 firms, cycle through each run
+    .range(0, 49); // Process 50 firms per run, cycle through (150 total = 3 runs)
 
   if (error) {
     console.error('[News] Error fetching firms:', error.message);

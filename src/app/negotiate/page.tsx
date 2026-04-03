@@ -893,6 +893,12 @@ export default function NegotiatePage() {
           .step-row { gap: 8px; }
           .fc-bar { height: 28px; }
           .fc-val { font-size: 13px; }
+          .sf-grid { grid-template-columns: 1fr !important; }
+          .enrich-nudge { flex-direction: column; gap: 12px; align-items: stretch; }
+          .en-btn { text-align: center; }
+          .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
+          .stat-cell { padding: 12px 10px; }
+          .stat-val { font-size: 18px; }
         }
       ` }} />
 
@@ -911,11 +917,11 @@ export default function NegotiatePage() {
               Fee Negotiation Tool
             </div>
             {firmData ? (
-              <h1 className="ng-hero-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0, whiteSpace: 'nowrap' }}>
+              <h1 className="ng-hero-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                 Negotiate with <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>{firmData.name}</em>
               </h1>
             ) : (
-              <h1 className="ng-hero-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0, whiteSpace: 'nowrap' }}>
+              <h1 className="ng-hero-h1" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                 Are you paying <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>too much?</em>
               </h1>
             )}
@@ -1179,7 +1185,7 @@ export default function NegotiatePage() {
                       style={{ flex: 1, border: 'none', background: 'none', outline: 'none', fontFamily: 'DM Mono, monospace', fontSize: 14, color: '#0C1810', padding: '11px 14px' }}
                     />
                     {feeMode === 'flat' && rawFee && (
-                      <span className="bps-hint" style={{ padding: '0 10px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', borderLeft: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      <span className="bps-hint" style={{ padding: '0 10px', fontFamily: 'DM Mono, monospace', fontSize: 12, color: '#5A7568', borderLeft: '1px solid #CAD8D0', lineHeight: '44px', flexShrink: 0, whiteSpace: 'normal', overflowWrap: 'break-word' }}>
                         {bps > 0 ? `${bps} bps` : ''}
                       </span>
                     )}
