@@ -167,18 +167,15 @@ export async function getSimilarFirms({
     });
 
     scored.sort((a, b) => b._composite - a._composite);
-    const top = scored.slice(0, limit * 2);
+    const pool = scored.slice(0, limit * 3);
 
-    const crds = top.map(f => f.crd as number);
+    const crds = pool.map(f => f.crd as number);
     const lookups: Promise<any>[] = [
       supabase.from('firm_names').select('crd, display_name').in('crd', crds),
       getFirmScores(crds),
+      // Always fetch fees for ranking boost (fee data + score boost)
+      supabase.from('firmdata_feesandmins').select('crd, fee_structure_type, fee_range_min, fee_range_max').in('crd', crds),
     ];
-    if (includeFees) {
-      lookups.push(
-        supabase.from('firmdata_feesandmins').select('crd, fee_structure_type, fee_range_min, fee_range_max').in('crd', crds),
-      );
-    }
 
     const lookupResults = await Promise.all(lookups);
     const nameMap = new Map(
@@ -186,27 +183,38 @@ export async function getSimilarFirms({
     );
     const scoreMap = lookupResults[1] as Map<number, any>;
     const feeMap = new Map<number, { fee_structure_type: string | null; fee_range_min: number | null; fee_range_max: number | null }>();
-    if (includeFees && lookupResults[2]?.data) {
+    if (lookupResults[2]?.data) {
       for (const row of lookupResults[2].data) {
         feeMap.set(row.crd, row);
       }
     }
 
-    return top.slice(0, limit).map(f => {
+    // Re-rank pool with fee data boost, score boost, and random jitter
+    const boosted = pool.map(f => {
       const feeRow = feeMap.get(f.crd);
-      return {
-        crd: f.crd,
-        name: (nameMap.get(f.crd) as string | null) || f.primary_business_name || 'Unknown',
-        city: f.main_office_city,
-        state: f.main_office_state,
-        aum: f.aum,
-        score: (scoreMap.get(f.crd) as { final_score?: number } | undefined)?.final_score ?? null,
-        reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
-        feeRangeMin: feeRow?.fee_range_min ?? null,
-        feeRangeMax: feeRow?.fee_range_max ?? null,
-        feeStructureType: feeRow?.fee_structure_type ?? null,
-      };
+      const scoreEntry = scoreMap.get(f.crd) as { final_score?: number } | undefined;
+      const visorScore = scoreEntry?.final_score ?? 0;
+
+      const feeBoost = feeRow?.fee_range_max != null ? 0.12 : 0;
+      const scoreBoost = (visorScore / 100) * 0.08;
+      const jitter = Math.random() * 0.12 - 0.06;
+
+      return { ...f, _final: f._composite + feeBoost + scoreBoost + jitter, _feeRow: feeRow, _visorScore: visorScore };
     });
+    boosted.sort((a, b) => b._final - a._final);
+
+    return boosted.slice(0, limit).map(f => ({
+      crd: f.crd,
+      name: (nameMap.get(f.crd) as string | null) || f.primary_business_name || 'Unknown',
+      city: f.main_office_city,
+      state: f.main_office_state,
+      aum: f.aum,
+      score: f._visorScore || null,
+      reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
+      feeRangeMin: f._feeRow?.fee_range_min ?? null,
+      feeRangeMax: f._feeRow?.fee_range_max ?? null,
+      feeStructureType: f._feeRow?.fee_structure_type ?? null,
+    }));
   } catch (e) {
     console.error('getSimilarFirms error:', e);
     return [];

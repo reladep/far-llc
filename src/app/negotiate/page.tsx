@@ -1152,7 +1152,7 @@ export default function NegotiatePage() {
             <div className="ng-step-hd">
               <div className="step-n">01</div>
               <div className="step-title">Your portfolio &amp; fee</div>
-              {firmData && <div className="step-meta">Pre-filled from firm profile</div>}
+              {firmData && <div className="step-meta">Visor Index</div>}
             </div>
             <div style={{ padding: 24 }}>
 
@@ -1552,8 +1552,8 @@ function ResultsPreview({
               <div className="stat-cell">
                 <div className="stat-label">{firmData.name}</div>
                 <div className="stat-val" style={{ color: '#0A1C2A' }}>
-                  {firmData.feeStructureType === 'range' || firmData.feeStructureType === 'tiered'
-                    ? `${firmData.feeRangeMin ?? '—'}–${firmData.feeRangeMax}%`
+                  {(firmData.feeStructureType === 'range' || firmData.feeStructureType === 'tiered') && firmData.feeRangeMin != null
+                    ? `${firmData.feeRangeMin}–${firmData.feeRangeMax}%`
                     : `${firmData.feeRangeMax}%`
                   }
                 </div>
@@ -1715,20 +1715,13 @@ function ResultsPreview({
         </div>
       </div>
 
-      {/* Enrich nudge (if no firm added) / firm badge (if firm loaded) */}
-      {firmData ? (
+      {/* Firm-specific nudge (only when firm is loaded) */}
+      {firmData && (
         <div className="enrich-nudge" style={{ marginBottom: 32 }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
             <strong style={{ color: '#2DBD74' }}>✓ Firm-specific playbook</strong> — includes ADV data, conflict flags, and verbatim citations for {firmData.name}.
           </div>
           <Link href={`/firm/${firmData.crd}`} className="en-btn" style={{ textDecoration: 'none' }}>View Firm Profile</Link>
-        </div>
-      ) : (
-        <div className="enrich-nudge" style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
-            <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
-          </div>
-          <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
         </div>
       )}
 
@@ -1788,7 +1781,7 @@ function ResultsPreview({
         )}
 
         {/* Consultation CTA */}
-        <div className="enrich-nudge" style={{ marginBottom: 32 }}>
+        <div className="enrich-nudge">
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
             <strong style={{ color: '#2DBD74' }}>Go beyond the public filings</strong> — custom due diligence, investment reviews, background checks, and fee benchmarking.
           </div>

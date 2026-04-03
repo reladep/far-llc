@@ -1090,7 +1090,6 @@ function FirmCard({
   const scoreColor =
     score == null ? '#CAD8D0' : score >= 80 ? '#2DBD74' : score >= 50 ? '#F59E0B' : '#EF4444';
   const isFeatured = score != null && score >= 80;
-  const description = firm.specialty_strategies || firm.investment_philosophy || null;
   const firmName = firm.display_name || firm.primary_business_name;
 
   // Computed values for expanded panel
@@ -1174,7 +1173,6 @@ function FirmCard({
                 {firm.services_financial_planning === 'Y' ? 'Fee-only · RIA' : 'RIA'}
               </span>
             )}
-            {description && <p className="text-[11px] text-[#5A7568]/80 truncate max-w-[340px]">{description}</p>}
             <button
               data-more-btn
               onClick={handleMoreClick}
@@ -1254,7 +1252,6 @@ function FirmCard({
               </div>
             </div>
           </div>
-          {description && <p className="text-[11px] text-[#5A7568]/80 truncate mb-1">{description}</p>}
           <button
             data-more-btn
             onClick={handleMoreClick}

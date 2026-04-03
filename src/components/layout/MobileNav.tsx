@@ -12,7 +12,6 @@ const allNavLinks = [
   { label: 'Compare', href: '/compare' },
   { label: 'Match', href: '/match' },
   { label: 'Negotiate', href: '/negotiate' },
-  { label: 'Guide', href: '/guide' },
   { label: 'Directory', href: '/directory' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
