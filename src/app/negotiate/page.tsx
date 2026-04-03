@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import FirmLogo from '@/components/firms/FirmLogo';
 import { useSearchParams } from 'next/navigation';
 import { Session } from '@supabase/supabase-js';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -11,6 +12,7 @@ import {
   getNextBreakpoint,
   calcTieredFeeSimple,
   synthesizeRangeTiers,
+  synthesizeMaxOnlyTiers,
   formatDollar,
   formatCompact,
   projectGrowth,
@@ -20,10 +22,11 @@ import {
   type FeeTier,
 } from '@/lib/fee-utils';
 import { getSimilarFirms, type SimilarFirm } from '@/lib/similar-firms';
+import CompoundingImpact from '@/components/negotiate/CompoundingImpact';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type FeeMode = 'flat' | 'tiered' | 'dollar' | 'unknown';
-type ClientStatus = 'existing' | 'prospective' | 'exploring';
+type ClientStatus = 'existing' | 'prospective';
 
 interface PlaybookItem {
   type: 'primary' | 'rebuttal';
@@ -70,6 +73,8 @@ function formatFirmName(name: string): string {
 export default function NegotiatePage() {
   const searchParams = useSearchParams();
   const crdParam = searchParams.get('crd');
+  const aumParam = searchParams.get('aum');
+  const feeParam = searchParams.get('fee');
 
   // ── PROTECTED STATE ──────────────────────────────────────────────────────
   const [rawAum, setRawAum] = useState('');
@@ -99,6 +104,7 @@ export default function NegotiatePage() {
   const [firmQuery, setFirmQuery] = useState('');
   const [firmResults, setFirmResults] = useState<{ crd: number; name: string }[]>([]);
   const [firmSelectedIndex, setFirmSelectedIndex] = useState(-1);
+  const [bannerSearchOpen, setBannerSearchOpen] = useState(false);
 
   // ── ENTRY MODE STATE ──────────────────────────────────────────────────
   // 'choose' = show two-path picker, 'firm' = searching for firm, 'manual' = enter fees yourself
@@ -129,6 +135,7 @@ export default function NegotiatePage() {
   // ── FIRM DATA FETCH (reusable) ───────────────────────────────────────────
   const loadFirm = useCallback((crd: number) => {
     setFirmLoading(true);
+    setFirmData(null);   // Clear stale data so prefill doesn't re-run with old firm
     setFirmPrefilled(false);
     const supabase = createSupabaseBrowserClient();
 
@@ -177,12 +184,17 @@ export default function NegotiatePage() {
     });
   }, []);
 
-  // Load from URL param on mount
+  // Load from URL param on mount (requires auth — wait for session to resolve)
   useEffect(() => {
-    if (!crdParam) return;
+    if (!crdParam || session === undefined) return; // wait for auth check
+    if (session === null) {
+      // Redirect to clean negotiate page — unauthenticated users can't import firms
+      window.location.replace('/negotiate');
+      return;
+    }
     const crd = parseInt(crdParam, 10);
     if (!isNaN(crd)) loadFirm(crd);
-  }, [crdParam, loadFirm]);
+  }, [crdParam, session, loadFirm]);
 
   // ── SIMILAR FIRMS FETCH ────────────────────────────────────────────────
   useEffect(() => {
@@ -236,6 +248,7 @@ export default function NegotiatePage() {
     setFirmQuery('');
     setFirmResults([]);
     setFirmSelectedIndex(-1);
+    setBannerSearchOpen(false);
     setEntryMode('manual');
     loadFirm(crd);
   }, [loadFirm]);
@@ -257,10 +270,24 @@ export default function NegotiatePage() {
     setShowGate(false);
   }, []);
 
+  // ── PRE-FILL from URL params (runs once on mount, before firm data loads) ──
+  useEffect(() => {
+    if (aumParam) setRawAum(aumParam);
+    if (feeParam) setRawFee(feeParam);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── PRE-FILL from firm data ────────────────────────────────────────────
   useEffect(() => {
     if (!firmData || firmPrefilled) return;
     setFirmPrefilled(true);
+
+    // Reset fee inputs before applying new firm's data
+    setRawFee('');
+    setFeeTiers([
+      { min: 0, max: 500000, fee: 1.0 },
+      { min: 500000, max: null, fee: 0.8 },
+    ]);
+    setShowResults(false);
 
     const type = firmData.feeStructureType;
 
@@ -276,7 +303,7 @@ export default function NegotiatePage() {
       setFeeMode('flat');
       setRawFee(firmData.feeRangeMax.toString());
     } else if (type === 'range' && firmData.feeRangeMin != null && firmData.feeRangeMax != null) {
-      // Synthesize tiers from range
+      // Synthesize tiers from full range
       const avgClientSize = (firmData.aum && firmData.clientTotal && firmData.clientTotal > 0)
         ? firmData.aum / firmData.clientTotal
         : 1_000_000;
@@ -292,9 +319,31 @@ export default function NegotiatePage() {
         setFeeMode('flat');
         setRawFee(firmData.feeRangeMax.toString());
       }
-    } else if (type === 'maximum_only' && firmData.feeRangeMax) {
-      setFeeMode('flat');
-      setRawFee(firmData.feeRangeMax.toString());
+    } else if ((type === 'maximum_only' || type === 'range') && firmData.feeRangeMax) {
+      // Max-only or range with only max — synthesize from max + industry data
+      const avgClient = (firmData.aum && firmData.clientTotal && firmData.clientTotal > 0)
+        ? firmData.aum / firmData.clientTotal
+        : 0;
+      if (avgClient > 0) {
+        const synthTiers = synthesizeMaxOnlyTiers(firmData.feeRangeMax, avgClient);
+        if (synthTiers.length > 0) {
+          setFeeMode('tiered');
+          setFeeTiers(synthTiers.map(t => ({
+            min: parseInt(t.min_aum || '0'),
+            max: t.max_aum,
+            fee: t.fee_pct ?? 0,
+          })));
+        } else {
+          setFeeMode('flat');
+          setRawFee(firmData.feeRangeMax.toString());
+        }
+      } else {
+        // No avg client data — treat as not disclosed
+        setFeeMode('unknown');
+      }
+    } else {
+      // Firm has no disclosed fee structure — use industry median
+      setFeeMode('unknown');
     }
   }, [firmData, firmPrefilled]);
 
@@ -378,6 +427,15 @@ export default function NegotiatePage() {
     }
   }, [rawFee, feeMode, aum, feeTiers]);
 
+  // True when the firm prefill logic was able to extract a concrete fee structure
+  const firmHasDisclosedFees = firmData
+    ? (
+        (firmData.feeStructureType === 'tiered' && firmData.tiers.length > 0) ||
+        (firmData.feeStructureType === 'flat_percentage' && firmData.feeRangeMax != null) ||
+        ((firmData.feeStructureType === 'range' || firmData.feeStructureType === 'maximum_only') && firmData.feeRangeMax != null)
+      )
+    : true;
+
   const hasValidInput = aum >= 10_000 && feePercent > 0;
   const bracket = useMemo(() => (aum > 0 ? getClosestBreakpoint(aum) : null), [aum]);
 
@@ -394,9 +452,6 @@ export default function NegotiatePage() {
 
   const tenYearCurrent  = useMemo(() => projectGrowth(aum, feePercent / 100, 10), [aum, feePercent]);
   const tenYearMedian   = useMemo(() => bracket ? projectGrowth(aum, bracket.median / 100, 10) : null, [aum, bracket]);
-  const twentyYearCurrent = useMemo(() => projectGrowth(aum, feePercent / 100, 20), [aum, feePercent]);
-  const twentyYearMedian  = useMemo(() => bracket ? projectGrowth(aum, bracket.median / 100, 20) : null, [aum, bracket]);
-  const twentyYearP25     = useMemo(() => bracket ? projectGrowth(aum, bracket.p25 / 100, 20) : null, [aum, bracket]);
 
   const compoundingCost = tenYearMedian ? tenYearMedian.value - tenYearCurrent.value : 0;
   const gaugeMax = bracket ? Math.max(bracket.p75 * 1.5, feePercent * 1.15) : 2;
@@ -470,6 +525,14 @@ export default function NegotiatePage() {
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
     }
   }, [hasValidInput, aum, session]);
+
+  // Auto-trigger analysis when arriving from firm profile with AUM param
+  useEffect(() => {
+    if (firmPrefilled && aumParam) {
+      const t = setTimeout(() => handleCalculate(), 300);
+      return () => clearTimeout(t);
+    }
+  }, [firmPrefilled, aumParam, handleCalculate]);
 
   // Gate unlock (email submit)
   const handleGateUnlock = useCallback(() => {
@@ -678,32 +741,41 @@ export default function NegotiatePage() {
           quote: `"Your filing shows fees ranging from ${firmData.feeRangeMin}% to ${firmData.feeRangeMax}%. Given my portfolio size of ${formatCompact(aum)}, I'd like to discuss where I fall within that range and whether we can move toward the lower end."`,
         });
       }
+
+      // ── NO DISCLOSED FEE STRUCTURE ──────────────────────────────────
+      if (!firmHasDisclosedFees) {
+        items.push({
+          type: 'primary', tag: 'Fee Transparency', head: `${fn} doesn't publicly disclose fees`,
+          text: `Unlike many registered advisors, this firm doesn't publish a standard fee schedule in their ADV filing. This often means fees are negotiated individually — which means there's room to negotiate.`,
+          quote: `"I noticed your firm doesn't publish a standard fee schedule. Before we move forward, I'd like to understand the complete fee structure in writing — including any platform fees, fund expenses, or transaction charges."`,
+        });
+
+        items.push({
+          type: 'primary', tag: 'Discovery', head: 'Get the full picture before negotiating',
+          text: `Ask for a written breakdown of all fees: advisory fee, fund expense ratios, platform/custody fees, and any performance-based charges. Comparable firms in your AUM bracket charge a median of ${bracket.median.toFixed(2)}% and the best quartile charges ${bracket.p25.toFixed(2)}%.`,
+          quote: `"I'd like a written breakdown of the total cost of your advisory services — advisory fee, fund expense ratios, platform fees, and any other charges. I've been reviewing data on Visor Index and comparable firms charge between ${bracket.p25.toFixed(2)}% and ${bracket.median.toFixed(2)}% for my portfolio size."`,
+        });
+      }
     }
 
     return items;
-  }, [bracket, hasValidInput, aum, feePercent, clientStatus, askRate, leverage, nextBp, isOverpaying, isSignificantlyOver, compoundingCost, firmData]);
+  }, [bracket, hasValidInput, aum, feePercent, clientStatus, askRate, leverage, nextBp, isOverpaying, isSignificantlyOver, compoundingCost, firmData, firmHasDisclosedFees]);
 
   // ── HELPERS FOR RENDER ───────────────────────────────────────────────────
   const feeColor   = isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A';
   const feeLabel   = isSignificantlyOver ? 'Above 75th Percentile' : isOverpaying ? 'Above Median' : isUnder ? 'Below Median' : 'At Median';
 
-  const max20yr = Math.max(
-    twentyYearP25?.value   ?? 0,
-    twentyYearMedian?.value ?? 0,
-    twentyYearCurrent.value,
-  );
 
   const STATUS_OPTS: { val: ClientStatus; label: string }[] = [
-    { val: 'existing',    label: 'Existing client' },
+    { val: 'existing',    label: 'Existing Client' },
     { val: 'prospective', label: 'Prospective' },
-    { val: 'exploring',   label: 'Just exploring' },
   ];
 
   const FEE_TABS: { val: FeeMode; label: string }[] = [
     { val: 'flat',    label: 'Flat %' },
     { val: 'tiered',  label: 'Tiered %' },
-    { val: 'dollar',  label: 'Dollar amount' },
-    { val: 'unknown', label: 'Not sure' },
+    { val: 'dollar',  label: 'Dollar Amount' },
+    { val: 'unknown', label: 'Not Disclosed' },
   ];
 
   const showContent = showGate || showResults;
@@ -738,6 +810,7 @@ export default function NegotiatePage() {
         .sf-card-why { font-family: 'DM Mono', monospace; font-size: 9px; color: #1A7A4A; margin-top: 6px; letter-spacing: .03em; }
 
         .ng-step { border: 1px solid #CAD8D0; background: #fff; margin-bottom: 32px; }
+        .ng-step:last-child { margin-bottom: 0; }
         .ng-step-hd { padding: 18px 24px; border-bottom: 1px solid #CAD8D0; display: flex; align-items: center; gap: 12px; }
         .step-n { width: 20px; height: 20px; background: #0A1C2A; display: grid; place-items: center; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: #fff; flex-shrink: 0; }
         .step-title { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #0C1810; }
@@ -802,23 +875,15 @@ export default function NegotiatePage() {
         .cost-diff-badge.under { color: #1A7A4A; background: rgba(45,189,116,.07); border: 1px solid rgba(45,189,116,.2); }
         .cost-diff-badge.even  { color: #5A7568; background: rgba(90,117,104,.07); border: 1px solid rgba(90,117,104,.2); }
 
-        .cmp-section-label { font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #5A7568; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-        .cmp-section-label::after { content: ''; flex: 1; height: 1px; background: #CAD8D0; }
-        .cmp-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-        .cmp-lbl { font-size: 11px; color: #5A7568; width: 172px; flex-shrink: 0; line-height: 1.4; }
-        .cmp-bar-wrap { flex: 1; height: 7px; background: #CAD8D0; border-radius: 3px; overflow: hidden; }
-        .cmp-bar { height: 100%; border-radius: 3px; transition: width .9s cubic-bezier(.16,1,.3,1); }
-        .cmp-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #0C1810; text-align: right; width: 68px; flex-shrink: 0; }
-        .cmp-delta { font-family: 'DM Mono', monospace; font-size: 10px; text-align: right; width: 76px; flex-shrink: 0; }
-        .cmp-delta.pos { color: #1A7A4A; }
-        .cmp-delta.neg { color: #EF4444; }
 
-        .ask-banner { background: #0A1C2A; padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-        .ask-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .2em; color: rgba(255,255,255,.3); margin-bottom: 4px; }
-        .ask-rate { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #2DBD74; line-height: 1; }
-        .ask-ctx  { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 2px; }
-        .ask-savings { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700; color: #fff; line-height: 1; }
-        .ask-savings-sub { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 2px; }
+        .ask-card { border: 1px solid #CAD8D0; background: #fff; }
+        .ask-compare { display: grid; grid-template-columns: 1fr 1fr; }
+        .ask-col { padding: 20px 24px; text-align: center; }
+        .ask-col:first-child { border-right: 1px solid #CAD8D0; }
+        .ask-col-label { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #5A7568; margin-bottom: 6px; }
+        .ask-col-val { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; line-height: 1; }
+        .ask-col-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: #8BA89B; margin-top: 4px; }
+        .ask-footer { border-top: 1px solid #CAD8D0; padding: 12px 24px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 11px; color: #5A7568; }
 
         .playbook-items { display: flex; flex-direction: column; gap: 18px; }
         .pb-item { padding: 20px 24px; border: 1px solid #CAD8D0; border-left: 3px solid #1A7A4A; background: #fff; }
@@ -858,11 +923,12 @@ export default function NegotiatePage() {
         .ng-firm-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; border: 1px solid #CAD8D0; border-top: none; max-height: 240px; overflow-y: auto; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
         .ng-firm-result { display: block; width: 100%; text-align: left; padding: 10px 14px; background: #fff; border: none; border-bottom: 1px solid #F6F8F7; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #0C1810; transition: background .1s; }
         .ng-firm-result:hover, .ng-firm-result.active { background: rgba(26,122,74,.06); }
-        .firm-banner { display: flex; align-items: center; gap: 16px; padding: 16px 24px; background: #fff; border: 1px solid #CAD8D0; border-left: 3px solid #2DBD74; margin-bottom: 32px; flex-wrap: wrap; }
-        .fb-logo { width: 40px; height: 40px; background: #0A1C2A; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 700; color: rgba(255,255,255,.5); }
-        .fb-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #0C1810; }
-        .fb-meta { display: flex; gap: 12px; font-size: 11px; color: #5A7568; margin-top: 2px; }
-        .fb-meta span { text-transform: capitalize; }
+        .firm-banner { display: flex; align-items: center; gap: 16px; padding: 16px 24px; background: #fff; border: 1px solid #CAD8D0; border-left: 3px solid #2DBD74; margin-bottom: 32px; }
+        .fb-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #0C1810; transition: color .15s; }
+        .fb-name:hover { color: #1A7A4A; }
+        .fb-change { background: none; border: 1px solid #CAD8D0; padding: 6px 12px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+        .fb-change:hover { border-color: #5A7568; color: #0C1810; }
+        .fb-search-wrap { width: 100%; margin-top: 12px; position: relative; }
         .fb-flags { display: flex; gap: 6px; flex-wrap: wrap; }
         .fb-flag { font-size: 10px; font-weight: 600; letter-spacing: .08em; padding: 3px 10px; color: #EF4444; background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.15); }
         .fb-flag.pfa { color: #F59E0B; background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.15); }
@@ -873,6 +939,12 @@ export default function NegotiatePage() {
         .fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 16px; transition: color .15s; margin-left: auto; padding: 0 2px; }
         .fc-remove:hover { color: #0A1C2A; }
         @media (max-width: 640px) {
+          .ng-content-wrap { padding-left: 0 !important; padding-right: 0 !important; }
+          .ng-step { border-left: none; border-right: none; }
+          .firm-banner { border-right: none; padding: 14px 16px; }
+          .entry-bar-tab:first-child { border-left: none; }
+          .entry-bar-tab:last-child { border-right: none; }
+          .entry-firm-search { border-left: none; border-right: none; }
           .entry-bar-tab { font-size: 11px; padding: 10px 12px; }
           .gate-card { top: 120px; padding: 28px 20px; max-width: calc(100% - 32px); }
           .gc-ctas { flex-wrap: nowrap; }
@@ -886,16 +958,23 @@ export default function NegotiatePage() {
           .cost-diff { padding: 12px 14px; gap: 8px; }
           .cost-diff-val { font-size: 18px; }
           .sf-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .cmp-lbl { width: 100px; font-size: 10px; }
-          .ask-banner { flex-direction: column; gap: 16px; align-items: center; text-align: center; }
-          .ask-banner > div { text-align: center !important; }
+          .ask-col { padding: 16px 14px; }
+          .ask-col-val { font-size: 24px; }
           .cta-card { flex-direction: column; align-items: stretch; }
         }
         @media (max-width: 480px) {
           .ng-page { padding: 0; }
           .ng-page > div[style*="padding: '44px 48px"] { padding: 28px 16px 36px !important; }
           .ng-hero-wrap { padding: 28px 16px 36px !important; }
-          .ng-content-wrap { padding: 0 16px 16px !important; }
+          .ng-content-wrap { padding: 0 0 16px !important; }
+          .firm-banner { padding: 12px 14px; gap: 12px; border-left: 3px solid #2DBD74; border-right: none; }
+          .fb-name { font-size: 15px; }
+          .ng-step { border-left: none; border-right: none; }
+          .entry-bar { margin-left: 0; margin-right: 0; }
+          .entry-bar-tab:first-child { border-left: none; }
+          .entry-bar-tab:last-child { border-right: none; }
+          .entry-firm-search { border-left: none; border-right: none; }
+          .enrich-nudge { border-left: none !important; border-right: none !important; }
           .bm-dot-label { font-size: 9px; }
           .bm-track { margin: 32px 0 32px; }
           .bm-dot.p25 .bm-dot-label { top: auto !important; bottom: calc(100% + 6px) !important; transform: translateX(-90%) !important; }
@@ -917,10 +996,6 @@ export default function NegotiatePage() {
           .cost-col { padding: 12px 10px; }
           .cost-col-val { font-size: 20px; }
           .cost-diff-val { font-size: 16px; }
-          .cmp-row { flex-wrap: wrap; gap: 6px; }
-          .cmp-lbl { width: 100%; font-size: 10px; }
-          .cmp-val { width: auto; font-size: 11px; }
-          .cmp-delta { width: auto; font-size: 10px; }
         }
       ` }} />
 
@@ -949,9 +1024,11 @@ export default function NegotiatePage() {
             )}
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
               {firmData
-                ? firmData.feeStructureType === 'range'
-                  ? `We've estimated ${firmData.name.endsWith('s') || firmData.name.endsWith('S') ? firmData.name + "'" : firmData.name + "'s"} fee tiers based on the fee range disclosed in their SEC ADV filing. Enter your portfolio value to benchmark and build your personalized playbook.`
-                  : `We've pre-filled ${firmData.name.endsWith('s') || firmData.name.endsWith('S') ? firmData.name + "'" : firmData.name + "'s"} disclosed fee schedule from their SEC ADV filing. Enter your portfolio value to benchmark and build your personalized playbook.`
+                ? !firmHasDisclosedFees
+                  ? `${firmData.name} doesn't publicly disclose a standard fee schedule. We'll benchmark against industry data so you know what to expect — and what to ask.`
+                  : (firmData.feeStructureType === 'range' || firmData.feeStructureType === 'maximum_only')
+                    ? `We've estimated ${firmData.name.endsWith('s') || firmData.name.endsWith('S') ? firmData.name + "'" : firmData.name + "'s"} fee tiers based on their SEC ADV filing and industry data. Enter your portfolio value to benchmark and build your personalized playbook.`
+                    : `We've pre-filled ${firmData.name.endsWith('s') || firmData.name.endsWith('S') ? firmData.name + "'" : firmData.name + "'s"} disclosed fee schedule from their SEC ADV filing. Enter your portfolio value to benchmark and build your personalized playbook.`
                 : `Enter your portfolio value and what you pay — we'll benchmark it against thousands of fee structures and build your negotiation playbook.`
               }
             </p>
@@ -959,31 +1036,54 @@ export default function NegotiatePage() {
         </div>
 
         {/* ── MAIN ─────────────────────────────────────────────────────────── */}
-        <div className="ng-content-wrap" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px 80px' }}>
+        <div className="ng-content-wrap" style={{ maxWidth: 800, margin: '0 auto', padding: '40px 48px' }}>
 
-          {/* ── FIRM BANNER (when ?crd= is present) ──────────────────────── */}
+          {/* ── FIRM BANNER (when firm is loaded) ──────────────────────── */}
           {firmData && (
-            <div className="firm-banner">
-              <div className="fb-logo">
-                {firmData.logoKey ? (
-                  <img
-                    src={`https://visorindex.com/logos/${firmData.logoKey}`}
-                    alt={firmData.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = firmData!.name.charAt(0); }}
-                  />
-                ) : (
-                  <span>{firmData.name.charAt(0)}</span>
-                )}
-              </div>
+            <div className="firm-banner" style={{ flexWrap: 'wrap' }}>
+              <FirmLogo logoKey={firmData.logoKey} firmName={firmData.name} size="sm" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="fb-name">Negotiating with {firmData.name}</div>
-                <div className="fb-meta">
-                  {firmData.feeStructureType && <span>{firmData.feeStructureType.replace(/_/g, ' ')}</span>}
-                  {firmData.score && <span>Visor Score: {firmData.score}/100</span>}
-                  {firmData.aum && <span>AUM: {formatCompact(firmData.aum)}</span>}
-                </div>
+                <Link href={`/firm/${firmData.crd}`} className="fb-name" style={{ textDecoration: 'none' }}>{firmData.name}</Link>
               </div>
+              <button
+                className="fb-change"
+                onClick={() => { setBannerSearchOpen(!bannerSearchOpen); setFirmQuery(''); setFirmResults([]); }}
+              >
+                {bannerSearchOpen ? 'Cancel' : 'Change firm'}
+              </button>
+              {bannerSearchOpen && (
+                <div className="fb-search-wrap">
+                  <input
+                    type="text"
+                    value={firmQuery}
+                    onChange={e => { setFirmQuery(e.target.value); setFirmSelectedIndex(-1); }}
+                    onKeyDown={e => {
+                      if (e.key === 'ArrowDown') { e.preventDefault(); setFirmSelectedIndex(prev => Math.min(prev + 1, firmResults.length - 1)); }
+                      else if (e.key === 'ArrowUp') { e.preventDefault(); setFirmSelectedIndex(prev => Math.max(prev - 1, -1)); }
+                      else if (e.key === 'Enter' && firmSelectedIndex >= 0 && firmResults[firmSelectedIndex]) { e.preventDefault(); selectFirm(firmResults[firmSelectedIndex].crd); }
+                      else if (e.key === 'Escape') { setBannerSearchOpen(false); setFirmQuery(''); setFirmResults([]); }
+                    }}
+                    placeholder="Search for a different firm..."
+                    className="entry-firm-input"
+                    autoFocus
+                  />
+                  {firmResults.length > 0 && (
+                    <div className="entry-firm-dropdown">
+                      {firmResults.map((r, idx) => (
+                        <button
+                          key={r.crd}
+                          onClick={() => selectFirm(r.crd)}
+                          className={`entry-firm-result${idx === firmSelectedIndex ? ' active' : ''}`}
+                        >
+                          {r.name}
+                          <span style={{ color: '#CAD8D0', fontSize: 11 }}>#{r.crd}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {firmLoading && <div style={{ fontSize: 11, color: '#5A7568', marginTop: 6 }}>Loading firm data...</div>}
+                </div>
+              )}
             </div>
           )}
           {/* ── ENTRY MODE BAR ──────────────────────────────────────── */}
@@ -998,10 +1098,14 @@ export default function NegotiatePage() {
               </button>
               <button
                 className={`entry-bar-tab${entryMode === 'firm' ? ' active' : ''}`}
-                onClick={() => { if (firmData) clearFirm(); setEntryMode('firm'); }}
+                onClick={() => { if (session === null) return; if (firmData) clearFirm(); setEntryMode('firm'); }}
+                style={session === null ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
               >
                 <span className="entry-bar-label">B</span>
                 Import from Firm
+                {session === null && (
+                  <svg style={{ width: 10, height: 10, marginLeft: 4, opacity: 0.4 }} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
+                )}
               </button>
             </div>
           )}
@@ -1119,7 +1223,10 @@ export default function NegotiatePage() {
               {/* Fee input area */}
               {feeMode === 'unknown' ? (
                 <div style={{ padding: '12px 16px', background: '#F6F8F7', border: '1px solid #CAD8D0', fontSize: 13, color: '#5A7568', lineHeight: 1.6 }}>
-                  No problem — we&rsquo;ll use the industry median as your baseline. You can compare how you&rsquo;d look at each benchmark.
+                  {firmData && !firmHasDisclosedFees
+                    ? `${firmData.name} does not publicly disclose their fee structure, and has not self-reported to Visor Index. We'll use the industry median as your baseline.`
+                    : `No problem — we'll use the industry median as your baseline. You can compare how you'd look at each benchmark.`
+                  }
                 </div>
               ) : feeMode === 'tiered' ? (
                 <div style={{ marginBottom: 4 }}>
@@ -1186,9 +1293,24 @@ export default function NegotiatePage() {
                       Blended effective rate: <strong style={{ color: '#0C1810' }}>{feePercent.toFixed(2)}%</strong> on {formatCompact(aum)}
                     </p>
                   )}
-                  {firmData?.feeStructureType === 'range' && (
+                  {firmData?.feeStructureType === 'range' && firmData.feeRangeMin != null && (
                     <p style={{ fontSize: 10, color: '#9CB3A5', marginTop: 8, lineHeight: 1.5, fontStyle: 'italic' }}>
                       These tiers are estimated based on {firmData.name.endsWith('s') ? firmData.name + '\u2019' : firmData.name + '\u2019s'} disclosed fee range ({firmData.feeRangeMin}%–{firmData.feeRangeMax}%) and average client size. Actual tier breakpoints may differ. Source: Visor Index.
+                    </p>
+                  )}
+                  {firmData?.feeStructureType === 'range' && firmData.feeRangeMin == null && feeMode === 'tiered' && (
+                    <p style={{ fontSize: 10, color: '#9CB3A5', marginTop: 8, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      These tiers are estimated from {firmData.name.endsWith('s') ? firmData.name + '\u2019' : firmData.name + '\u2019s'} disclosed maximum fee ({firmData.feeRangeMax}%) and industry data for comparable firms. Actual fees may differ — ask for a written fee schedule. Source: Visor Index.
+                    </p>
+                  )}
+                  {firmData?.feeStructureType === 'tiered' && (
+                    <p style={{ fontSize: 10, color: '#9CB3A5', marginTop: 8, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      These tiers are from {firmData.name.endsWith('s') ? firmData.name + '\u2019' : firmData.name + '\u2019s'} SEC ADV filing. Your actual fee schedule may differ — adjust the tiers above to match your agreement. Source: Visor Index.
+                    </p>
+                  )}
+                  {firmData?.feeStructureType === 'maximum_only' && feeMode === 'tiered' && (
+                    <p style={{ fontSize: 10, color: '#9CB3A5', marginTop: 8, lineHeight: 1.5, fontStyle: 'italic' }}>
+                      These tiers are estimated from {firmData.name.endsWith('s') ? firmData.name + '\u2019' : firmData.name + '\u2019s'} disclosed maximum fee ({firmData.feeRangeMax}%) and industry data for comparable firms. Actual fees may differ — ask for a written fee schedule. Source: Visor Index.
                     </p>
                   )}
                 </div>
@@ -1234,24 +1356,6 @@ export default function NegotiatePage() {
                 Analyze My Fee <span className="analyze-btn-arrow">→</span>
               </button>
 
-              {/* ── Firm search / chip (paid users only) ────────────── */}
-              {session && firmData && <div style={{ marginTop: 20 }}>
-                  <div className="ng-firm-chip">
-                    <div className="ng-fc-logo">
-                      {firmData.logoKey ? (
-                        <img
-                          src={`https://visorindex.com/logos/${firmData.logoKey}`}
-                          alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = firmData!.name.charAt(0); }}
-                        />
-                      ) : firmData.name.charAt(0)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0C1810' }}>{firmData.name}</div>
-                    </div>
-                    <button onClick={() => { clearFirm(); setEntryMode('manual'); }} className="ng-fc-remove" title="Remove firm">×</button>
-                  </div>
-              </div>}
             </div>
           </div>
 
@@ -1280,12 +1384,9 @@ export default function NegotiatePage() {
                     askRate={askRate}
                     askSavings={askSavings}
                     playbookItems={playbookItems}
-                    twentyYearP25={twentyYearP25}
-                    twentyYearMedian={twentyYearMedian}
-                    twentyYearCurrent={twentyYearCurrent}
-                    max20yr={max20yr}
                     animated={false}
                     firmData={firmData}
+                    feeMode={feeMode}
                   />
                 </div>
               )}
@@ -1330,13 +1431,10 @@ export default function NegotiatePage() {
                   askRate={askRate}
                   askSavings={askSavings}
                   playbookItems={playbookItems}
-                  twentyYearP25={twentyYearP25}
-                  twentyYearMedian={twentyYearMedian}
-                  twentyYearCurrent={twentyYearCurrent}
-                  max20yr={max20yr}
                   animated={animated}
                   firmData={firmData}
                   similarFirms={similarFirms}
+                  feeMode={feeMode}
                 />
               )}
 
@@ -1368,23 +1466,29 @@ interface ResultsProps {
   askRate: number;
   askSavings: number;
   playbookItems: PlaybookItem[];
-  twentyYearP25: { value: number; totalFees: number } | null;
-  twentyYearMedian: { value: number; totalFees: number } | null;
-  twentyYearCurrent: { value: number; totalFees: number };
-  max20yr: number;
   animated: boolean;
   firmData?: FirmData | null;
   similarFirms?: SimilarFirm[];
+  feeMode?: FeeMode;
 }
 
 function ResultsPreview({
   bracket, aum, feePercent, annualFee, medianFee, p25Fee, feeDiff,
   feeColor, feeLabel, pctPos, bps, medianBps, isOverpaying, isSignificantlyOver,
   askRate, askSavings, playbookItems,
-  twentyYearP25, twentyYearMedian, twentyYearCurrent, max20yr, animated,
+  animated,
   firmData,
   similarFirms = [],
+  feeMode,
 }: ResultsProps) {
+  const firmHasDisclosedFees = firmData
+    ? (
+        (firmData.feeStructureType === 'tiered' && firmData.tiers.length > 0) ||
+        (firmData.feeStructureType === 'flat_percentage' && firmData.feeRangeMax != null) ||
+        ((firmData.feeStructureType === 'range' || firmData.feeStructureType === 'maximum_only') && firmData.feeRangeMax != null)
+      )
+    : true;
+
   // Label collision: flip overlapping labels above the track
   const labelPositions = (() => {
     if (!bracket) return { p25: 'below' as const, median: 'below' as const };
@@ -1425,11 +1529,13 @@ function ResultsPreview({
                 <strong>{bracket.median.toFixed(2)}%</strong>
               </div>
             </div>
-            <div className="bm-dot you" style={{ left: `${pctPos(feePercent)}%` }}>
-              <div className="bm-dot-label">
-                <strong style={{ color: feeColor }}>{feePercent.toFixed(2)}%</strong>
+            {feeMode !== 'unknown' && (
+              <div className="bm-dot you" style={{ left: `${pctPos(feePercent)}%` }}>
+                <div className="bm-dot-label">
+                  <strong style={{ color: feeColor }}>{feePercent.toFixed(2)}%</strong>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Stat row */}
@@ -1442,7 +1548,7 @@ function ResultsPreview({
               <div className="stat-label">Peer Median</div>
               <div className="stat-val">{bracket.median.toFixed(2)}%</div>
             </div>
-            {firmData && firmData.feeRangeMax != null && (
+            {firmData && firmData.feeRangeMax != null && firmHasDisclosedFees && (
               <div className="stat-cell">
                 <div className="stat-label">{firmData.name}</div>
                 <div className="stat-val" style={{ color: '#0A1C2A' }}>
@@ -1454,25 +1560,44 @@ function ResultsPreview({
               </div>
             )}
             <div className="stat-cell">
-              <div className="stat-label">Your Fee</div>
-              <div className="stat-val" style={{ color: feeColor }}>{feePercent.toFixed(2)}%</div>
+              <div className="stat-label">{feeMode === 'unknown' ? 'Industry Estimate' : 'Your Fee'}</div>
+              <div className="stat-val" style={{ color: feeMode === 'unknown' ? '#5A7568' : feeColor }}>{feePercent.toFixed(2)}%</div>
             </div>
           </div>
 
           {/* Status badge */}
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              display: 'inline-flex', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-              padding: '3px 10px',
-              color: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A',
-              background: isSignificantlyOver ? 'rgba(239,68,68,.07)' : isOverpaying ? 'rgba(245,158,11,.07)' : 'rgba(26,122,74,.07)',
-              border: `1px solid ${isSignificantlyOver ? 'rgba(239,68,68,.2)' : isOverpaying ? 'rgba(245,158,11,.2)' : 'rgba(26,122,74,.2)'}`,
-            }}>
-              {feeLabel}
-            </div>
-            <span style={{ fontSize: 12, color: '#5A7568' }}>
-              {bps} bps vs. {medianBps} bps peer median
-            </span>
+            {feeMode === 'unknown' ? (
+              <>
+                <div style={{
+                  display: 'inline-flex', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                  padding: '3px 10px',
+                  color: '#5A7568',
+                  background: 'rgba(90,117,104,.07)',
+                  border: '1px solid rgba(90,117,104,.2)',
+                }}>
+                  Industry Estimate
+                </div>
+                <span style={{ fontSize: 12, color: '#5A7568' }}>
+                  Using industry median for {bracket.label} AUM bracket
+                </span>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  display: 'inline-flex', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                  padding: '3px 10px',
+                  color: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A',
+                  background: isSignificantlyOver ? 'rgba(239,68,68,.07)' : isOverpaying ? 'rgba(245,158,11,.07)' : 'rgba(26,122,74,.07)',
+                  border: `1px solid ${isSignificantlyOver ? 'rgba(239,68,68,.2)' : isOverpaying ? 'rgba(245,158,11,.2)' : 'rgba(26,122,74,.2)'}`,
+                }}>
+                  {feeLabel}
+                </div>
+                <span style={{ fontSize: 12, color: '#5A7568' }}>
+                  {bps} bps vs. {medianBps} bps peer median
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1481,72 +1606,66 @@ function ResultsPreview({
       <div className="ng-step">
         <div className="ng-step-hd">
           <div className="step-n">03</div>
-          <div className="step-title">What this costs you</div>
+          <div className="step-title">{feeMode === 'unknown' ? 'Industry fee estimate' : 'What this costs you'}</div>
         </div>
         <div style={{ padding: 24 }}>
 
-          {/* Cost comparison card */}
-          <div className="cost-card">
-            <div className="cost-compare">
-              <div className="cost-col">
-                <div className="cost-col-label">You pay annually</div>
-                <div className="cost-col-val">{formatCompact(annualFee)}</div>
-                <div className="cost-col-sub">{feePercent.toFixed(2)}% of AUM</div>
+          {feeMode === 'unknown' ? (
+            /* Informational card when firm doesn't disclose fees */
+            <div className="cost-card">
+              <div className="cost-compare">
+                <div className="cost-col">
+                  <div className="cost-col-label">Typical fee (median)</div>
+                  <div className="cost-col-val">{bracket.median.toFixed(2)}%</div>
+                  <div className="cost-col-sub">{formatCompact(medianFee)}/yr</div>
+                </div>
+                <div className="cost-col">
+                  <div className="cost-col-label">Best quartile (P25)</div>
+                  <div className="cost-col-val" style={{ color: '#1A7A4A' }}>{bracket.p25.toFixed(2)}%</div>
+                  <div className="cost-col-sub">{formatCompact(p25Fee)}/yr</div>
+                </div>
               </div>
-              <div className="cost-col">
-                <div className="cost-col-label">Peer median pays</div>
-                <div className="cost-col-val">{formatCompact(medianFee)}</div>
-                <div className="cost-col-sub">{bracket.median.toFixed(2)}% of AUM</div>
+              <div className="cost-diff" style={{ flexDirection: 'column', gap: 4, textAlign: 'center' }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: '#5A7568', lineHeight: 1.6 }}>
+                  Based on industry data for your {bracket.label} AUM bracket.
+                  <br />
+                  Ask for a written fee schedule to compare against these benchmarks.
+                </div>
               </div>
             </div>
-            <div className="cost-diff">
-              <div className="cost-diff-val" style={{ color: feeDiff > 0 ? '#EF4444' : feeDiff < 0 ? '#1A7A4A' : '#0C1810' }}>
-                {feeDiff === 0 ? '$0' : (feeDiff > 0 ? '+' : '-') + formatCompact(Math.abs(feeDiff))}
+          ) : (
+            /* Standard cost comparison card */
+            <div className="cost-card">
+              <div className="cost-compare">
+                <div className="cost-col">
+                  <div className="cost-col-label">You pay annually</div>
+                  <div className="cost-col-val">{formatCompact(annualFee)}</div>
+                  <div className="cost-col-sub">{feePercent.toFixed(2)}% of AUM</div>
+                </div>
+                <div className="cost-col">
+                  <div className="cost-col-label">Peer median pays</div>
+                  <div className="cost-col-val">{formatCompact(medianFee)}</div>
+                  <div className="cost-col-sub">{bracket.median.toFixed(2)}% of AUM</div>
+                </div>
               </div>
-              {feeDiff > 0 && <div className="cost-diff-badge over">You overpay by this</div>}
-              {feeDiff < 0 && <div className="cost-diff-badge under">You save this</div>}
-              {feeDiff === 0 && <div className="cost-diff-badge even">At median</div>}
-            </div>
-          </div>
-
-          {/* 20-Year compounding bars */}
-          {max20yr > 0 && (
-            <div style={{ marginTop: 28 }}>
-              <div className="cmp-section-label">20-Year compounding impact (7% gross return)</div>
-              {twentyYearP25 && (
-                <div className="cmp-row">
-                  <div className="cmp-lbl">At P25 fee ({bracket.p25.toFixed(2)}%)</div>
-                  <div className="cmp-bar-wrap">
-                    <div className="cmp-bar" style={{ width: animated ? `${(twentyYearP25.value / max20yr) * 100}%` : '0%', background: '#1A7A4A' }} />
-                  </div>
-                  <div className="cmp-val">{formatCompact(twentyYearP25.value)}</div>
-                  <div className={`cmp-delta${twentyYearP25.value > twentyYearCurrent.value ? ' pos' : ''}`}>
-                    {twentyYearP25.value > twentyYearCurrent.value ? `+${formatCompact(twentyYearP25.value - twentyYearCurrent.value)}` : '—'}
-                  </div>
+              <div className="cost-diff">
+                <div className="cost-diff-val" style={{ color: feeDiff > 0 ? '#EF4444' : feeDiff < 0 ? '#1A7A4A' : '#0C1810' }}>
+                  {feeDiff === 0 ? '$0' : (feeDiff > 0 ? '+' : '-') + formatCompact(Math.abs(feeDiff))}
                 </div>
-              )}
-              {twentyYearMedian && (
-                <div className="cmp-row">
-                  <div className="cmp-lbl">At peer median ({bracket.median.toFixed(2)}%)</div>
-                  <div className="cmp-bar-wrap">
-                    <div className="cmp-bar" style={{ width: animated ? `${(twentyYearMedian.value / max20yr) * 100}%` : '0%', background: '#5A7568' }} />
-                  </div>
-                  <div className="cmp-val">{formatCompact(twentyYearMedian.value)}</div>
-                  <div className={`cmp-delta${twentyYearMedian.value > twentyYearCurrent.value ? ' pos' : ''}`}>
-                    {twentyYearMedian.value > twentyYearCurrent.value ? `+${formatCompact(twentyYearMedian.value - twentyYearCurrent.value)}` : '—'}
-                  </div>
-                </div>
-              )}
-              <div className="cmp-row">
-                <div className="cmp-lbl">At your fee ({feePercent.toFixed(2)}%)</div>
-                <div className="cmp-bar-wrap">
-                  <div className="cmp-bar" style={{ width: animated ? `${(twentyYearCurrent.value / max20yr) * 100}%` : '0%', background: isSignificantlyOver ? '#EF4444' : isOverpaying ? '#F59E0B' : '#1A7A4A' }} />
-                </div>
-                <div className="cmp-val">{formatCompact(twentyYearCurrent.value)}</div>
-                <div className="cmp-delta neg">{formatCompact(twentyYearCurrent.totalFees)} paid</div>
+                {feeDiff > 0 && <div className="cost-diff-badge over">You overpay by this</div>}
+                {feeDiff < 0 && <div className="cost-diff-badge under">You save this</div>}
+                {feeDiff === 0 && <div className="cost-diff-badge even">At median</div>}
               </div>
             </div>
           )}
+
+          <CompoundingImpact
+            aum={aum}
+            feePercent={feePercent}
+            bracket={bracket}
+            isOverpaying={isOverpaying}
+            isSignificantlyOver={isSignificantlyOver}
+          />
         </div>
       </div>
 
@@ -1558,18 +1677,23 @@ function ResultsPreview({
         </div>
         <div style={{ padding: 24, paddingBottom: 0 }}>
 
-          {/* Ask banner */}
+          {/* Ask card */}
           {askSavings > 0 && (
-            <div className="ask-banner" style={{ marginBottom: 24 }}>
-              <div>
-                <div className="ask-eyebrow">Recommended ask</div>
-                <div className="ask-rate">{askRate.toFixed(2)}%</div>
-                <div className="ask-ctx">Best-quartile effective rate for your AUM</div>
+            <div className="ask-card" style={{ marginBottom: 24 }}>
+              <div className="ask-compare">
+                <div className="ask-col">
+                  <div className="ask-col-label">Target rate</div>
+                  <div className="ask-col-val" style={{ color: '#1A7A4A' }}>{askRate.toFixed(2)}%</div>
+                  <div className="ask-col-sub">P25 for your AUM</div>
+                </div>
+                <div className="ask-col">
+                  <div className="ask-col-label">Annual savings</div>
+                  <div className="ask-col-val" style={{ color: '#0C1810' }}>{formatCompact(askSavings)}</div>
+                  <div className="ask-col-sub">if advisor agrees</div>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="ask-eyebrow">Est. annual savings</div>
-                <div className="ask-savings">{formatCompact(askSavings)}</div>
-                <div className="ask-savings-sub">if advisor agrees</div>
+              <div className="ask-footer">
+                <span style={{ color: '#1A7A4A' }}>↓ {Math.round((feePercent - askRate) * 100)} bps</span> from current ({feePercent.toFixed(2)}%)
               </div>
             </div>
           )}
@@ -1588,27 +1712,29 @@ function ResultsPreview({
             ))}
           </div>
 
-          {/* Enrich nudge (if no firm added) / firm badge (if firm loaded) */}
-          {firmData ? (
-            <div className="enrich-nudge" style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
-                <strong style={{ color: '#2DBD74' }}>✓ Firm-specific playbook</strong> — includes ADV data, conflict flags, and verbatim citations for {firmData.name}.
-              </div>
-              <Link href={`/firm/${firmData.crd}`} className="en-btn" style={{ textDecoration: 'none' }}>View Firm Profile</Link>
-            </div>
-          ) : (
-            <div className="enrich-nudge" style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
-                <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
-              </div>
-              <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* Step 5: Similar firms fee comparison */}
+      {/* Enrich nudge (if no firm added) / firm badge (if firm loaded) */}
+      {firmData ? (
+        <div className="enrich-nudge" style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+            <strong style={{ color: '#2DBD74' }}>✓ Firm-specific playbook</strong> — includes ADV data, conflict flags, and verbatim citations for {firmData.name}.
+          </div>
+          <Link href={`/firm/${firmData.crd}`} className="en-btn" style={{ textDecoration: 'none' }}>View Firm Profile</Link>
+        </div>
+      ) : (
+        <div className="enrich-nudge" style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+            <strong style={{ color: '#fff' }}>Add your advisor firm</strong> for a sharper playbook — firm-specific ADV data, conflict flags, and verbatim citations.
+          </div>
+          <Link href="/search" className="en-btn" style={{ textDecoration: 'none' }}>Search Firms</Link>
+        </div>
+      )}
+
+      {/* Step 5: Similar firms fee comparison */}
         {firmData && similarFirms.length > 0 && (
-          <div className="ng-step" style={{ marginBottom: 0 }}>
+          <div className="ng-step">
             <div className="ng-step-hd">
               <div className="step-n">05</div>
               <div className="step-title">FEES AT SIMILAR FIRMS</div>
@@ -1662,16 +1788,12 @@ function ResultsPreview({
         )}
 
         {/* Consultation CTA */}
-        <div style={{ padding: '24px 24px 24px' }}>
-          <div className="enrich-nudge">
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
-              <strong style={{ color: '#2DBD74' }}>Go beyond the public filings</strong> — custom due diligence, investment reviews, background checks, and fee benchmarking.
-            </div>
-            <Link href="/contact" className="en-btn" style={{ textDecoration: 'none' }}>Request a Consultation</Link>
+        <div className="enrich-nudge" style={{ marginBottom: 32 }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', maxWidth: 400, lineHeight: 1.6 }}>
+            <strong style={{ color: '#2DBD74' }}>Go beyond the public filings</strong> — custom due diligence, investment reviews, background checks, and fee benchmarking.
           </div>
+          <Link href="/contact" className="en-btn" style={{ textDecoration: 'none' }}>Request a Consultation</Link>
         </div>
-
-      </div>
 
     </div>
   );

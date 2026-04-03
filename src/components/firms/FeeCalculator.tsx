@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import {
   type FeeTier, type CalcResult,
   INDUSTRY_ALL, INDUSTRY_SMALL, INDUSTRY_MID,
-  getClosestBreakpoint, getIndustryMedianRate, calcTieredFee, synthesizeRangeTiers,
+  getClosestBreakpoint, getIndustryMedianRate, calcTieredFee, synthesizeRangeTiers, synthesizeMaxOnlyTiers,
 } from '@/lib/fee-utils';
 
 interface FeeCalculatorProps {
@@ -265,6 +265,9 @@ export default function FeeCalculator({
     if (feeRangeMin != null && feeRangeMax != null && avgClientSize && avgClientSize > 0) {
       return synthesizeRangeTiers(feeRangeMin, feeRangeMax, avgClientSize);
     }
+    if (feeRangeMax != null && avgClientSize && avgClientSize > 0) {
+      return synthesizeMaxOnlyTiers(feeRangeMax, avgClientSize);
+    }
     if (feeRangeMax != null) {
       return [{ min_aum: '0', max_aum: null, fee_pct: feeRangeMax }];
     }
@@ -360,6 +363,11 @@ export default function FeeCalculator({
               </div>
             );
           })}
+        </div>
+      )}
+      {isSynthetic && feeRangeMax != null && feeRangeMin == null && (
+        <div className="fc-industry-note" style={{ marginTop: 8 }}>
+          Fee tiers estimated from the disclosed maximum rate ({feeRangeMax}%) and industry data. Actual fees may be lower — contact the firm for their current schedule.
         </div>
       )}
 
@@ -513,7 +521,7 @@ export default function FeeCalculator({
                       })}
                     </div>
                     <a
-                      href={`/negotiate?aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
+                      href={`/negotiate?crd=${crd}&aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
                       className="fc-nego-cta"
                     >
                       See your negotiation plan

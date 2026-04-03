@@ -22,6 +22,24 @@ export function projectGrowth(principal: number, annualFeeRate: number, years: n
   return { value, totalFees };
 }
 
+export function projectGrowthSeries(
+  principal: number,
+  annualFeeRate: number,
+  years: number,
+  returnRate = 0.07,
+): { year: number; value: number; totalFees: number }[] {
+  const series = [{ year: 0, value: principal, totalFees: 0 }];
+  let value = principal;
+  let totalFees = 0;
+  for (let y = 1; y <= years; y++) {
+    const fee = value * annualFeeRate;
+    totalFees += fee;
+    value = (value - fee) * (1 + returnRate);
+    series.push({ year: y, value, totalFees });
+  }
+  return series;
+}
+
 // ── Shared fee calculation utilities ─────────────────────────────────────────
 
 export interface FeeTier {
@@ -171,6 +189,43 @@ export function synthesizeRangeTiers(
       min_aum: String(uniqueBps[i]),
       max_aum: maxAum,
       fee_pct: Math.round(rate * 10000) / 10000,
+    });
+  }
+
+  return tiers;
+}
+
+// ── Synthetic tier generation for maximum-only firms ──────────────────────
+// For firms that disclose only a maximum fee (no min, no tier breakpoints),
+// use the max fee up to the firm's average client size, then industry median
+// rates at standard breakpoints for larger clients.
+export function synthesizeMaxOnlyTiers(
+  feeRangeMax: number,
+  avgClientSize: number,
+): FeeTier[] {
+  if (feeRangeMax <= 0 || avgClientSize <= 0) return [];
+
+  const tiers: FeeTier[] = [];
+
+  // Find the first INDUSTRY_ALL breakpoint above avgClientSize
+  const bpsAbove = INDUSTRY_ALL.filter(bp => bp.breakpoint > avgClientSize);
+
+  // Tier 1: $0 to avgClientSize (or first breakpoint above) at the disclosed max rate
+  const firstBpAbove = bpsAbove[0];
+  tiers.push({
+    min_aum: '0',
+    max_aum: firstBpAbove ? firstBpAbove.breakpoint : null,
+    fee_pct: feeRangeMax,
+  });
+
+  // Remaining tiers: industry median rates at each breakpoint above avgClientSize
+  for (let i = 0; i < bpsAbove.length; i++) {
+    const bp = bpsAbove[i];
+    const nextBp = bpsAbove[i + 1] ?? null;
+    tiers.push({
+      min_aum: String(bp.breakpoint),
+      max_aum: nextBp ? nextBp.breakpoint : null,
+      fee_pct: Math.round(bp.median * 10000) / 10000,
     });
   }
 

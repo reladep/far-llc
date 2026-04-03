@@ -1613,7 +1613,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 feeTiers={feeTiers}
                 crd={String(firm.crd)}
                 firmAum={firm.aum}
-                industryOnly={(!feeTiers || feeTiers.length === 0) && !(feesAndMins?.fee_range_min && feesAndMins?.fee_range_max && avgClientSize)}
+                industryOnly={(!feeTiers || feeTiers.length === 0) && !(feesAndMins?.fee_range_min && feesAndMins?.fee_range_max && avgClientSize) && !(feesAndMins?.fee_range_max && avgClientSize)}
                 feeTypeDisplay={feeTypeDisplay}
                 feeNotes={feesAndMins?.notes ?? null}
                 minAccount={minAccount}
