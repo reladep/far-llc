@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { getUSCities } from '@/lib/geo';
@@ -11,25 +11,32 @@ interface Answers {
   lifeTriggerText: string;
   location: string;
   priorities: string[];
-  feeSensitivity: string;
   firmSize: string;
   serviceDepth: string;
   conflictImportance: string;
 }
 
-const STEPS = [
+interface StepSection {
+  sectionKey: string;
+  label: string;
+  multi?: boolean;
+  options: { value: string; label: string }[];
+}
+
+interface Step {
+  key: string;
+  question: string;
+  subtitle: string;
+  options: { value: string; label: string }[];
+  sections?: StepSection[];
+}
+
+const STEPS: Step[] = [
   {
     key: 'netWorth',
-    question: 'What are your investable assets?',
-    subtitle: 'This helps us match you with firms who typically work with clients at your wealth level.',
-    options: [
-      { value: 'under_250k', label: 'Under $250K' },
-      { value: '250k_1m', label: '$250K – $1M' },
-      { value: '1m_5m', label: '$1M – $5M' },
-      { value: '5m_10m', label: '$5M – $10M' },
-      { value: '10m_25m', label: '$10M – $25M' },
-      { value: '25m_plus', label: '$25M+' },
-    ],
+    question: 'What is your investable portfolio?',
+    subtitle: 'Your exact amount lets us calculate precise fee estimates and find firms that work with clients at your level.',
+    options: [],
   },
   {
     key: 'lifeTrigger',
@@ -52,62 +59,63 @@ const STEPS = [
     options: [],
   },
   {
-    key: 'priorities',
-    question: 'What matters most to you in an advisor?',
-    subtitle: 'Select all that apply.',
-    options: [
-      { value: 'fees', label: 'Low fees' },
-      { value: 'aum_growth', label: 'Proven AUM growth' },
-      { value: 'client_retention', label: 'High client retention' },
-      { value: 'advisor_experience', label: 'Experienced advisors' },
-      { value: 'personal_service', label: 'Personal attention' },
-      { value: 'comprehensive', label: 'Full-service (planning + management)' },
-      { value: 'fiduciary', label: 'Fiduciary duty' },
-      { value: 'fee_only', label: 'Fee-only (no commissions)' },
+    key: 'preferences',
+    question: 'What matters in your advisor?',
+    subtitle: 'Select what matters most — skip any section that isn\u2019t important to you.',
+    options: [],
+    sections: [
+      {
+        sectionKey: 'priorities',
+        label: 'Your priorities',
+        multi: true,
+        options: [
+          { value: 'aum_growth', label: 'Proven AUM growth' },
+          { value: 'client_retention', label: 'High client retention' },
+          { value: 'advisor_experience', label: 'Experienced advisors' },
+          { value: 'personal_service', label: 'Personal attention' },
+          { value: 'comprehensive', label: 'Full-service (planning + management)' },
+          { value: 'fiduciary', label: 'Fiduciary duty' },
+          { value: 'fee_only', label: 'Fee-only (no commissions)' },
+        ],
+      },
+      {
+        sectionKey: 'conflictImportance',
+        label: 'Conflicts of interest',
+        options: [
+          { value: 'critical', label: 'Critical — must be fee-only fiduciary' },
+          { value: 'important', label: 'Important — prefer fiduciary' },
+          { value: 'somewhat', label: 'Somewhat — would prefer no conflicts' },
+          { value: 'not_important', label: 'Not important' },
+        ],
+      },
     ],
   },
   {
-    key: 'feeSensitivity',
-    question: 'How sensitive are you to advisor fees?',
-    subtitle: 'This affects how we weight fee competitiveness in your matches.',
-    options: [
-      { value: 'very', label: 'Very sensitive — lowest fees are critical' },
-      { value: 'somewhat', label: 'Somewhat — prefer competitive fees' },
-      { value: 'not_much', label: 'Not very — willing to pay more for value' },
-      { value: 'irrelevant', label: "Fees don't matter to me" },
-    ],
-  },
-  {
-    key: 'firmSize',
-    question: 'What size firm do you prefer?',
-    subtitle: 'Larger firms offer more resources; smaller firms offer more personal attention.',
-    options: [
-      { value: 'any', label: 'No preference' },
-      { value: 'small', label: 'Small (< $500M AUM)' },
-      { value: 'mid', label: 'Mid-size ($500M – $5B AUM)' },
-      { value: 'large', label: 'Large ($5B+ AUM)' },
-    ],
-  },
-  {
-    key: 'serviceDepth',
-    question: 'What level of service do you need?',
-    subtitle: 'This helps us match you with firms that offer the right service model.',
-    options: [
-      { value: 'basic', label: 'Basic portfolio management only' },
-      { value: 'standard', label: 'Financial planning + portfolio management' },
-      { value: 'comprehensive', label: 'Comprehensive wealth management (tax, estate, etc.)' },
-      { value: 'concierge', label: 'Concierge / Family office level' },
-    ],
-  },
-  {
-    key: 'conflictImportance',
-    question: 'How important is it that your advisor has no conflicts of interest?',
-    subtitle: 'This affects whether we prioritize fee-only or fiduciary advisors.',
-    options: [
-      { value: 'critical', label: 'Critical — must be fee-only fiduciary' },
-      { value: 'important', label: 'Important — prefer fiduciary' },
-      { value: 'somewhat', label: 'Somewhat — would prefer no conflicts' },
-      { value: 'not_important', label: 'Not important' },
+    key: 'firmFit',
+    question: 'What type of firm fits you?',
+    subtitle: 'These help us narrow your matches — skip if you have no preference.',
+    options: [],
+    sections: [
+      {
+        sectionKey: 'firmSize',
+        label: 'Firm size',
+        options: [
+          { value: 'any', label: 'No preference' },
+          { value: 'small', label: 'Small (< $500M AUM)' },
+          { value: 'mid', label: 'Mid-size ($500M – $5B AUM)' },
+          { value: 'large', label: 'Large ($5B+ AUM)' },
+        ],
+      },
+      {
+        sectionKey: 'serviceDepth',
+        label: 'Service level',
+        options: [
+          { value: 'basic', label: 'Basic portfolio management only' },
+          { value: 'standard', label: 'Financial planning + portfolio management' },
+          { value: 'comprehensive', label: 'Comprehensive wealth management (tax, estate, etc.)' },
+          { value: 'concierge', label: 'Concierge / Family office level' },
+        ],
+      },
     ],
   },
 ];
@@ -134,7 +142,7 @@ const CSS = `
     --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+    --serif:'Cormorant Garamond',serif; --sans:'Inter',sans-serif; --mono:'DM Mono',monospace;
   }
 
   .mx-page { min-height:100vh; background:var(--white); }
@@ -176,7 +184,7 @@ const CSS = `
   }
   .mx-hero-sub {
     font-size:14px; color:rgba(255,255,255,.38);
-    line-height:1.75; max-width:500; margin-top:12px;
+    line-height:1.75; max-width:500px; margin-top:12px;
   }
 
   .mx-body {
@@ -337,6 +345,30 @@ const CSS = `
   .mx-outside-link:hover { color:var(--green); }
   .mx-outside-link.selected { color:var(--green); }
 
+  .mx-section { margin-bottom:24px; }
+  .mx-section:last-child { margin-bottom:0; }
+  .mx-section-label {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:12px; padding-bottom:8px;
+    border-bottom:1px solid var(--rule);
+  }
+
+  .mx-step-content {
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .mx-step-content.mx-exit-forward { opacity:0; transform:translateY(-8px); }
+  .mx-step-content.mx-exit-back { opacity:0; transform:translateY(8px); }
+  .mx-step-content.mx-enter { opacity:0; transform:translateY(8px); }
+  .mx-step-content.mx-enter-back { opacity:0; transform:translateY(-8px); }
+  @media(prefers-reduced-motion:reduce){
+    .mx-step-content { transition:none; }
+    .mx-step-content.mx-exit-forward,
+    .mx-step-content.mx-exit-back,
+    .mx-step-content.mx-enter,
+    .mx-step-content.mx-enter-back { opacity:1; transform:none; }
+  }
+
   .mx-min-hint {
     font-family:var(--sans); font-size:12px; color:#EF4444;
     margin-top:8px; opacity:0; transition:opacity .3s;
@@ -368,6 +400,7 @@ export default function MatchPage() {
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<string[]>([]);
   const [locationFocused, setLocationFocused] = useState(false);
+  const [transitionClass, setTransitionClass] = useState('');
   const minHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [answers, setAnswers] = useState<Answers>({
     netWorth: '',
@@ -375,11 +408,35 @@ export default function MatchPage() {
     lifeTriggerText: '',
     location: '',
     priorities: [],
-    feeSensitivity: '',
     firmSize: '',
     serviceDepth: '',
     conflictImportance: '',
   });
+
+  // Restore draft from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const draft = sessionStorage.getItem('matchAnswers_draft');
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed.answers) setAnswers(parsed.answers);
+        if (typeof parsed.step === 'number') setStep(parsed.step);
+      }
+    } catch {}
+  }, []);
+
+  // Save draft on every step/answers change
+  useEffect(() => {
+    sessionStorage.setItem('matchAnswers_draft', JSON.stringify({ step, answers }));
+  }, [step, answers]);
+
+  // Repopulate exact amount when navigating back to step 0
+  useEffect(() => {
+    if (step === 0 && answers.netWorth.startsWith('exact_')) {
+      const num = Number(answers.netWorth.replace('exact_', ''));
+      if (num) setExactAmount(num.toLocaleString('en-US'));
+    }
+  }, [step]);
 
   const currentStep = STEPS[step];
   const progress = ((step + 1) / STEPS.length) * 100;
@@ -396,6 +453,19 @@ export default function MatchPage() {
       setAnswers({ ...answers, [key]: updated });
     } else {
       if (key === 'netWorth') setExactAmount('');
+      setAnswers({ ...answers, [key]: value });
+    }
+  };
+
+  const handleSectionSelect = (sectionKey: string, value: string, multi?: boolean) => {
+    const key = sectionKey as keyof Answers;
+    if (multi) {
+      const current = (answers[key] as string[]);
+      const updated = current.includes(value)
+        ? current.filter((p) => p !== value)
+        : [...current, value];
+      setAnswers({ ...answers, [key]: updated });
+    } else {
       setAnswers({ ...answers, [key]: value });
     }
   };
@@ -422,11 +492,24 @@ export default function MatchPage() {
     }
   };
 
+  const changeStep = (newStep: number) => {
+    const direction = newStep > step ? 'forward' : 'back';
+    setTransitionClass(direction === 'forward' ? 'mx-exit-forward' : 'mx-exit-back');
+    setTimeout(() => {
+      setStep(newStep);
+      setTransitionClass(direction === 'forward' ? 'mx-enter' : 'mx-enter-back');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setTransitionClass(''));
+      });
+    }, 150);
+  };
+
   const handleNext = async () => {
     if (step < STEPS.length - 1) {
-      setStep(step + 1);
+      changeStep(step + 1);
     } else {
       sessionStorage.setItem('matchAnswers', JSON.stringify(answers));
+      sessionStorage.removeItem('matchAnswers_draft');
 
       // Persist to Supabase for signed-in users
       try {
@@ -449,10 +532,11 @@ export default function MatchPage() {
   };
 
   const canProceed = () => {
+    // Grouped steps: can always proceed (all sections optional)
+    if (currentStep.sections) return true;
     const key = currentStep.key;
     if (MULTI_KEYS.includes(key)) {
       const arr = answers[key as keyof Answers] as string[];
-      // lifeTrigger: text alone is enough, or at least one option
       if (key === 'lifeTrigger') return arr.length > 0 || answers.lifeTriggerText.trim().length > 0;
       return arr.length > 0;
     }
@@ -465,6 +549,12 @@ export default function MatchPage() {
       return (answers[key as keyof Answers] as string[]).includes(value);
     }
     return answers[key as keyof Answers] === value;
+  };
+
+  const isSectionSelected = (sectionKey: string, value: string, multi?: boolean) => {
+    const key = sectionKey as keyof Answers;
+    if (multi) return (answers[key] as string[]).includes(value);
+    return answers[key] === value;
   };
 
   const isMulti = MULTI_KEYS.includes(currentStep.key);
@@ -489,6 +579,7 @@ export default function MatchPage() {
 
       {/* Question + Options */}
       <div className="mx-body">
+        <div className={`mx-step-content ${transitionClass}`}>
         <div className="mx-step-label">
           Step {step + 1} of {STEPS.length}
         </div>
@@ -510,15 +601,7 @@ export default function MatchPage() {
                   setLocationQuery(e.target.value);
                   setLocationResults(searchLocations(e.target.value));
                 }}
-                onFocus={() => {
-                  setLocationFocused(true);
-                  if (answers.location && answers.location !== 'outside_us') {
-                    // If there's a selected value, clear it on focus so they can re-search
-                    setLocationQuery(answers.location);
-                    setLocationResults(searchLocations(answers.location));
-                    setAnswers({ ...answers, location: '' });
-                  }
-                }}
+                onFocus={() => setLocationFocused(true)}
                 onBlur={() => setTimeout(() => setLocationFocused(false), 200)}
               />
               {answers.location && answers.location !== 'outside_us' && (
@@ -566,7 +649,7 @@ export default function MatchPage() {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="Enter exact amount"
+                placeholder="Enter your portfolio value"
                 value={exactAmount}
                 onChange={(e) => handleExactAmount(e.target.value)}
               />
@@ -574,19 +657,34 @@ export default function MatchPage() {
             <div className={`mx-min-hint${showMinHint ? ' visible' : ''}`}>
               Please enter at least $10,000
             </div>
-            <div className="mx-or-divider"><span>Or select a range</span></div>
-            {currentStep.options.map((option) => {
-              const selected = isSelected(option.value);
-              return (
-                <button
-                  key={option.value}
-                  className={`mx-option${selected ? ' selected' : ''}`}
-                  onClick={() => handleSelect(option.value)}
-                >
-                  <span>{option.label}</span>
-                </button>
-              );
-            })}
+          </>
+        ) : currentStep.sections ? (
+          <>
+            {currentStep.sections.map((section) => (
+              <div key={section.sectionKey} className="mx-section">
+                <div className="mx-section-label">{section.label}</div>
+                {section.multi && (
+                  <span className="mx-multi-hint">Select all that apply</span>
+                )}
+                {section.options.map((option) => {
+                  const selected = isSectionSelected(section.sectionKey, option.value, section.multi);
+                  return (
+                    <button
+                      key={option.value}
+                      className={`mx-option${selected ? ' selected' : ''}`}
+                      onClick={() => handleSectionSelect(section.sectionKey, option.value, section.multi)}
+                    >
+                      <span>{option.label}</span>
+                      {section.multi && (
+                        <span className="mx-check">
+                          {selected && <CheckSVG />}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </>
         ) : (
           <>
@@ -633,6 +731,7 @@ export default function MatchPage() {
             )}
           </>
         )}
+        </div>
       </div>
 
       {/* Navigation */}
@@ -640,7 +739,7 @@ export default function MatchPage() {
         <button
           className="mx-btn-back"
           disabled={step === 0}
-          onClick={() => setStep((s) => s - 1)}
+          onClick={() => changeStep(step - 1)}
         >
           ← Back
         </button>

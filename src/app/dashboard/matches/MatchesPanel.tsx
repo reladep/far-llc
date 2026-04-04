@@ -8,7 +8,6 @@ interface MatchAnswers {
   lifeTrigger: string;
   location: string;
   priorities: string[];
-  feeSensitivity: string;
   firmSize: string;
   serviceDepth: string;
   conflictImportance: string;
@@ -45,10 +44,6 @@ const LABEL_MAP: Record<string, Record<string, string>> = {
     ny: 'New York', ca: 'California', fl: 'Florida', tx: 'Texas',
     il: 'Illinois', ma: 'Massachusetts', other: 'Nationwide',
   },
-  feeSensitivity: {
-    very: 'Very sensitive', somewhat: 'Somewhat sensitive',
-    not_much: 'Not very sensitive', irrelevant: 'Not a factor',
-  },
   firmSize: {
     any: 'No preference', small: 'Small (< $500M)', mid: 'Mid-size ($500M–$5B)', large: 'Large ($5B+)',
   },
@@ -61,7 +56,7 @@ const LABEL_MAP: Record<string, Record<string, string>> = {
     somewhat: 'Somewhat important', not_important: 'Not important',
   },
   priorities: {
-    fees: 'Low fees', aum_growth: 'Proven AUM growth', client_retention: 'High client retention',
+    aum_growth: 'Proven AUM growth', client_retention: 'High client retention',
     advisor_experience: 'Experienced advisors', personal_service: 'Personal attention',
     comprehensive: 'Full-service', fiduciary: 'Fiduciary duty', fee_only: 'Fee-only',
   },
@@ -202,7 +197,6 @@ export default function MatchesPanel({ answers, updatedAt }: MatchesPanelProps) 
       lifeTrigger: answers.lifeTrigger,
       location: answers.location,
       priorities: answers.priorities.join(','),
-      feeSensitivity: answers.feeSensitivity,
       firmSize: answers.firmSize,
       serviceDepth: answers.serviceDepth,
       conflictImportance: answers.conflictImportance,
@@ -223,7 +217,6 @@ export default function MatchesPanel({ answers, updatedAt }: MatchesPanelProps) 
     { label: 'Investable Assets', key: 'netWorth' },
     { label: 'Situation', key: 'lifeTrigger' },
     { label: 'Location', key: 'location' },
-    { label: 'Fee Sensitivity', key: 'feeSensitivity' },
     { label: 'Firm Size', key: 'firmSize' },
     { label: 'Service Level', key: 'serviceDepth' },
     { label: 'Conflict Importance', key: 'conflictImportance' },
@@ -258,7 +251,9 @@ export default function MatchesPanel({ answers, updatedAt }: MatchesPanelProps) 
               {PROFILE_FIELDS.map(f => {
                 const val = answers[f.key as keyof MatchAnswers];
                 const display = typeof val === 'string'
-                  ? (LABEL_MAP[f.key]?.[val] || val)
+                  ? (val.startsWith('exact_')
+                    ? `$${Number(val.replace('exact_', '')).toLocaleString('en-US')}`
+                    : (LABEL_MAP[f.key]?.[val] || val))
                   : null;
                 return (
                   <div key={f.key}>
