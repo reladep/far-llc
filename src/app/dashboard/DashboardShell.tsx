@@ -13,10 +13,11 @@ interface DashboardShellProps {
 }
 
 const NAV = [
-  { label: 'Matches',           href: '/dashboard/matches',     icon: '◇', countKey: 'match' as const },
-  { label: 'Saved Firms',       href: '/dashboard/saved-firms', icon: '◈', countKey: 'saved' as const },
-  { label: 'Alerts',            href: '/dashboard/alerts',      icon: '◯', countKey: 'alert' as const },
-  { label: 'Account & Billing', href: '/dashboard/billing',     icon: '◎', countKey: null },
+  { label: 'Overview',          href: '/dashboard',             icon: '◉', countKey: null,              exact: true },
+  { label: 'Matches',           href: '/dashboard/matches',     icon: '◇', countKey: 'match' as const, exact: false },
+  { label: 'Saved Firms',       href: '/dashboard/saved-firms', icon: '◈', countKey: 'saved' as const, exact: false },
+  { label: 'Alerts',            href: '/dashboard/alerts',      icon: '◯', countKey: 'alert' as const, exact: false },
+  { label: 'Account & Billing', href: '/dashboard/billing',     icon: '◎', countKey: null,              exact: false },
 ];
 
 const CSS = `
@@ -41,7 +42,8 @@ const CSS = `
   }
 
   /* user identity */
-  .db-id { padding:24px 20px 20px; border-bottom:1px solid var(--rule); }
+  .db-id { padding:24px 20px 20px; border-bottom:1px solid var(--rule); display:block; text-decoration:none; transition:background .15s; }
+  .db-id:hover { background:var(--white); }
   .db-eyebrow {
     font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
     color:var(--ink-3); font-family:var(--mono); margin-bottom:6px;
@@ -160,19 +162,21 @@ export default function DashboardShell({
         {/* ── SIDEBAR ── */}
         <aside className={`db-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* User identity */}
-          <div className="db-id">
+          <Link href="/dashboard" className="db-id" onClick={() => setSidebarOpen(false)}>
             <div className="db-eyebrow">Dashboard</div>
             <div className="db-name">{displayName}</div>
             <div className="db-plan">
               <span className="db-plan-dot" />
               Annual Access
             </div>
-          </div>
+          </Link>
 
           {/* Nav items */}
           <nav className="db-nav">
             {NAV.map(item => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(item.href + '/');
               const count = countFor(item.countKey);
               return (
                 <Link

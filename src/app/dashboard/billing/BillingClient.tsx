@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import '@/components/dashboard/dashboard.css';
 
 interface BillingClientProps {
   email: string;
@@ -10,17 +11,6 @@ interface BillingClientProps {
 }
 
 const CSS = `
-  .bl-wrap {
-    --navy:#0A1C2A; --navy-2:#0F2538;
-    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
-    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --amber:#B45309; --amber-pale:#FEF3C7; --red:#DC2626;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
-  }
-  .bl-title { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); letter-spacing:-.02em; margin-bottom:4px; }
-  .bl-sub { font-size:13px; color:var(--ink-3); margin-bottom:24px; }
-  .bl-divider { height:1px; background:var(--rule); margin-bottom:24px; }
-
   /* plan card */
   .plan-card {
     background:var(--navy); padding:28px 30px; margin-bottom:14px;
@@ -144,13 +134,24 @@ const CSS = `
     font-size:11px; background:none; border:none; color:var(--ink-3);
     cursor:pointer; font-family:var(--sans); padding:14px 0 0; display:block; transition:color .12s;
   }
-  .danger-link:hover { color:var(--red); }
+  .danger-link:hover { color:#DC2626; }
+
+  /* mobile */
+  @media(max-width:640px){
+    .plan-card { flex-direction:column; align-items:stretch; gap:16px; }
+    .plan-btns { flex-direction:row; }
+    .pay-row { flex-direction:column; gap:8px; }
+    .acct-row { flex-direction:column; gap:4px; }
+    .acct-lbl { width:auto; }
+    .inv-table th:nth-child(4), .inv-table td:nth-child(4),
+    .inv-table th:nth-child(5), .inv-table td:nth-child(5) { display:none; }
+  }
 `;
 
 const NOTIFS = [
   { key: 'watchlist', title: 'Watchlist alerts', sub: 'Email when a watched firm files a change matching your alert types', defaultOn: true },
   { key: 'digest',    title: 'Weekly digest',    sub: 'Sunday summary of changes across your saved firms', defaultOn: true },
-  { key: 'scores',    title: 'Score updates',    sub: 'When VVS scores for saved firms change by more than 5 points', defaultOn: true },
+  { key: 'scores',    title: 'Score updates',    sub: 'When Visor Index scores for saved firms change by more than 5 points', defaultOn: true },
   { key: 'product',   title: 'Product announcements', sub: 'New features and platform updates', defaultOn: false },
 ];
 
@@ -167,12 +168,12 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
   };
 
   return (
-    <div className="bl-wrap">
+    <div>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="bl-title">Account &amp; Billing</div>
-      <div className="bl-sub">Your plan, payment, invoices, and account settings.</div>
-      <div className="bl-divider" />
+      <div className="db-panel-title">Account &amp; Billing</div>
+      <div className="db-panel-sub">Your plan, payment, invoices, and account settings.</div>
+      <div className="db-panel-divider" />
 
       {/* Plan card */}
       <div className="plan-card">
@@ -240,7 +241,7 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
                   <td>{inv.date}</td>
                   <td>{inv.amount}</td>
                   <td><span className="inv-badge">Paid</span></td>
-                  <td><button className="inv-dl">↓ PDF</button></td>
+                  <td><button className="inv-dl" aria-label={`Download invoice for ${inv.desc}`}>↓ PDF</button></td>
                 </tr>
               ))}
             </tbody>
@@ -299,11 +300,12 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
                 <div className="notif-title">{n.title}</div>
                 <div className="notif-sub">{n.sub}</div>
               </div>
-              <label className="tog">
+              <label className="tog" aria-label={`Toggle ${n.title}`}>
                 <input
                   type="checkbox"
                   checked={notifs[n.key]}
                   onChange={() => toggleNotif(n.key)}
+                  aria-label={n.title}
                 />
                 <span className="tog-track" />
               </label>

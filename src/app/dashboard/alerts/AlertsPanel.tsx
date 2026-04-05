@@ -173,6 +173,7 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
                 disabled={removingId === sub.id}
                 onClick={() => handleRemove(sub.id, sub.crd)}
                 title="Remove alert"
+                aria-label={`Remove alert for ${sub.name}`}
               >
                 ✕
               </button>
