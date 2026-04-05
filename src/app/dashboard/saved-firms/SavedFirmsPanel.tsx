@@ -16,6 +16,7 @@ export interface SavedFirm {
   vvs: number | null;
   savedAt: string;
   savedTs: number;
+  watching: boolean;
 }
 
 interface SavedFirmsPanelProps {
@@ -45,8 +46,15 @@ const CSS = `
   .sf-cmp-btn.clear:hover { border-color:var(--ink-3); color:var(--ink); }
 
   /* Saved firms row layout */
-  .sf-row { grid-template-columns:28px 1fr 42px 100px 80px; cursor:pointer; }
+  .sf-row { grid-template-columns:28px 1fr 36px 28px 100px 100px; cursor:pointer; }
   .sf-check input { accent-color:var(--green); width:14px; height:14px; cursor:pointer; }
+  .sf-watch-btn {
+    background:none; border:none; cursor:pointer; padding:2px;
+    color:var(--rule); transition:color .12s; display:flex; align-items:center;
+  }
+  .sf-watch-btn:hover { color:var(--green); }
+  .sf-watch-btn.on { color:var(--green); }
+  .sf-watch-btn:disabled { opacity:.4; cursor:default; }
   .sf-date { font-family:var(--mono); font-size:10px; color:var(--ink-3); text-align:right; }
   .sf-actions { display:flex; justify-content:flex-end; gap:6px; opacity:0; transition:opacity .12s; }
   .sf-row:hover .sf-actions { opacity:1; }
@@ -60,7 +68,7 @@ const CSS = `
 
   /* mobile */
   @media(max-width:640px){
-    .sf-row { grid-template-columns:20px 1fr 36px; }
+    .sf-row { grid-template-columns:20px 1fr 36px 28px; }
     .sf-date,.sf-actions { display:none; }
   }
 `;
@@ -68,6 +76,32 @@ const CSS = `
 export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [watchSet, setWatchSet] = useState<Set<number>>(
+    () => new Set(firms.filter(f => f.watching).map(f => f.crd))
+  );
+  const [watchLoading, setWatchLoading] = useState<number | null>(null);
+
+  const handleWatchToggle = async (crd: number) => {
+    const isWatching = watchSet.has(crd);
+    setWatchLoading(crd);
+    try {
+      if (isWatching) {
+        const res = await fetch(`/api/user/alerts/subscriptions?crd=${crd}`, {
+          method: 'DELETE', credentials: 'include',
+        });
+        if (res.ok) setWatchSet(prev => { const next = new Set(prev); next.delete(crd); return next; });
+      } else {
+        const res = await fetch('/api/user/alerts/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ crd }),
+          credentials: 'include',
+        });
+        if (res.ok) setWatchSet(prev => new Set(prev).add(crd));
+      }
+    } catch { /* silently fail */ }
+    setWatchLoading(null);
+  };
 
   const sorted = [...firms].sort((a, b) => {
     if (sortKey === 'vvs') return (b.vvs ?? -1) - (a.vvs ?? -1);
@@ -99,6 +133,7 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
     <div>
       <style dangerouslySetInnerHTML={{ __html: FIRM_ROW_CSS + CSS }} />
 
+      <div className="db-panel-eyebrow">Your Watchlist</div>
       <div className="db-panel-title">Saved Firms</div>
       <div className="db-panel-sub">Firms you&apos;ve bookmarked. Click any row to view the full profile.</div>
       <div className="db-panel-divider" />
@@ -157,6 +192,20 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
                 }
                 trailing={
                   <>
+                    <div onClick={e => e.stopPropagation()}>
+                      <button
+                        className={`sf-watch-btn${watchSet.has(firm.crd) ? ' on' : ''}`}
+                        onClick={() => handleWatchToggle(firm.crd)}
+                        disabled={watchLoading === firm.crd}
+                        title={watchSet.has(firm.crd) ? 'Alerts enabled — click to disable' : 'Enable alerts'}
+                        aria-label={`Toggle alerts for ${firm.name}`}
+                      >
+                        <svg width="14" height="14" fill={watchSet.has(firm.crd) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.3" viewBox="0 0 16 16">
+                          <path d="M8 1.5c-2.5 0-4.5 2-4.5 4.5v3l-1 1.5h11l-1-1.5v-3c0-2.5-2-4.5-4.5-4.5Z" />
+                          <path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" />
+                        </svg>
+                      </button>
+                    </div>
                     <div className="sf-date">{firm.savedAt}</div>
                     <div className="sf-actions" onClick={e => e.stopPropagation()}>
                       <Link href={`/firm/${firm.crd}`} className="sf-btn">

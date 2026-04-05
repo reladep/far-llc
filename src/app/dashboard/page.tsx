@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import FirmRow from '@/components/dashboard/FirmRow';
+import type { FirmRowData } from '@/components/dashboard/FirmRow';
 import '@/components/dashboard/dashboard.css';
 
 export const metadata: Metadata = {
@@ -10,14 +12,39 @@ export const metadata: Metadata = {
 };
 
 const CSS = `
+  /* FirmRow styles (inlined for server component compat) */
+  .fr-list { border:1px solid var(--rule); background:var(--rule); display:flex; flex-direction:column; gap:1px; }
+  .fr-row {
+    background:#fff; display:grid; align-items:center; gap:12px; padding:13px 16px;
+    transition:background .1s; text-decoration:none;
+  }
+  .fr-row:hover { background:#f7faf8; }
+  .fr-name { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:2px; text-decoration:none; display:block; }
+  .fr-name:hover { color:var(--green); }
+  .fr-meta { font-family:var(--mono); font-size:10px; color:var(--ink-3); display:flex; gap:8px; flex-wrap:wrap; }
+  .fr-aum { font-family:var(--mono); font-size:11px; color:var(--ink-3); text-align:right; }
+  .fr-ring { position:relative; width:36px; height:36px; flex-shrink:0; }
+  .fr-ring svg { transform:rotate(-90deg); }
+  .fr-ring-label {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--serif); font-size:12px; font-weight:700; line-height:1;
+  }
+  .fr-ring-na {
+    width:36px; height:36px; flex-shrink:0;
+    display:grid; place-items:center;
+    font-family:var(--serif); font-size:10px; color:var(--ink-3);
+    background:var(--white); border-radius:50%;
+  }
+
   .do-stats {
     display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px;
   }
   .do-stat {
     background:#fff; border:1px solid var(--rule); padding:20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
   }
   .do-stat-value {
-    font-family:var(--serif); font-size:28px; font-weight:700; color:var(--ink); margin-bottom:2px;
+    font-family:var(--serif); font-size:24px; font-weight:700; color:var(--ink); margin-bottom:2px;
   }
   .do-stat-label {
     font-family:var(--mono); font-size:10px; font-weight:600;
@@ -26,7 +53,10 @@ const CSS = `
 
   .do-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
 
-  .do-card { background:#fff; border:1px solid var(--rule); }
+  .do-card {
+    background:#fff; border:1px solid var(--rule);
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+  }
   .do-card-hd {
     padding:14px 20px; border-bottom:1px solid var(--rule);
     display:flex; align-items:center; justify-content:space-between;
@@ -42,17 +72,19 @@ const CSS = `
   .do-card-link:hover { color:var(--green); }
   .do-card-body { padding:16px 20px; }
 
-  .do-firm-row {
+  .do-recent-row { grid-template-columns:1fr 36px; padding:10px 0; }
+  .do-recent-row .fr-meta { display:none; }
+  .do-recent-row .fr-aum { display:none; }
+  .do-recent-list { border:none; background:transparent; gap:0; }
+  .do-recent-list .fr-row { border-bottom:1px solid var(--rule); }
+  .do-recent-list .fr-row:last-child { border-bottom:none; }
+
+  .do-info-row {
     display:flex; align-items:center; justify-content:space-between;
     padding:8px 0; border-bottom:1px solid var(--rule);
   }
-  .do-firm-row:last-child { border-bottom:none; }
-  .do-firm-name {
-    font-size:13px; font-weight:500; color:var(--ink);
-    text-decoration:none; transition:color .15s;
-  }
-  .do-firm-name:hover { color:var(--green); }
-  .do-firm-meta {
+  .do-info-row:last-child { border-bottom:none; }
+  .do-info-meta {
     font-family:var(--mono); font-size:10px; color:var(--ink-3);
   }
 
@@ -68,10 +100,20 @@ const CSS = `
   }
   .do-action:hover { border-color:var(--green); }
   .do-action-icon {
-    font-size:16px; flex-shrink:0; width:24px; text-align:center;
+    flex-shrink:0; width:24px; display:grid; place-items:center; color:var(--ink-3);
   }
   .do-action-text { font-size:12px; font-weight:500; color:var(--ink); font-family:var(--sans); }
   .do-action-sub { font-size:10px; color:var(--ink-3); font-family:var(--sans); margin-top:1px; }
+
+  .do-active-status { font-size:12px; font-weight:600; color:var(--green); }
+  .do-results-btn {
+    display:inline-block; font-size:11px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-3); background:none; border:1px solid var(--rule);
+    padding:7px 16px; text-decoration:none;
+    font-family:var(--sans); transition:all .15s;
+  }
+  .do-results-btn:hover { border-color:var(--green); color:var(--green); }
 
   .do-empty-msg {
     font-size:13px; color:var(--ink-3); font-family:var(--sans); padding:4px 0;
@@ -120,30 +162,47 @@ export default async function DashboardOverview() {
       .limit(3),
   ]);
 
-  // Fetch firm names for recent favorites
+  // Fetch firm details for recent favorites
   const recentCrds = recentFavorites?.map(f => f.crd) ?? [];
-  let recentFirms: { crd: number; name: string; savedAt: string }[] = [];
+  let recentFirms: (FirmRowData & { savedAt: string })[] = [];
   if (recentCrds.length > 0) {
-    const { data: firmData } = await supabaseAdmin
-      .from('firmdata_current')
-      .select('crd, legal_name')
-      .in('crd', recentCrds);
+    const [{ data: firmData }, { data: displayNames }, { data: scores }] = await Promise.all([
+      supabaseAdmin
+        .from('firmdata_current')
+        .select('crd, legal_name, main_office_city, main_office_state, aum')
+        .in('crd', recentCrds),
+      supabaseAdmin
+        .from('firm_names')
+        .select('crd, display_name')
+        .in('crd', recentCrds),
+      supabaseAdmin
+        .from('firm_scores')
+        .select('crd, final_score')
+        .in('crd', recentCrds),
+    ]);
 
-    // Check for display names
-    const { data: displayNames } = await supabaseAdmin
-      .from('firm_names')
-      .select('crd, display_name')
-      .in('crd', recentCrds);
+    const firmMap = new Map<number, { name: string; city: string | null; state: string | null; aum: number | null }>();
+    firmData?.forEach(f => firmMap.set(f.crd, { name: f.legal_name, city: f.main_office_city, state: f.main_office_state, aum: f.aum }));
+    const displayMap = new Map<number, string>();
+    displayNames?.forEach(f => { if (f.display_name) displayMap.set(f.crd, f.display_name); });
+    const scoreMap = new Map<number, number | null>();
+    scores?.forEach(s => scoreMap.set(s.crd, s.final_score));
 
-    const nameMap = new Map<number, string>();
-    firmData?.forEach(f => nameMap.set(f.crd, f.legal_name));
-    displayNames?.forEach(f => { if (f.display_name) nameMap.set(f.crd, f.display_name); });
-
-    recentFirms = (recentFavorites ?? []).map(f => ({
-      crd: f.crd,
-      name: nameMap.get(f.crd) ?? `CRD #${f.crd}`,
-      savedAt: new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    }));
+    recentFirms = (recentFavorites ?? []).map(f => {
+      const firm = firmMap.get(f.crd);
+      const aum = firm?.aum;
+      const aumStr = aum ? (aum >= 1e9 ? `$${(aum / 1e9).toFixed(1)}B` : aum >= 1e6 ? `$${(aum / 1e6).toFixed(0)}M` : `$${Math.round(aum / 1000)}K`) : '';
+      return {
+        crd: f.crd,
+        name: firm?.name ?? `CRD #${f.crd}`,
+        displayName: displayMap.get(f.crd),
+        city: firm?.city ?? null,
+        state: firm?.state ?? null,
+        aum: aumStr,
+        visorScore: scoreMap.get(f.crd) ?? null,
+        savedAt: new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      };
+    });
   }
 
   const hasMatch = !!matchProfile?.answers;
@@ -155,6 +214,7 @@ export default async function DashboardOverview() {
     <div>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
+      <div className="db-panel-eyebrow">Dashboard</div>
       <div className="db-panel-title">Overview</div>
       <div className="db-panel-sub">Your activity at a glance.</div>
       <div className="db-panel-divider" />
@@ -182,16 +242,15 @@ export default async function DashboardOverview() {
             <span className="do-card-title">Recently Saved</span>
             <Link href="/dashboard/saved-firms" className="do-card-link">View all →</Link>
           </div>
-          <div className="do-card-body">
+          <div className="do-card-body" style={{ padding: recentFirms.length > 0 ? '4px 20px' : undefined }}>
             {recentFirms.length === 0 ? (
               <div className="do-empty-msg">No saved firms yet.</div>
             ) : (
-              recentFirms.map(f => (
-                <div key={f.crd} className="do-firm-row">
-                  <Link href={`/firm/${f.crd}`} className="do-firm-name">{f.name}</Link>
-                  <span className="do-firm-meta">{f.savedAt}</span>
-                </div>
-              ))
+              <div className="do-recent-list fr-list">
+                {recentFirms.map(f => (
+                  <FirmRow key={f.crd} firm={f} className="do-recent-row" />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -204,21 +263,18 @@ export default async function DashboardOverview() {
           <div className="do-card-body">
             {hasMatch ? (
               <>
-                <div className="do-firm-row">
-                  <span className="do-firm-meta">Status</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#1A7A4A' }}>Active</span>
+                <div className="do-info-row">
+                  <span className="do-info-meta">Status</span>
+                  <span className="do-active-status">Active</span>
                 </div>
                 {matchDate && (
-                  <div className="do-firm-row">
-                    <span className="do-firm-meta">Last updated</span>
-                    <span className="do-firm-meta">{matchDate}</span>
+                  <div className="do-info-row">
+                    <span className="do-info-meta">Last updated</span>
+                    <span className="do-info-meta">{matchDate}</span>
                   </div>
                 )}
                 <div style={{ marginTop: 12 }}>
-                  <Link
-                    href="/match/results"
-                    style={{ fontSize: 11, fontWeight: 600, color: '#5A7568', textDecoration: 'none', border: '1px solid #CAD8D0', padding: '6px 14px', transition: 'all .15s' }}
-                  >
+                  <Link href="/match/results" className="do-results-btn">
                     View Results →
                   </Link>
                 </div>
@@ -238,21 +294,33 @@ export default async function DashboardOverview() {
       {/* Quick actions */}
       <div className="do-actions">
         <Link href="/search" className="do-action">
-          <span className="do-action-icon">⌕</span>
+          <span className="do-action-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="7.5" cy="7.5" r="5.5" /><path d="M11.5 11.5L16 16" strokeLinecap="round" />
+            </svg>
+          </span>
           <div>
             <div className="do-action-text">Search Advisors</div>
             <div className="do-action-sub">Browse and filter firms</div>
           </div>
         </Link>
         <Link href="/compare" className="do-action">
-          <span className="do-action-icon">⇄</span>
+          <span className="do-action-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 3H3v12h3M12 3h3v12h-3M6 9h6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
           <div>
             <div className="do-action-text">Compare Firms</div>
             <div className="do-action-sub">Side-by-side analysis</div>
           </div>
         </Link>
         <Link href="/negotiate" className="do-action">
-          <span className="do-action-icon">↕</span>
+          <span className="do-action-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M9 2v14M5 5l4-3 4 3M5 13l4 3 4-3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
           <div>
             <div className="do-action-text">Negotiate Fees</div>
             <div className="do-action-sub">Get your fee playbook</div>

@@ -102,7 +102,7 @@ const CSS = `
   .mp-retake:hover { border-color:var(--green); color:var(--green); }
 
   /* ── Match-specific row layout ── */
-  .mp-row { grid-template-columns:1fr 80px 42px 80px; cursor:pointer; }
+  .mp-row { grid-template-columns:1fr 80px 36px 80px; cursor:pointer; }
   .mp-match-pct {
     font-family:var(--serif); font-size:16px; font-weight:700;
     color:var(--green-3); text-align:right;
@@ -164,6 +164,7 @@ export default function MatchesPanel({ answers, updatedAt, savedResults, results
     <div>
       <style dangerouslySetInnerHTML={{ __html: FIRM_ROW_CSS + CSS }} />
 
+      <div className="db-panel-eyebrow">Advisor Match</div>
       <div className="db-panel-title">Matches</div>
       <div className="db-panel-sub">Firms tailored to your profile, ranked by fit alone.</div>
       <div className="db-panel-divider" />

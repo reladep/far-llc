@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
 import FirmAlerts from '@/components/firms/FirmAlerts';
@@ -366,13 +367,13 @@ const PAGE_CSS = `
   .vfp-bc-current { color:rgba(255,255,255,.6); }
   .vfp-bc-actions { display:flex; align-items:center; gap:10px; padding-left:16px; border-left:1px solid rgba(255,255,255,.08); }
   .vfp-bc-compare {
-    display:inline-flex; align-items:center; gap:7px;
-    font-family:var(--sans); font-size:9px; font-weight:600;
-    background:var(--green-3); color:#fff;
-    padding:8px 18px; border:none; cursor:pointer; border-radius:3px;
-    transition:background .2s; letter-spacing:.04em; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    background:transparent; color:rgba(255,255,255,.5);
+    padding:6px 14px; border:1px solid rgba(255,255,255,.12); cursor:pointer; border-radius:0;
+    transition:all .2s; letter-spacing:.04em; text-decoration:none;
   }
-  .vfp-bc-compare:hover { background:var(--green-2); }
+  .vfp-bc-compare:hover { border-color:rgba(45,189,116,.3); color:#2DBD74; }
   .vfp-hero-actions { display:none; }
 
   .vfp-page {
@@ -915,14 +916,24 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   const { data: { user } } = await authSupabase.auth.getUser();
 
   let isSaved = false;
+  let isWatching = false;
   if (user) {
-    const { data: fav } = await authSupabase
-      .from('user_favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('crd', params.crd)
-      .maybeSingle();
+    const [{ data: fav }, { data: alertSub }] = await Promise.all([
+      authSupabase
+        .from('user_favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('crd', params.crd)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('alert_subscriptions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('crd', params.crd)
+        .maybeSingle(),
+    ]);
     isSaved = !!fav;
+    isWatching = !!alertSub;
   }
 
   // ── Computed stats (needed for both gated + authenticated views) ──
@@ -1078,7 +1089,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     { label: 'AUM Growth', score: fs.aum_growth_score ?? 0, tip: 'Measures AUM growth rate over 3 and 5 years relative to peer median.' },
     { label: 'Client Growth', score: fs.client_growth_score ?? 0, tip: 'Tracks net new client additions year-over-year as a signal of firm health.' },
     { label: 'Advisor Bandwidth', score: fs.advisor_bandwidth_score ?? 0, tip: 'Ratio of clients to advisory staff. Lower ratios indicate more attentive service capacity.' },
-    { label: 'Derivatives Risk', score: fs.derivatives_score ?? 0, tip: 'Flags use of complex instruments like options, swaps, or leverage in client portfolios.' },
+    { label: 'Investment Mix', score: fs.derivatives_score ?? 0, tip: 'Flags use of complex instruments like options, swaps, or leverage in client portfolios.' },
   ] : [];
 
   // ── Fee tier table ──
@@ -1352,12 +1363,12 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <span className="vfp-bc-current">{firmDisplayName}</span>
           </div>
           <div className="vfp-bc-actions">
-            <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
+            <SaveFirmButton crd={firm.crd} initialSaved={isSaved} initialWatching={isWatching} />
             <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
               <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                 <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
               </svg>
-              Add to Compare
+              Compare
             </Link>
           </div>
         </div>
@@ -1410,12 +1421,12 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
               {/* Mobile action buttons — hidden on desktop where breadcrumb has them */}
               <div className="vfp-hero-actions">
-                <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
+                <SaveFirmButton crd={firm.crd} initialSaved={isSaved} initialWatching={isWatching} />
                 <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
                   <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                     <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
                   </svg>
-                  Add to Compare
+                  Compare
                 </Link>
               </div>
             </div>

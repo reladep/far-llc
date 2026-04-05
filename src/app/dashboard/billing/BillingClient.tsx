@@ -171,6 +171,7 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
     <div>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
+      <div className="db-panel-eyebrow">Settings</div>
       <div className="db-panel-title">Account &amp; Billing</div>
       <div className="db-panel-sub">Your plan, payment, invoices, and account settings.</div>
       <div className="db-panel-divider" />

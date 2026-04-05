@@ -1659,7 +1659,7 @@ export default function ComparePage() {
                       <ScoreRow label="AUM Growth" tip="AUM growth rate over 3 and 5 years vs peer median" scores={comparisonData.map(f => f.aumGrowthScore)} />
                       <ScoreRow label="Client Growth" tip="Year-over-year change in total client count" scores={comparisonData.map(f => f.clientGrowthScore)} />
                       <ScoreRow label="Advisor Bandwidth" tip="Ratio of clients to advisory staff" scores={comparisonData.map(f => f.advisorBandwidthScore)} />
-                      <ScoreRow label="Derivatives Risk" tip="Use of complex instruments in client portfolios" scores={comparisonData.map(f => f.derivativesScore)} />
+                      <ScoreRow label="Investment Mix" tip="Use of complex instruments in client portfolios" scores={comparisonData.map(f => f.derivativesScore)} />
                       <ViewProfileRow firms={comparisonData} />
                     </>
                   )}

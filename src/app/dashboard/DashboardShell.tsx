@@ -83,6 +83,7 @@ const CSS = `
   .db-nav-count {
     font-family:var(--mono); font-size:10px; font-weight:600;
     background:var(--rule); color:var(--ink-3); padding:2px 6px;
+    min-width:24px; text-align:center;
   }
   .db-nav-item.active .db-nav-count { background:rgba(26,122,74,.15); color:var(--green); }
 
@@ -185,21 +186,15 @@ export default function DashboardShell({
                   className={`db-nav-item${isActive ? ' active' : ''}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="db-nav-icon">{item.icon}</span>
                   <span className="db-nav-label">{item.label}</span>
                   {count !== null && count > 0 && (
-                    <span className="db-nav-count">{count}</span>
+                    <span className="db-nav-count">{count > 100 ? '100+' : count}</span>
                   )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Footer links */}
-          <div className="db-sb-footer">
-            <Link href="/search" className="db-sb-link">→ Search advisors</Link>
-            <Link href="/negotiate" className="db-sb-link">→ Negotiate fees</Link>
-          </div>
         </aside>
 
         {/* ── MAIN ── */}

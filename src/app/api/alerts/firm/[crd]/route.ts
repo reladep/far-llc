@@ -24,18 +24,28 @@ export async function GET(
     .from('firm_alerts')
     .select('id, crd, alert_type, severity, title, summary, detail, detected_at, source')
     .eq('crd', crd)
-    .order('detected_at', { ascending: false })
-    .limit(limit);
+    .order('detected_at', { ascending: false });
 
   if (type) {
     query = query.eq('alert_type', type);
   }
 
+  // Fetch extra to account for duplicates we'll filter out
+  query = query.limit(limit * 3);
   const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ alerts: data });
+  // Dedup by alert_type + normalized title — keep the most recent
+  const seen = new Set<string>();
+  const deduped = (data || []).filter(alert => {
+    const key = `${alert.alert_type}:${alert.title.toLowerCase().trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, limit);
+
+  return NextResponse.json({ alerts: deduped });
 }

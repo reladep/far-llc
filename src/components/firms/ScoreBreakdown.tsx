@@ -22,7 +22,7 @@ const SCORE_COMPONENTS: ScoreComponent[] = [
   { key: 'aum_growth_score', label: 'AUM Growth', description: 'Consistent year-over-year AUM growth', weight: 0.8 },
   { key: 'client_growth_score', label: 'Client Growth', description: 'New client acquisition and retention', weight: 0.8 },
   { key: 'advisor_bandwidth_score', label: 'Advisor Bandwidth', description: 'Number of clients per advisor', weight: 1.0 },
-  { key: 'derivatives_score', label: 'Derivatives Risk', description: 'Low exposure to risky derivatives', weight: 0.7 },
+  { key: 'derivatives_score', label: 'Investment Mix', description: 'Low exposure to risky derivatives', weight: 0.7 },
   { key: 'upmarket_score', label: 'Upmarket Experience', description: 'Experience with high-net-worth clients', weight: 0.6 },
   { key: 'viability_score', label: 'Firm Viability', description: 'Financial stability and longevity', weight: 0.9 },
 ];

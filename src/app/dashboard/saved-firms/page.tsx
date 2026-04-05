@@ -60,8 +60,18 @@ export default async function SavedFirmsPage() {
     }
   }
 
-  // Fetch VVS scores for all saved firms
-  const scoreMap = crds.length > 0 ? await getFirmScores(crds) : new Map();
+  // Fetch VVS scores + alert subscriptions for all saved firms
+  const [scoreMap, alertSubData] = await Promise.all([
+    crds.length > 0 ? getFirmScores(crds) : Promise.resolve(new Map()),
+    crds.length > 0
+      ? supabaseAdmin
+          .from('alert_subscriptions')
+          .select('crd')
+          .eq('user_id', user.id)
+          .in('crd', crds)
+          .then(({ data }) => new Set((data || []).map((s: any) => s.crd)))
+      : Promise.resolve(new Set<number>()),
+  ]);
 
   const firmsList = (favorites || []).map(fav => ({
     ...fav,
@@ -83,6 +93,7 @@ export default async function SavedFirmsPage() {
         month: 'short', day: 'numeric', year: 'numeric',
       }),
       savedTs: new Date(fav.created_at).getTime(),
+      watching: alertSubData.has(fav.crd),
     };
   });
 

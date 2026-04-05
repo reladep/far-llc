@@ -5,6 +5,15 @@
 */
 
 /* ── Panel header ── */
+.db-panel-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green-3, #2DBD74);
+  margin-bottom: 8px;
+}
 .db-panel-title {
   font-family: var(--serif);
   font-size: clamp(22px, 2.5vw, 26px);

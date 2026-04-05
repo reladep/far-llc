@@ -19,16 +19,26 @@ export async function GET(
   const url = new URL(request.url);
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 50);
 
+  // Fetch extra to account for duplicates we'll filter out
   const { data, error } = await supabase
     .from('news_articles')
     .select('id, crd, title, url, source, published_at, snippet, relevance_score')
     .eq('crd', crd)
     .order('published_at', { ascending: false })
-    .limit(limit);
+    .limit(limit * 3);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ articles: data });
+  // Dedup by normalized title — keep the most recent version
+  const seen = new Set<string>();
+  const deduped = (data || []).filter(article => {
+    const key = article.title.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, limit);
+
+  return NextResponse.json({ articles: deduped });
 }
