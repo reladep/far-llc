@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AlertSub } from './page';
+import '@/components/dashboard/dashboard.css';
 
 interface AlertsPanelProps {
   subs: AlertSub[];
@@ -19,17 +20,6 @@ const ALERT_TYPE_LABELS: Record<string, string> = {
 };
 
 const CSS = `
-  .ap-wrap {
-    --navy:#0A1C2A; --navy-2:#0F2538;
-    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
-    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --red:#DC2626;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
-  }
-  .ap-title { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); letter-spacing:-.02em; margin-bottom:4px; }
-  .ap-sub { font-size:13px; color:var(--ink-3); margin-bottom:24px; }
-  .ap-divider { height:1px; background:var(--rule); margin-bottom:24px; }
-
   .alerts-list { border:1px solid var(--rule); display:flex; flex-direction:column; }
   .alert-row {
     background:#fff;
@@ -69,7 +59,7 @@ const CSS = `
     font-size:11px; background:none; border:none; color:var(--rule);
     cursor:pointer; font-family:var(--sans); transition:color .12s; padding:0 4px;
   }
-  .alert-remove:hover { color:var(--red); }
+  .alert-remove:hover { color:#DC2626; }
   .alert-remove:disabled { opacity:.4; cursor:default; }
 
   /* add row */
@@ -82,10 +72,12 @@ const CSS = `
   }
   .ap-add-btn:hover { border-color:var(--green); color:var(--green); }
 
-  /* empty */
-  .ap-empty { padding:48px 24px; text-align:center; background:#fff; border:1px solid var(--rule); }
-  .ap-empty-title { font-family:var(--serif); font-size:18px; font-weight:700; color:var(--ink); margin-bottom:6px; }
-  .ap-empty-sub { font-size:13px; color:var(--ink-3); }
+  /* mobile */
+  @media(max-width:640px){
+    .alert-row { grid-template-columns:1fr; gap:10px; }
+    .notify-group { justify-self:start; }
+    .alert-remove { justify-self:start; }
+  }
 `;
 
 export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
@@ -112,7 +104,6 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
   };
 
   const handleToggle = async (id: string, crd: number, field: 'notifyEmail' | 'notifyInApp', current: boolean) => {
-    // Optimistic update
     setSubs(prev => prev.map(s => s.id === id ? { ...s, [field]: !current } : s));
     try {
       await fetch('/api/user/alerts/subscriptions', {
@@ -125,23 +116,22 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
         }),
       });
     } catch {
-      // revert on failure
       setSubs(prev => prev.map(s => s.id === id ? { ...s, [field]: current } : s));
     }
   };
 
   return (
-    <div className="ap-wrap">
+    <div>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="ap-title">Alerts</div>
-      <div className="ap-sub">Monitor firms for filing changes. Toggle notification preferences per firm.</div>
-      <div className="ap-divider" />
+      <div className="db-panel-title">Alerts</div>
+      <div className="db-panel-sub">Monitor firms for filing changes. Toggle notification preferences per firm.</div>
+      <div className="db-panel-divider" />
 
       {subs.length === 0 ? (
-        <div className="ap-empty">
-          <div className="ap-empty-title">No alerts set</div>
-          <div className="ap-empty-sub">Add firms from your saved list to start monitoring them.</div>
+        <div className="db-empty">
+          <div className="db-empty-title">No alerts set</div>
+          <div className="db-empty-sub">Add firms from your saved list to start monitoring them.</div>
         </div>
       ) : (
         <div className="alerts-list">
@@ -161,7 +151,6 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
                 )}
               </div>
 
-              {/* Email / In-app toggle */}
               <div className="notify-group">
                 <button
                   className={`notify-btn${sub.notifyEmail ? ' on' : ''}`}

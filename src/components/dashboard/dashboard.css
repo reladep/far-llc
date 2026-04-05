@@ -1,0 +1,165 @@
+/* ── Shared dashboard panel styles ──
+   Color variables (--navy, --green, --ink, etc.) are inherited
+   from .db-wrap in DashboardShell. These styles define reusable
+   patterns used across all dashboard panels.
+*/
+
+/* ── Panel header ── */
+.db-panel-title {
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.5vw, 26px);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.db-panel-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  margin-bottom: 24px;
+}
+.db-panel-divider {
+  height: 1px;
+  background: var(--rule);
+  margin-bottom: 24px;
+}
+
+/* ── Section labels ── */
+.db-section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.db-section-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--rule);
+}
+
+/* ── Empty state ── */
+.db-empty {
+  padding: 48px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--rule);
+}
+.db-empty-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.db-empty-sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  margin-bottom: 16px;
+}
+.db-empty-link {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: var(--green);
+  color: #fff;
+  padding: 8px 18px;
+  text-decoration: none;
+  font-family: var(--sans);
+  transition: background 0.15s;
+}
+.db-empty-link:hover {
+  background: var(--green-2);
+}
+
+/* ── Loading spinner ── */
+.db-loading {
+  padding: 48px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--rule);
+}
+.db-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--green-3);
+  border-radius: 50%;
+  animation: db-spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes db-spin {
+  to { transform: rotate(360deg); }
+}
+.db-loading-text {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--sans);
+}
+
+/* ── Toolbar ── */
+.db-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.db-sort-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.db-sort-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-family: var(--sans);
+}
+.db-sort-btn {
+  font-size: 11px;
+  font-family: var(--sans);
+  padding: 5px 11px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.db-sort-btn:hover:not(.on) {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.db-sort-btn.on {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+/* ── View-all link ── */
+.db-view-all {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-3);
+  text-decoration: none;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  transition: all 0.15s;
+}
+.db-view-all:hover {
+  border-color: var(--green);
+  color: var(--green);
+}

@@ -24,7 +24,9 @@ const CSS = `
     --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+    --serif:var(--font-serif,'Cormorant Garamond',serif);
+    --sans:var(--font-sans,'Inter',sans-serif);
+    --mono:var(--font-mono,'DM Mono',monospace);
   }
   .db-page { display:flex; min-height:calc(100vh - 52px); }
 

@@ -785,6 +785,8 @@ export default function MatchResultsPage() {
   const [savedCrds, setSavedCrds] = useState<Set<number>>(new Set());
 
   const [expandedCrd, setExpandedCrd] = useState<number | null>(null);
+  const [resultsSaved, setResultsSaved] = useState(false);
+  const [savingResults, setSavingResults] = useState(false);
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -955,8 +957,8 @@ export default function MatchResultsPage() {
         </div>
       </div>
 
-      {/* Stats strip */}
-      {firms.length > 0 && isAuthed !== false && (
+      {/* Stats strip — authed only */}
+      {firms.length > 0 && isAuthed && (
         <div className="flex items-center justify-center gap-7 py-7 px-5 border-b border-[#CAD8D0]">
           <div className="text-center">
             <div className="font-serif text-[18px] font-bold text-[#0C1810]">
@@ -991,8 +993,8 @@ export default function MatchResultsPage() {
         </div>
       )}
 
-      {/* Profile Insights */}
-      {!loading && answers && firms.length > 0 && (
+      {/* Profile Insights — authed only */}
+      {!loading && answers && firms.length > 0 && isAuthed && (
         <ProfileInsightsPanel answers={answers} firms={firms} />
       )}
 
@@ -1013,17 +1015,37 @@ export default function MatchResultsPage() {
         ) : isAuthed === false ? (
           <FirmTableGate config={matchGateConfig}>
             <div className="mc-list">
-              {firms.slice(0, matchGateConfig.previewCount ?? 4).map((firm, i) => (
-                <MatchCard
-                  key={firm.crd}
-                  firm={firm}
-                  index={i}
-                  isExpanded={false}
-                  onToggle={() => {}}
-                  isAuthed={isAuthed}
-                  isSaved={false}
-                />
-              ))}
+              {firms.slice(0, matchGateConfig.previewCount ?? 4).map((firm, i) => {
+                // Redact sensitive data — only show placeholder shapes
+                const redacted: MatchedFirm = {
+                  ...firm,
+                  name: 'Advisory Firm',
+                  displayName: 'Advisory Firm',
+                  city: '',
+                  state: '',
+                  logoKey: null,
+                  matchPercent: 0,
+                  visorScore: undefined,
+                  estimatedFee: '',
+                  matchReason: '',
+                  reasons: [],
+                  aum: 0,
+                  feeCompetitiveness: 0,
+                  clientGrowth: 0,
+                  advisorBandwidth: 0,
+                };
+                return (
+                  <MatchCard
+                    key={firm.crd}
+                    firm={redacted}
+                    index={i}
+                    isExpanded={false}
+                    onToggle={() => {}}
+                    isAuthed={isAuthed}
+                    isSaved={false}
+                  />
+                );
+              })}
             </div>
           </FirmTableGate>
         ) : (
@@ -1045,6 +1067,31 @@ export default function MatchResultsPage() {
         {/* Bottom actions */}
         {!loading && firms.length > 0 && (
           <div className="flex gap-3 justify-center flex-wrap pt-6 max-sm:flex-col max-sm:items-stretch">
+            {isAuthed && (
+              <button
+                className={`text-[12px] font-sans font-semibold px-6 py-2.5 transition-all text-center ${
+                  resultsSaved
+                    ? 'bg-[rgba(45,189,116,0.08)] border border-[rgba(45,189,116,0.3)] text-[#2DBD74]'
+                    : 'bg-[#1A7A4A] text-white hover:bg-[#22995E]'
+                }`}
+                disabled={savingResults || resultsSaved}
+                onClick={async () => {
+                  setSavingResults(true);
+                  try {
+                    const res = await fetch('/api/user/match-results', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ firms }),
+                      credentials: 'include',
+                    });
+                    if (res.ok) setResultsSaved(true);
+                  } catch { /* silent */ }
+                  finally { setSavingResults(false); }
+                }}
+              >
+                {savingResults ? 'Saving\u2026' : resultsSaved ? '\u2713 Saved to Dashboard' : 'Save Results to Dashboard'}
+              </button>
+            )}
             <Link
               href="/match"
               className="text-[12px] font-sans px-6 py-2.5 border border-[#CAD8D0] text-[#5A7568] hover:border-[#5A7568] hover:text-[#0C1810] transition-all text-center"
