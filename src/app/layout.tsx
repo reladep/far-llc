@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Cormorant_Garamond, DM_Mono, Inter } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { ToastProvider } from '@/components/ui/Toast';
 import '@/styles/globals.css';
 
 const inter = Inter({
@@ -43,7 +44,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${cormorant.variable} ${dmMono.variable}`}>
       <body className="min-h-screen flex flex-col bg-bg-primary text-text-primary font-sans antialiased">
         <Header />
-        <main className="flex-1">{children}</main>
+        <ToastProvider>
+          <main className="flex-1">{children}</main>
+        </ToastProvider>
         <Footer />
       </body>
     </html>

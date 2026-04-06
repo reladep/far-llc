@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface SaveFirmButtonProps {
   crd: number;
@@ -14,6 +15,7 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
   const [loading, setLoading] = useState(false);
   const [watchLoading, setWatchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleToggle = async () => {
     setLoading(true);
@@ -23,14 +25,15 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
         const res = await fetch(`/api/user/saved-firms/${crd}`, { method: 'DELETE', credentials: 'include' });
         if (res.ok) {
           setSaved(false);
-          // Also remove alert subscription when unsaving
           if (watching) {
             await fetch(`/api/user/alerts/subscriptions?crd=${crd}`, { method: 'DELETE', credentials: 'include' });
             setWatching(false);
           }
+          toast('Firm removed');
         } else {
           const data = await res.json();
           setError(data.error || 'Failed to remove');
+          toast(data.error || 'Failed to remove', { type: 'error' });
         }
       } else {
         const res = await fetch('/api/user/saved-firms', {
@@ -39,14 +42,18 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
           body: JSON.stringify({ crd }),
           credentials: 'include',
         });
-        if (res.ok) setSaved(true);
-        else {
+        if (res.ok) {
+          setSaved(true);
+          toast('Firm saved');
+        } else {
           const data = await res.json();
           setError(data.error || 'Failed to save');
+          toast(data.error || 'Failed to save', { type: 'error' });
         }
       }
     } catch {
       setError('Network error');
+      toast('Network error', { type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -61,10 +68,13 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
         const res = await fetch(`/api/user/alerts/subscriptions?crd=${crd}`, {
           method: 'DELETE', credentials: 'include',
         });
-        if (res.ok) setWatching(false);
-        else {
+        if (res.ok) {
+          setWatching(false);
+          toast('Alerts disabled');
+        } else {
           const data = await res.json();
           setError(data.error || 'Failed to remove alert');
+          toast(data.error || 'Failed to remove alert', { type: 'error' });
         }
       } else {
         const res = await fetch('/api/user/alerts/subscriptions', {
@@ -73,14 +83,18 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
           body: JSON.stringify({ crd }),
           credentials: 'include',
         });
-        if (res.ok) setWatching(true);
-        else {
+        if (res.ok) {
+          setWatching(true);
+          toast('Alerts enabled');
+        } else {
           const data = await res.json();
           setError(data.error || 'Failed to add alert');
+          toast(data.error || 'Failed to add alert', { type: 'error' });
         }
       }
     } catch {
       setError('Network error');
+      toast('Network error', { type: 'error' });
     } finally {
       setWatchLoading(false);
     }

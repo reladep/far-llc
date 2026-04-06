@@ -15,7 +15,7 @@ export default async function DashboardLayout({
     redirect('/auth/login');
   }
 
-  // Sidebar badge counts (parallel)
+  // Sidebar badge counts + plan tier (parallel)
   const [{ count: savedCount }, { count: alertCount }, { count: matchCount }] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
@@ -31,12 +31,22 @@ export default async function DashboardLayout({
       .eq('user_id', user.id),
   ]);
 
+  // Plan label — will read from subscription table once billing is wired
+  const PLAN_LABELS: Record<string, string> = {
+    trial: 'Trial Access',
+    consumer: 'Consumer',
+    enterprise: 'Enterprise',
+  };
+  const planTier = (user.user_metadata?.plan_tier as string) || 'trial';
+  const planLabel = PLAN_LABELS[planTier] || 'Trial Access';
+
   return (
     <DashboardShell
       userEmail={user.email ?? ''}
       savedCount={savedCount ?? 0}
       alertCount={alertCount ?? 0}
       matchCount={matchCount ?? 0}
+      planLabel={planLabel}
     >
       {children}
     </DashboardShell>

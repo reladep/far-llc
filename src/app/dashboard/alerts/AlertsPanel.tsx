@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { AlertSub, RecentAlert, WatchedFirm } from './page';
+import { useToast } from '@/components/ui/Toast';
+import type { AlertSub, RecentAlert } from './page';
 import '@/components/dashboard/dashboard.css';
 
 interface AlertsPanelProps {
   subs: AlertSub[];
   digestFrequency: string;
   recentAlerts: RecentAlert[];
-  watchedFirms: WatchedFirm[];
 }
 
 const ALERT_TYPE_LABELS: Record<string, string> = {
@@ -147,8 +147,11 @@ const CSS = `
   @media(max-width:640px){
     .alert-row { grid-template-columns:1fr; gap:10px; }
     .notify-group { justify-self:start; }
-    .alert-remove { justify-self:start; }
+    .notify-btn { padding:10px 16px; font-size:12px; }
+    .alert-remove { justify-self:start; padding:6px 10px; font-size:14px; }
     .ap-freq-group { flex-wrap:wrap; }
+    .ap-freq-btn { padding:10px 16px; }
+    .ap-load-more { padding:14px; font-size:13px; }
   }
 `;
 
@@ -172,48 +175,13 @@ const DIGEST_OPTIONS = [
   { value: 'none', label: 'Off' },
 ];
 
-export default function AlertsPanel({ subs: initialSubs, digestFrequency: initialFreq, recentAlerts, watchedFirms }: AlertsPanelProps) {
+export default function AlertsPanel({ subs: initialSubs, digestFrequency: initialFreq, recentAlerts }: AlertsPanelProps) {
   const [subs, setSubs] = useState(initialSubs);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [frequency, setFrequency] = useState(initialFreq);
-  const [firmFilter, setFirmFilter] = useState<number | null>(null);
-  const [alerts, setAlerts] = useState<RecentAlert[]>(recentAlerts);
-  const [cursor, setCursor] = useState<string | null>(
-    recentAlerts.length > 0 ? recentAlerts[recentAlerts.length - 1].detectedAt : null
-  );
-  const [hasMore, setHasMore] = useState(recentAlerts.length >= 20);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const alerts = recentAlerts;
   const router = useRouter();
-
-  const loadAlerts = async (crd: number | null, reset: boolean) => {
-    setLoadingMore(true);
-    try {
-      const params = new URLSearchParams({ limit: '20' });
-      if (crd) params.set('crd', String(crd));
-      if (!reset && cursor) params.set('cursor', cursor);
-
-      const res = await fetch(`/api/user/alerts/feed?${params}`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
-
-      if (reset) {
-        setAlerts(data.alerts);
-      } else {
-        setAlerts(prev => [...prev, ...data.alerts]);
-      }
-      setCursor(data.next_cursor);
-      setHasMore(data.has_more);
-    } catch { /* silently fail */ }
-    setLoadingMore(false);
-  };
-
-  const handleFirmFilter = (crd: number | null) => {
-    setFirmFilter(crd);
-    setAlerts([]);
-    setCursor(null);
-    setHasMore(false);
-    loadAlerts(crd, true);
-  };
+  const { toast } = useToast();
 
   const handleRemove = async (id: string, crd: number) => {
     setRemovingId(id);
@@ -224,10 +192,23 @@ export default function AlertsPanel({ subs: initialSubs, digestFrequency: initia
       });
       if (res.ok) {
         setSubs(prev => prev.filter(s => s.id !== id));
+        toast('Alert removed', {
+          undo: async () => {
+            await fetch('/api/user/alerts/subscriptions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ crd }),
+              credentials: 'include',
+            });
+            router.refresh();
+          },
+        });
         router.refresh();
+      } else {
+        toast('Failed to remove alert', { type: 'error' });
       }
     } catch {
-      // silently fail
+      toast('Network error', { type: 'error' });
     } finally {
       setRemovingId(null);
     }
@@ -254,14 +235,17 @@ export default function AlertsPanel({ subs: initialSubs, digestFrequency: initia
     const oldFreq = frequency;
     setFrequency(newFreq);
     try {
-      await fetch('/api/user/alerts/preferences', {
+      const res = await fetch('/api/user/alerts/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ digest_frequency: newFreq }),
       });
+      if (res.ok) toast('Digest preference updated');
+      else { setFrequency(oldFreq); toast('Failed to update preference', { type: 'error' }); }
     } catch {
       setFrequency(oldFreq);
+      toast('Network error', { type: 'error' });
     }
   };
 
@@ -300,77 +284,46 @@ export default function AlertsPanel({ subs: initialSubs, digestFrequency: initia
         <div className="ap-digest-note">{DIGEST_NOTE[frequency]}</div>
       </div>
 
-      {/* Recent events feed */}
-      {(alerts.length > 0 || firmFilter !== null) && (
+      {/* Recent events preview */}
+      {alerts.length > 0 && (
         <div className="ap-feed">
           <div className="db-toolbar">
             <span className="db-section-label">Recent Activity</span>
-            <span className="db-section-count">{alerts.length} events{hasMore ? '+' : ''}</span>
+            <Link href="/dashboard/alerts/history" className="do-card-link">View all →</Link>
           </div>
-          {watchedFirms.length > 1 && (
-            <div className="db-sort-group" style={{ marginBottom: 12 }}>
-              <span className="db-sort-label">Firm</span>
-              <button
-                className={`db-sort-btn${firmFilter === null ? ' on' : ''}`}
-                onClick={() => handleFirmFilter(null)}
-              >
-                All
-              </button>
-              {watchedFirms.map(f => (
-                <button
-                  key={f.crd}
-                  className={`db-sort-btn${firmFilter === f.crd ? ' on' : ''}`}
-                  onClick={() => handleFirmFilter(f.crd)}
-                >
-                  {f.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {alerts.length === 0 && firmFilter !== null ? (
-            <div className="db-empty">
-              <div className="db-empty-title">No alerts for this firm</div>
-              <div className="db-empty-sub">No events have been detected yet. Alerts are generated when we detect changes in firm data.</div>
-            </div>
-          ) : (
-            <div className="ap-feed-list">
-              {alerts.map(alert => (
-                <div key={alert.id} className="ap-event">
-                  <div className="ap-event-header">
-                    <span
-                      className="ap-event-dot"
-                      style={{ background: SEVERITY_COLORS[alert.severity] || '#CAD8D0' }}
-                    />
-                    <span className="ap-event-type">
-                      {ALERT_TYPE_LABELS[alert.alertType] || alert.alertType}
-                    </span>
-                    <span className="ap-event-time">{timeAgo(alert.detectedAt)}</span>
-                  </div>
-                  <div className="ap-event-title">{alert.title}</div>
-                  <Link href={`/firm/${alert.crd}`} className="ap-event-firm">
-                    {alert.firmName}
-                  </Link>
-                  {alert.summary && (
-                    <div className="ap-event-summary">{alert.summary}</div>
-                  )}
+          <div className="ap-feed-list">
+            {alerts.slice(0, 5).map(alert => (
+              <div key={alert.id} className="ap-event">
+                <div className="ap-event-header">
+                  <span
+                    className="ap-event-dot"
+                    style={{ background: SEVERITY_COLORS[alert.severity] || '#CAD8D0' }}
+                  />
+                  <span className="ap-event-type">
+                    {ALERT_TYPE_LABELS[alert.alertType] || alert.alertType}
+                  </span>
+                  <span className="ap-event-time">{timeAgo(alert.detectedAt)}</span>
                 </div>
-              ))}
-            </div>
-          )}
-          {hasMore && (
-            <button
-              className="ap-load-more"
-              onClick={() => loadAlerts(firmFilter, false)}
-              disabled={loadingMore}
-            >
-              {loadingMore ? 'Loading…' : 'Load More'}
-            </button>
+                <div className="ap-event-title">{alert.title}</div>
+                <Link href={`/firm/${alert.crd}`} className="ap-event-firm">
+                  {alert.firmName}
+                </Link>
+                {alert.summary && (
+                  <div className="ap-event-summary">{alert.summary}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          {alerts.length > 5 && (
+            <Link href="/dashboard/alerts/history" className="ap-load-more" style={{ textAlign: 'center', textDecoration: 'none', display: 'block' }}>
+              View All Alerts →
+            </Link>
           )}
         </div>
       )}
 
       {/* Subscriptions */}
-      <div className="db-toolbar" style={{ marginTop: alerts.length > 0 || firmFilter !== null ? 24 : 0 }}>
+      <div className="db-toolbar" style={{ marginTop: alerts.length > 0 ? 24 : 0 }}>
         <span className="db-section-label">Watched Firms</span>
         {subs.length > 0 && <span className="db-section-count">{subs.length} / 25</span>}
       </div>

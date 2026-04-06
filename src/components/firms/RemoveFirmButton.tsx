@@ -2,24 +2,40 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/Toast';
 
 interface RemoveFirmButtonProps {
   crd: number;
+  firmName?: string;
 }
 
-export default function RemoveFirmButton({ crd }: RemoveFirmButtonProps) {
+export default function RemoveFirmButton({ crd, firmName }: RemoveFirmButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleRemove = async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/user/saved-firms/${crd}`, { method: 'DELETE' });
       if (res.ok) {
+        toast(`${firmName || 'Firm'} removed`, {
+          type: 'success',
+          undo: async () => {
+            await fetch('/api/user/saved-firms', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ crd }),
+            });
+            router.refresh();
+          },
+        });
         router.refresh();
+      } else {
+        toast('Failed to remove firm', { type: 'error' });
       }
     } catch {
-      // silently fail
+      toast('Network error', { type: 'error' });
     } finally {
       setLoading(false);
     }

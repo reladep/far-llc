@@ -10,6 +10,7 @@ interface DashboardShellProps {
   savedCount: number;
   alertCount: number;
   matchCount: number;
+  planLabel: string;
 }
 
 const NAV = [
@@ -124,6 +125,8 @@ const CSS = `
     .db-sidebar.open { transform:translateX(0); }
     .db-main { padding:16px 16px 80px; }
     .db-mobile-trigger { display:flex; }
+    .db-nav-item { padding:16px 14px; font-size:14px; }
+    .db-nav-count { font-size:11px; padding:3px 8px; }
   }
 `;
 
@@ -133,6 +136,7 @@ export default function DashboardShell({
   savedCount,
   alertCount,
   matchCount,
+  planLabel,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -168,7 +172,7 @@ export default function DashboardShell({
             <div className="db-name">{displayName}</div>
             <div className="db-plan">
               <span className="db-plan-dot" />
-              Annual Access
+              {planLabel}
             </div>
           </Link>
 

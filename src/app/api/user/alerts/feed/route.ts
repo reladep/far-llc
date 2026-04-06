@@ -9,9 +9,11 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  * Supports cursor-based pagination and firm filtering.
  *
  * Query params:
- *   limit  — max results (default 20, max 100)
- *   cursor — ISO timestamp cursor (detected_at of last item)
- *   crd    — filter to a single firm
+ *   limit    — max results (default 20, max 100)
+ *   cursor   — ISO timestamp cursor (detected_at of last item)
+ *   crd      — filter to a single firm
+ *   type     — filter by alert_type (e.g. fee_change, news)
+ *   severity — filter by severity (high, medium, low)
  */
 export async function GET(request: NextRequest) {
   const supabase = createSupabaseServerClient();
@@ -25,6 +27,8 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
   const cursor = url.searchParams.get('cursor');
   const crdFilter = url.searchParams.get('crd');
+  const typeFilter = url.searchParams.get('type');
+  const severityFilter = url.searchParams.get('severity');
 
   // Get user's subscribed CRDs
   const { data: subs } = await supabaseAdmin
@@ -53,10 +57,16 @@ export async function GET(request: NextRequest) {
     .select('id, crd, alert_type, severity, title, summary, detected_at')
     .in('crd', crds)
     .order('detected_at', { ascending: false })
-    .limit((limit + 1) * 3); // fetch extra for dedup headroom
+    .limit((limit + 1) * 10); // fetch extra for dedup headroom (duplicates can be heavy)
 
   if (cursor) {
     query = query.lt('detected_at', cursor);
+  }
+  if (typeFilter) {
+    query = query.eq('alert_type', typeFilter);
+  }
+  if (severityFilter) {
+    query = query.eq('severity', severityFilter);
   }
 
   const { data: alerts, error } = await query;

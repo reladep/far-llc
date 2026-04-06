@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/Toast';
 import RemoveFirmButton from '@/components/firms/RemoveFirmButton';
 import FirmRow, { FIRM_ROW_CSS } from '@/components/dashboard/FirmRow';
 import type { FirmRowData } from '@/components/dashboard/FirmRow';
@@ -46,7 +48,7 @@ const CSS = `
   .sf-cmp-btn.clear:hover { border-color:var(--ink-3); color:var(--ink); }
 
   /* Saved firms row layout */
-  .sf-row { grid-template-columns:28px 1fr 36px 28px 100px 100px; cursor:pointer; }
+  .sf-row { grid-template-columns:28px 1fr 36px 28px 90px auto; cursor:pointer; }
   .sf-check input { accent-color:var(--green); width:14px; height:14px; cursor:pointer; }
   .sf-watch-btn {
     background:none; border:none; cursor:pointer; padding:2px;
@@ -70,16 +72,36 @@ const CSS = `
   @media(max-width:640px){
     .sf-row { grid-template-columns:20px 1fr 36px 28px; }
     .sf-date,.sf-actions { display:none; }
+    .sf-watch-btn { padding:6px; }
+    .sf-watch-btn svg { width:18px; height:18px; }
+    .sf-check input { width:18px; height:18px; }
   }
 `;
 
+const VALID_SORTS: SortKey[] = ['date', 'vvs', 'aum', 'name'];
+
 export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('date');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialSort = VALID_SORTS.includes(searchParams.get('sort') as SortKey)
+    ? (searchParams.get('sort') as SortKey)
+    : 'date';
+  const [sortKey, setSortKey] = useState<SortKey>(initialSort);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [watchSet, setWatchSet] = useState<Set<number>>(
     () => new Set(firms.filter(f => f.watching).map(f => f.crd))
   );
   const [watchLoading, setWatchLoading] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const handleSort = (key: SortKey) => {
+    setSortKey(key);
+    const params = new URLSearchParams(searchParams.toString());
+    if (key === 'date') params.delete('sort');
+    else params.set('sort', key);
+    const qs = params.toString();
+    router.replace(`/dashboard/saved-firms${qs ? `?${qs}` : ''}`, { scroll: false });
+  };
 
   const handleWatchToggle = async (crd: number) => {
     const isWatching = watchSet.has(crd);
@@ -89,7 +111,12 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
         const res = await fetch(`/api/user/alerts/subscriptions?crd=${crd}`, {
           method: 'DELETE', credentials: 'include',
         });
-        if (res.ok) setWatchSet(prev => { const next = new Set(prev); next.delete(crd); return next; });
+        if (res.ok) {
+          setWatchSet(prev => { const next = new Set(prev); next.delete(crd); return next; });
+          toast('Alerts disabled');
+        } else {
+          toast('Failed to update alerts', { type: 'error' });
+        }
       } else {
         const res = await fetch('/api/user/alerts/subscriptions', {
           method: 'POST',
@@ -97,9 +124,14 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
           body: JSON.stringify({ crd }),
           credentials: 'include',
         });
-        if (res.ok) setWatchSet(prev => new Set(prev).add(crd));
+        if (res.ok) {
+          setWatchSet(prev => new Set(prev).add(crd));
+          toast('Alerts enabled');
+        } else {
+          toast('Failed to update alerts', { type: 'error' });
+        }
       }
-    } catch { /* silently fail */ }
+    } catch { toast('Network error', { type: 'error' }); }
     setWatchLoading(null);
   };
 
@@ -146,7 +178,7 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
             <button
               key={s.key}
               className={`db-sort-btn${sortKey === s.key ? ' on' : ''}`}
-              onClick={() => setSortKey(s.key)}
+              onClick={() => handleSort(s.key)}
             >
               {s.label}
             </button>
@@ -211,7 +243,7 @@ export default function SavedFirmsPanel({ firms }: SavedFirmsPanelProps) {
                       <Link href={`/firm/${firm.crd}`} className="sf-btn">
                         View →
                       </Link>
-                      <RemoveFirmButton crd={firm.crd} />
+                      <RemoveFirmButton crd={firm.crd} firmName={firm.name} />
                     </div>
                   </>
                 }

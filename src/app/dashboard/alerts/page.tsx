@@ -94,7 +94,7 @@ export default async function AlertsPage() {
         .select('id, crd, alert_type, severity, title, summary, detected_at')
         .in('crd', crds)
         .order('detected_at', { ascending: false })
-        .limit(60), // fetch extra for dedup headroom
+        .limit(200), // fetch extra for dedup headroom (duplicates can be heavy)
     ]);
 
     firmData = firms || [];
@@ -127,11 +127,6 @@ export default async function AlertsPage() {
   const nameMap = new Map((nameData).map((n: any) => [n.crd, n.display_name as string]));
   const firmMap = new Map((firmData).map((f: any) => [f.crd, f]));
 
-  const watchedFirms: { crd: number; name: string }[] = crds.map(crd => ({
-    crd,
-    name: nameMap.get(crd) || `CRD #${crd}`,
-  }));
-
   const alertSubs: AlertSub[] = (subs || []).map((s: any) => {
     const firm = firmMap.get(s.crd);
     const displayName = nameMap.get(s.crd) || `CRD #${s.crd}`;
@@ -157,7 +152,6 @@ export default async function AlertsPage() {
       subs={alertSubs}
       digestFrequency={digestFrequency}
       recentAlerts={recentAlerts}
-      watchedFirms={watchedFirms}
     />
   );
 }

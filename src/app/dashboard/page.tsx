@@ -50,6 +50,10 @@ const CSS = `
     font-family:var(--mono); font-size:10px; font-weight:600;
     letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
   }
+  .do-stat-sub {
+    font-family:var(--sans); font-size:11px; color:var(--green);
+    font-weight:500; margin-top:4px;
+  }
 
   .do-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
 
@@ -140,6 +144,7 @@ export default async function DashboardOverview() {
     { count: alertCount },
     { data: matchProfile },
     { data: recentFavorites },
+    { data: alertSubCrds },
   ] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
@@ -160,7 +165,24 @@ export default async function DashboardOverview() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(3),
+    supabaseAdmin
+      .from('alert_subscriptions')
+      .select('crd')
+      .eq('user_id', user.id),
   ]);
+
+  // Recent alert events (last 7 days) for watched firms
+  const watchedCrds = alertSubCrds?.map(s => s.crd) ?? [];
+  let recentAlertEventCount = 0;
+  if (watchedCrds.length > 0) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count } = await supabaseAdmin
+      .from('firm_alerts')
+      .select('*', { count: 'exact', head: true })
+      .in('crd', watchedCrds)
+      .gte('detected_at', sevenDaysAgo);
+    recentAlertEventCount = count ?? 0;
+  }
 
   // Fetch firm details for recent favorites
   const recentCrds = recentFavorites?.map(f => f.crd) ?? [];
@@ -227,10 +249,13 @@ export default async function DashboardOverview() {
         </div>
         <div className="do-stat">
           <div className="do-stat-value">{alertCount ?? 0}</div>
-          <div className="do-stat-label">Active Alerts</div>
+          <div className="do-stat-label">Watched Firms</div>
+          {recentAlertEventCount > 0 && (
+            <div className="do-stat-sub">{recentAlertEventCount} event{recentAlertEventCount !== 1 ? 's' : ''} this week</div>
+          )}
         </div>
         <div className="do-stat">
-          <div className="do-stat-value">{hasMatch ? '1' : '0'}</div>
+          <div className="do-stat-value">{hasMatch ? 'Active' : '—'}</div>
           <div className="do-stat-label">Match Profile{hasMatch && matchDate ? ` · ${matchDate}` : ''}</div>
         </div>
       </div>
