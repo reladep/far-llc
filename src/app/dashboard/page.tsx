@@ -37,14 +37,17 @@ const CSS = `
   }
 
   .do-stats {
-    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px;
+    display:flex; align-items:center; justify-content:center; gap:28px;
+    padding:16px 0; margin-bottom:20px; border-bottom:1px solid var(--rule);
+  }
+  .do-stat-divider {
+    width:1px; height:28px; background:var(--rule); flex-shrink:0;
   }
   .do-stat {
-    background:#fff; border:1px solid var(--rule); padding:20px;
-    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+    text-align:center;
   }
   .do-stat-value {
-    font-family:var(--serif); font-size:24px; font-weight:700; color:var(--ink); margin-bottom:2px;
+    font-family:var(--serif); font-size:20px; font-weight:700; color:var(--ink); margin-bottom:1px;
   }
   .do-stat-label {
     font-family:var(--mono); font-size:10px; font-weight:600;
@@ -52,7 +55,7 @@ const CSS = `
   }
   .do-stat-sub {
     font-family:var(--sans); font-size:11px; color:var(--green);
-    font-weight:500; margin-top:4px;
+    font-weight:500; margin-top:2px;
   }
 
   .do-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
@@ -124,7 +127,8 @@ const CSS = `
   }
 
   @media(max-width:640px){
-    .do-stats { grid-template-columns:1fr; }
+    .do-stats { flex-direction:column; gap:14px; }
+    .do-stat-divider { width:60px; height:1px; }
     .do-grid { grid-template-columns:1fr; }
     .do-actions { flex-direction:column; }
   }
@@ -247,13 +251,15 @@ export default async function DashboardOverview() {
           <div className="do-stat-value">{savedCount ?? 0}</div>
           <div className="do-stat-label">Saved Firms</div>
         </div>
+        <div className="do-stat-divider" />
         <div className="do-stat">
           <div className="do-stat-value">{alertCount ?? 0}</div>
-          <div className="do-stat-label">Watched Firms</div>
+          <div className="do-stat-label">Firms with Alerts</div>
           {recentAlertEventCount > 0 && (
             <div className="do-stat-sub">{recentAlertEventCount} event{recentAlertEventCount !== 1 ? 's' : ''} this week</div>
           )}
         </div>
+        <div className="do-stat-divider" />
         <div className="do-stat">
           <div className="do-stat-value">{hasMatch ? 'Active' : '—'}</div>
           <div className="do-stat-label">Match Profile{hasMatch && matchDate ? ` · ${matchDate}` : ''}</div>

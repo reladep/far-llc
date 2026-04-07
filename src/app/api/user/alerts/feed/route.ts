@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 2000);
   const cursor = url.searchParams.get('cursor');
   const crdFilter = url.searchParams.get('crd');
   const typeFilter = url.searchParams.get('type');

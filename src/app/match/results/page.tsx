@@ -945,53 +945,42 @@ export default function MatchResultsPage() {
           <p className="text-[13px] text-white/45 mb-4 font-sans">
             We work for you, not the advisors. Every match is ranked by fit alone.
           </p>
-          {chips.length > 0 && (
-            <div className="flex flex-wrap gap-2 justify-center">
-              {chips.map((c, i) => (
-                <span key={i} className="font-mono text-[10px] text-white/55 border border-white/[0.12] px-3 py-1 bg-white/[0.04]">
-                  {c}
-                </span>
-              ))}
+          {firms.length > 0 && isAuthed && (
+            <div className="flex items-center justify-center gap-7 mt-6 px-5">
+              <div className="text-center">
+                <div className="font-serif text-[18px] font-bold text-white">
+                  {firms.length}<span className="text-[#2DBD74]">+</span>
+                </div>
+                <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                  Matches Found
+                </div>
+              </div>
+              <div className="w-px h-4 bg-white/15 shrink-0" />
+              <div className="text-center">
+                <div className="font-serif text-[18px] font-bold text-white">
+                  {avgMatch}<span className="text-[#2DBD74]">%</span>
+                </div>
+                <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                  Avg Match
+                </div>
+              </div>
+              {avgVisor > 0 && (
+                <>
+                  <div className="w-px h-4 bg-white/15 shrink-0" />
+                  <div className="text-center">
+                    <div className="font-serif text-[18px] font-bold text-white">
+                      {avgVisor}<span className="text-[#2DBD74]">/100</span>
+                    </div>
+                    <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                      Avg Visor Index
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* Stats strip — authed only */}
-      {firms.length > 0 && isAuthed && (
-        <div className="flex items-center justify-center gap-7 py-7 px-5 border-b border-[#CAD8D0]">
-          <div className="text-center">
-            <div className="font-serif text-[18px] font-bold text-[#0C1810]">
-              {firms.length}<span className="text-[#2DBD74]">+</span>
-            </div>
-            <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-[#5A7568] mt-0.5">
-              Matches Found
-            </div>
-          </div>
-          <div className="w-px h-4 bg-[#CAD8D0] shrink-0" />
-          <div className="text-center">
-            <div className="font-serif text-[18px] font-bold text-[#0C1810]">
-              {avgMatch}<span className="text-[#2DBD74]">%</span>
-            </div>
-            <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-[#5A7568] mt-0.5">
-              Avg Match
-            </div>
-          </div>
-          {avgVisor > 0 && (
-            <>
-              <div className="w-px h-4 bg-[#CAD8D0] shrink-0" />
-              <div className="text-center">
-                <div className="font-serif text-[18px] font-bold text-[#0C1810]">
-                  {avgVisor}<span className="text-[#2DBD74]">/100</span>
-                </div>
-                <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-[#5A7568] mt-0.5">
-                  Avg Visor Index
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* Profile Insights — authed only */}
       {!loading && answers && firms.length > 0 && isAuthed && (
@@ -1050,7 +1039,7 @@ export default function MatchResultsPage() {
           </FirmTableGate>
         ) : (
           <div className="mc-list">
-            {firms.slice(0, 10).map((firm, i) => (
+            {firms.map((firm, i) => (
               <MatchCard
                 key={firm.crd}
                 firm={firm}

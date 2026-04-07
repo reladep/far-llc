@@ -289,7 +289,6 @@ export default function AlertsPanel({ subs: initialSubs, digestFrequency: initia
         <div className="ap-feed">
           <div className="db-toolbar">
             <span className="db-section-label">Recent Activity</span>
-            <Link href="/dashboard/alerts/history" className="do-card-link">View all →</Link>
           </div>
           <div className="ap-feed-list">
             {alerts.slice(0, 5).map(alert => (
@@ -314,11 +313,9 @@ export default function AlertsPanel({ subs: initialSubs, digestFrequency: initia
               </div>
             ))}
           </div>
-          {alerts.length > 5 && (
-            <Link href="/dashboard/alerts/history" className="ap-load-more" style={{ textAlign: 'center', textDecoration: 'none', display: 'block' }}>
-              View All Alerts →
-            </Link>
-          )}
+          <Link href="/dashboard/alerts/history" className="db-view-all">
+            View All Alerts →
+          </Link>
         </div>
       )}
 
