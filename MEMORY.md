@@ -49,6 +49,10 @@ _Last updated: 2026-03-29_
 - Firm profiles showing real data
 - **Fee calculator widget live on all firm profiles**
 
+## Active Issues (April 2026)
+- **Alert History page added (4/5):** New `/dashboard/alerts/history` route with full AlertHistoryPanel component (+387 lines) — users can now view complete alert history
+- **Toast notifications added (4/5):** New reusable Toast component for user feedback
+
 ## Active Issues (March 2026)
 
 - **News Scraper Debugging (RESOLVED 3/28):** Previously had SIGTERM issues (process killed mid-run). Now running successfully with M&A filtering. Still investigating fuzzy matching false positives.
