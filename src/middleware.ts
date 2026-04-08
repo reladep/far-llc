@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/onboarding'];
+const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/choose-plan'];
 const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password', '/auth/update-password'];
 const GATED_PATHS = ['/firm/'];
 
@@ -61,18 +61,28 @@ export async function middleware(request: NextRequest) {
   // Gated routes: require auth (firm pages handled in page component for teaser)
   // We let the page component handle showing teaser vs full content
 
-  // Check onboarding completion for authenticated users on non-onboarding protected routes
+  // Check onboarding and plan status for authenticated users on dashboard routes
   if (isAuthenticated && !pathname.startsWith('/onboarding') && !isAuthPage && (isProtected || isGated)) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('onboarding_completed')
+      .select('onboarding_completed, plan_tier')
       .eq('user_id', user.id)
       .single();
 
     if (!profile || !profile.onboarding_completed) {
-      // Don't redirect if already heading to onboarding
       if (!pathname.startsWith('/onboarding')) {
-        return NextResponse.redirect(new URL('/onboarding', request.url));
+        const redirectRes = NextResponse.redirect(new URL('/onboarding', request.url));
+        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+        return redirectRes;
+      }
+    }
+
+    // Force users without a plan to the plan selection page
+    if (profile && profile.onboarding_completed && (!profile.plan_tier || profile.plan_tier === 'none')) {
+      if (pathname.startsWith('/dashboard')) {
+        const redirectRes = NextResponse.redirect(new URL('/choose-plan', request.url));
+        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+        return redirectRes;
       }
     }
   }
@@ -81,5 +91,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/firm/:path*', '/api/user/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/firm/:path*', '/api/user/:path*'],
 };

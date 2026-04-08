@@ -35,7 +35,22 @@ export interface User {
   email: string;
   full_name?: string;
   avatar_url?: string;
-  plan_tier: 'free' | 'starter' | 'pro' | 'enterprise';
+  plan_tier: 'none' | 'trial' | 'consumer' | 'enterprise';
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string;
+  stripe_subscription_id: string | null;
+  plan_tier: 'trial' | 'consumer' | 'enterprise';
+  status: 'active' | 'past_due' | 'canceled' | 'expired' | 'incomplete';
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  trial_ends_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Lead {

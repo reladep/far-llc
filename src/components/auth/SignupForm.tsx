@@ -1,12 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button, Input } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from './AuthLayout';
 
 export function SignupForm() {
   const auth = useAuth();
+  const searchParams = useSearchParams();
+
+  // Store intended plan from pricing page so checkout can use it after onboarding
+  useEffect(() => {
+    const plan = searchParams.get('plan');
+    if (plan && ['trial', 'consumer', 'enterprise'].includes(plan)) {
+      localStorage.setItem('intended_plan', plan);
+    }
+  }, [searchParams]);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

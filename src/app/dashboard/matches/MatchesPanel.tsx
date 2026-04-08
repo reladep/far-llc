@@ -57,7 +57,7 @@ const LABEL_MAP: Record<string, Record<string, string>> = {
   },
   serviceDepth: {
     basic: 'Basic management', standard: 'Planning + management',
-    comprehensive: 'Comprehensive wealth', concierge: 'Concierge / Family office',
+    comprehensive: 'Comprehensive wealth', concierge: 'Family office / MFO',
   },
   conflictImportance: {
     critical: 'Critical — fee-only only', important: 'Important — prefer fiduciary',

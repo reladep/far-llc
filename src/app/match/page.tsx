@@ -113,7 +113,7 @@ const STEPS: Step[] = [
           { value: 'basic', label: 'Basic portfolio management only' },
           { value: 'standard', label: 'Financial planning + portfolio management' },
           { value: 'comprehensive', label: 'Comprehensive wealth management (tax, estate, etc.)' },
-          { value: 'concierge', label: 'Concierge / Family office level' },
+          { value: 'concierge', label: 'Family office / Multi-family office level' },
         ],
       },
     ],

@@ -1880,7 +1880,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                     <path d="M2 6h8M7 3l3 3-3 3" />
                   </svg>
                 </Link>
-                <div className="vfp-cta-trust">Custom engagement · Tailored to your needs</div>
+                <div className="vfp-cta-trust">Available to all paid subscribers · Tailored to your needs</div>
               </div>
             </div>
 

@@ -246,7 +246,6 @@ export default function OnboardingPage() {
       services_wanted: form.services_wanted.length > 0 ? form.services_wanted : null,
       financial_context: form.financial_context || null,
       onboarding_completed: true,
-      subscription_status: 'active',
     }, { onConflict: 'user_id' });
 
     if (dbError) {
@@ -255,7 +254,27 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push('/dashboard');
+    // If user came from pricing with an intended plan, go straight to Stripe Checkout
+    const intendedPlan = localStorage.getItem('intended_plan');
+    if (intendedPlan && ['trial', 'consumer', 'enterprise'].includes(intendedPlan)) {
+      localStorage.removeItem('intended_plan');
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier: intendedPlan }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+      } catch {
+        // Fall through to plan selection
+      }
+    }
+
+    router.push('/choose-plan');
     router.refresh();
   };
 

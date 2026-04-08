@@ -24,12 +24,12 @@ export async function GET() {
   return NextResponse.json({ subscriptions: data });
 }
 
-// Subscription limits by tier — will read from user_profiles.plan_tier once billing is wired up
 const TIER_LIMITS: Record<string, number> = {
+  trial: 0,
   consumer: 25,
   enterprise: 100,
 };
-const DEFAULT_LIMIT = 25;
+const DEFAULT_LIMIT = 0;
 
 // POST /api/user/alerts/subscriptions — subscribe to alerts for a firm
 export async function POST(request: NextRequest) {
@@ -55,13 +55,19 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabaseAdmin
     .from('user_profiles')
-    .select('subscription_status')
-    .eq('id', user.id)
+    .select('plan_tier')
+    .eq('user_id', user.id)
     .maybeSingle();
 
-  // TODO: Read plan_tier from user_profiles once billing tiers are implemented
-  const tier = 'consumer';
-  const limit = TIER_LIMITS[tier] || DEFAULT_LIMIT;
+  const tier = (profile?.plan_tier as string) || 'none';
+  const limit = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || DEFAULT_LIMIT;
+
+  if (limit === 0) {
+    return NextResponse.json(
+      { error: 'Alert subscriptions require a paid plan. Upgrade to Consumer for 25 firm alerts.' },
+      { status: 403 },
+    );
+  }
 
   // Allow upsert if user already has this CRD subscribed (updating preferences)
   const { data: existingSub } = await supabaseAdmin

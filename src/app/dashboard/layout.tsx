@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   }
 
   // Sidebar badge counts + plan tier (parallel)
-  const [{ count: savedCount }, { count: alertCount }, { count: matchCount }] = await Promise.all([
+  const [{ count: savedCount }, { count: alertCount }, { count: matchCount }, { data: profile }] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
       .select('*', { count: 'exact', head: true })
@@ -29,16 +29,22 @@ export default async function DashboardLayout({
       .from('user_match_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id),
+    supabaseAdmin
+      .from('user_profiles')
+      .select('plan_tier')
+      .eq('user_id', user.id)
+      .single(),
   ]);
 
-  // Plan label — will read from subscription table once billing is wired
+  const planTier = profile?.plan_tier || 'none';
+
   const PLAN_LABELS: Record<string, string> = {
+    none: 'No Plan',
     trial: 'Trial Access',
     consumer: 'Consumer',
     enterprise: 'Enterprise',
   };
-  const planTier = (user.user_metadata?.plan_tier as string) || 'trial';
-  const planLabel = PLAN_LABELS[planTier] || 'Trial Access';
+  const planLabel = PLAN_LABELS[planTier] || 'Free';
 
   return (
     <DashboardShell

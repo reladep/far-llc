@@ -1,13 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import '@/components/dashboard/dashboard.css';
+
+interface SubscriptionData {
+  plan_tier: string;
+  status: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  trial_ends_at: string | null;
+}
 
 interface BillingClientProps {
   email: string;
   memberSince: string;
   nameFallback: string;
+  planTier: string;
+  subscription: SubscriptionData | null;
+  hasStripeCustomer: boolean;
 }
 
 const CSS = `
@@ -31,7 +43,9 @@ const CSS = `
     font-family:var(--mono); font-size:10px; color:var(--green-3);
     background:rgba(45,189,116,.1); border:1px solid rgba(45,189,116,.2); padding:3px 9px;
   }
+  .plan-status.warn { color:#F59E0B; background:rgba(245,158,11,.1); border-color:rgba(245,158,11,.2); }
   .plan-dot { width:5px; height:5px; background:var(--green-3); border-radius:50%; animation:bl-pulse 2s infinite; }
+  .plan-dot.warn { background:#F59E0B; }
   @keyframes bl-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
   .plan-btns { display:flex; flex-direction:column; gap:7px; z-index:1; }
   .plan-btn {
@@ -43,6 +57,32 @@ const CSS = `
   .plan-btn.up:hover { background:#38d98a; }
   .plan-btn.cancel { background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.4); }
   .plan-btn.cancel:hover { border-color:rgba(255,255,255,.3); color:rgba(255,255,255,.65); }
+
+  /* choose plan grid */
+  .choose-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); margin-bottom:14px; }
+  .choose-card { background:#fff; padding:24px 20px; display:flex; flex-direction:column; }
+  .choose-card.featured { background:var(--navy); }
+  .choose-tier { font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; margin-bottom:12px; font-family:var(--mono); }
+  .choose-card .choose-tier { color:var(--ink-3); }
+  .choose-card.featured .choose-tier { color:rgba(255,255,255,.35); }
+  .choose-amount { font-family:var(--serif); font-size:36px; font-weight:700; margin-bottom:4px; }
+  .choose-card .choose-amount { color:var(--ink); }
+  .choose-card.featured .choose-amount { color:#fff; }
+  .choose-note { font-family:var(--mono); font-size:10px; margin-bottom:14px; }
+  .choose-card .choose-note { color:var(--ink-3); }
+  .choose-card.featured .choose-note { color:rgba(255,255,255,.35); }
+  .choose-desc { font-size:12px; line-height:1.5; margin-bottom:18px; flex:1; }
+  .choose-card .choose-desc { color:var(--ink-3); }
+  .choose-card.featured .choose-desc { color:rgba(255,255,255,.45); }
+  .choose-cta {
+    display:block; text-align:center; text-decoration:none; font-size:11px;
+    font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:11px 16px;
+    cursor:pointer; transition:all .12s; font-family:var(--sans); border:none; width:100%;
+  }
+  .choose-card .choose-cta { border:1px solid var(--rule); color:var(--ink); background:none; }
+  .choose-card .choose-cta:hover { border-color:var(--ink-3); background:var(--white); }
+  .choose-card.featured .choose-cta { background:var(--green-3); color:var(--navy); }
+  .choose-card.featured .choose-cta:hover { background:#38d98a; }
 
   /* billing cards */
   .bcard { background:#fff; border:1px solid var(--rule); margin-bottom:14px; }
@@ -58,33 +98,7 @@ const CSS = `
   .bcard-edit:hover { border-color:var(--ink-3); color:var(--ink); }
   .bcard-body { padding:18px 20px; }
   .bcard-body.flush { padding:0 20px; }
-
-  /* payment */
-  .pay-row { display:flex; align-items:center; justify-content:space-between; }
-  .card-chip { display:flex; align-items:center; gap:12px; }
-  .card-mark {
-    width:36px; height:23px; background:var(--navy);
-    display:grid; place-items:center;
-    font-family:var(--mono); font-size:7px; font-weight:700; color:rgba(255,255,255,.6); letter-spacing:.05em;
-  }
-  .card-num { font-family:var(--mono); font-size:13px; color:var(--ink); }
-  .card-exp { font-family:var(--mono); font-size:10px; color:var(--ink-3); }
-
-  /* invoices */
-  .inv-table { width:100%; border-collapse:collapse; }
-  .inv-table th {
-    font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-3); padding:8px 0; border-bottom:1px solid var(--rule); text-align:left; font-family:var(--sans);
-  }
-  .inv-table td {
-    font-size:12px; padding:11px 0; border-bottom:1px solid var(--rule);
-    font-family:var(--mono); color:var(--ink-2);
-  }
-  .inv-table tr:last-child td { border-bottom:none; }
-  .inv-table td.inv-desc { font-family:var(--sans); font-size:13px; color:var(--ink); }
-  .inv-badge { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; padding:2px 7px; background:var(--green-pale); color:var(--green); }
-  .inv-dl { font-size:11px; color:var(--ink-3); background:none; border:none; cursor:pointer; font-family:var(--sans); transition:color .12s; }
-  .inv-dl:hover { color:var(--green); }
+  .bcard-empty { font-size:13px; color:var(--ink-3); font-family:var(--sans); }
 
   /* account rows */
   .acct-row { display:flex; align-items:baseline; padding:10px 0; border-bottom:1px solid var(--rule); }
@@ -129,6 +143,15 @@ const CSS = `
   .tog input:checked + .tog-track { background:var(--green); }
   .tog input:checked + .tog-track::before { transform:translateX(16px); }
 
+  /* success banner */
+  .checkout-success {
+    background:rgba(45,189,116,.08); border:1px solid rgba(45,189,116,.2);
+    padding:14px 20px; margin-bottom:14px; display:flex; align-items:center; gap:10px;
+  }
+  .checkout-success-icon { color:var(--green-3); font-size:16px; flex-shrink:0; }
+  .checkout-success-text { font-size:13px; color:var(--ink); font-family:var(--sans); }
+  .checkout-success-text strong { font-weight:600; }
+
   /* danger */
   .danger-link {
     font-size:11px; background:none; border:none; color:var(--ink-3);
@@ -140,13 +163,17 @@ const CSS = `
   @media(max-width:640px){
     .plan-card { flex-direction:column; align-items:stretch; gap:16px; }
     .plan-btns { flex-direction:row; }
-    .pay-row { flex-direction:column; gap:8px; }
+    .choose-grid { grid-template-columns:1fr; }
     .acct-row { flex-direction:column; gap:4px; }
     .acct-lbl { width:auto; }
-    .inv-table th:nth-child(4), .inv-table td:nth-child(4),
-    .inv-table th:nth-child(5), .inv-table td:nth-child(5) { display:none; }
   }
 `;
+
+const PLAN_INFO: Record<string, { name: string; price: string }> = {
+  trial: { name: 'Trial', price: '$99' },
+  consumer: { name: 'Consumer', price: '$199 / yr' },
+  enterprise: { name: 'Enterprise', price: '$499 / yr' },
+};
 
 const NOTIFS = [
   { key: 'watchlist', title: 'Watchlist alerts', sub: 'Email when a watched firm files a change matching your alert types', defaultOn: true },
@@ -155,10 +182,25 @@ const NOTIFS = [
   { key: 'product',   title: 'Product announcements', sub: 'New features and platform updates', defaultOn: false },
 ];
 
-export default function BillingClient({ email, memberSince, nameFallback }: BillingClientProps) {
+async function callStripeAction(endpoint: string, body?: object) {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
+
+export default function BillingClient({ email, memberSince, nameFallback, planTier, subscription, hasStripeCustomer }: BillingClientProps) {
+  const searchParams = useSearchParams();
+  const checkoutStatus = searchParams.get('checkout');
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(nameFallback);
   const [emailInput, setEmailInput] = useState(email);
+  const [loading, setLoading] = useState<string | null>(null);
   const [notifs, setNotifs] = useState<Record<string, boolean>>(
     Object.fromEntries(NOTIFS.map(n => [n.key, n.defaultOn]))
   );
@@ -166,6 +208,29 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
   const toggleNotif = (key: string) => {
     setNotifs(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const handleCheckout = async (tier: string) => {
+    setLoading(tier);
+    await callStripeAction('/api/stripe/checkout', { tier });
+    setLoading(null);
+  };
+
+  const handlePortal = async () => {
+    setLoading('portal');
+    await callStripeAction('/api/stripe/portal');
+    setLoading(null);
+  };
+
+  const info = PLAN_INFO[planTier];
+  const isCanceling = subscription?.cancel_at_period_end;
+
+  const renewDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
+
+  const trialDaysLeft = subscription?.trial_ends_at
+    ? Math.max(0, Math.ceil((new Date(subscription.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div>
@@ -176,79 +241,116 @@ export default function BillingClient({ email, memberSince, nameFallback }: Bill
       <div className="db-panel-sub">Your plan, payment, invoices, and account settings.</div>
       <div className="db-panel-divider" />
 
-      {/* Plan card */}
-      <div className="plan-card">
-        <div>
-          <div className="plan-eyebrow">Current Plan</div>
-          <div className="plan-name">
-            Annual Access
-            <span className="plan-price">$199 / yr</span>
-          </div>
-          <div className="plan-renew">Renews March 1, 2027</div>
-          <div className="plan-status">
-            <span className="plan-dot" />
-            Active
+      {checkoutStatus === 'success' && (
+        <div className="checkout-success">
+          <span className="checkout-success-icon">✓</span>
+          <div className="checkout-success-text">
+            <strong>Payment confirmed.</strong> Your plan is now active. It may take a moment to reflect below.
           </div>
         </div>
-        <div className="plan-btns">
-          <Link href="/pricing" className="plan-btn up">Upgrade to Concierge</Link>
-          <button className="plan-btn cancel">Cancel Plan</button>
-        </div>
-      </div>
+      )}
 
-      {/* Payment method */}
-      <div className="bcard">
-        <div className="bcard-hd">
-          <div className="bcard-title">Payment Method</div>
-          <button className="bcard-edit">Update</button>
-        </div>
-        <div className="bcard-body">
-          <div className="pay-row">
-            <div className="card-chip">
-              <div className="card-mark">VISA</div>
-              <div>
-                <div className="card-num">•••• •••• •••• 4242</div>
-                <div className="card-exp">Expires 09 / 2028</div>
+      {/* No plan — show selection */}
+      {planTier === 'none' && (
+        <>
+          <div style={{ marginBottom: 14, fontFamily: 'var(--sans)', fontSize: 13, color: 'var(--ink-3)' }}>
+            A plan is required to access the platform. Choose one below to get started.
+          </div>
+          <div className="choose-grid">
+            <div className="choose-card">
+              <div className="choose-tier">Trial</div>
+              <div className="choose-amount"><sup style={{ fontSize: 18 }}>$</sup>99</div>
+              <div className="choose-note">2 weeks · one-time</div>
+              <div className="choose-desc">Full platform access for two weeks. No auto-renew.</div>
+              <button className="choose-cta" onClick={() => handleCheckout('trial')} disabled={loading === 'trial'}>
+                {loading === 'trial' ? 'Loading...' : 'Start Your Trial'}
+              </button>
+            </div>
+            <div className="choose-card featured">
+              <div className="choose-tier">Consumer</div>
+              <div className="choose-amount"><sup style={{ fontSize: 18 }}>$</sup>199</div>
+              <div className="choose-note">per year · ~$0.55/day</div>
+              <div className="choose-desc">Year-round research, monitoring, and advisor matching.</div>
+              <button className="choose-cta" onClick={() => handleCheckout('consumer')} disabled={loading === 'consumer'}>
+                {loading === 'consumer' ? 'Loading...' : 'Get Consumer Access'}
+              </button>
+            </div>
+            <div className="choose-card">
+              <div className="choose-tier">Enterprise</div>
+              <div className="choose-amount"><sup style={{ fontSize: 18 }}>$</sup>499</div>
+              <div className="choose-note">per year</div>
+              <div className="choose-desc">Scale, speed, and deeper integration for power users.</div>
+              <button className="choose-cta" onClick={() => handleCheckout('enterprise')} disabled={loading === 'enterprise'}>
+                {loading === 'enterprise' ? 'Loading...' : 'Get Enterprise Access'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Active plan card */}
+      {planTier !== 'none' && info && (
+        <div className="plan-card">
+          <div>
+            <div className="plan-eyebrow">Current Plan</div>
+            <div className="plan-name">
+              {info.name}
+              <span className="plan-price">{info.price}</span>
+            </div>
+            {planTier === 'trial' && trialDaysLeft !== null && (
+              <div className="plan-renew">{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</div>
+            )}
+            {planTier !== 'trial' && renewDate && (
+              <div className="plan-renew">{isCanceling ? 'Access until' : 'Renews'} {renewDate}</div>
+            )}
+            {isCanceling ? (
+              <div className="plan-status warn">
+                <span className="plan-dot warn" />
+                Canceling at period end
               </div>
+            ) : (
+              <div className="plan-status">
+                <span className="plan-dot" />
+                Active
+              </div>
+            )}
+          </div>
+          <div className="plan-btns">
+            {planTier === 'trial' && (
+              <button className="plan-btn up" onClick={() => handleCheckout('consumer')} disabled={loading === 'consumer'}>
+                {loading === 'consumer' ? 'Loading...' : 'Upgrade to Consumer'}
+              </button>
+            )}
+            {planTier === 'consumer' && (
+              <button className="plan-btn up" onClick={() => handleCheckout('enterprise')} disabled={loading === 'enterprise'}>
+                {loading === 'enterprise' ? 'Loading...' : 'Upgrade to Enterprise'}
+              </button>
+            )}
+            {hasStripeCustomer && planTier !== 'trial' && (
+              <button className="plan-btn cancel" onClick={handlePortal} disabled={loading === 'portal'}>
+                {loading === 'portal' ? 'Loading...' : 'Manage Plan'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Payment & Invoices — link to Stripe Portal */}
+      {hasStripeCustomer && (
+        <div className="bcard">
+          <div className="bcard-hd">
+            <div className="bcard-title">Payment &amp; Invoices</div>
+            <button className="bcard-edit" onClick={handlePortal} disabled={loading === 'portal'}>
+              {loading === 'portal' ? 'Loading...' : 'Manage'}
+            </button>
+          </div>
+          <div className="bcard-body">
+            <div className="bcard-empty">
+              Update payment method, view invoices, and manage billing through Stripe.
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Invoice history */}
-      <div className="bcard">
-        <div className="bcard-hd">
-          <div className="bcard-title">Invoice History</div>
-        </div>
-        <div className="bcard-body flush">
-          <table className="inv-table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { desc: 'Annual Access — 2026', date: 'Mar 1, 2026', amount: '$199.00' },
-                { desc: 'Annual Access — 2025', date: 'Mar 1, 2025', amount: '$199.00' },
-                { desc: '30-Day Access',         date: 'Jan 14, 2025', amount: '$99.00' },
-              ].map((inv, i) => (
-                <tr key={i}>
-                  <td className="inv-desc">{inv.desc}</td>
-                  <td>{inv.date}</td>
-                  <td>{inv.amount}</td>
-                  <td><span className="inv-badge">Paid</span></td>
-                  <td><button className="inv-dl" aria-label={`Download invoice for ${inv.desc}`}>↓ PDF</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Account settings */}
       <div className="bcard">

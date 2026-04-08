@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import FirmRow from '@/components/dashboard/FirmRow';
 import type { FirmRowData } from '@/components/dashboard/FirmRow';
+import PlanBanner from '@/components/dashboard/PlanBanner';
 import '@/components/dashboard/dashboard.css';
 
 export const metadata: Metadata = {
@@ -149,6 +150,7 @@ export default async function DashboardOverview() {
     { data: matchProfile },
     { data: recentFavorites },
     { data: alertSubCrds },
+    { data: userProfile },
   ] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
@@ -173,6 +175,11 @@ export default async function DashboardOverview() {
       .from('alert_subscriptions')
       .select('crd')
       .eq('user_id', user.id),
+    supabaseAdmin
+      .from('user_profiles')
+      .select('plan_tier')
+      .eq('user_id', user.id)
+      .single(),
   ]);
 
   // Recent alert events (last 7 days) for watched firms
@@ -244,6 +251,8 @@ export default async function DashboardOverview() {
       <div className="db-panel-title">Overview</div>
       <div className="db-panel-sub">Your activity at a glance.</div>
       <div className="db-panel-divider" />
+
+      {(!userProfile?.plan_tier || userProfile.plan_tier === 'none') && <PlanBanner />}
 
       {/* Stats */}
       <div className="do-stats">
