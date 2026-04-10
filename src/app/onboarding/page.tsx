@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Input } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -192,6 +192,8 @@ const PAGE_CSS = `
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showWelcome = searchParams.get('welcome') === '1';
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -254,27 +256,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    // If user came from pricing with an intended plan, go straight to Stripe Checkout
-    const intendedPlan = localStorage.getItem('intended_plan');
-    if (intendedPlan && ['trial', 'consumer', 'enterprise'].includes(intendedPlan)) {
-      localStorage.removeItem('intended_plan');
-      try {
-        const res = await fetch('/api/stripe/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tier: intendedPlan }),
-        });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
-      } catch {
-        // Fall through to plan selection
-      }
-    }
-
-    router.push('/choose-plan');
+    router.push('/dashboard');
     router.refresh();
   };
 
@@ -404,9 +386,13 @@ export default function OnboardingPage() {
 
       {/* Navy header */}
       <div className="ob-header">
-        <div className="ob-header-kicker">Getting Started</div>
-        <div className="ob-header-title">Set up your profile</div>
-        <div className="ob-header-sub">Takes about 2 minutes · All fields optional</div>
+        <div className="ob-header-kicker">{showWelcome ? 'Welcome Aboard' : 'Getting Started'}</div>
+        <div className="ob-header-title">{showWelcome ? 'One last step' : 'Set up your profile'}</div>
+        <div className="ob-header-sub">
+          {showWelcome
+            ? 'Your plan is active. Takes about 2 minutes · All fields optional'
+            : 'Takes about 2 minutes · All fields optional'}
+        </div>
       </div>
 
       {/* Card */}

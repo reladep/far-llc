@@ -47,6 +47,21 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
+// Stripe moved period fields onto subscription items in recent API versions.
+// Fall back to the subscription object for backward compatibility.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getPeriod(sub: Record<string, any>): { start: number | null; end: number | null } {
+  const item = sub.items?.data?.[0];
+  const start = item?.current_period_start ?? sub.current_period_start ?? null;
+  const end = item?.current_period_end ?? sub.current_period_end ?? null;
+  return { start, end };
+}
+
+function tsToIso(seconds: number | null): string | null {
+  if (!seconds || typeof seconds !== 'number') return null;
+  return new Date(seconds * 1000).toISOString();
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleCheckoutComplete(session: Record<string, any>) {
   const userId = session.metadata?.supabase_user_id;
@@ -76,7 +91,12 @@ async function handleCheckoutComplete(session: Record<string, any>) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleInvoicePaid(invoice: Record<string, any>) {
-  const subscriptionId = invoice.subscription as string;
+  // In newer API versions, subscription moved to parent.subscription_details.subscription
+  const subscriptionId =
+    (invoice.subscription as string) ||
+    (invoice.parent?.subscription_details?.subscription as string) ||
+    null;
+
   if (!subscriptionId) return;
 
   const sub = await stripe.subscriptions.retrieve(subscriptionId) as Record<string, any>;
@@ -84,17 +104,23 @@ async function handleInvoicePaid(invoice: Record<string, any>) {
   const planTier = sub.metadata?.plan_tier;
   if (!userId || !planTier) return;
 
-  await supabaseAdmin.from('subscriptions').upsert({
+  const { start, end } = getPeriod(sub);
+
+  const { error: upsertError } = await supabaseAdmin.from('subscriptions').upsert({
     user_id: userId,
     stripe_customer_id: sub.customer as string,
     stripe_subscription_id: subscriptionId,
     plan_tier: planTier,
     status: 'active',
-    current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+    current_period_start: tsToIso(start),
+    current_period_end: tsToIso(end),
     cancel_at_period_end: sub.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'stripe_subscription_id' });
+
+  if (upsertError) {
+    console.error('[invoice.paid] subscriptions upsert error:', upsertError);
+  }
 
   await syncUserPlanTier(userId);
 }
@@ -113,13 +139,15 @@ async function handleSubscriptionUpdated(subscription: Record<string, any>) {
     unpaid: 'past_due',
   };
 
+  const { start, end } = getPeriod(subscription);
+
   await supabaseAdmin
     .from('subscriptions')
     .update({
       status: statusMap[subscription.status] || subscription.status,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: tsToIso(start),
+      current_period_end: tsToIso(end),
       updated_at: new Date().toISOString(),
     })
     .eq('stripe_subscription_id', subscription.id);
@@ -176,12 +204,16 @@ async function syncUserPlanTier(userId: string) {
     }
   }
 
-  await supabaseAdmin
+  const { error: profileError } = await supabaseAdmin
     .from('user_profiles')
-    .update({
+    .upsert({
+      user_id: userId,
       plan_tier: effectiveTier,
       subscription_status: effectiveTier === 'none' ? 'inactive' : 'active',
       updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+    }, { onConflict: 'user_id' });
+
+  if (profileError) {
+    console.error('[syncUserPlanTier] user_profiles upsert error:', profileError);
+  }
 }

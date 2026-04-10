@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/choose-plan'];
+const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/choose-plan', '/checkout'];
 const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password', '/auth/update-password'];
 const GATED_PATHS = ['/firm/'];
 
@@ -61,29 +61,42 @@ export async function middleware(request: NextRequest) {
   // Gated routes: require auth (firm pages handled in page component for teaser)
   // We let the page component handle showing teaser vs full content
 
-  // Check onboarding and plan status for authenticated users on dashboard routes
-  if (isAuthenticated && !pathname.startsWith('/onboarding') && !isAuthPage && (isProtected || isGated)) {
+  // Gate authenticated users through: signup → choose-plan → onboarding → dashboard
+  if (isAuthenticated && !isAuthPage && (isProtected || isGated)) {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('onboarding_completed, plan_tier')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile || !profile.onboarding_completed) {
-      if (!pathname.startsWith('/onboarding')) {
-        const redirectRes = NextResponse.redirect(new URL('/onboarding', request.url));
-        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
-        return redirectRes;
-      }
-    }
+    const hasPlan = profile?.plan_tier && profile.plan_tier !== 'none';
+    const onboardingDone = !!profile?.onboarding_completed;
 
-    // Force users without a plan to the plan selection page
-    if (profile && profile.onboarding_completed && (!profile.plan_tier || profile.plan_tier === 'none')) {
-      if (pathname.startsWith('/dashboard')) {
+    // Step 1: No plan → force /choose-plan (unless already on /choose-plan or /checkout)
+    if (!hasPlan) {
+      if (!pathname.startsWith('/choose-plan') && !pathname.startsWith('/checkout')) {
         const redirectRes = NextResponse.redirect(new URL('/choose-plan', request.url));
         response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
         return redirectRes;
       }
+      return response;
+    }
+
+    // Step 2: Has plan but no onboarding → force /onboarding (unless already there or on /checkout)
+    if (!onboardingDone) {
+      if (!pathname.startsWith('/onboarding') && !pathname.startsWith('/checkout')) {
+        const redirectRes = NextResponse.redirect(new URL('/onboarding', request.url));
+        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+        return redirectRes;
+      }
+      return response;
+    }
+
+    // Step 3: Fully onboarded. Keep them out of /choose-plan and /onboarding.
+    if (pathname.startsWith('/choose-plan') || pathname.startsWith('/onboarding')) {
+      const redirectRes = NextResponse.redirect(new URL('/dashboard', request.url));
+      response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+      return redirectRes;
     }
   }
 
@@ -91,5 +104,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/firm/:path*', '/api/user/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/checkout/:path*', '/firm/:path*', '/api/user/:path*'],
 };

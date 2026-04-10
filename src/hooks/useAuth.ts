@@ -54,7 +54,7 @@ export function useAuth() {
       if (error) {
         setState((s) => ({ ...s, loading: false, error: error.message }));
       } else {
-        router.push('/onboarding');
+        router.push('/choose-plan');
         router.refresh();
       }
     },

@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
     customer: customerId,
     mode: isOneTime ? 'payment' : 'subscription',
     line_items: [{ price: PRICE_IDS[tier], quantity: 1 }],
-    success_url: `${origin}/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/pricing?checkout=canceled`,
+    success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/choose-plan?checkout=canceled`,
     metadata: {
       supabase_user_id: user.id,
       plan_tier: tier,
