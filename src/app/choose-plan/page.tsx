@@ -106,7 +106,6 @@ const CSS = `
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     align-items: stretch;
-    padding-top: 28px; /* room for the "Recommended" label on featured card */
   }
 
   .cp-card-wrap {
@@ -114,31 +113,27 @@ const CSS = `
     display: flex;
     flex-direction: column;
   }
-  .cp-card-wrap.featured {
-    transform: translateY(-16px);
-  }
+  /* Recommended label — inside card */
   .cp-recommended {
-    position: absolute;
-    top: -24px;
-    left: 0;
-    right: 0;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .cp-rec-line {
+    display: block;
+    width: 18px;
+    height: 1px;
+    background: var(--green);
+  }
+  .cp-rec-text {
     font-family: var(--mono);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--green);
-  }
-  .cp-recommended::before,
-  .cp-recommended::after {
-    content: '';
-    display: inline-block;
-    width: 16px;
-    height: 1px;
-    background: var(--green);
-    vertical-align: middle;
-    margin: 0 10px;
   }
 
   .cp-card {
@@ -339,16 +334,10 @@ const CSS = `
       gap: 16px;
       padding-top: 8px;
     }
-    .cp-card-wrap.featured {
-      transform: none;
-    }
     .cp-recommended {
-      position: static;
-      text-align: left;
-      margin-bottom: 8px;
+      justify-content: flex-start;
     }
-    .cp-recommended::before,
-    .cp-recommended::after {
+    .cp-rec-line {
       display: none;
     }
     .cp-main { padding: 48px 20px 72px; }
@@ -495,8 +484,12 @@ export default function ChoosePlanPage() {
 
           {/* Consumer — featured */}
           <div className="cp-card-wrap featured">
-            <div className="cp-recommended">Recommended</div>
             <div className="cp-card">
+              <div className="cp-recommended">
+                <span className="cp-rec-line" />
+                <span className="cp-rec-text">Recommended</span>
+                <span className="cp-rec-line" />
+              </div>
               <div className="cp-tier-label">Consumer</div>
               <div className="cp-price-row">
                 <span className="cp-dollar">$</span>
