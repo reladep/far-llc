@@ -113,13 +113,17 @@ const CSS = `
     display: flex;
     flex-direction: column;
   }
-  /* Recommended label — inside card */
+  /* Recommended label — above card */
   .cp-recommended {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+    height: 18px;
+  }
+  .cp-rec-spacer {
+    height: 28px;
   }
   .cp-rec-line {
     display: block;
@@ -443,17 +447,10 @@ export default function ChoosePlanPage() {
       </div>
 
       <main className="cp-main">
-        <div className="cp-heading">
-          <div className="cp-eyebrow">Billing</div>
-          <h1 className="cp-h1">Select a plan</h1>
-          <p className="cp-sub">
-            All plans include the full Visor Index platform. Cancel anytime.
-          </p>
-        </div>
-
         <div className="cp-grid">
           {/* Trial */}
           <div className="cp-card-wrap">
+            <div className="cp-rec-spacer" />
             <div className="cp-card">
               <div className="cp-tier-label">Trial</div>
               <div className="cp-price-row">
@@ -484,12 +481,12 @@ export default function ChoosePlanPage() {
 
           {/* Consumer — featured */}
           <div className="cp-card-wrap featured">
+            <div className="cp-recommended">
+              <span className="cp-rec-line" />
+              <span className="cp-rec-text">Recommended</span>
+              <span className="cp-rec-line" />
+            </div>
             <div className="cp-card">
-              <div className="cp-recommended">
-                <span className="cp-rec-line" />
-                <span className="cp-rec-text">Recommended</span>
-                <span className="cp-rec-line" />
-              </div>
               <div className="cp-tier-label">Consumer</div>
               <div className="cp-price-row">
                 <span className="cp-dollar">$</span>
@@ -520,6 +517,7 @@ export default function ChoosePlanPage() {
 
           {/* Enterprise */}
           <div className="cp-card-wrap">
+            <div className="cp-rec-spacer" />
             <div className="cp-card">
               <div className="cp-tier-label">Enterprise</div>
               <div className="cp-price-row">
