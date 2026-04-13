@@ -127,6 +127,37 @@ const CSS = `
     font-size:13px; color:var(--ink-3); font-family:var(--sans); padding:4px 0;
   }
 
+  /* ---- Welcome checklist (empty state) ---- */
+  .do-welcome {
+    background:#fff; border:1px solid var(--rule);
+    padding:32px 28px; margin-bottom:20px;
+  }
+  .do-welcome-title {
+    font-family:var(--serif); font-size:20px; font-weight:700;
+    color:var(--ink); margin-bottom:4px;
+  }
+  .do-welcome-sub {
+    font-size:13px; color:var(--ink-3); margin-bottom:24px;
+  }
+  .do-checklist { display:flex; flex-direction:column; gap:0; }
+  .do-check-item {
+    display:flex; align-items:center; gap:14px;
+    padding:14px 0; border-top:1px solid var(--rule);
+    text-decoration:none; transition:background .1s;
+  }
+  .do-check-item:first-child { border-top:none; }
+  .do-check-ring {
+    width:24px; height:24px; flex-shrink:0;
+    border:1.5px solid var(--rule); border-radius:50%;
+    display:grid; place-items:center;
+  }
+  .do-check-text { flex:1; }
+  .do-check-title { font-size:13px; font-weight:600; color:var(--ink); }
+  .do-check-desc { font-size:12px; color:var(--ink-3); margin-top:1px; }
+  .do-check-arrow { font-size:12px; color:var(--rule); transition:color .12s; }
+  .do-check-item:hover .do-check-arrow { color:var(--green); }
+  .do-check-item:hover .do-check-ring { border-color:var(--green); }
+
   @media(max-width:640px){
     .do-stats { flex-direction:column; gap:14px; }
     .do-stat-divider { width:60px; height:1px; }
@@ -149,7 +180,6 @@ export default async function DashboardOverview() {
     { count: alertCount },
     { data: matchProfile },
     { data: recentFavorites },
-    { data: alertSubCrds },
     { data: userProfile },
   ] = await Promise.all([
     supabaseAdmin
@@ -172,28 +202,11 @@ export default async function DashboardOverview() {
       .order('created_at', { ascending: false })
       .limit(3),
     supabaseAdmin
-      .from('alert_subscriptions')
-      .select('crd')
-      .eq('user_id', user.id),
-    supabaseAdmin
       .from('user_profiles')
       .select('plan_tier')
       .eq('user_id', user.id)
       .single(),
   ]);
-
-  // Recent alert events (last 7 days) for watched firms
-  const watchedCrds = alertSubCrds?.map(s => s.crd) ?? [];
-  let recentAlertEventCount = 0;
-  if (watchedCrds.length > 0) {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await supabaseAdmin
-      .from('firm_alerts')
-      .select('*', { count: 'exact', head: true })
-      .in('crd', watchedCrds)
-      .gte('detected_at', sevenDaysAgo);
-    recentAlertEventCount = count ?? 0;
-  }
 
   // Fetch firm details for recent favorites
   const recentCrds = recentFavorites?.map(f => f.crd) ?? [];
@@ -254,26 +267,57 @@ export default async function DashboardOverview() {
 
       {(!userProfile?.plan_tier || userProfile.plan_tier === 'none') && <PlanBanner />}
 
-      {/* Stats */}
-      <div className="do-stats">
-        <div className="do-stat">
-          <div className="do-stat-value">{savedCount ?? 0}</div>
-          <div className="do-stat-label">Saved Firms</div>
+      {(savedCount ?? 0) === 0 && (alertCount ?? 0) === 0 && !hasMatch ? (
+        /* Welcome checklist — shown when the user has no activity yet */
+        <div className="do-welcome">
+          <div className="do-welcome-title">Get started</div>
+          <div className="do-welcome-sub">Three steps to make the most of Visor Index.</div>
+          <div className="do-checklist">
+            <Link href="/search" className="do-check-item">
+              <span className="do-check-ring" />
+              <div className="do-check-text">
+                <div className="do-check-title">Search for an advisor</div>
+                <div className="do-check-desc">Browse 40,000+ SEC-registered firms by name, city, or CRD number.</div>
+              </div>
+              <span className="do-check-arrow">→</span>
+            </Link>
+            <Link href="/match" className="do-check-item">
+              <span className="do-check-ring" />
+              <div className="do-check-text">
+                <div className="do-check-title">Take the 2-minute match quiz</div>
+                <div className="do-check-desc">Answer a few questions and get matched with advisors that fit your needs.</div>
+              </div>
+              <span className="do-check-arrow">→</span>
+            </Link>
+            <Link href="/search" className="do-check-item">
+              <span className="do-check-ring" />
+              <div className="do-check-text">
+                <div className="do-check-title">Save a firm to your watchlist</div>
+                <div className="do-check-desc">Bookmark firms you're evaluating and track changes over time.</div>
+              </div>
+              <span className="do-check-arrow">→</span>
+            </Link>
+          </div>
         </div>
-        <div className="do-stat-divider" />
-        <div className="do-stat">
-          <div className="do-stat-value">{alertCount ?? 0}</div>
-          <div className="do-stat-label">Firms with Alerts</div>
-          {recentAlertEventCount > 0 && (
-            <div className="do-stat-sub">{recentAlertEventCount} event{recentAlertEventCount !== 1 ? 's' : ''} this week</div>
-          )}
+      ) : (
+        /* Stats strip — shown when the user has at least one data point */
+        <div className="do-stats">
+          <div className="do-stat">
+            <div className="do-stat-value">{savedCount ?? 0}</div>
+            <div className="do-stat-label">Saved Firms</div>
+          </div>
+          <div className="do-stat-divider" />
+          <div className="do-stat">
+            <div className="do-stat-value">{alertCount ?? 0}</div>
+            <div className="do-stat-label">Firms with Alerts</div>
+          </div>
+          <div className="do-stat-divider" />
+          <div className="do-stat">
+            <div className="do-stat-value">{hasMatch ? 'Active' : '—'}</div>
+            <div className="do-stat-label">Match Profile{hasMatch && matchDate ? ` · ${matchDate}` : ''}</div>
+          </div>
         </div>
-        <div className="do-stat-divider" />
-        <div className="do-stat">
-          <div className="do-stat-value">{hasMatch ? 'Active' : '—'}</div>
-          <div className="do-stat-label">Match Profile{hasMatch && matchDate ? ` · ${matchDate}` : ''}</div>
-        </div>
-      </div>
+      )}
 
       {/* Recent activity + Match status */}
       <div className="do-grid">

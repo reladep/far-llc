@@ -170,7 +170,7 @@ const PAGE_CSS = `
     --rule:#CAD8D0; --rule-2:#B0C4BA;
     --red:#EF4444; --amber:#F59E0B;
     --serif:'Cormorant Garamond',serif;
-    --sans:'DM Sans',sans-serif;
+    --sans:'Inter',sans-serif;
     --mono:'DM Mono',monospace;
     background: var(--bg); color: var(--ink); min-height: 100vh; padding-bottom: 48px;
   }

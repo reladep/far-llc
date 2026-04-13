@@ -6,8 +6,28 @@ const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/choose-plan', '/checkout
 const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password', '/auth/update-password'];
 const GATED_PATHS = ['/firm/'];
 
+// Known scraper / AI-crawler user-agent fragments (case-insensitive match)
+const BOT_UA_PATTERNS = [
+  'GPTBot', 'ChatGPT-User', 'CCBot', 'anthropic-ai', 'ClaudeBot',
+  'Bytespider', 'PetalBot', 'Scrapy', 'python-requests', 'Go-http-client',
+  'Java/', 'libwww-perl', 'Wget', 'curl/', 'Applebot',
+  'AhrefsBot', 'SemrushBot', 'DotBot', 'MJ12bot', 'DataForSeoBot',
+];
+
+function isBlockedBot(ua: string): boolean {
+  const lower = ua.toLowerCase();
+  return BOT_UA_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Bot detection: block known scrapers ──
+  const ua = request.headers.get('user-agent') || '';
+  if (isBlockedBot(ua)) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
@@ -104,5 +124,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/checkout/:path*', '/firm/:path*', '/api/user/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/checkout/:path*', '/firm/:path*', '/api/:path*'],
 };

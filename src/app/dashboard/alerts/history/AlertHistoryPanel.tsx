@@ -471,7 +471,7 @@ export default function AlertHistoryPanel({ watchedFirms }: AlertHistoryPanelPro
               : 'No alert events have been detected for your watched firms yet.'}
           </div>
           {hasActiveFilters && (
-            <button className="db-empty-link" onClick={clearFilters} style={{ border: 'none', cursor: 'pointer' }}>
+            <button className="db-empty-link db-empty-link-btn" onClick={clearFilters}>
               Clear Filters
             </button>
           )}

@@ -53,7 +53,7 @@ const PAGE_CSS = `
     --navy: #0A1C2A; --ink: #0C1810; --ink-2: #2E4438; --ink-3: #5A7568;
     --rule: #CAD8D0; --white: #F6F8F7; --card-bg: #fff;
     --serif: 'Cormorant Garamond', serif;
-    --sans: 'DM Sans', sans-serif;
+    --sans: 'Inter', sans-serif;
     --mono: 'DM Mono', monospace;
     min-height: 100vh; background: var(--white);
   }

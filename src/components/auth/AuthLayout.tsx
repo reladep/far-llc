@@ -18,7 +18,7 @@ const CSS = `
     --navy: #172438; --navy-2: #0A1C2A;
     --green: #1A7A4A; --green-2: #22995E; --green-3: #2DBD74;
     --bg: #F6F8F7; --ink: #0C1810; --ink-2: #2E4438; --ink-3: #5A7568; --rule: #CAD8D0;
-    --serif: 'Cormorant Garamond', serif; --sans: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
+    --serif: 'Cormorant Garamond', serif; --sans: 'Inter', sans-serif; --mono: 'DM Mono', monospace;
   }
 
   .auth-page {

@@ -102,7 +102,7 @@ export default function SaveFirmButton({ crd, initialSaved, initialWatching = fa
 
   const btnStyle = (active: boolean) => ({
     display: 'inline-flex' as const, alignItems: 'center' as const, gap: 6,
-    fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: '.04em',
+    fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: '.04em',
     padding: '6px 14px',
     background: active ? 'rgba(45,189,116,.07)' : 'transparent',
     border: active ? '1px solid rgba(45,189,116,.3)' : '1px solid rgba(255,255,255,.12)',

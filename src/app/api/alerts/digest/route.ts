@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'No email subscribers', digests_sent: 0 });
   }
 
-  const uniqueUserIds = [...new Set(emailUsers.map(u => u.user_id))];
+  const uniqueUserIds = Array.from(new Set(emailUsers.map(u => u.user_id)));
 
   // 2. Get digest preferences for these users
   const { data: prefs } = await supabaseAdmin
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
     if (filteredAlerts.length === 0) continue;
 
     // Get firm names
-    const alertCrds = [...new Set(filteredAlerts.map(a => a.crd))];
+    const alertCrds = Array.from(new Set(filteredAlerts.map(a => a.crd)));
     const [{ data: firmNames }, { data: displayNames }] = await Promise.all([
       supabaseAdmin.from('firmdata_current').select('crd, legal_name').in('crd', alertCrds),
       supabaseAdmin.from('firm_names').select('crd, display_name').in('crd', alertCrds),

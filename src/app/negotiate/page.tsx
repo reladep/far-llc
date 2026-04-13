@@ -784,7 +784,7 @@ export default function NegotiatePage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        .ng-page { background: #F6F8F7; color: #0C1810; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+        .ng-page { background: #F6F8F7; color: #0C1810; font-family: 'Inter', sans-serif; min-height: 100vh; }
 
         /* Entry mode bar */
         .entry-bar { display: flex; margin-bottom: 0; }
@@ -836,7 +836,7 @@ export default function NegotiatePage() {
         .money-input-wrap { display: flex; border: 1px solid #CAD8D0; background: #F6F8F7; transition: border-color .15s; }
         .money-input-wrap:focus-within { border-color: #2DBD74; }
 
-        .analyze-btn { width: 100%; background: #1A7A4A; color: #fff; border: none; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
+        .analyze-btn { width: 100%; background: #1A7A4A; color: #fff; border: none; padding: 14px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
         .analyze-btn:hover:not(:disabled) { background: #22995E; }
         .analyze-btn:disabled { background: #CAD8D0; cursor: not-allowed; }
         .analyze-btn-arrow { font-size: 16px; transition: transform .2s; }
@@ -893,7 +893,7 @@ export default function NegotiatePage() {
         .pb-quote { margin-top: 10px; padding: 10px 14px; border-left: 2px solid #2DBD74; font-style: italic; font-size: 12px; color: #5A7568; background: #F6F8F7; line-height: 1.65; }
 
         .enrich-nudge { background: #0A1C2A; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .en-btn { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; background: #1A7A4A; color: #fff; border: none; padding: 9px 18px; cursor: pointer; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
+        .en-btn { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; background: #1A7A4A; color: #fff; border: none; padding: 9px 18px; cursor: pointer; transition: background .15s; white-space: nowrap; flex-shrink: 0; }
         .en-btn:hover { background: #22995E; }
 
         .cta-card { padding: 24px 28px; background: #fff; border: 1px solid #CAD8D0; border-top: 2px solid #0C1810; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
@@ -917,16 +917,16 @@ export default function NegotiatePage() {
         .ng-fc-logo { width: 32px; height: 32px; background: #0A1C2A; display: grid; place-items: center; flex-shrink: 0; overflow: hidden; font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.5); }
         .ng-fc-remove { background: none; border: none; cursor: pointer; color: rgba(10,28,42,.3); font-size: 20px; padding: 0 4px; transition: color .15s; flex-shrink: 0; }
         .ng-fc-remove:hover { color: #EF4444; }
-        .ng-firm-input { width: 100%; border: 1px solid #CAD8D0; background: #F6F8F7; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #0C1810; outline: none; transition: border-color .15s; }
+        .ng-firm-input { width: 100%; border: 1px solid #CAD8D0; background: #F6F8F7; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 13px; color: #0C1810; outline: none; transition: border-color .15s; }
         .ng-firm-input:focus { border-color: #2DBD74; }
         .ng-firm-input::placeholder { color: #CAD8D0; }
         .ng-firm-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; border: 1px solid #CAD8D0; border-top: none; max-height: 240px; overflow-y: auto; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-        .ng-firm-result { display: block; width: 100%; text-align: left; padding: 10px 14px; background: #fff; border: none; border-bottom: 1px solid #F6F8F7; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; color: #0C1810; transition: background .1s; }
+        .ng-firm-result { display: block; width: 100%; text-align: left; padding: 10px 14px; background: #fff; border: none; border-bottom: 1px solid #F6F8F7; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; color: #0C1810; transition: background .1s; }
         .ng-firm-result:hover, .ng-firm-result.active { background: rgba(26,122,74,.06); }
         .firm-banner { display: flex; align-items: center; gap: 16px; padding: 16px 24px; background: #fff; border: 1px solid #CAD8D0; border-left: 3px solid #2DBD74; margin-bottom: 32px; }
         .fb-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #0C1810; transition: color .15s; }
         .fb-name:hover { color: #1A7A4A; }
-        .fb-change { background: none; border: 1px solid #CAD8D0; padding: 6px 12px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+        .fb-change { background: none; border: 1px solid #CAD8D0; padding: 6px 12px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: #5A7568; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
         .fb-change:hover { border-color: #5A7568; color: #0C1810; }
         .fb-search-wrap { width: 100%; margin-top: 12px; position: relative; }
         .fb-flags { display: flex; gap: 6px; flex-wrap: wrap; }

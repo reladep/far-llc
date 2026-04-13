@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'No subscriptions to process', alerts_created: 0 });
   }
 
-  const uniqueCrds = [...new Set(subscribedCrds.map(s => s.crd))];
+  const uniqueCrds = Array.from(new Set(subscribedCrds.map(s => s.crd)));
 
   // 2. Fetch current firm data for all subscribed CRDs
   const { data: currentFirms } = await supabaseAdmin
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
   // Create news alerts (dedup by normalized title per CRD)
   if (recentNews && recentNews.length > 0) {
     // Check for existing news alerts in the last 48h to avoid duplicates
-    const newsCrds = [...new Set(recentNews.map(a => a.crd))];
+    const newsCrds = Array.from(new Set(recentNews.map(a => a.crd)));
     const dupCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
     const { data: existingNewsAlerts } = await supabaseAdmin
       .from('firm_alerts')
@@ -304,7 +304,7 @@ export async function POST(request: NextRequest) {
         const notifications: { user_id: string; alert_id: string; channel: string }[] = [];
 
         // Get all subscriptions grouped by CRD
-        const alertCrds = [...new Set(inserted.map(a => a.crd))];
+        const alertCrds = Array.from(new Set(inserted.map(a => a.crd)));
         const { data: subs } = await supabaseAdmin
           .from('alert_subscriptions')
           .select('user_id, crd, alert_types, notify_email, notify_in_app')

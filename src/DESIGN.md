@@ -66,7 +66,7 @@ Loaded in `layout.tsx` via `next/font/google`:
 | Sans | Inter | `--font-sans` | Body text, buttons, labels |
 | Mono | DM Mono | `--font-mono` | Data values, step numbers, metadata |
 
-> **Note:** Many pages reference `'DM Sans', sans-serif` in scoped styles, but DM Sans is **not loaded** in `layout.tsx`. See Tech Debt section.
+> All scoped styles now use `'Inter', sans-serif` to match the font loaded in `layout.tsx`.
 
 ### Type scale
 
@@ -221,5 +221,5 @@ Standard pattern: **eyebrow label** above **serif heading**.
 
 - **`tokens.css` is stale** — needs full rewrite to match the actual palette (navy, green, ink values). Currently references Inter, JetBrains Mono, Slate grays, and Tailwind greens.
 - **`Button.tsx` uses old token system** — renders with wrong green (`bg-primary` = Tailwind green-600), rounded corners, and wrong font size. Needs migration to match branded CTA spec.
-- **DM Sans is not loaded** — many pages reference `'DM Sans', sans-serif` in scoped `<style>` blocks, but only Inter is loaded in `layout.tsx`. Either add `DM_Sans` to `next/font/google` imports or remove DM Sans references and standardize on Inter.
+- **~~DM Sans is not loaded~~** — resolved: all scoped styles now reference `'Inter'` instead of `'DM Sans'`.
 - **`globals.css` responsive helpers** — `.text-responsive-h1` etc. reference Tailwind theme values that don't exist in the current config.

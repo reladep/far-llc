@@ -85,6 +85,10 @@
 .db-empty-link:hover {
   background: var(--green-2);
 }
+.db-empty-link-btn {
+  border: none;
+  cursor: pointer;
+}
 
 /* ── Loading spinner ── */
 .db-loading {

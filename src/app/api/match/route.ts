@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { calcTieredFeeSimple, formatDollar, synthesizeRangeTiers, synthesizeMaxOnlyTiers, type FeeTier } from '@/lib/fee-utils';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { checkRateLimit } from '@/lib/rate-limit';
 
 interface MatchParams {
   netWorth: string;
@@ -71,6 +68,15 @@ const PRIORITY_MAP: Record<string, { key: string; pctKey?: string }> = {
 };
 
 export async function GET(request: NextRequest) {
+  const blocked = checkRateLimit(request, '/api/match', { limit: 10, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
 
   const params: MatchParams = {

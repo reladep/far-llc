@@ -337,13 +337,13 @@ const SECTION_NAV = [
 
 const PAGE_CSS = `
   .vfp-breadcrumb, .vfp-page {
-    --navy:#172438; --navy-2:#0F2538;
+    --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --rule-2:#B0C4BA;
     --red:#EF4444; --amber:#F59E0B;
     --serif:'Cormorant Garamond',serif;
-    --sans:'DM Sans',sans-serif;
+    --sans:'Inter',sans-serif;
     --mono:'DM Mono',monospace;
   }
   .vfp-breadcrumb {
@@ -731,7 +731,19 @@ const PAGE_CSS = `
   }
   .vfp-filing-link:hover { color:var(--green-2); text-decoration:underline; }
 
-  .vfp-cta-card { background:var(--navy); border:none; border-radius:10px; overflow:hidden; }
+  /* Data accuracy notice — sits inside Filing Details card */
+  .vfp-accuracy {
+    font-size:11px; color:var(--ink-3); font-family:var(--sans);
+    border-top:1px solid var(--rule); margin-top:12px; padding-top:12px;
+    line-height:1.45;
+  }
+  .vfp-accuracy-link {
+    color:var(--green); text-decoration:none; font-weight:500;
+    transition:color .12s;
+  }
+  .vfp-accuracy-link:hover { text-decoration:underline; }
+
+  .vfp-cta-card { background:var(--navy); border:none; overflow:hidden; }
   .vfp-cta-body { padding:24px; }
   .vfp-cta-eyebrow {
     font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
@@ -890,20 +902,51 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>
-            Firm Not Found
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24 }}>
-            We couldn&apos;t find a firm with CRD #{params.crd}
-          </p>
-          <Link href="/search" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 24px', background: 'var(--green)', color: '#fff',
-            textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600,
+        <section className="vfp-hero" style={{ paddingBottom: 36 }}>
+          <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+            <div style={{
+              fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 500,
+              letterSpacing: '0.18em', textTransform: 'uppercase' as const,
+              color: '#2DBD74', marginBottom: 8,
+            }}>CRD #{params.crd}</div>
+            <h1 style={{
+              fontFamily: 'var(--serif)', fontSize: 'clamp(28px, 4vw, 38px)',
+              fontWeight: 300, color: '#fff', lineHeight: 1.1, margin: 0,
+            }}>
+              Firm not found.
+            </h1>
+          </div>
+        </section>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 24px 80px' }}>
+          <div style={{
+            background: '#fff', border: '1px solid var(--rule)', padding: 32,
           }}>
-            ← Back to Search
-          </Link>
+            <p style={{
+              fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6,
+              fontFamily: 'var(--sans)', margin: '0 0 8px',
+            }}>
+              We couldn&apos;t locate a firm with this CRD number. The firm may have been deregistered or the number may be incorrect.
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6,
+              fontFamily: 'var(--sans)', margin: '0 0 24px',
+            }}>
+              Try searching by firm name instead, or verify the CRD number on{' '}
+              <a href="https://adviserinfo.sec.gov" target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--green)', textDecoration: 'none', fontWeight: 500 }}>
+                SEC IAPD
+              </a>.
+            </p>
+            <Link href="/search" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 20px', background: 'var(--green)', color: '#fff',
+              textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 11,
+              fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
+              borderRadius: 0,
+            }}>
+              Search advisors →
+            </Link>
+          </div>
         </div>
       </>
     );
@@ -2054,6 +2097,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 >
                   View on SEC EDGAR ↗
                 </a>
+                <div className="vfp-accuracy">
+                  Something look off? <Link href="/contact?subject=Data+correction" className="vfp-accuracy-link">Let us know</Link> and we&apos;ll review it promptly.
+                </div>
               </div>
             </div>
 

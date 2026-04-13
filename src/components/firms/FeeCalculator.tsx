@@ -100,7 +100,7 @@ const CSS = `
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+    --serif:'Cormorant Garamond',serif; --sans:'Inter',sans-serif; --mono:'DM Mono',monospace;
   }
   .fc-wrap {
     background:#fff; border:0.5px solid var(--rule); border-radius:10px;

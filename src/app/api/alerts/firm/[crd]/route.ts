@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// GET /api/alerts/firm/[crd] — public alerts for a firm
+// GET /api/alerts/firm/[crd] — alerts for a firm (authenticated)
 export async function GET(
   request: NextRequest,
   { params }: { params: { crd: string } }
 ) {
+  const blocked = checkRateLimit(request, '/api/alerts/firm', { limit: 20, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const crd = parseInt(params.crd);
   if (isNaN(crd)) {
     return NextResponse.json({ error: 'Invalid CRD' }, { status: 400 });

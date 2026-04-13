@@ -97,7 +97,7 @@ const CSS = `
   }
   .bcard-edit:hover { border-color:var(--ink-3); color:var(--ink); }
   .bcard-body { padding:18px 20px; }
-  .bcard-body.flush { padding:0 20px; }
+  .bcard-body.flush { padding:0 20px 14px; }
   .bcard-empty { font-size:13px; color:var(--ink-3); font-family:var(--sans); }
 
   /* account rows */
@@ -112,36 +112,16 @@ const CSS = `
     padding:2px 0; outline:none; transition:border-color .15s; width:220px;
   }
   .acct-input:focus { border-color:var(--green); }
-  .acct-save-row { display:flex; gap:8px; margin-top:14px; }
-  .acct-btn { font-size:11px; font-family:var(--sans); font-weight:600; padding:6px 14px; cursor:pointer; border:none; transition:all .12s; }
+  .acct-save-row { display:flex; gap:8px; padding:14px 0 4px; }
+  .acct-btn { font-size:11px; font-family:var(--sans); font-weight:600; padding:8px 18px; cursor:pointer; border:none; transition:all .12s; }
   .acct-btn.save { background:var(--green); color:#fff; }
   .acct-btn.save:hover { background:var(--green-2); }
+  .acct-btn.save:disabled { opacity:.5; cursor:not-allowed; }
   .acct-btn.cancel { background:none; border:1px solid var(--rule); color:var(--ink-3); }
   .acct-btn.cancel:hover { border-color:var(--ink-3); color:var(--ink); }
-
-  /* notifications */
-  .notif-row {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 0; border-bottom:1px solid var(--rule);
-  }
-  .notif-row:last-child { border-bottom:none; }
-  .notif-title { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:2px; }
-  .notif-sub { font-size:11px; color:var(--ink-3); }
-
-  /* toggle switch */
-  .tog { position:relative; display:inline-block; width:34px; height:18px; flex-shrink:0; }
-  .tog input { opacity:0; width:0; height:0; }
-  .tog-track {
-    position:absolute; cursor:pointer; inset:0;
-    background:var(--rule); transition:background .2s; border-radius:18px;
-  }
-  .tog-track::before {
-    content:''; position:absolute;
-    width:12px; height:12px; left:3px; bottom:3px;
-    background:#fff; border-radius:50%; transition:transform .2s;
-  }
-  .tog input:checked + .tog-track { background:var(--green); }
-  .tog input:checked + .tog-track::before { transform:translateX(16px); }
+  .acct-pw-hint { font-size:11px; color:var(--ink-3); font-family:var(--sans); margin-top:2px; }
+  .acct-pw-error { font-size:11px; color:#EF4444; font-family:var(--sans); margin-top:4px; }
+  .acct-save-msg { font-size:11px; color:var(--green); font-family:var(--sans); margin-left:8px; display:flex; align-items:center; }
 
   /* success banner */
   .checkout-success {
@@ -175,13 +155,6 @@ const PLAN_INFO: Record<string, { name: string; price: string }> = {
   enterprise: { name: 'Enterprise', price: '$499 / yr' },
 };
 
-const NOTIFS = [
-  { key: 'watchlist', title: 'Watchlist alerts', sub: 'Email when a watched firm files a change matching your alert types', defaultOn: true },
-  { key: 'digest',    title: 'Weekly digest',    sub: 'Sunday summary of changes across your saved firms', defaultOn: true },
-  { key: 'scores',    title: 'Score updates',    sub: 'When Visor Index scores for saved firms change by more than 5 points', defaultOn: true },
-  { key: 'product',   title: 'Product announcements', sub: 'New features and platform updates', defaultOn: false },
-];
-
 async function callStripeAction(endpoint: string, body?: object) {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -200,13 +173,66 @@ export default function BillingClient({ email, memberSince, nameFallback, planTi
   const [editing, setEditing] = useState(false);
   const [nameInput, setNameInput] = useState(nameFallback);
   const [emailInput, setEmailInput] = useState(email);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState('');
   const [loading, setLoading] = useState<string | null>(null);
-  const [notifs, setNotifs] = useState<Record<string, boolean>>(
-    Object.fromEntries(NOTIFS.map(n => [n.key, n.defaultOn]))
-  );
 
-  const toggleNotif = (key: string) => {
-    setNotifs(prev => ({ ...prev, [key]: !prev[key] }));
+  const resetEditForm = () => {
+    setEditing(false);
+    setPasswordInput('');
+    setConfirmPasswordInput('');
+    setPasswordError('');
+    setSaveSuccess('');
+    setNameInput(nameFallback);
+    setEmailInput(email);
+  };
+
+  const handleSaveAccount = async () => {
+    setPasswordError('');
+    setSaveSuccess('');
+
+    // Validate password if user entered one
+    if (passwordInput) {
+      if (passwordInput.length < 8) {
+        setPasswordError('Password must be at least 8 characters');
+        return;
+      }
+      if (passwordInput !== confirmPasswordInput) {
+        setPasswordError('Passwords do not match');
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const { createSupabaseBrowserClient } = await import('@/lib/supabase-browser');
+      const supabase = createSupabaseBrowserClient();
+
+      // Update password if provided
+      if (passwordInput) {
+        const { error } = await supabase.auth.updateUser({ password: passwordInput });
+        if (error) {
+          setPasswordError(error.message);
+          setSaving(false);
+          return;
+        }
+      }
+
+      setSaving(false);
+      setSaveSuccess('Changes saved');
+      setPasswordInput('');
+      setConfirmPasswordInput('');
+      setTimeout(() => {
+        setEditing(false);
+        setSaveSuccess('');
+      }, 1500);
+    } catch {
+      setPasswordError('Something went wrong. Please try again.');
+      setSaving(false);
+    }
   };
 
   const handleCheckout = async (tier: string) => {
@@ -356,7 +382,7 @@ export default function BillingClient({ email, memberSince, nameFallback, planTi
       <div className="bcard">
         <div className="bcard-hd">
           <div className="bcard-title">Account Settings</div>
-          <button className="bcard-edit" onClick={() => setEditing(e => !e)}>
+          <button className="bcard-edit" onClick={() => editing ? resetEditForm() : setEditing(true)}>
             {editing ? 'Cancel' : 'Edit'}
           </button>
         </div>
@@ -378,46 +404,56 @@ export default function BillingClient({ email, memberSince, nameFallback, planTi
                 <div className="acct-lbl">Email</div>
                 <input className="acct-input" type="email" value={emailInput} onChange={e => setEmailInput(e.target.value)} />
               </div>
-              <div className="acct-row">
-                <div className="acct-lbl">New Password</div>
-                <input className="acct-input" type="password" placeholder="Leave blank to keep current" />
+              <div className="acct-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', width: '100%' }}>
+                  <div className="acct-lbl">New Password</div>
+                  <input
+                    className="acct-input"
+                    type="password"
+                    placeholder="Leave blank to keep current"
+                    value={passwordInput}
+                    onChange={e => { setPasswordInput(e.target.value); setPasswordError(''); }}
+                  />
+                </div>
+                <div className="acct-pw-hint" style={{ marginLeft: 150 }}>Min. 8 characters</div>
               </div>
+              <div className="acct-row">
+                <div className="acct-lbl">Confirm Password</div>
+                <input
+                  className="acct-input"
+                  type="password"
+                  placeholder="Re-enter new password"
+                  value={confirmPasswordInput}
+                  onChange={e => { setConfirmPasswordInput(e.target.value); setPasswordError(''); }}
+                />
+              </div>
+              {passwordError && <div className="acct-pw-error">{passwordError}</div>}
               <div className="acct-save-row">
-                <button className="acct-btn save" onClick={() => setEditing(false)}>Save Changes</button>
-                <button className="acct-btn cancel" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="acct-btn save" onClick={handleSaveAccount} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button className="acct-btn cancel" onClick={resetEditForm}>Cancel</button>
+                {saveSuccess && <span className="acct-save-msg">{saveSuccess}</span>}
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Email notifications */}
+      {/* Email notifications — managed on the Alerts page */}
       <div className="bcard">
         <div className="bcard-hd">
           <div className="bcard-title">Email Notifications</div>
+          <Link href="/dashboard/alerts" className="bcard-edit" style={{ textDecoration: 'none' }}>Manage</Link>
         </div>
-        <div className="bcard-body flush">
-          {NOTIFS.map(n => (
-            <div key={n.key} className="notif-row">
-              <div>
-                <div className="notif-title">{n.title}</div>
-                <div className="notif-sub">{n.sub}</div>
-              </div>
-              <label className="tog" aria-label={`Toggle ${n.title}`}>
-                <input
-                  type="checkbox"
-                  checked={notifs[n.key]}
-                  onChange={() => toggleNotif(n.key)}
-                  aria-label={n.title}
-                />
-                <span className="tog-track" />
-              </label>
-            </div>
-          ))}
+        <div className="bcard-body">
+          <div className="bcard-empty">
+            Configure your email digest frequency and per-firm alert preferences on the Alerts page.
+          </div>
         </div>
       </div>
 
-      <button className="danger-link">Request account deletion →</button>
+      <Link href="/contact" className="danger-link" style={{ textDecoration: 'none' }}>Request account deletion →</Link>
     </div>
   );
 }

@@ -167,10 +167,10 @@ export async function getSimilarFirms({
     });
 
     scored.sort((a, b) => b._composite - a._composite);
-    const pool = scored.slice(0, limit * 3);
+    const pool: any[] = scored.slice(0, limit * 3);
 
     const crds = pool.map(f => f.crd as number);
-    const lookups: Promise<any>[] = [
+    const lookups: PromiseLike<any>[] = [
       supabase.from('firm_names').select('crd, display_name').in('crd', crds),
       getFirmScores(crds),
       // Always fetch fees for ranking boost (fee data + score boost)

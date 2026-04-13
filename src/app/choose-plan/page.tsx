@@ -16,7 +16,7 @@ const CSS = `
     --rule-soft: #E5E9E6;
     --bg: #F6F8F7;
     --serif: 'Cormorant Garamond', Georgia, serif;
-    --sans: 'DM Sans', 'Inter', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
     --mono: 'DM Mono', 'SF Mono', Menlo, monospace;
     min-height: 100vh;
     background: var(--bg);

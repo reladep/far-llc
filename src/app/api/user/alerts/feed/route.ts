@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
   const page = deduped.slice(0, limit);
 
   // Resolve firm names
-  const alertCrds = [...new Set(page.map(a => a.crd))];
+  const alertCrds = Array.from(new Set(page.map(a => a.crd)));
   const { data: names } = await supabaseAdmin
     .from('firm_names')
     .select('crd, display_name')

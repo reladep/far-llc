@@ -12,7 +12,7 @@ const C = {
   white: '#F6F8F7', ink: '#0C1810', ink2: '#2E4438', ink3: '#5A7568', rule: '#CAD8D0',
 };
 const SERIF = "'Cormorant Garamond', serif";
-const SANS  = "'DM Sans', sans-serif";
+const SANS  = "'Inter', sans-serif";
 const MONO  = "'DM Mono', monospace";
 
 const W = 960, H = 560;

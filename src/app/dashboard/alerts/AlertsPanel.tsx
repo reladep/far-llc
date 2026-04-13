@@ -38,7 +38,7 @@ const CSS = `
     font-family:var(--mono); font-size:10px; font-weight:700;
     letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
   }
-  .ap-freq-group { display:flex; gap:0; border:1px solid var(--rule); }
+  .ap-freq-group { display:inline-flex; gap:0; border:1px solid var(--rule); }
   .ap-freq-btn {
     font-size:11px; font-weight:600; letter-spacing:.04em;
     font-family:var(--sans); padding:7px 14px; cursor:pointer;

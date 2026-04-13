@@ -64,7 +64,7 @@ const CSS = `
     --ink-3: #5A7568;
     --rule: #CAD8D0;
     --serif: 'Cormorant Garamond', serif;
-    --sans: 'DM Sans', sans-serif;
+    --sans: 'Inter', sans-serif;
     --mono: 'DM Mono', monospace;
   }
 

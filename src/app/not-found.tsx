@@ -37,7 +37,7 @@ export default function NotFound() {
 
         {/* Body */}
         <p style={{
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Inter', sans-serif",
           fontSize: 14,
           color: '#5A7568',
           lineHeight: 1.7,
@@ -57,7 +57,7 @@ export default function NotFound() {
             background: '#1A7A4A',
             color: '#fff',
             textDecoration: 'none',
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Inter', sans-serif",
             fontSize: 13,
             fontWeight: 600,
             letterSpacing: '0.04em',
@@ -83,7 +83,7 @@ export default function NotFound() {
               key={link.href}
               href={link.href}
               style={{
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Inter', sans-serif",
                 fontSize: 12,
                 fontWeight: 500,
                 color: '#5A7568',

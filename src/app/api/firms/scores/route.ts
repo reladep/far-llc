@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
+  const blocked = checkRateLimit(request, '/api/firms/scores', { limit: 20, windowMs: 60_000 });
+  if (blocked) return blocked;
+
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const crdsParam = searchParams.get('crds');
   

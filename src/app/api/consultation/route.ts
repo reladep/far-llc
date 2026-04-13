@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -8,6 +9,8 @@ const NOTIFY_EMAIL = 'maxwellbrain2026@gmail.com';
 
 export async function POST(req: NextRequest) {
   try {
+    const blocked = checkRateLimit(req, '/api/consultation', { limit: 5, windowMs: 60_000 });
+    if (blocked) return blocked;
     const body = await req.json();
     const { name, email, phone, aum, services, hasAdvisor, advisorName, message, turnstileToken } = body;
 
