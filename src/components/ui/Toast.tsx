@@ -110,7 +110,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   Undo
                 </button>
               )}
-              <button className="toast-close" onClick={() => dismiss(t.id)}>✕</button>
+              <button className="toast-close" onClick={() => dismiss(t.id)} aria-label="Dismiss notification">✕</button>
             </div>
           ))}
         </div>

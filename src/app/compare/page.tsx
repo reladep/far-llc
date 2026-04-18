@@ -1575,6 +1575,7 @@ export default function ComparePage() {
                       <div key={col} className="cp-firm-slot">
                         {lk ? (
                           <div className="cp-firm-logo">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- dynamic Supabase URL with DOM-based onError fallback that rewrites parent innerHTML; converting to next/image here would break the fallback path. */}
                             <img src={`${supaUrl}/storage/v1/object/public/firm-logos/${lk}`} alt="" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = `<span style="font-family:var(--serif);font-size:11px;font-weight:700;color:rgba(255,255,255,.5)">${displayName.slice(0, 2).toUpperCase()}</span>`; }} />
                           </div>
                         ) : (
@@ -1583,7 +1584,7 @@ export default function ComparePage() {
                         <span className="cp-firm-name" title={displayName}>
                           <Link href={`/firm/${crd}`}>{displayName}</Link>
                         </span>
-                        <button className="cp-remove-btn" onClick={() => crd && removeFirm(crd)}>×</button>
+                        <button className="cp-remove-btn" onClick={() => crd && removeFirm(crd)} aria-label={`Remove ${displayName} from comparison`}>×</button>
                       </div>
                     );
                   }
@@ -2098,9 +2099,9 @@ export default function ComparePage() {
                 <svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" /></svg>
                 Unlock Full Comparison
               </div>
-              <h2 className="cp-gate-headline">
+              <h1 className="cp-gate-headline">
                 Differentiate firms on the factors that matter.
-              </h2>
+              </h1>
               <p className="cp-gate-sub">
                 Compare client types, growth rates, fees, and more across wealth management firms.
               </p>
@@ -2246,7 +2247,7 @@ export default function ComparePage() {
                 {selected.map(firm => (
                   <div key={firm.crd} className="cp-search-chip">
                     {firm.display_name || firm.primary_business_name}
-                    <button onClick={() => removeFirm(firm.crd)} style={{ color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+                    <button onClick={() => removeFirm(firm.crd)} aria-label={`Remove ${firm.display_name || firm.primary_business_name}`} style={{ color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
                   </div>
                 ))}
                 <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, PasswordInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from './AuthLayout';
 
@@ -30,9 +30,8 @@ export function LoginForm() {
           placeholder="you@example.com"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"

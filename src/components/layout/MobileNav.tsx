@@ -13,6 +13,7 @@ const allNavLinks = [
   { label: 'Match', href: '/match' },
   { label: 'Negotiate', href: '/negotiate' },
   { label: 'Directory', href: '/directory' },
+  { label: 'Deep Dive', href: '/deep-dive' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
 ];

@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'How It Works — Visor Index',
   description:
     'Learn how the Visor Index Score works — six weighted dimensions built entirely from SEC filings to help you evaluate financial advisors.',
+  alternates: { canonical: '/how-it-works' },
 };
 
 const PILLARS = [

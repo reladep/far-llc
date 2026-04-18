@@ -68,7 +68,7 @@ const PRIORITY_MAP: Record<string, { key: string; pctKey?: string }> = {
 };
 
 export async function GET(request: NextRequest) {
-  const blocked = checkRateLimit(request, '/api/match', { limit: 10, windowMs: 60_000 });
+  const blocked = await checkRateLimit(request, '/api/match', { limit: 10, windowMs: 60_000 });
   if (blocked) return blocked;
 
   const supabase = createSupabaseServerClient();

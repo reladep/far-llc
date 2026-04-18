@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { checkRateLimit } from '@/lib/rate-limit';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const NOTIFY_EMAIL = 'maxwellbrain2026@gmail.com';
 
 export async function POST(req: NextRequest) {
   try {
-    const blocked = checkRateLimit(req, '/api/contact', { limit: 5, windowMs: 60_000 });
+    const blocked = await checkRateLimit(req, '/api/contact', { limit: 5, windowMs: 60_000 });
     if (blocked) return blocked;
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error('[contact] RESEND_API_KEY not configured');
+      return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
+    }
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     const body = await req.json();
     const { name, email, subject, message, turnstileToken } = body;
 

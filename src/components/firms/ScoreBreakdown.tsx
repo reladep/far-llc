@@ -45,7 +45,7 @@ function ScoreBar({ label, value, description }: { label: string; value: number;
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-700">{label}</span>
-          <button className="text-slate-400 hover:text-slate-600 text-xs">ⓘ</button>
+          <button className="text-slate-400 hover:text-slate-600 text-xs" aria-label={`More info about ${label}`} type="button">ⓘ</button>
         </div>
         <span className="text-sm font-semibold text-slate-900">{value}</span>
       </div>

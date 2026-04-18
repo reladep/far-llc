@@ -442,7 +442,7 @@ export default function FeeCalculator({
             </div>
 
             {/* Toggle for detailed analysis */}
-            <button className="fc-detail-toggle" onClick={() => setShowDetail(!showDetail)}>
+            <button className="fc-detail-toggle" onClick={() => setShowDetail(!showDetail)} aria-expanded={showDetail}>
               <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 10 10"
                 style={{ transform: showDetail ? 'rotate(90deg)' : 'rotate(0)' }}>
                 <path d="M3 1.5l4 3.5-4 3.5" />

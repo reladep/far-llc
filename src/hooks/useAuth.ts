@@ -46,17 +46,24 @@ export function useAuth() {
   const signup = useCallback(
     async (email: string, password: string, fullName: string) => {
       setState((s) => ({ ...s, loading: true, error: null }));
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
       });
       if (error) {
         setState((s) => ({ ...s, loading: false, error: error.message }));
-      } else {
-        router.push('/choose-plan');
-        router.refresh();
+        return;
       }
+      // If Supabase has email confirmation enabled, no session is returned
+      // until the user clicks the link. Route them to the check-your-email page.
+      if (!data.session) {
+        router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
+        return;
+      }
+      // Otherwise (email confirmation disabled), proceed straight to onboarding flow.
+      router.push('/choose-plan');
+      router.refresh();
     },
     [router]
   );

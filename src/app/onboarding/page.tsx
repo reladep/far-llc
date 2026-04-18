@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Input } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -190,7 +190,7 @@ const PAGE_CSS = `
   }
 `;
 
-export default function OnboardingPage() {
+function OnboardingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const showWelcome = searchParams.get('welcome') === '1';
@@ -436,5 +436,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={null}>
+      <OnboardingPageInner />
+    </Suspense>
   );
 }

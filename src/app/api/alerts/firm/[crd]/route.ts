@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { crd: string } }
 ) {
-  const blocked = checkRateLimit(request, '/api/alerts/firm', { limit: 20, windowMs: 60_000 });
+  const blocked = await checkRateLimit(request, '/api/alerts/firm', { limit: 20, windowMs: 60_000 });
   if (blocked) return blocked;
 
   const supabase = createSupabaseServerClient();

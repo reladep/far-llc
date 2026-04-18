@@ -277,9 +277,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { firmData, displayName } = await getFirmData(params.crd);
   const name = displayName || firmData?.primary_business_name || 'Firm';
+  const location = firmData?.main_office_city && firmData?.main_office_state
+    ? `${firmData.main_office_city}, ${firmData.main_office_state}`
+    : null;
+  const title = `${name} — Visor Index`;
+  const description = location
+    ? `${name} · ${location}. View detailed profile, Visor Index™ Score, fees, services, and regulatory history. SEC-registered investment advisor (CRD #${params.crd}).`
+    : `View detailed profile, Visor Index™ Score, fees, services, and regulatory history for ${name}. SEC-registered investment advisor (CRD #${params.crd}).`;
+  const url = `https://visorindex.com/firm/${params.crd}`;
+
   return {
-    title: `${name} — Visor Index`,
-    description: `View detailed profile, fees, services, and Visor Index™ for ${name}. SEC-registered investment advisor.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'profile',
+      url,
+      siteName: 'Visor Index',
+      title,
+      description,
+      // Uses default site-wide opengraph-image from app/opengraph-image.tsx
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 
@@ -1171,6 +1194,74 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     !(s.id === 'allocation' && allocRows.length === 0)
   );
 
+  // ── JSON-LD Structured Data ──────────────────────────────────────────────────
+  const firmJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialService',
+    '@id': `https://visorindex.com/firm/${firm.crd}`,
+    name: firmTitleCase,
+    url: `https://visorindex.com/firm/${firm.crd}`,
+    ...(website?.website && { sameAs: [website.website] }),
+    ...(profileText?.business_profile && { description: profileText.business_profile.slice(0, 500) }),
+    ...(firm.main_phone_number && { telephone: firm.main_phone_number }),
+    identifier: {
+      '@type': 'PropertyValue',
+      propertyID: 'SEC CRD',
+      value: String(firm.crd),
+    },
+    ...(firm.main_office_city && firm.main_office_state && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: [firm.main_office_street_1, firm.main_office_street_2].filter(Boolean).join(', ') || undefined,
+        addressLocality: firm.main_office_city,
+        addressRegion: firm.main_office_state,
+        postalCode: firm.main_office_zip || undefined,
+        addressCountry: 'US',
+      },
+    }),
+    ...(firm.aum != null && {
+      aggregateRating: undefined, // placeholder slot — no ratings data yet
+    }),
+    provider: {
+      '@type': 'Organization',
+      name: 'Visor Index',
+      url: 'https://visorindex.com',
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Search', item: 'https://visorindex.com/search' },
+      ...(firm.main_office_state ? [{
+        '@type': 'ListItem' as const,
+        position: 2,
+        name: firm.main_office_state,
+        item: `https://visorindex.com/directory/${firm.main_office_state.toLowerCase()}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: firm.main_office_state ? 3 : 2,
+        name: firmTitleCase,
+        item: `https://visorindex.com/firm/${firm.crd}`,
+      },
+    ],
+  };
+
+  const jsonLdScript = (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(firmJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+    </>
+  );
+
   // ── GATED VIEW (unauthenticated) ─────────────────────────────────────────────
   if (!user) {
     const truncatedAbout = profileText?.business_profile
@@ -1180,6 +1271,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+        {jsonLdScript}
 
         {/* Breadcrumb hidden for gated view */}
 
@@ -1386,6 +1478,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+      {jsonLdScript}
 
       {/* Fixed breadcrumb bar */}
       <div className="vfp-breadcrumb">

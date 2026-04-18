@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Terms of Service — Visor Index',
   description:
     'Terms of Service and Legal Disclosures for Visor Index. Read our terms before using the platform.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

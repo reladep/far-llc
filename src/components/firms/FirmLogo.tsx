@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface FirmLogoProps {
@@ -14,6 +15,13 @@ const SIZES = {
   sm: 'h-10 w-10 text-xs',
   md: 'h-12 w-12 text-sm',
   lg: 'h-20 w-20 text-xl',
+};
+
+// Pixel dimensions matching the Tailwind SIZES, for next/image optimization hints
+const PX_SIZES = {
+  sm: 40,
+  md: 48,
+  lg: 80,
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -42,13 +50,17 @@ export default function FirmLogo({ logoKey, firmName, size = 'md', className }: 
 
   if (logoKey && !failed) {
     const url = `${supabaseUrl}/storage/v1/object/public/firm-logos/${logoKey}`;
+    const px = PX_SIZES[size];
     return (
       <div className={cn(sizeClass, 'shrink-0 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden', className)}>
-        <img
+        <Image
           src={url}
           alt={`${firmName} logo`}
+          width={px}
+          height={px}
           className="h-full w-full object-contain p-1"
           onError={() => setFailed(true)}
+          unoptimized={false}
         />
       </div>
     );

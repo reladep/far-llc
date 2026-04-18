@@ -21,10 +21,26 @@
   --color-primary-hover: var(--color-primary-500);  /* #22995E */
   --color-primary-active: var(--color-primary-700);
 
-  /* DESIGN.md named greens */
+  /* DESIGN.md named greens
+   * ─────────────────────────────────────────────────
+   * ACCESSIBILITY NOTE — contrast ratios vs key backgrounds:
+   *   --green    (#1A7A4A)  →  5.35 on white ✓AA  ·  3.24 on navy ✗AA body
+   *   --green-2  (#22995E)  →  3.63 on white ⚠ only large text  ·  4.77 on navy ✓AA
+   *   --green-3  (#2DBD74)  →  2.43 on white ✗FAIL  ·  7.13 on navy ✓AAA
+   *
+   * Rule of thumb:
+   *   • Green TEXT on white/bg  → use --green (#1A7A4A)
+   *   • Green TEXT on navy      → use --green-3 (#2DBD74)
+   *   • Green BACKGROUND + white text → use --green (5.35:1) or --green-2 (3.63:1 large only)
+   *   • NEVER: --green-3 as text on white, or white text on --green-3 background
+   * ───────────────────────────────────────────────── */
   --green: #1A7A4A;
   --green-2: #22995E;
   --green-3: #2DBD74;
+
+  /* Semantic aliases — prefer these in new code */
+  --green-text-on-light: var(--green);   /* body text on white/#F6F8F7 */
+  --green-text-on-dark: var(--green-3);  /* accent/eyebrow on navy */
 
   /* DESIGN.md named navys */
   --navy: #0A1C2A;

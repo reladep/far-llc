@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, PasswordInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from './AuthLayout';
 
@@ -62,17 +62,16 @@ export function SignupForm() {
           placeholder="you@example.com"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Min. 8 characters"
+          showStrength
           required
         />
-        <Input
+        <PasswordInput
           label="Confirm Password"
-          type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Re-enter password"

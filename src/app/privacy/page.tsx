@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Privacy Policy — Visor Index',
   description:
     'How Visor Index collects, uses, and protects your personal information. Read our Privacy Policy.',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Privacy',
+  alternates: { canonical: '/disclosures/privacy' },
 };
 
 export default function PrivacyPage() {

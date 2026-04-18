@@ -64,6 +64,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title: `Financial Advisors in ${name} — Visor Index`,
     description: `Browse and compare SEC-registered investment advisory firms in ${name}. View fees, AUM, Visor scores, and more.`,
+    alternates: { canonical: `/directory/${params.slug.toLowerCase()}` },
   };
 }
 

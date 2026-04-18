@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: NextRequest) {
-  const blocked = checkRateLimit(request, '/api/firms/scores', { limit: 20, windowMs: 60_000 });
+  const blocked = await checkRateLimit(request, '/api/firms/scores', { limit: 20, windowMs: 60_000 });
   if (blocked) return blocked;
 
   const supabase = createSupabaseServerClient();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -9,9 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  *   1. Check their digest frequency preference
  *   2. If it's time to send (daily=every day, weekly=Mondays, monthly=1st)
  *   3. Gather undelivered firm_alerts for their subscribed firms
- *   4. Build a grouped summary and log the digest
- *
- * The actual email sending is stubbed — replace with Resend/Postmark/SES.
+ *   4. Build a grouped summary and send via Resend
  */
 
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -153,6 +152,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[digest] RESEND_API_KEY not configured');
+    return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   const now = new Date();
   const digests: UserDigest[] = [];
 
@@ -278,35 +283,45 @@ export async function POST(request: NextRequest) {
 
   // 5. Send digests and log them
   let digestsSent = 0;
+  let digestsFailed = 0;
+
   for (const digest of digests) {
-    const _html = buildDigestHtml(digest);
+    const html = buildDigestHtml(digest);
+    const alertCount = digest.firms.reduce((s, f) => s + f.alerts.length, 0);
+    const subject = `Visor Index: ${digest.firms.length} firm${digest.firms.length !== 1 ? 's' : ''} with updates`;
 
-    // TODO: Replace with actual email sending (Resend, Postmark, SES)
-    // await sendEmail({
-    //   to: digest.email,
-    //   subject: `Visor Index: ${digest.firms.length} firm${digest.firms.length !== 1 ? 's' : ''} with updates`,
-    //   html,
-    // });
+    try {
+      await resend.emails.send({
+        from: 'Visor Index <notifications@visorindex.com>',
+        to: digest.email,
+        subject,
+        html,
+      });
 
-    console.log(`[Digest] Would send ${digest.frequency} digest to ${digest.email}: ${digest.firms.length} firms, ${digest.firms.reduce((s, f) => s + f.alerts.length, 0)} alerts`);
+      // Log successful delivery
+      await supabaseAdmin.from('alert_digest_log').insert({
+        user_id: digest.userId,
+        digest_type: digest.frequency,
+        period_start: digest.periodStart,
+        period_end: digest.periodEnd,
+        event_count: alertCount,
+        firm_count: digest.firms.length,
+      });
 
-    // Log the digest
-    await supabaseAdmin.from('alert_digest_log').insert({
-      user_id: digest.userId,
-      digest_type: digest.frequency,
-      period_start: digest.periodStart,
-      period_end: digest.periodEnd,
-      event_count: digest.firms.reduce((s, f) => s + f.alerts.length, 0),
-      firm_count: digest.firms.length,
-    });
-
-    digestsSent++;
+      digestsSent++;
+    } catch (err) {
+      digestsFailed++;
+      console.error(`[digest] Failed to send ${digest.frequency} digest to ${digest.email}:`,
+        err instanceof Error ? err.message : err);
+      // Do not log to alert_digest_log so the next run will retry
+    }
   }
 
   return NextResponse.json({
     message: 'Digest processing complete',
     users_checked: uniqueUserIds.length,
     digests_sent: digestsSent,
-    digests_skipped: uniqueUserIds.length - digestsSent,
+    digests_failed: digestsFailed,
+    digests_skipped: uniqueUserIds.length - digestsSent - digestsFailed,
   });
 }

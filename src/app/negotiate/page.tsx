@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import FirmLogo from '@/components/firms/FirmLogo';
 import { useSearchParams } from 'next/navigation';
@@ -70,7 +70,7 @@ function formatFirmName(name: string): string {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function NegotiatePage() {
+function NegotiatePageInner() {
   const searchParams = useSearchParams();
   const crdParam = searchParams.get('crd');
   const aumParam = searchParams.get('aum');
@@ -1277,7 +1277,7 @@ export default function NegotiatePage() {
                         />
                         <span style={{ fontSize: 12, color: '#5A7568', flexShrink: 0 }}>%</span>
                         {feeTiers.length > 2 && (
-                          <button onClick={() => removeFeeTier(index)} style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
+                          <button onClick={() => removeFeeTier(index)} aria-label="Remove fee tier" style={{ color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
                         )}
                       </div>
                     </div>
@@ -1789,5 +1789,13 @@ function ResultsPreview({
         </div>
 
     </div>
+  );
+}
+
+export default function NegotiatePage() {
+  return (
+    <Suspense fallback={null}>
+      <NegotiatePageInner />
+    </Suspense>
   );
 }

@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Disclosures — Visor Index',
   description:
     'Regulatory status, data source disclosures, compensation model, and analytical methodology disclosures for Visor Index.',
+  alternates: { canonical: '/disclosures' },
 };
 
 export default function DisclosuresPage() {
