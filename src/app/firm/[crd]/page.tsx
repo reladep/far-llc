@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import SaveFirmButton from '@/components/firms/SaveFirmButton';
 import FeeCalculator from '@/components/firms/FeeCalculator';
 import FirmAlerts from '@/components/firms/FirmAlerts';
@@ -13,7 +14,8 @@ import SectionNav from '@/components/firms/SectionNav';
 import ExpandableText from '@/components/firms/ExpandableText';
 import AnimatedBars from '@/components/firms/AnimatedBars';
 import AnimatedRows from '@/components/firms/AnimatedRows';
-import { getFirmScore, getFirmScores } from '@/lib/scores';
+import { getFirmScore } from '@/lib/scores';
+import { getSimilarFirms, type SimilarFirm } from '@/lib/similar-firms';
 
 // ─── Supabase client ──────────────────────────────────────────────────────────
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -214,191 +216,8 @@ async function getFirmData(crd: string) {
 }
 
 // ─── New types ────────────────────────────────────────────────────────────────
-interface SimilarFirm {
-  crd: number;
-  name: string;
-  city: string | null;
-  state: string;
-  aum: number | null;
-  score: number | null;
-  reason: string;
-}
-
-// ─── Similar Firms: multi-dimensional similarity ─────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type FirmRow = Record<string, any>;
-
-function clientVector(f: FirmRow | null | undefined): number[] {
-  if (!f) return Array(12).fill(0);
-  const keys = [
-    'client_hnw_number', 'client_non_hnw_number', 'client_pension_number',
-    'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number',
-    'client_other_number', 'client_banks_number', 'client_govt_number',
-    'client_insurance_number', 'client_investment_cos_number', 'client_other_advisors_number',
-  ];
-  return keys.map(k => Number(f[k]) || 0);
-}
-
-function serviceVector(f: FirmRow | null | undefined): number[] {
-  if (!f) return Array(6).fill(0);
-  const keys = [
-    'services_financial_planning', 'services_mgr_selection', 'services_pension_consulting',
-    'services_port_management_individuals', 'services_port_management_institutional',
-    'services_port_management_pooled',
-  ];
-  return keys.map(k => f[k] === 'Y' ? 1 : 0);
-}
-
-function cosineSim(a: number[], b: number[]): number {
-  let dot = 0, magA = 0, magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
-  }
-  const denom = Math.sqrt(magA) * Math.sqrt(magB);
-  return denom === 0 ? 0 : dot / denom;
-}
-
-function aumProximity(a: number, b: number): number {
-  if (!a || !b) return 0;
-  const ratio = Math.min(a, b) / Math.max(a, b);
-  return ratio; // 1.0 = identical, 0.0 = very far
-}
-
-function totalClientsFromRow(f: FirmRow | null | undefined): number {
-  if (!f) return 0;
-  const keys = [
-    'client_hnw_number', 'client_non_hnw_number', 'client_pension_number',
-    'client_charitable_number', 'client_corporations_number', 'client_pooled_vehicles_number',
-    'client_other_number', 'client_banks_number', 'client_govt_number',
-    'client_insurance_number', 'client_investment_cos_number', 'client_other_advisors_number',
-  ];
-  return keys.reduce((sum, k) => sum + (Number(f[k]) || 0), 0);
-}
-
-function avgClientAum(f: FirmRow | null | undefined): number {
-  if (!f) return 0;
-  const total = totalClientsFromRow(f);
-  const aum = Number(f.aum) || 0;
-  return total > 0 && aum > 0 ? aum / total : 0;
-}
-
-function dominantReason(
-  clientSim: number, aumSim: number, serviceSim: number, avgClientSim: number, sameState: boolean
-): string {
-  const parts: string[] = [];
-  if (clientSim > 0.7) parts.push('Similar Client Base');
-  if (aumSim > 0.6) parts.push('Comparable AUM');
-  if (avgClientSim > 0.6) parts.push('Similar Avg. Client Size');
-  if (serviceSim > 0.7) parts.push('Same Services');
-  if (sameState) parts.push('Same State');
-  if (parts.length === 0) {
-    if (aumSim >= clientSim && aumSim >= serviceSim) parts.push('Comparable AUM');
-    else if (clientSim >= serviceSim) parts.push('Similar Client Base');
-    else parts.push('Same Services');
-  }
-  return parts.slice(0, 2).join(' · ');
-}
-
-async function getSimilarFirms(crd: number, state: string, aum: number | null, firm: FirmData): Promise<SimilarFirm[]> {
-  try {
-    const selectFields = 'crd, primary_business_name, main_office_city, main_office_state, aum, client_hnw_number, client_non_hnw_number, client_pension_number, client_charitable_number, client_corporations_number, client_pooled_vehicles_number, client_other_number, client_banks_number, client_govt_number, client_insurance_number, client_investment_cos_number, client_other_advisors_number, services_financial_planning, services_mgr_selection, services_pension_consulting, services_port_management_individuals, services_port_management_institutional, services_port_management_pooled';
-
-    const queries = [];
-
-    // Same-state candidates (AUM range 0.3x–3x)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let qState: any = supabase.from('firmdata_current')
-      .select(selectFields)
-      .eq('main_office_state', state)
-      .neq('crd', crd)
-      .not('aum', 'is', null)
-      .order('aum', { ascending: false })
-      .limit(20);
-    if (aum) qState = qState.gte('aum', Math.round(aum * 0.3)).lte('aum', Math.round(aum * 3));
-    queries.push(qState);
-
-    // Out-of-state candidates (tighter AUM range 0.5x–2x)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let qOther: any = supabase.from('firmdata_current')
-      .select(selectFields)
-      .neq('main_office_state', state)
-      .neq('crd', crd)
-      .not('aum', 'is', null)
-      .order('aum', { ascending: false })
-      .limit(20);
-    if (aum) qOther = qOther.gte('aum', Math.round(aum * 0.5)).lte('aum', Math.round(aum * 2));
-    queries.push(qOther);
-
-    const results = await Promise.all(queries);
-    const stateData = results[0]?.data;
-    const otherData = results[1]?.data;
-    const allCandidates: FirmRow[] = [...(stateData || []), ...(otherData || [])].filter(Boolean);
-    if (!allCandidates.length) return [];
-
-    // Compute similarity scores
-    const firmClientVec = clientVector(firm as unknown as FirmRow);
-    const firmServiceVec = serviceVector(firm as unknown as FirmRow);
-    const firmAum = aum || 0;
-    const firmAvgClient = avgClientAum(firm as unknown as FirmRow);
-
-    const scored = allCandidates.map(c => {
-      const clientSim = cosineSim(firmClientVec, clientVector(c));
-      const serviceSim = cosineSim(firmServiceVec, serviceVector(c));
-      const aumSim = aumProximity(firmAum, c.aum || 0);
-      const avgClientSim = aumProximity(firmAvgClient, avgClientAum(c));
-      const sameState = c.main_office_state === state;
-
-      // Weighted composite: client 30%, AUM 20%, avg client AUM 15%, service 15%, geography 10%, diversity 10%
-      const composite =
-        clientSim * 0.30 +
-        aumSim * 0.20 +
-        avgClientSim * 0.15 +
-        serviceSim * 0.15 +
-        (sameState ? 1 : 0) * 0.10 +
-        (aumSim > 0.3 && aumSim < 0.95 ? 0.10 : 0);
-
-      return {
-        ...c,
-        _clientSim: clientSim,
-        _serviceSim: serviceSim,
-        _aumSim: aumSim,
-        _avgClientSim: avgClientSim,
-        _sameState: sameState,
-        _composite: composite,
-      };
-    });
-
-    scored.sort((a, b) => b._composite - a._composite);
-    const top = scored.slice(0, 8);
-
-    const crds = top.map(f => (f as any).crd as number);
-    const [{ data: names }, scoreMap] = await Promise.all([
-      supabase.from('firm_names').select('crd, display_name').in('crd', crds),
-      getFirmScores(crds),
-    ]);
-    const nameMap = new Map(
-      names?.map((n: { crd: number; display_name: string | null }) => [n.crd, n.display_name]) ?? []
-    );
-
-    return top.slice(0, 4).map(f => {
-      const fa = f as any;
-      return {
-        crd: fa.crd,
-        name: (nameMap.get(fa.crd) as string | null) || fa.primary_business_name || 'Unknown',
-        city: fa.main_office_city,
-        state: fa.main_office_state,
-        aum: fa.aum,
-        score: (scoreMap.get(fa.crd) as { final_score?: number } | undefined)?.final_score ?? null,
-        reason: dominantReason(f._clientSim, f._aumSim, f._serviceSim, f._avgClientSim, f._sameState),
-      };
-    });
-  } catch (e) {
-    console.error('getSimilarFirms error:', e);
-    return [];
-  }
-}
+// ─── Similar Firms: uses shared multi-dimensional similarity algorithm ───────
+// (see lib/similar-firms.ts)
 
 // ─── New: Score percentile query ──────────────────────────────────────────────
 async function getScorePercentile(score: number): Promise<{ rank: number; total: number } | null> {
@@ -458,9 +277,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { firmData, displayName } = await getFirmData(params.crd);
   const name = displayName || firmData?.primary_business_name || 'Firm';
+  const location = firmData?.main_office_city && firmData?.main_office_state
+    ? `${firmData.main_office_city}, ${firmData.main_office_state}`
+    : null;
+  const title = `${name} — Visor Index`;
+  const description = location
+    ? `${name} · ${location}. View detailed profile, Visor Index™ Score, fees, services, and regulatory history. SEC-registered investment advisor (CRD #${params.crd}).`
+    : `View detailed profile, Visor Index™ Score, fees, services, and regulatory history for ${name}. SEC-registered investment advisor (CRD #${params.crd}).`;
+  const url = `https://visorindex.com/firm/${params.crd}`;
+
   return {
-    title: `${name} — Visor Index`,
-    description: `View detailed profile, fees, services, and Visor Index™ for ${name}. SEC-registered investment advisor.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'profile',
+      url,
+      siteName: 'Visor Index',
+      title,
+      description,
+      // Uses default site-wide opengraph-image from app/opengraph-image.tsx
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 
@@ -518,13 +360,13 @@ const SECTION_NAV = [
 
 const PAGE_CSS = `
   .vfp-breadcrumb, .vfp-page {
-    --navy:#172438; --navy-2:#0F2538;
+    --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --rule-2:#B0C4BA;
     --red:#EF4444; --amber:#F59E0B;
     --serif:'Cormorant Garamond',serif;
-    --sans:'DM Sans',sans-serif;
+    --sans:'Inter',sans-serif;
     --mono:'DM Mono',monospace;
   }
   .vfp-breadcrumb {
@@ -548,16 +390,17 @@ const PAGE_CSS = `
   .vfp-bc-current { color:rgba(255,255,255,.6); }
   .vfp-bc-actions { display:flex; align-items:center; gap:10px; padding-left:16px; border-left:1px solid rgba(255,255,255,.08); }
   .vfp-bc-compare {
-    display:inline-flex; align-items:center; gap:7px;
-    font-family:var(--sans); font-size:9px; font-weight:600;
-    background:var(--green-3); color:#fff;
-    padding:8px 18px; border:none; cursor:pointer; border-radius:3px;
-    transition:background .2s; letter-spacing:.04em; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    background:transparent; color:rgba(255,255,255,.5);
+    padding:6px 14px; border:1px solid rgba(255,255,255,.12); cursor:pointer; border-radius:0;
+    transition:all .2s; letter-spacing:.04em; text-decoration:none;
   }
-  .vfp-bc-compare:hover { background:var(--green-2); }
+  .vfp-bc-compare:hover { border-color:rgba(45,189,116,.3); color:#2DBD74; }
+  .vfp-hero-actions { display:none; }
 
   .vfp-page {
-    padding-top:40px; max-width:1200px; margin:0 auto;
+    padding-top:48px; max-width:1200px; margin:0 auto;
     padding-left:56px; padding-right:56px; padding-bottom:0;
     overflow-x:hidden; background:var(--navy);
   }
@@ -609,7 +452,7 @@ const PAGE_CSS = `
   .vfp-stat {
     padding:12px 18px; border-right:0.5px solid rgba(255,255,255,.08);
     transition:background .15s;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
   }
   .vfp-stat:hover { background:rgba(255,255,255,.04); }
   .vfp-stat:last-child { border-right:none; }
@@ -623,7 +466,7 @@ const PAGE_CSS = `
     min-height:56px; display:flex; align-items:center; justify-content:center;
   }
   .vfp-stat-val em { font-style:normal; color:var(--green-3); font-size:.75em; }
-  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.55); margin-top:6px; font-family:var(--mono); }
+  .vfp-stat-sub { font-size:10px; color:rgba(255,255,255,.55); margin-top:auto; padding-top:6px; font-family:var(--mono); }
   .vfp-stat-sub em { font-style:normal; color:var(--green-3); }
 
   .vfp-body {
@@ -911,7 +754,19 @@ const PAGE_CSS = `
   }
   .vfp-filing-link:hover { color:var(--green-2); text-decoration:underline; }
 
-  .vfp-cta-card { background:var(--navy); border:none; border-radius:10px; overflow:hidden; }
+  /* Data accuracy notice — sits inside Filing Details card */
+  .vfp-accuracy {
+    font-size:11px; color:var(--ink-3); font-family:var(--sans);
+    border-top:1px solid var(--rule); margin-top:12px; padding-top:12px;
+    line-height:1.45;
+  }
+  .vfp-accuracy-link {
+    color:var(--green); text-decoration:none; font-weight:500;
+    transition:color .12s;
+  }
+  .vfp-accuracy-link:hover { text-decoration:underline; }
+
+  .vfp-cta-card { background:var(--navy); border:none; overflow:hidden; }
   .vfp-cta-body { padding:24px; }
   .vfp-cta-eyebrow {
     font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
@@ -932,59 +787,46 @@ const PAGE_CSS = `
   /* Gated view */
   .vfp-gate-blur {
     pointer-events:none; user-select:none; position:relative;
-  }
-  .vfp-gate-blur::after {
-    content:''; position:absolute; inset:0;
-    backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
-    -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.2) 6%,rgba(0,0,0,1) 18%);
-    mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.2) 6%,rgba(0,0,0,1) 18%);
-    pointer-events:none; z-index:2;
+    filter:blur(1.5px); max-height:600px; overflow:hidden;
+    mask-image:linear-gradient(to bottom, #000 55%, transparent 100%);
+    -webkit-mask-image:linear-gradient(to bottom, #000 55%, transparent 100%);
   }
   .vfp-gate-preview-data {
-    filter:blur(6px); pointer-events:none; user-select:none;
+    pointer-events:none; user-select:none;
   }
   .vfp-gate-cta {
-    position:absolute; top:60px; left:50%; transform:translateX(-50%);
-    width:calc(100% - 48px); max-width:520px;
-    background:#fff; border:1px solid var(--rule); border-top:2px solid var(--navy);
-    box-shadow:0 32px 80px rgba(10,28,42,.13),0 4px 20px rgba(10,28,42,.07);
-    padding:40px 44px; text-align:center; z-index:50;
+    position:absolute; top:180px; left:50%; transform:translateX(-50%);
+    width:calc(100% - 48px); max-width:480px;
+    background:#0F2538; border:1px solid rgba(255,255,255,.09); border-top:2px solid #1A7A4A;
+    box-shadow:0 8px 48px rgba(0,0,0,0.5);
+    padding:36px 40px; text-align:left; z-index:30;
   }
-  .vfp-gate-lock {
-    width:48px; height:48px; background:var(--navy);
-    display:grid; place-items:center; margin:0 auto 20px;
+  .vfp-gc-eyebrow {
+    display:flex; align-items:center; gap:8px; margin-bottom:16px;
+    font-size:9px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#2DBD74;
   }
-  .vfp-gate-list {
-    text-align:left; margin:0 auto 24px; max-width:320px;
-    display:flex; flex-direction:column; gap:10px;
+  .vfp-gc-eyebrow svg { width:12px; height:12px; }
+  .vfp-gc-headline {
+    font-family:'Cormorant Garamond', serif; font-size:clamp(22px, 2.5vw, 30px);
+    font-weight:700; line-height:1.2; letter-spacing:-.02em; color:#fff; margin-bottom:12px;
   }
-  .vfp-gate-list-item {
-    display:flex; align-items:center; gap:10px;
-    font-size:12px; color:var(--ink-2); font-family:var(--sans);
+  .vfp-gc-sub {
+    font-size:13px; color:rgba(255,255,255,.55); line-height:1.7;
+    border-top:1px solid rgba(255,255,255,.06); padding-top:16px; margin-bottom:24px;
   }
-  .vfp-gate-check {
-    width:16px; height:16px; background:rgba(45,189,116,.1);
-    display:grid; place-items:center; flex-shrink:0;
+  .vfp-gc-ctas { display:flex; gap:12px; flex-wrap:wrap; }
+  .vfp-gc-cta-primary {
+    display:inline-flex; align-items:center; padding:12px 28px;
+    background:#1A7A4A; color:#fff; font-size:13px; font-weight:600;
+    text-decoration:none; transition:background .15s;
   }
-  .vfp-gate-email-row { display:flex; border:1px solid var(--rule); margin-bottom:14px; }
-  .vfp-gate-email-input {
-    flex:1; border:none; background:var(--white); outline:none;
-    font-family:var(--mono); font-size:13px; color:var(--ink); padding:12px 14px;
+  .vfp-gc-cta-primary:hover { background:#22995E; }
+  .vfp-gc-cta-secondary {
+    display:inline-flex; align-items:center; padding:12px 28px;
+    border:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.6);
+    font-size:13px; text-decoration:none; transition:all .15s;
   }
-  .vfp-gate-submit {
-    background:var(--green); color:#fff; border:none; padding:12px 20px;
-    font-family:var(--sans); font-size:12px; font-weight:600;
-    letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
-    transition:background .15s; white-space:nowrap;
-  }
-  .vfp-gate-submit:hover { background:var(--green-2); }
-  .vfp-gate-google {
-    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    background:#fff; border:1px solid var(--rule); color:var(--ink); padding:11px;
-    font-size:13px; cursor:pointer; transition:border-color .15s;
-    margin-bottom:14px; font-family:var(--sans); text-decoration:none;
-  }
-  .vfp-gate-google:hover { border-color:var(--ink-3); }
+  .vfp-gc-cta-secondary:hover { border-color:rgba(255,255,255,.3); color:#fff; }
   .vfp-gate-nav {
     background:var(--white); border-bottom:1px solid var(--rule);
     margin:0 -56px; display:flex; overflow-x:auto;
@@ -1012,7 +854,7 @@ const PAGE_CSS = `
     .vfp-client-grid { grid-template-columns:1fr; }
     .vfp-client-card:nth-child(odd) { border-right:none; padding-right:0; }
     .vfp-client-card:nth-child(even) { padding-left:0; }
-    .vfp-gate-cta { padding:28px 24px; width:calc(100% - 24px); top:40px; }
+    .vfp-gate-cta { padding:28px 24px; width:calc(100% - 24px); top:120px; }
     .vfp-gate-nav { margin:0 -20px; }
     .vfp-gate-nav-inner { padding:0 20px; }
   }
@@ -1030,21 +872,33 @@ const PAGE_CSS = `
     .vfp-stat-label { font-size:7px; letter-spacing:.06em; }
     .vfp-stat-val { font-size:20px; }
     .vfp-stat-sub { font-size:8px; }
-    .vfp-tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; gap:0; }
-    .vfp-tab { white-space:nowrap; flex-shrink:0; }
     .vfp-score-grid { grid-template-columns:1fr 1fr; }
     .vfp-aum-stats { grid-template-columns:1fr 1fr; }
     .vfp-client-grid { grid-template-columns:1fr; }
     .vfp-fee-grid { grid-template-columns:1fr; }
     .vfp-fee-card { padding:16px; }
     .vfp-similar-grid { grid-template-columns:1fr; }
-    .vfp-gate-cta { padding:24px 16px; width:calc(100% - 16px); top:20px; }
+    .vfp-gate-cta { padding:28px 20px; width:calc(100% - 32px); max-width:calc(100% - 32px); top:100px; }
+    .vfp-gc-ctas { flex-wrap:nowrap; }
+    .vfp-gc-cta-primary, .vfp-gc-cta-secondary { padding:12px 16px; font-size:12px; white-space:nowrap; }
     .vfp-breadcrumb { padding:0 12px; }
     .vfp-breadcrumb-i { gap:4px; }
     .vfp-bc-trail { font-size:10px; gap:4px; }
-    .vfp-bc-actions { gap:4px; }
+    .vfp-bc-sep, .vfp-bc-current { display:none; }
+    .vfp-bc-trail a:not(:first-child) { display:none; }
+    .vfp-bc-actions { display:none; }
+    .vfp-hero-actions { display:flex; align-items:center; gap:10px; margin-top:12px; }
     .vfp-gate-nav { margin:0 -16px; }
     .vfp-gate-nav-inner { padding:0 16px; }
+
+    /* AUM & Client stat headers: stack on mobile */
+    .vfp-aum-head, .vfp-client-head { grid-template-columns:1fr; }
+    .vfp-aum-stat, .vfp-client-stat { border-right:none; border-bottom:1px solid var(--rule); }
+    .vfp-aum-stat:last-child, .vfp-client-stat:last-child { border-bottom:none; }
+    .vfp-aum-stat-val, .vfp-client-card-val { font-size:22px; }
+
+    /* Chart overflow */
+    .vfp-chart-body { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   }
 `;
 
@@ -1055,27 +909,67 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     profileText, website, growth, clientBreakdown, assetAllocation, firmScore, error,
   } = await getFirmData(params.crd);
 
-  const firmDisplayName = displayName || firmData?.primary_business_name || 'Unknown Firm';
+  const rawFirmName = displayName || firmData?.primary_business_name || 'Unknown Firm';
+  const firmDisplayName = rawFirmName === rawFirmName.toUpperCase()
+    ? rawFirmName
+        .replace(/,?\s*(LLC|LLP|INC|LP|CO|CORP|PC)\.?$/i, '')
+        .split(/\s+/)
+        .map(w => w.length <= 3 ? w.toUpperCase() : w.charAt(0) + w.slice(1).toLowerCase())
+        .join(' ')
+        .trim()
+    : rawFirmName;
+  const firmTitleCase = firmDisplayName;
 
   // ── Not found ──
   if (error || !firmData) {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '120px 56px', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 36, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>
-            Firm Not Found
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--ink-3)', marginBottom: 24 }}>
-            We couldn&apos;t find a firm with CRD #{params.crd}
-          </p>
-          <Link href="/search" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 24px', background: 'var(--green)', color: '#fff',
-            textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 600,
+        <section className="vfp-hero" style={{ paddingBottom: 36 }}>
+          <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+            <div style={{
+              fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 500,
+              letterSpacing: '0.18em', textTransform: 'uppercase' as const,
+              color: '#2DBD74', marginBottom: 8,
+            }}>CRD #{params.crd}</div>
+            <h1 style={{
+              fontFamily: 'var(--serif)', fontSize: 'clamp(28px, 4vw, 38px)',
+              fontWeight: 300, color: '#fff', lineHeight: 1.1, margin: 0,
+            }}>
+              Firm not found.
+            </h1>
+          </div>
+        </section>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '48px 24px 80px' }}>
+          <div style={{
+            background: '#fff', border: '1px solid var(--rule)', padding: 32,
           }}>
-            ← Back to Search
-          </Link>
+            <p style={{
+              fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6,
+              fontFamily: 'var(--sans)', margin: '0 0 8px',
+            }}>
+              We couldn&apos;t locate a firm with this CRD number. The firm may have been deregistered or the number may be incorrect.
+            </p>
+            <p style={{
+              fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6,
+              fontFamily: 'var(--sans)', margin: '0 0 24px',
+            }}>
+              Try searching by firm name instead, or verify the CRD number on{' '}
+              <a href="https://adviserinfo.sec.gov" target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--green)', textDecoration: 'none', fontWeight: 500 }}>
+                SEC IAPD
+              </a>.
+            </p>
+            <Link href="/search" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '10px 20px', background: 'var(--green)', color: '#fff',
+              textDecoration: 'none', fontFamily: 'var(--sans)', fontSize: 11,
+              fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
+              borderRadius: 0,
+            }}>
+              Search advisors →
+            </Link>
+          </div>
         </div>
       </>
     );
@@ -1088,14 +982,24 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   const { data: { user } } = await authSupabase.auth.getUser();
 
   let isSaved = false;
+  let isWatching = false;
   if (user) {
-    const { data: fav } = await authSupabase
-      .from('user_favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('crd', params.crd)
-      .maybeSingle();
+    const [{ data: fav }, { data: alertSub }] = await Promise.all([
+      authSupabase
+        .from('user_favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('crd', params.crd)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('alert_subscriptions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('crd', params.crd)
+        .maybeSingle(),
+    ]);
     isSaved = !!fav;
+    isWatching = !!alertSub;
   }
 
   // ── Computed stats (needed for both gated + authenticated views) ──
@@ -1235,7 +1139,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── New: Similar firms + score percentile + stat percentiles (parallel) ──
   const [similarFirms, scoreRank, statPct] = await Promise.all([
     firm.main_office_state
-      ? getSimilarFirms(firm.crd, firm.main_office_state, firm.aum, firm)
+      ? getSimilarFirms({ supabase, crd: firm.crd, state: firm.main_office_state, aum: firm.aum, firmRow: firm as unknown as Record<string, any> })
       : Promise.resolve([]),
     finalScore > 0 ? getScorePercentile(finalScore) : Promise.resolve(null),
     getStatPercentiles(firm, totalClients, avgClientSize, aumPerInvPro, minAccount),
@@ -1251,7 +1155,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     { label: 'AUM Growth', score: fs.aum_growth_score ?? 0, tip: 'Measures AUM growth rate over 3 and 5 years relative to peer median.' },
     { label: 'Client Growth', score: fs.client_growth_score ?? 0, tip: 'Tracks net new client additions year-over-year as a signal of firm health.' },
     { label: 'Advisor Bandwidth', score: fs.advisor_bandwidth_score ?? 0, tip: 'Ratio of clients to advisory staff. Lower ratios indicate more attentive service capacity.' },
-    { label: 'Derivatives Risk', score: fs.derivatives_score ?? 0, tip: 'Flags use of complex instruments like options, swaps, or leverage in client portfolios.' },
+    { label: 'Investment Mix', score: fs.derivatives_score ?? 0, tip: 'Flags use of complex instruments like options, swaps, or leverage in client portfolios.' },
   ] : [];
 
   // ── Fee tier table ──
@@ -1262,15 +1166,15 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   // ── Active sections for nav (filter out unavailable sections) ──
   // ── Allocation rows ──
   const ALLOC_LABELS: Record<string, { label: string; color: string }> = {
-    public_equity:    { label: 'Public Equity',       color: '#22995E' },
-    private_equity:   { label: 'Private Equity',      color: '#1A7A4A' },
-    ig_corp_bonds:    { label: 'IG Corporate Bonds',  color: '#4B8ECC' },
-    non_ig_corp_bonds:{ label: 'Non-IG Corp Bonds',   color: '#7AA8D4' },
-    us_govt_bonds:    { label: 'US Government Bonds',  color: '#2E6BAD' },
-    us_muni_bonds:    { label: 'Municipal Bonds',     color: '#5BA0D9' },
-    cash:             { label: 'Cash & Equivalents',   color: '#B0C4BA' },
-    derivatives:      { label: 'Derivatives',          color: '#F59E0B' },
-    other:            { label: 'Other',                color: '#8FA69A' },
+    public_equity:    { label: 'Individual Stocks',                    color: '#22995E' },
+    private_equity:   { label: 'Private Equity',                      color: '#1A7A4A' },
+    ig_corp_bonds:    { label: 'IG Corporate Bonds',                  color: '#4B8ECC' },
+    non_ig_corp_bonds:{ label: 'Non-IG Corp Bonds',                   color: '#7AA8D4' },
+    us_govt_bonds:    { label: 'US Treasury Bonds',                   color: '#2E6BAD' },
+    us_muni_bonds:    { label: 'US Municipal Bonds',                  color: '#5BA0D9' },
+    cash:             { label: 'Cash & Equivalents',                  color: '#B0C4BA' },
+    derivatives:      { label: 'Funds, ETFs, and Alternatives', color: '#F59E0B' },
+    other:            { label: 'Other',                               color: '#8FA69A' },
   };
 
   const allocRows: Array<{ key: string; label: string; pct: number; color: string }> = [];
@@ -1290,6 +1194,74 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     !(s.id === 'allocation' && allocRows.length === 0)
   );
 
+  // ── JSON-LD Structured Data ──────────────────────────────────────────────────
+  const firmJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FinancialService',
+    '@id': `https://visorindex.com/firm/${firm.crd}`,
+    name: firmTitleCase,
+    url: `https://visorindex.com/firm/${firm.crd}`,
+    ...(website?.website && { sameAs: [website.website] }),
+    ...(profileText?.business_profile && { description: profileText.business_profile.slice(0, 500) }),
+    ...(firm.main_phone_number && { telephone: firm.main_phone_number }),
+    identifier: {
+      '@type': 'PropertyValue',
+      propertyID: 'SEC CRD',
+      value: String(firm.crd),
+    },
+    ...(firm.main_office_city && firm.main_office_state && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: [firm.main_office_street_1, firm.main_office_street_2].filter(Boolean).join(', ') || undefined,
+        addressLocality: firm.main_office_city,
+        addressRegion: firm.main_office_state,
+        postalCode: firm.main_office_zip || undefined,
+        addressCountry: 'US',
+      },
+    }),
+    ...(firm.aum != null && {
+      aggregateRating: undefined, // placeholder slot — no ratings data yet
+    }),
+    provider: {
+      '@type': 'Organization',
+      name: 'Visor Index',
+      url: 'https://visorindex.com',
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Search', item: 'https://visorindex.com/search' },
+      ...(firm.main_office_state ? [{
+        '@type': 'ListItem' as const,
+        position: 2,
+        name: firm.main_office_state,
+        item: `https://visorindex.com/directory/${firm.main_office_state.toLowerCase()}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: firm.main_office_state ? 3 : 2,
+        name: firmTitleCase,
+        item: `https://visorindex.com/firm/${firm.crd}`,
+      },
+    ],
+  };
+
+  const jsonLdScript = (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(firmJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+    </>
+  );
+
   // ── GATED VIEW (unauthenticated) ─────────────────────────────────────────────
   if (!user) {
     const truncatedAbout = profileText?.business_profile
@@ -1299,25 +1271,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+        {jsonLdScript}
 
-        {/* Breadcrumb (simplified — no Save/Compare) */}
-        <div className="vfp-breadcrumb">
-          <div className="vfp-breadcrumb-i">
-            <div className="vfp-bc-trail">
-              <Link href="/search">Search</Link>
-              <span className="vfp-bc-sep">›</span>
-              {firm.main_office_city && firm.main_office_state && (
-                <>
-                  <Link href={`/search?city=${encodeURIComponent(firm.main_office_city)}&state=${encodeURIComponent(firm.main_office_state)}`}>
-                    {firm.main_office_city} · {firm.main_office_state}
-                  </Link>
-                  <span className="vfp-bc-sep">›</span>
-                </>
-              )}
-              <span className="vfp-bc-current">{firmDisplayName}</span>
-            </div>
-          </div>
-        </div>
+        {/* Breadcrumb hidden for gated view */}
 
         <div className="vfp-page">
 
@@ -1326,6 +1282,54 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
             {/* Blurred preview sections */}
             <div className="vfp-gate-blur">
+
+              {/* Hero preview */}
+              <div className="vfp-hero">
+                <div className="vfp-hero-top">
+                  <div className="vfp-logo-col">
+                    <div className="vfp-logo-mark">
+                      <FirmLogo logoKey={logoKey} firmName={firmDisplayName} size="lg" className="!h-[64px] !w-[64px] !text-xl" />
+                    </div>
+                  </div>
+                  <div className="vfp-hero-text">
+                    <h1 className="vfp-firm-name">{firmDisplayName}</h1>
+                    <div className="vfp-meta-row">
+                      {firm.main_office_city && (
+                        <span className="vfp-meta-item">
+                          <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                            <circle cx="5.5" cy="4.5" r="2" /><path d="M1 10c0-2.5 2-4.5 4.5-4.5S10 7.5 10 10" />
+                          </svg>
+                          {firm.main_office_city}, {firm.main_office_state}
+                        </span>
+                      )}
+                      <span className="vfp-meta-item">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                          <path d="M5.5 1v1M5.5 9v1M1 5.5h1M9 5.5h1" /><circle cx="5.5" cy="5.5" r="2.5" />
+                        </svg>
+                        CRD #{firm.crd}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="vfp-stats-row">
+                  <div className="vfp-stat">
+                    <div className="vfp-stat-label">AUM</div>
+                    <div className="vfp-stat-val">{formatAUM(firm.aum)}</div>
+                  </div>
+                  <div className="vfp-stat">
+                    <div className="vfp-stat-label">Min. Account</div>
+                    <div className="vfp-stat-val">{minAccount ? formatAUM(minAccount) : '—'}</div>
+                  </div>
+                  <div className="vfp-stat">
+                    <div className="vfp-stat-label">Avg. Client Size</div>
+                    <div className="vfp-stat-val">{avgClientSize ? formatAUM(avgClientSize) : '—'}</div>
+                  </div>
+                  <div className="vfp-stat">
+                    <div className="vfp-stat-label">Employees</div>
+                    <div className="vfp-stat-val">{firm.employee_total ?? '—'}</div>
+                  </div>
+                </div>
+              </div>
 
               {/* About preview */}
               <div className="vfp-section" style={{ paddingTop: 32 }}>
@@ -1446,126 +1450,23 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
 
             {/* ── CTA OVERLAY CARD ── */}
             <div className="vfp-gate-cta">
-              {/* Lock icon */}
-              <div className="vfp-gate-lock">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+              <div className="vfp-gc-eyebrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
+                UNLOCK FULL PROFILE
               </div>
-
-              <h2 style={{
-                fontFamily: 'var(--serif)', fontSize: 22, fontWeight: 600,
-                color: 'var(--navy)', marginTop: 16, lineHeight: 1.3,
-                textAlign: 'center',
-              }}>
-                Unlock {firmDisplayName.split(' ').slice(0, 3).join(' ')}&apos;s full profile
+              <h2 className="vfp-gc-headline">
+                Everything you need to know about {firmTitleCase}.
               </h2>
-
-              <p style={{
-                fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)',
-                marginTop: 6, textAlign: 'center', letterSpacing: '.03em',
-              }}>
-                Free forever · No credit card required
+              <p className="vfp-gc-sub">
+                Get Visor Index scores, fee breakdowns, growth trends, regulatory history, firm alerts, and more when you sign up today.
               </p>
-
-              {/* Feature list */}
-              <div className="vfp-gate-list">
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  Visor Index™ breakdown (8 dimensions)
-                </div>
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  Interactive fee calculator
-                </div>
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  AUM &amp; client growth charts
-                </div>
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  Regulatory &amp; disciplinary history
-                </div>
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  Side-by-side firm comparison
-                </div>
-                <div className="vfp-gate-list-item">
-                  <span className="vfp-gate-check">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5L4 7.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </span>
-                  Similar firms in your state
-                </div>
+              <div className="vfp-gc-ctas">
+                <Link href="/auth/signup" className="vfp-gc-cta-primary">Get Full Access →</Link>
+                <Link href="/pricing" className="vfp-gc-cta-secondary">View Pricing</Link>
               </div>
-
-              {/* Email + submit row */}
-              <div className="vfp-gate-email-row">
-                <input
-                  type="email"
-                  placeholder="you@email.com"
-                  className="vfp-gate-email-input"
-                  readOnly
-                  tabIndex={-1}
-                />
-                <Link href="/auth/signup" className="vfp-gate-submit">
-                  View Profile
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 6h8M7 3l3 3-3 3" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </Link>
-              </div>
-
-              {/* Divider */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0' }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--rule)' }} />
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.08em' }}>or</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--rule)' }} />
-              </div>
-
-              {/* Google OAuth */}
-              <Link href="/auth/signup" className="vfp-gate-google">
-                <svg width="16" height="16" viewBox="0 0 18 18">
-                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
-                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
-                  <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
-                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-                </svg>
-                Continue with Google
-              </Link>
-
-              {/* Trust line */}
-              <p style={{
-                fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)',
-                textAlign: 'center', marginTop: 14, letterSpacing: '.02em',
-              }}>
-                Free forever · No credit card ·{' '}
-                <Link href="/terms" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Terms</Link>
-                {' · '}
-                <Link href="/privacy" style={{ color: 'var(--green)', textDecoration: 'underline', textDecorationColor: 'rgba(26,122,74,.3)' }}>Privacy</Link>
-              </p>
             </div>
           </div>
         </div>
@@ -1577,6 +1478,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+      {jsonLdScript}
 
       {/* Fixed breadcrumb bar */}
       <div className="vfp-breadcrumb">
@@ -1597,12 +1499,12 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <span className="vfp-bc-current">{firmDisplayName}</span>
           </div>
           <div className="vfp-bc-actions">
-            <SaveFirmButton crd={firm.crd} initialSaved={isSaved} />
+            <SaveFirmButton crd={firm.crd} initialSaved={isSaved} initialWatching={isWatching} />
             <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
               <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
                 <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
               </svg>
-              Add to Compare
+              Compare
             </Link>
           </div>
         </div>
@@ -1652,6 +1554,17 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                   CRD #{firm.crd}
                 </span>
               </div>
+
+              {/* Mobile action buttons — hidden on desktop where breadcrumb has them */}
+              <div className="vfp-hero-actions">
+                <SaveFirmButton crd={firm.crd} initialSaved={isSaved} initialWatching={isWatching} />
+                <Link href={`/compare?add=${firm.crd}`} className="vfp-bc-compare">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 11 11">
+                    <rect x="1" y="4" width="3" height="6" /><rect x="4.5" y="2" width="3" height="8" /><rect x="8" y="5" width="3" height="5" />
+                  </svg>
+                  Compare
+                </Link>
+              </div>
             </div>
 
           </div>
@@ -1672,7 +1585,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
             <div className="vfp-stat">
               <div className="vfp-stat-label">Min. Account</div>
               <div className="vfp-stat-val">{minAccount ? formatAUM(minAccount) : '—'}</div>
-              <div className="vfp-stat-sub">{minFee ? `Min fee ${formatCurrency(minFee)}` : 'No minimum disclosed'}</div>
+              <div className="vfp-stat-sub">{minFee ? `Min fee ${formatCurrency(minFee)}` : minAccount ? 'No minimum fee disclosed' : 'No minimum disclosed'}</div>
             </div>
             <div className="vfp-stat">
               <div className="vfp-stat-label">Avg. Client Size</div>
@@ -1847,12 +1760,15 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 feeTiers={feeTiers}
                 crd={String(firm.crd)}
                 firmAum={firm.aum}
-                industryOnly={!feeTiers || feeTiers.length === 0}
+                industryOnly={(!feeTiers || feeTiers.length === 0) && !(feesAndMins?.fee_range_min && feesAndMins?.fee_range_max && avgClientSize) && !(feesAndMins?.fee_range_max && avgClientSize)}
                 feeTypeDisplay={feeTypeDisplay}
                 feeNotes={feesAndMins?.notes ?? null}
                 minAccount={minAccount}
                 minFee={minFee}
                 sortedFeeTiers={sortedFeeTiers}
+                feeRangeMin={feesAndMins?.fee_range_min ? parseFloat(feesAndMins.fee_range_min) : null}
+                feeRangeMax={feesAndMins?.fee_range_max ? parseFloat(feesAndMins.fee_range_max) : null}
+                avgClientSize={avgClientSize}
               />
             </div>
 
@@ -2100,7 +2016,7 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                     <path d="M2 6h8M7 3l3 3-3 3" />
                   </svg>
                 </Link>
-                <div className="vfp-cta-trust">Custom engagement · Tailored to your needs</div>
+                <div className="vfp-cta-trust">Available to all paid subscribers · Tailored to your needs</div>
               </div>
             </div>
 
@@ -2274,6 +2190,9 @@ export default async function FirmPage({ params }: { params: { crd: string } }) 
                 >
                   View on SEC EDGAR ↗
                 </a>
+                <div className="vfp-accuracy">
+                  Something look off? <Link href="/contact?subject=Data+correction" className="vfp-accuracy-link">Let us know</Link> and we&apos;ll review it promptly.
+                </div>
               </div>
             </div>
 

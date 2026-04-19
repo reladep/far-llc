@@ -49,6 +49,11 @@ const CSS = `
   .abc-delta-spacer { height:14px; margin-top:1px; }
   .abc-delta.up { color:var(--green); }
   .abc-delta.dn { color:#C53030; }
+
+  @media (max-width:640px) {
+    .abc-chart { min-width:500px; }
+    .abc-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  }
   .abc-tooltip {
     position:absolute; bottom:100%; left:50%; transform:translateX(-50%) translateY(4px);
     background:var(--ink); color:#fff; padding:6px 10px; border-radius:4px;
@@ -104,6 +109,7 @@ export default function AnimatedBarChart({ bars, title, subtitle }: AnimatedBarC
         {subtitle && <span className="abc-title-sub">{subtitle}</span>}
       </div>
 
+      <div className="abc-scroll">
       <div className="abc-chart">
         {bars.map((bar, i) => {
           const barColor = bar.color ?? '#22995E';
@@ -137,6 +143,7 @@ export default function AnimatedBarChart({ bars, title, subtitle }: AnimatedBarC
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

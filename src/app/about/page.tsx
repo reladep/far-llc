@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'About — Visor Index',
   description:
     'We are on your side. Visor Index gives you the data, analysis, and tools to find, evaluate, negotiate with, and track the right wealth partner on your terms.',
+  alternates: { canonical: '/about' },
 };
 
 export default function AboutPage() {

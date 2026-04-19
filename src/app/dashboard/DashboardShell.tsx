@@ -9,12 +9,16 @@ interface DashboardShellProps {
   userEmail: string;
   savedCount: number;
   alertCount: number;
+  matchCount: number;
+  planLabel: string;
 }
 
 const NAV = [
-  { label: 'Saved Firms',       href: '/dashboard/saved-firms', icon: '◈', countKey: 'saved' as const },
-  { label: 'Alerts',            href: '/dashboard/alerts',      icon: '◯', countKey: 'alert' as const },
-  { label: 'Account & Billing', href: '/dashboard/billing',     icon: '◎', countKey: null },
+  { label: 'Overview',          href: '/dashboard',             icon: '◉', countKey: null,              exact: true },
+  { label: 'Matches',           href: '/dashboard/matches',     icon: '◇', countKey: 'match' as const, exact: false },
+  { label: 'Saved Firms',       href: '/dashboard/saved-firms', icon: '◈', countKey: 'saved' as const, exact: false },
+  { label: 'Alerts',            href: '/dashboard/alerts',      icon: '◯', countKey: 'alert' as const, exact: false },
+  { label: 'Account & Billing', href: '/dashboard/billing',     icon: '◎', countKey: null,              exact: false },
 ];
 
 const CSS = `
@@ -22,7 +26,9 @@ const CSS = `
     --navy:#0A1C2A; --navy-2:#0F2538;
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+    --serif:var(--font-serif,'Cormorant Garamond',serif);
+    --sans:var(--font-sans,'Inter',sans-serif);
+    --mono:var(--font-mono,'DM Mono',monospace);
   }
   .db-page { display:flex; min-height:calc(100vh - 52px); }
 
@@ -37,7 +43,8 @@ const CSS = `
   }
 
   /* user identity */
-  .db-id { padding:24px 20px 20px; border-bottom:1px solid var(--rule); }
+  .db-id { padding:24px 20px 20px; border-bottom:1px solid var(--rule); display:block; text-decoration:none; transition:background .15s; }
+  .db-id:hover { background:var(--white); }
   .db-eyebrow {
     font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
     color:var(--ink-3); font-family:var(--mono); margin-bottom:6px;
@@ -77,6 +84,7 @@ const CSS = `
   .db-nav-count {
     font-family:var(--mono); font-size:10px; font-weight:600;
     background:var(--rule); color:var(--ink-3); padding:2px 6px;
+    min-width:24px; text-align:center;
   }
   .db-nav-item.active .db-nav-count { background:rgba(26,122,74,.15); color:var(--green); }
 
@@ -117,6 +125,8 @@ const CSS = `
     .db-sidebar.open { transform:translateX(0); }
     .db-main { padding:16px 16px 80px; }
     .db-mobile-trigger { display:flex; }
+    .db-nav-item { padding:16px 14px; font-size:14px; }
+    .db-nav-count { font-size:11px; padding:3px 8px; }
   }
 `;
 
@@ -125,6 +135,8 @@ export default function DashboardShell({
   userEmail,
   savedCount,
   alertCount,
+  matchCount,
+  planLabel,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -134,9 +146,10 @@ export default function DashboardShell({
     ? userEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : 'My Account';
 
-  const countFor = (key: 'saved' | 'alert' | null) => {
+  const countFor = (key: 'saved' | 'alert' | 'match' | null) => {
     if (key === 'saved') return savedCount;
     if (key === 'alert') return alertCount;
+    if (key === 'match') return matchCount;
     return null;
   };
 
@@ -154,19 +167,21 @@ export default function DashboardShell({
         {/* ── SIDEBAR ── */}
         <aside className={`db-sidebar${sidebarOpen ? ' open' : ''}`}>
           {/* User identity */}
-          <div className="db-id">
+          <Link href="/dashboard" className="db-id" onClick={() => setSidebarOpen(false)}>
             <div className="db-eyebrow">Dashboard</div>
             <div className="db-name">{displayName}</div>
             <div className="db-plan">
               <span className="db-plan-dot" />
-              Annual Access
+              {planLabel}
             </div>
-          </div>
+          </Link>
 
           {/* Nav items */}
           <nav className="db-nav">
             {NAV.map(item => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(item.href + '/');
               const count = countFor(item.countKey);
               return (
                 <Link
@@ -175,21 +190,15 @@ export default function DashboardShell({
                   className={`db-nav-item${isActive ? ' active' : ''}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="db-nav-icon">{item.icon}</span>
                   <span className="db-nav-label">{item.label}</span>
                   {count !== null && count > 0 && (
-                    <span className="db-nav-count">{count}</span>
+                    <span className="db-nav-count">{count > 100 ? '100+' : count}</span>
                   )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Footer links */}
-          <div className="db-sb-footer">
-            <Link href="/search" className="db-sb-link">→ Search advisors</Link>
-            <Link href="/negotiate" className="db-sb-link">→ Negotiate fees</Link>
-          </div>
         </aside>
 
         {/* ── MAIN ── */}

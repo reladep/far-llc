@@ -1,12 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { Button, Input } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Button, Input, PasswordInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from './AuthLayout';
 
 export function SignupForm() {
   const auth = useAuth();
+  const searchParams = useSearchParams();
+
+  // Store intended plan from pricing page so checkout can use it after onboarding
+  useEffect(() => {
+    const plan = searchParams.get('plan');
+    if (plan && ['trial', 'consumer', 'enterprise'].includes(plan)) {
+      localStorage.setItem('intended_plan', plan);
+    }
+  }, [searchParams]);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,17 +62,16 @@ export function SignupForm() {
           placeholder="you@example.com"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Min. 8 characters"
+          showStrength
           required
         />
-        <Input
+        <PasswordInput
           label="Confirm Password"
-          type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Re-enter password"
@@ -71,7 +80,7 @@ export function SignupForm() {
 
         {error && <p className="text-sm text-error">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={auth.loading}>
+        <Button type="submit" className="w-full !rounded-none !bg-[#1A7A4A] hover:!bg-[#22995E] !h-[46px] !text-[12px] !font-semibold !tracking-[0.1em] !uppercase !font-[var(--sans)]" disabled={auth.loading}>
           {auth.loading ? 'Creating account...' : 'Create Account'}
         </Button>
       </form>

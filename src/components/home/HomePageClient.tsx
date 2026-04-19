@@ -2,6 +2,7 @@
 
 import { FormEvent, ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -553,9 +554,11 @@ function ReviewedFirmsStrip() {
                       href={`/firm/${logo.crd}`}
                       className="flex shrink-0 items-center opacity-50 grayscale transition-all duration-300 hover:-translate-y-0.5 hover:opacity-90 hover:grayscale-0"
                     >
-                      <img
-                        src={`https://tgbatuqvvltemslwtpia.supabase.co/storage/v1/object/public/firm-logos/${logo.logo_key}`}
+                      <NextImage
+                        src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/firm-logos/${logo.logo_key}`}
                         alt="Reviewed firm logo"
+                        width={120}
+                        height={36}
                         className="h-9 max-w-[120px] object-contain brightness-0 invert"
                       />
                     </Link>

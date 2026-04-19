@@ -12,7 +12,7 @@ const C = {
   white: '#F6F8F7', ink: '#0C1810', ink2: '#2E4438', ink3: '#5A7568', rule: '#CAD8D0',
 };
 const SERIF = "'Cormorant Garamond', serif";
-const SANS  = "'DM Sans', sans-serif";
+const SANS  = "'Inter', sans-serif";
 const MONO  = "'DM Mono', monospace";
 
 const W = 960, H = 560;
@@ -224,95 +224,102 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes dir-spin { to { transform: rotate(360deg); } }
-        .dir-gate-content { pointer-events: none; user-select: none; position: relative; }
-        .dir-gate-content::after {
-          content: '';
-          position: absolute; inset: 0;
-          backdrop-filter: blur(3px);
-          -webkit-backdrop-filter: blur(3px);
-          -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.4) 10%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
-          mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.4) 10%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
-          pointer-events: none;
-          z-index: 2;
-        }
         .dir-gate-content {
-          -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.35) 42%, rgba(0,0,0,0) 62%);
-          mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,.35) 42%, rgba(0,0,0,0) 62%);
+          pointer-events: none; user-select: none; position: relative;
+          filter: blur(1.5px); max-height: 600px; overflow: hidden;
+          mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
         }
         .dir-browse-link:hover { color: ${C.green2} !important; }
-        .dir-gc-cta:hover { background: ${C.green2} !important; }
-        .dir-gc-cta:hover .dir-gc-arrow { transform: translateX(4px); }
-        .dir-gc-arrow { transition: transform .2s; display: inline-block; }
+        .dir-gate-card {
+          position: absolute; top: 140px; left: 50%; transform: translateX(-50%);
+          width: calc(100% - 48px); max-width: 480px;
+          background: #0F2538; border: 1px solid rgba(255,255,255,.09); border-top: 2px solid #1A7A4A;
+          box-shadow: 0 8px 48px rgba(0,0,0,0.5);
+          padding: 36px 40px; text-align: left; z-index: 30;
+        }
+        .dir-gc-eyebrow {
+          display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+          font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #2DBD74;
+        }
+        .dir-gc-eyebrow svg { width: 12px; height: 12px; }
+        .dir-gc-headline {
+          font-family: 'Cormorant Garamond', serif; font-size: clamp(22px, 2.5vw, 30px);
+          font-weight: 700; line-height: 1.2; letter-spacing: -.02em; color: #fff; margin-bottom: 12px;
+        }
+        .dir-gc-sub {
+          font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7;
+          border-top: 1px solid rgba(255,255,255,.06); padding-top: 16px; margin-bottom: 24px;
+        }
+        .dir-gc-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+        .dir-gc-cta-primary {
+          display: inline-flex; align-items: center; padding: 12px 28px;
+          background: #1A7A4A; color: #fff; font-size: 13px; font-weight: 600;
+          text-decoration: none; transition: background .15s;
+        }
+        .dir-gc-cta-primary:hover { background: #22995E; }
+        .dir-gc-cta-secondary {
+          display: inline-flex; align-items: center; padding: 12px 28px;
+          border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.6);
+          font-size: 13px; text-decoration: none; transition: all .15s;
+        }
+        .dir-gc-cta-secondary:hover { border-color: rgba(255,255,255,.3); color: #fff; }
+        @media (max-width: 640px) {
+          .dir-gate-card { top: 120px; padding: 28px 20px; max-width: calc(100% - 32px); }
+          .dir-gc-ctas { flex-wrap: nowrap; }
+          .dir-gc-cta-primary, .dir-gc-cta-secondary { padding: 12px 16px; font-size: 12px; white-space: nowrap; }
+        }
+        @media (max-width: 480px) {
+          .dir-hero { padding: 28px 16px 36px !important; }
+        }
       ` }} />
 
-      <div style={{ fontFamily: SANS, background: C.white, minHeight: '100vh', paddingTop: 52 }}>
+      <div style={{ fontFamily: SANS, minHeight: '100vh', background: '#0A1C2A' }}>
 
         {/* ── Hero ── */}
-        <div style={{ background: C.navy, padding: '40px 0 48px', position: 'relative', overflow: 'hidden' }}>
-          <div style={{
-            position: 'absolute', right: -60, top: -80, width: 420, height: 420, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(26,122,74,.07) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }} />
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 48px', position: 'relative' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase',
-              color: C.green3, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 16, height: 1, background: C.green3, display: 'inline-block' }} />
+        <div className="dir-hero" style={{ background: '#0A1C2A', padding: '44px 48px 52px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -60, right: -80, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,189,116,.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
               Advisor Directory
             </div>
-            <h1 style={{ fontFamily: SERIF, fontSize: 36, fontWeight: 700, color: '#fff',
-              letterSpacing: '-.02em', marginBottom: 6, lineHeight: 1.1 }}>
-              Browse by State
+            <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0 }}>
+              Search firms <em style={{ fontStyle: 'normal', color: '#2DBD74' }}>near you</em>
             </h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', lineHeight: 1.65,
-              maxWidth: 480, marginBottom: 28 }}>
-              Every SEC-registered investment advisory firm, organized by state. Click any state
-              to browse firms, scores, fees, and regulatory history.
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
+              Every SEC-registered investment advisory firm, organized by state. Click any state to browse firms, scores, fees, and regulatory history.
             </p>
-            <div style={{ display: 'flex', gap: 0 }}>
-              {[
-                [totalFirms.toLocaleString(), 'Registered firms'],
-                ['$48.2T', 'Total AUM covered'],
-                [states.length.toString(), 'States indexed'],
-                ['Feb 2025', 'Last updated'],
-              ].map(([val, label], i) => (
-                <div key={label} style={{
-                  paddingLeft: i > 0 ? 28 : 0, marginLeft: i > 0 ? 28 : 0,
-                  borderLeft: i > 0 ? '1px solid rgba(255,255,255,.08)' : 'none',
-                }}>
-                  <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: '#fff' }}>{val}</div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 3 }}>{label}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
         {/* ── Map + Stats (gated or interactive) ── */}
         {isLoading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
-            height: 400, color: C.ink3, fontFamily: MONO, fontSize: 12, gap: 10 }}>
+            height: 400, color: C.ink3, fontFamily: MONO, fontSize: 12, gap: 10, background: C.white }}>
             <span style={{ display: 'inline-block', width: 16, height: 16, border: `2px solid ${C.green3}`,
               borderTopColor: 'transparent', borderRadius: '50%', animation: 'dir-spin .8s linear infinite' }} />
             Loading…
           </div>
         ) : (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', background: C.white }}>
 
             {/* Gate wrap for unauthed */}
             <div className={isGated ? 'dir-gate-content' : undefined}>
               <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 0' }}>
 
-                {/* Map section header */}
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
-                  <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: C.ink }}>
-                    Browse by State
+                {/* Map section header — hidden for gated, shown for authed */}
+                {!isGated && (
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+                    <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 700, color: C.ink }}>
+                      Browse by State
+                    </div>
+                    <div style={{ fontSize: 11, color: C.ink3, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green3, display: 'inline-block' }} />
+                      Click any state to view firms
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: C.ink3, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.green3, display: 'inline-block' }} />
-                    Click any state to view firms
-                  </div>
-                </div>
+                )}
 
                 {/* Map card */}
                 <div style={{ background: '#fff', border: `1px solid ${C.rule}`, borderTop: `2px solid ${C.ink}`,
@@ -380,77 +387,25 @@ export default function DirectoryClient({ states, totalFirms }: Props) {
             {/* Gate overlay elements for unauthed */}
             {isGated && (
               <>
-                {/* White floor */}
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
-                  background: C.white, pointerEvents: 'none', zIndex: 5,
-                }} />
-
-                {/* Gate card */}
-                <div style={{
-                  position: 'absolute', top: 260, left: '50%', transform: 'translateX(-50%)',
-                  width: '100%', maxWidth: 520,
-                  background: '#fff', border: `1px solid ${C.rule}`, borderTop: `2px solid ${C.navy}`,
-                  boxShadow: '0 32px 80px rgba(10,28,42,.13), 0 4px 20px rgba(10,28,42,.07)',
-                  padding: '40px 44px', textAlign: 'center', zIndex: 50,
-                }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.2em',
-                    textTransform: 'uppercase', color: C.green3, marginBottom: 12,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                    <span style={{ width: 20, height: 1, background: C.green3, display: 'inline-block' }} />
-                    Members only
-                    <span style={{ width: 20, height: 1, background: C.green3, display: 'inline-block' }} />
+                <div className="dir-gate-card">
+                  <div className="dir-gc-eyebrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    UNLOCK FULL DIRECTORY
                   </div>
-                  <div style={{ fontFamily: SERIF, fontSize: 30, fontWeight: 700, color: C.ink,
-                    letterSpacing: '-.02em', lineHeight: 1.1, marginBottom: 10 }}>
-                    Unlock the full directory
-                  </div>
-                  <p style={{ fontSize: 13, color: C.ink3, lineHeight: 1.75,
-                    maxWidth: 380, margin: '0 auto 24px' }}>
-                    Browse every SEC-registered advisor by state — with Visor scores,
-                    fee structures, AUM data, and regulatory history.
+                  <h2 className="dir-gc-headline">
+                    Every firm. Every state. Full transparency.
+                  </h2>
+                  <p className="dir-gc-sub">
+                    Get Visor Index scores, fee breakdowns, growth trends, regulatory history, firm alerts, and more when you sign up today.
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7, textAlign: 'left',
-                    marginBottom: 24, padding: '14px 18px', background: C.white, border: `1px solid ${C.rule}` }}>
-                    {[
-                      'All 14,280 registered firms across 50 states',
-                      'VVS scores, fee structures, and AUM for every firm',
-                      'Regulatory flags and disciplinary history',
-                      'One-click to compare or negotiate from any firm',
-                    ].map(perk => (
-                      <div key={perk} style={{ fontSize: 12, color: C.ink3,
-                        display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5 }}>
-                        <span style={{ color: C.green, fontWeight: 700, flexShrink: 0 }}>✓</span>
-                        {perk}
-                      </div>
-                    ))}
-                  </div>
-                  <Link
-                    href="/auth/signup"
-                    className="dir-gc-cta"
-                    style={{
-                      display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 10,
-                      background: C.green, color: '#fff', border: 'none', cursor: 'pointer',
-                      padding: 15, fontFamily: SANS, fontSize: 13, fontWeight: 600,
-                      letterSpacing: '.08em', textTransform: 'uppercase', textDecoration: 'none',
-                      transition: 'background .15s', marginBottom: 12,
-                    }}
-                  >
-                    Create Free Account
-                    <span className="dir-gc-arrow" style={{ fontSize: 16 }}>→</span>
-                  </Link>
-                  <div style={{ fontSize: 11, color: C.ink3 }}>
-                    Already have an account?{' '}
-                    <Link href="/auth/login"
-                      style={{ color: C.ink, fontWeight: 600, textDecoration: 'none',
-                        borderBottom: `1px solid ${C.rule}` }}>
-                      Sign in
-                    </Link>
+                  <div className="dir-gc-ctas">
+                    <Link href="/auth/signup" className="dir-gc-cta-primary">Get Full Access →</Link>
+                    <Link href="/pricing" className="dir-gc-cta-secondary">View Pricing</Link>
                   </div>
                 </div>
-
-                {/* Spacer below gate card */}
-                <div style={{ height: 560 }} />
               </>
             )}
           </div>

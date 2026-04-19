@@ -5,6 +5,7 @@ import DirectoryClient, { type StateCount } from './DirectoryClient';
 export const metadata: Metadata = {
   title: 'Advisor Directory by State — Visor Index',
   description: 'Browse SEC-registered investment advisors by state. Find and compare financial advisors near you.',
+  alternates: { canonical: '/directory' },
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

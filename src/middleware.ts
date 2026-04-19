@@ -2,12 +2,32 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/onboarding'];
+const PROTECTED_PATHS = ['/dashboard', '/onboarding', '/choose-plan', '/checkout'];
 const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/reset-password', '/auth/update-password'];
 const GATED_PATHS = ['/firm/'];
 
+// Known scraper / AI-crawler user-agent fragments (case-insensitive match)
+const BOT_UA_PATTERNS = [
+  'GPTBot', 'ChatGPT-User', 'CCBot', 'anthropic-ai', 'ClaudeBot',
+  'Bytespider', 'PetalBot', 'Scrapy', 'python-requests', 'Go-http-client',
+  'Java/', 'libwww-perl', 'Wget', 'curl/', 'Applebot',
+  'AhrefsBot', 'SemrushBot', 'DotBot', 'MJ12bot', 'DataForSeoBot',
+];
+
+function isBlockedBot(ua: string): boolean {
+  const lower = ua.toLowerCase();
+  return BOT_UA_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Bot detection: block known scrapers ──
+  const ua = request.headers.get('user-agent') || '';
+  if (isBlockedBot(ua)) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
@@ -61,19 +81,42 @@ export async function middleware(request: NextRequest) {
   // Gated routes: require auth (firm pages handled in page component for teaser)
   // We let the page component handle showing teaser vs full content
 
-  // Check onboarding completion for authenticated users on non-onboarding protected routes
-  if (isAuthenticated && !pathname.startsWith('/onboarding') && !isAuthPage && (isProtected || isGated)) {
+  // Gate authenticated users through: signup → choose-plan → onboarding → dashboard
+  if (isAuthenticated && !isAuthPage && (isProtected || isGated)) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('onboarding_completed')
+      .select('onboarding_completed, plan_tier')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile || !profile.onboarding_completed) {
-      // Don't redirect if already heading to onboarding
-      if (!pathname.startsWith('/onboarding')) {
-        return NextResponse.redirect(new URL('/onboarding', request.url));
+    const hasPlan = profile?.plan_tier && profile.plan_tier !== 'none';
+    const onboardingDone = !!profile?.onboarding_completed;
+
+    // Step 1: No plan → force /choose-plan (unless already on /choose-plan or /checkout)
+    if (!hasPlan) {
+      if (!pathname.startsWith('/choose-plan') && !pathname.startsWith('/checkout')) {
+        const redirectRes = NextResponse.redirect(new URL('/choose-plan', request.url));
+        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+        return redirectRes;
       }
+      return response;
+    }
+
+    // Step 2: Has plan but no onboarding → force /onboarding (unless already there or on /checkout)
+    if (!onboardingDone) {
+      if (!pathname.startsWith('/onboarding') && !pathname.startsWith('/checkout')) {
+        const redirectRes = NextResponse.redirect(new URL('/onboarding', request.url));
+        response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+        return redirectRes;
+      }
+      return response;
+    }
+
+    // Step 3: Fully onboarded. Keep them out of /choose-plan and /onboarding.
+    if (pathname.startsWith('/choose-plan') || pathname.startsWith('/onboarding')) {
+      const redirectRes = NextResponse.redirect(new URL('/dashboard', request.url));
+      response.cookies.getAll().forEach(c => redirectRes.cookies.set(c.name, c.value));
+      return redirectRes;
     }
   }
 
@@ -81,5 +124,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/firm/:path*', '/api/user/:path*'],
+  matcher: ['/dashboard', '/dashboard/:path*', '/auth/:path*', '/onboarding/:path*', '/choose-plan', '/checkout/:path*', '/firm/:path*', '/api/:path*'],
 };

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, PasswordInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from './AuthLayout';
 
@@ -30,9 +30,8 @@ export function LoginForm() {
           placeholder="you@example.com"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
@@ -52,7 +51,7 @@ export function LoginForm() {
           <p className="text-sm text-error">{auth.error}</p>
         )}
 
-        <Button type="submit" className="w-full" disabled={auth.loading}>
+        <Button type="submit" className="w-full !rounded-none !bg-[#1A7A4A] hover:!bg-[#22995E] !h-[46px] !text-[12px] !font-semibold !tracking-[0.1em] !uppercase !font-[var(--sans)]" disabled={auth.loading}>
           {auth.loading ? 'Signing in...' : 'Sign In'}
         </Button>
       </form>

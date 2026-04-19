@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-
-interface FeeTier {
-  min_aum: string | null;
-  max_aum: number | null;
-  fee_pct: number | null;
-}
+import {
+  type FeeTier, type CalcResult,
+  INDUSTRY_ALL, INDUSTRY_SMALL, INDUSTRY_MID,
+  getClosestBreakpoint, getIndustryMedianRate, calcTieredFee, synthesizeRangeTiers, synthesizeMaxOnlyTiers,
+} from '@/lib/fee-utils';
 
 interface FeeCalculatorProps {
   feeTiers: FeeTier[] | null;
@@ -19,43 +18,10 @@ interface FeeCalculatorProps {
   minAccount?: number | null;
   minFee?: number | null;
   sortedFeeTiers?: FeeTier[];
-}
-
-// ── Hardcoded industry averages ──────────────────────────────────────
-// Industry averages computed from Visor Index database (207 firms with disclosed fee tiers, 2026-03-29)
-const INDUSTRY_ALL = [
-  { breakpoint: 500_000, label: '$500K', avg: 1.262, p25: 1.00, median: 1.175, p75: 1.50 },
-  { breakpoint: 1_000_000, label: '$1M', avg: 1.213, p25: 1.00, median: 1.075, p75: 1.375 },
-  { breakpoint: 2_000_000, label: '$2M', avg: 1.108, p25: 0.90, median: 1.00, p75: 1.212 },
-  { breakpoint: 5_000_000, label: '$5M', avg: 0.954, p25: 0.79, median: 0.89, p75: 1.05 },
-  { breakpoint: 10_000_000, label: '$10M', avg: 0.801, p25: 0.637, median: 0.75, p75: 0.925 },
-  { breakpoint: 25_000_000, label: '$25M', avg: 0.637, p25: 0.46, median: 0.592, p75: 0.78 },
-  { breakpoint: 50_000_000, label: '$50M', avg: 0.562, p25: 0.376, median: 0.535, p75: 0.711 },
-  { breakpoint: 100_000_000, label: '$100M', avg: 0.517, p25: 0.315, median: 0.515, p75: 0.677 },
-];
-
-const INDUSTRY_SMALL = [
-  { breakpoint: 500_000, avg: 1.273, median: 1.25 },
-  { breakpoint: 1_000_000, avg: 1.209, median: 1.125 },
-  { breakpoint: 5_000_000, avg: 0.925, median: 0.865 },
-  { breakpoint: 10_000_000, avg: 0.79, median: 0.722 },
-];
-
-const INDUSTRY_MID = [
-  { breakpoint: 500_000, avg: 1.176, median: 1.00 },
-  { breakpoint: 1_000_000, avg: 1.149, median: 1.00 },
-  { breakpoint: 5_000_000, avg: 0.975, median: 0.935 },
-  { breakpoint: 10_000_000, avg: 0.839, median: 0.80 },
-];
-
-function getClosestBreakpoint(amount: number) {
-  let closest = INDUSTRY_ALL[0];
-  for (const bp of INDUSTRY_ALL) {
-    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) {
-      closest = bp;
-    }
-  }
-  return closest;
+  // Range data for synthetic tier generation
+  feeRangeMin?: number | null;
+  feeRangeMax?: number | null;
+  avgClientSize?: number | null;
 }
 
 function getSegmentLabel(firmAum: number | null | undefined): string {
@@ -104,61 +70,6 @@ function formatCurrency(value: number | string): string {
   return formatAUM(num);
 }
 
-interface CalcResult {
-  totalFee: number;
-  usedIndustryFallback: boolean;
-  fallbackTierMin: number | null;
-}
-
-function getIndustryMedianRate(amount: number): number {
-  // Find the closest breakpoint's median rate from INDUSTRY_ALL
-  let closest = INDUSTRY_ALL[0];
-  for (const bp of INDUSTRY_ALL) {
-    if (Math.abs(amount - bp.breakpoint) <= Math.abs(amount - closest.breakpoint)) {
-      closest = bp;
-    }
-  }
-  return closest.median / 100;
-}
-
-function calcTieredFee(amount: number, tiers: FeeTier[]): CalcResult {
-  if (tiers.length === 0) return { totalFee: 0, usedIndustryFallback: false, fallbackTierMin: null };
-  const sorted = [...tiers]
-    .sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'));
-  const validSorted = sorted.filter((t) => t.fee_pct != null);
-  if (validSorted.length === 0) return { totalFee: 0, usedIndustryFallback: false, fallbackTierMin: null };
-  if (validSorted.length === 1 && sorted.length === 1) {
-    return { totalFee: amount * (validSorted[0].fee_pct! / 100), usedIndustryFallback: false, fallbackTierMin: null };
-  }
-
-  let totalFee = 0;
-  let remaining = amount;
-  let usedIndustryFallback = false;
-  let fallbackTierMin: number | null = null;
-
-  for (let i = 0; i < sorted.length && remaining > 0; i++) {
-    const tierMin = parseInt(sorted[i].min_aum || '0');
-    const tierMax = sorted[i].max_aum;
-    const isNegotiated = sorted[i].fee_pct == null;
-    const bracketSize = tierMax ? tierMax - tierMin : remaining;
-    const taxable = Math.min(remaining, bracketSize);
-
-    if (isNegotiated) {
-      // Fall back to industry median for the midpoint of this bracket
-      const midpoint = tierMin + taxable / 2;
-      const fallbackRate = getIndustryMedianRate(midpoint);
-      totalFee += taxable * fallbackRate;
-      usedIndustryFallback = true;
-      fallbackTierMin = tierMin;
-    } else {
-      totalFee += taxable * (sorted[i].fee_pct! / 100);
-    }
-    remaining -= taxable;
-  }
-
-  return { totalFee, usedIndustryFallback, fallbackTierMin };
-}
-
 function projectGrowth(principal: number, annualFeeRate: number, years: number, returnRate: number = 0.07) {
   let value = principal;
   let totalFees = 0;
@@ -189,7 +100,7 @@ const CSS = `
     --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
     --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568;
     --rule:#CAD8D0; --amber:#F59E0B; --red:#EF4444;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+    --serif:'Cormorant Garamond',serif; --sans:'Inter',sans-serif; --mono:'DM Mono',monospace;
   }
   .fc-wrap {
     background:#fff; border:0.5px solid var(--rule); border-radius:10px;
@@ -321,11 +232,21 @@ const CSS = `
   .fc-tier.active { background:rgba(45,189,116,.06); border-left:2px solid var(--green-3); padding-left:18px; }
   .fc-tier-label { font-family:var(--sans); font-size:13px; color:var(--ink-2); text-align:center; }
   .fc-tier-rate { font-family:var(--mono); font-size:13px; font-weight:400; color:var(--ink-2); text-align:center; }
+
+  @media (max-width:640px) {
+    .fc-output-grid { grid-template-columns:1fr; }
+    .fc-out-cell { border-right:none; border-bottom:1px solid var(--rule); }
+    .fc-out-cell:last-child { border-bottom:none; }
+    .fc-out-val { font-size:22px; }
+    .fc-proj-head { grid-template-columns:50px 1fr 1fr 1fr; padding:6px 10px; }
+    .fc-proj-row { grid-template-columns:50px 1fr 1fr 1fr; padding:6px 10px; }
+  }
 `;
 
 export default function FeeCalculator({
   feeTiers, crd, firmAum, industryOnly = false,
   feeTypeDisplay, feeNotes, minAccount, minFee, sortedFeeTiers,
+  feeRangeMin, feeRangeMax, avgClientSize,
 }: FeeCalculatorProps) {
   const [rawInput, setRawInput] = useState(() =>
     minAccount ? minAccount.toLocaleString('en-US') : ''
@@ -338,8 +259,24 @@ export default function FeeCalculator({
     return Math.min(num, MAX_INPUT);
   }, [rawInput]);
 
-  const tiers = feeTiers || [];
-  const displayTiers = sortedFeeTiers || [];
+  // Use real tiers, or synthesize from range data if available, or flat rate
+  const tiers = useMemo(() => {
+    if (feeTiers && feeTiers.length > 0) return feeTiers;
+    if (feeRangeMin != null && feeRangeMax != null && avgClientSize && avgClientSize > 0) {
+      return synthesizeRangeTiers(feeRangeMin, feeRangeMax, avgClientSize);
+    }
+    if (feeRangeMax != null && avgClientSize && avgClientSize > 0) {
+      return synthesizeMaxOnlyTiers(feeRangeMax, avgClientSize);
+    }
+    if (feeRangeMax != null) {
+      return [{ min_aum: '0', max_aum: null, fee_pct: feeRangeMax }];
+    }
+    return [];
+  }, [feeTiers, feeRangeMin, feeRangeMax, avgClientSize]);
+  const isSynthetic = (feeTiers == null || feeTiers.length === 0) && tiers.length > 0;
+  const displayTiers = isSynthetic
+    ? [...tiers].sort((a, b) => parseInt(a.min_aum || '0') - parseInt(b.min_aum || '0'))
+    : sortedFeeTiers || [];
   const industryBp = useMemo(() => amount > 0 ? getClosestBreakpoint(amount) : null, [amount]);
   const segmentMedian = useMemo(() => amount > 0 ? getSegmentMedian(amount, firmAum) : null, [amount, firmAum]);
 
@@ -428,6 +365,11 @@ export default function FeeCalculator({
           })}
         </div>
       )}
+      {isSynthetic && feeRangeMax != null && feeRangeMin == null && (
+        <div className="fc-industry-note" style={{ marginTop: 8 }}>
+          Fee tiers estimated from the disclosed maximum rate ({feeRangeMax}%) and industry data. Actual fees may be lower — contact the firm for their current schedule.
+        </div>
+      )}
 
       {/* Zone 3: Calculator */}
       <div className="fc-calc">
@@ -500,7 +442,7 @@ export default function FeeCalculator({
             </div>
 
             {/* Toggle for detailed analysis */}
-            <button className="fc-detail-toggle" onClick={() => setShowDetail(!showDetail)}>
+            <button className="fc-detail-toggle" onClick={() => setShowDetail(!showDetail)} aria-expanded={showDetail}>
               <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 10 10"
                 style={{ transform: showDetail ? 'rotate(90deg)' : 'rotate(0)' }}>
                 <path d="M3 1.5l4 3.5-4 3.5" />
@@ -579,7 +521,7 @@ export default function FeeCalculator({
                       })}
                     </div>
                     <a
-                      href={`/negotiate?aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
+                      href={`/negotiate?crd=${crd}&aum=${amount}&fee=${effectiveRate.toFixed(2)}`}
                       className="fc-nego-cta"
                     >
                       See your negotiation plan

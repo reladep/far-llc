@@ -3,9 +3,11 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
+import type { User } from '@supabase/supabase-js';
 
 /* ------------------------------------------------------------------ */
-/*  Scroll-triggered reveal (reuses project pattern)                  */
+/*  Scroll-triggered reveal                                           */
 /* ------------------------------------------------------------------ */
 
 function usePrefersReducedMotion() {
@@ -90,54 +92,68 @@ const tenets = [
 /* ------------------------------------------------------------------ */
 
 export function AboutPageClient() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+  }, []);
+
   return (
     <>
       {/* ─── 1. HERO ─── */}
-      <section className="relative overflow-hidden bg-[#0a1c2a] pb-24 pt-28 md:pb-36 md:pt-40">
-        {/* Subtle grid overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:72px_72px]" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 640px) {
+          .about-hero { padding: 28px 16px 36px !important; }
+          .about-section { padding-left: 16px !important; padding-right: 16px !important; }
+        }
+      `}} />
+      <section
+        className="about-hero relative overflow-hidden"
+        style={{ background: '#0A1C2A', padding: '44px 48px 32px' }}
+      >
+        {/* Radial glow */}
+        <div className="pointer-events-none" style={{ position: 'absolute', top: -60, right: -80, width: 400, height: 400, background: 'radial-gradient(circle, rgba(45,189,116,.12) 0%, transparent 65%)' }} />
 
-        <div className="container-page relative">
-          <div className="max-w-3xl">
-            <Reveal>
-              <p className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.28em] text-emerald-300/70">
-                <span className="h-px w-8 bg-emerald-300/50" />
-                About Visor Index
-              </p>
-            </Reveal>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase', color: '#2DBD74', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 16, height: 1, background: '#2DBD74', display: 'inline-block' }} />
+              About Visor Index
+            </div>
+          </Reveal>
 
-            <Reveal delay={80}>
-              <h1 className="mt-8 font-serif text-[clamp(42px,6vw,76px)] leading-[1.05] tracking-[-0.025em] text-white">
-                We&rsquo;re on your side.
-              </h1>
-            </Reveal>
+          <Reveal delay={80}>
+            <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(28px, 7vw, 42px)', fontWeight: 700, color: '#fff', letterSpacing: '-.025em', lineHeight: 1.06, marginBottom: 0 }}>
+              We&rsquo;re on your side.
+            </h1>
+          </Reveal>
 
-            <Reveal delay={160}>
-              <p className="mt-8 max-w-xl text-lg font-light leading-8 text-white/50 md:text-xl md:leading-9">
-                Visor Index exists for one reason: to give you the data, clarity,
-                and leverage to make the most important financial decision of your
-                life&thinsp;&mdash;&thinsp;choosing the right wealth partner.
-              </p>
-            </Reveal>
-          </div>
+          <Reveal delay={160}>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,.38)', lineHeight: 1.75, maxWidth: 500, marginTop: 12 }}>
+              Visor Index exists for one reason: to give you the data, clarity,
+              and leverage to make the most important financial decision of your
+              life&thinsp;&mdash;&thinsp;choosing the right wealth partner.
+            </p>
+          </Reveal>
         </div>
       </section>
 
       {/* ─── 2. ORIGIN STORY ─── */}
-      <section className="bg-[#f6f8f7] py-24 md:py-32">
-        <div className="container-page">
-          <div className="border-t-2 border-[#2DBD74]/30 pt-12 md:pt-16" />
-          <div className="grid items-start gap-12 lg:grid-cols-[0.45fr_0.55fr] lg:gap-20">
+      <section className="about-section bg-[#F6F8F7] py-10 md:py-14" style={{ padding: '40px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div className="border-t-2 border-[#2DBD74]/30 pt-8 md:pt-10" />
+          <div className="space-y-8">
             <Reveal>
-              <blockquote className="font-serif text-[clamp(28px,3.4vw,44px)] italic leading-[1.2] tracking-[-0.015em] text-[#0a1c2a]">
-                &ldquo;It started with a question from a friend.&rdquo;
+              <blockquote className="font-serif text-[clamp(26px,3.2vw,40px)] italic leading-[1.2] tracking-[-0.015em] text-[#0C1810]">
+                &ldquo;How do I find a great financial advisor?&rdquo;
               </blockquote>
             </Reveal>
 
             <Reveal delay={120}>
-              <div className="space-y-6 text-[16px] leading-7 text-[#0a1c2a]/70 md:text-[17px] md:leading-8">
+              <div className="space-y-5 text-[14px] leading-7 text-[#5A7568] md:text-[15px]">
                 <p>
-                  It started with a question from a friend: <em>How do I find a
+                  It started with a question from a friend: <em className="text-[#2E4438]">How do I find a
                   great financial advisor?</em> As industry veterans, we thought we
                   knew the answer&thinsp;&mdash;&thinsp;find a firm run by
                   sophisticated investors, offering a full suite of services, at
@@ -151,8 +167,13 @@ export function AboutPageClient() {
                   firms they recommend. A model perfectly designed for
                   everyone&thinsp;&mdash;&thinsp;except the client.
                 </p>
-                <p className="font-medium text-[#0a1c2a]/90">
-                  We wanted to flip it. That&rsquo;s Visor Index.
+                <p className="font-medium text-[#0C1810]">
+                  We wanted to flip this model. That&rsquo;s why we created the{' '}
+                  <span className="font-serif italic tracking-[0.02em]">
+                    <span className="font-bold">VISOR</span>{' '}
+                    <span className="font-bold text-[#2DBD74]">INDEX</span>
+                  </span>
+                  <sup style={{ fontSize: 8, verticalAlign: 'super', marginLeft: 1 }}>&trade;</sup>
                 </p>
               </div>
             </Reveal>
@@ -161,30 +182,29 @@ export function AboutPageClient() {
       </section>
 
       {/* ─── 3. STAKES ─── */}
-      <section className="bg-white py-24 md:py-32">
-        <div className="container-page">
-          <div className="mx-auto max-w-3xl text-center">
+      <section className="about-section bg-white" style={{ padding: '40px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <Reveal>
               <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#2DBD74]">
                 Why it matters
               </p>
-              <h2 className="mt-6 font-serif text-[clamp(32px,4.2vw,56px)] leading-[1.1] tracking-[-0.02em] text-[#0a1c2a]">
+              <h2 className="mt-5 font-serif text-[clamp(30px,4vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#0C1810]">
                 The biggest expense of your lifetime.
               </h2>
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="mt-10 flex justify-center gap-10 md:gap-16">
+              <div className="mt-8 flex gap-10 md:gap-14">
                 {[
                   { value: '1%', label: 'fee difference' },
                   { value: '30+', label: 'years compounding' },
                   { value: '$100K+', label: 'potential cost' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <div className="font-mono text-2xl font-bold text-[#0a1c2a] md:text-3xl">
+                  <div key={s.label}>
+                    <div className="font-serif text-[26px] font-bold text-[#0C1810] md:text-[32px]">
                       {s.value}
                     </div>
-                    <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[#0a1c2a]/40">
+                    <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#5A7568]">
                       {s.label}
                     </div>
                   </div>
@@ -193,7 +213,7 @@ export function AboutPageClient() {
             </Reveal>
 
             <Reveal delay={180}>
-              <div className="mx-auto mt-12 max-w-2xl space-y-5 text-[16px] leading-7 text-[#0a1c2a]/65 md:text-[17px] md:leading-8">
+              <div className="mt-10 space-y-4 text-[14px] leading-7 text-[#5A7568] md:text-[15px]">
                 <p>
                   For many people, a financial advisor is the single largest expense
                   of their lifetime&thinsp;&mdash;&thinsp;greater than healthcare,
@@ -207,22 +227,20 @@ export function AboutPageClient() {
                 </p>
               </div>
             </Reveal>
-          </div>
         </div>
       </section>
 
       {/* ─── 4. VISION (dark band) ─── */}
-      <section className="bg-[#0a1c2a] py-24 md:py-32">
-        <div className="container-page">
-          <div className="mx-auto max-w-3xl text-center">
+      <section className="about-section bg-[#0a1c2a]" style={{ padding: '40px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <Reveal>
-              <h2 className="font-serif text-[clamp(30px,4vw,52px)] leading-[1.12] tracking-[-0.02em] text-white">
+              <h2 className="font-serif text-[clamp(28px,3.8vw,48px)] font-bold leading-[1.12] tracking-[-0.02em] text-white">
                 Your wealth. Your terms.
               </h2>
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="mx-auto mt-10 max-w-2xl space-y-5 text-[16px] leading-7 text-white/50 md:text-[17px] md:leading-8">
+              <div className="mt-8 space-y-4 text-[14px] leading-7 text-white/50 md:text-[15px]">
                 <p>
                   Whether you&rsquo;re managing $100&thinsp;million or
                   $100&thinsp;thousand, Visor Index gives you the data, analysis,
@@ -235,60 +253,62 @@ export function AboutPageClient() {
                 </p>
               </div>
             </Reveal>
-          </div>
         </div>
       </section>
 
       {/* ─── 5. CORE TENETS ─── */}
-      <section className="bg-[#f6f8f7] py-24 md:py-32">
-        <div className="container-page">
+      <section className="about-section bg-[#F6F8F7]" style={{ padding: '40px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <Reveal>
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#2DBD74]">
               What we believe
             </p>
-            <h2 className="mt-5 font-serif text-[clamp(30px,3.8vw,48px)] leading-[1.12] tracking-[-0.02em] text-[#0a1c2a]">
+            <h2 className="mt-4 font-serif text-[clamp(28px,3.6vw,44px)] font-bold leading-[1.12] tracking-[-0.02em] text-[#0C1810]">
               Core Tenets
             </h2>
           </Reveal>
 
-          <div className="mt-14 md:mt-20">
+          <div className="mt-8 md:mt-10">
             {tenets.map((tenet, i) => (
               <Reveal key={tenet.num} delay={i * 60}>
                 <div
-                  className="group border-t border-[#0a1c2a]/8 py-8 transition-all duration-300 hover:border-l-2 hover:border-l-[#2DBD74] hover:pl-6 md:py-10"
+                  className={cn(
+                    'group border-t border-[#CAD8D0] py-6 transition-all duration-300 hover:border-l-2 hover:border-l-[#2DBD74] hover:pl-6 md:py-8',
+                    i === tenets.length - 1 && 'border-b-0'
+                  )}
                 >
-                  <div className="grid items-baseline gap-4 md:grid-cols-[60px_1fr_1.2fr] md:gap-8">
-                    <span className="font-mono text-sm font-semibold text-[#2DBD74]">
-                      {tenet.num}
-                    </span>
-                    <h3 className="font-serif text-xl font-semibold leading-snug text-[#0a1c2a] md:text-[22px]">
-                      {tenet.title}
-                    </h3>
-                    <p className="text-[15px] leading-7 text-[#0a1c2a]/60 md:text-[16px]">
+                  <div className="space-y-2">
+                    <div className="flex items-baseline gap-4">
+                      <span className="font-mono text-sm font-semibold text-[#2DBD74]">
+                        {tenet.num}
+                      </span>
+                      <h3 className="font-serif text-xl font-semibold leading-snug text-[#0C1810] md:text-[22px]">
+                        {tenet.title}
+                      </h3>
+                    </div>
+                    <p className="text-[14px] leading-7 text-[#5A7568] md:text-[15px]">
                       {tenet.body}
                     </p>
                   </div>
                 </div>
               </Reveal>
             ))}
-            {/* Final bottom border */}
-            <div className="border-t border-[#0a1c2a]/8" />
+            <div className="border-t border-[#CAD8D0]" />
           </div>
         </div>
       </section>
 
       {/* ─── 6. CLOSING CTA ─── */}
-      <section className="bg-[#0a1c2a] py-28 md:py-36">
-        <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
+      <section className="about-section bg-[#0a1c2a]" style={{ padding: '56px 48px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
             <Reveal>
-              <h2 className="font-serif text-[clamp(32px,4.5vw,56px)] leading-[1.1] tracking-[-0.02em] text-[#f5f0eb]">
+              <h2 className="font-serif text-[clamp(30px,4.2vw,52px)] font-bold leading-[1.1] tracking-[-0.02em] text-white">
                 Take Control of Your Financial Future.
               </h2>
             </Reveal>
 
             <Reveal delay={100}>
-              <p className="mx-auto mt-8 max-w-xl text-[16px] leading-7 text-white/45 md:text-[17px] md:leading-8">
+              <p className="mt-6 text-[14px] leading-7 text-white/45 md:text-[15px]">
                 The right wealth partner can change the trajectory of your
                 financial life. The wrong one can cost you more than you&rsquo;ll
                 ever know. You now have the tools to tell the difference. Start
@@ -297,28 +317,21 @@ export function AboutPageClient() {
             </Reveal>
 
             <Reveal delay={180}>
-              <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
+              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
                 <Link
-                  href="/directory"
-                  className="inline-flex w-full items-center justify-center bg-gradient-to-b from-[#1f8f55] to-[#1A7A4A] px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_2px_12px_rgba(26,122,74,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-200 hover:from-[#22995E] hover:to-[#1f8f55] hover:shadow-[0_4px_20px_rgba(45,189,116,0.3)] sm:w-auto"
+                  href={user ? '/search' : '/pricing'}
+                  className="inline-flex w-full items-center justify-center bg-[#1A7A4A] px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition-all duration-200 hover:bg-[#22995E] sm:w-auto"
                 >
-                  Find Your Advisor
+                  Get Started
                 </Link>
                 <Link
                   href="/contact"
-                  className="inline-flex w-full items-center justify-center border border-white/20 px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/70 transition-all duration-200 hover:border-white/40 hover:text-white sm:w-auto"
+                  className="inline-flex w-full items-center justify-center border border-white/20 px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/70 transition-all duration-200 hover:border-white/40 hover:text-white sm:w-auto"
                 >
                   Contact Us
                 </Link>
               </div>
             </Reveal>
-
-            <Reveal delay={240}>
-              <p className="mt-10 font-mono text-[11px] tracking-[0.04em] text-white/25">
-                Based on SEC-registered ADV data. No affiliate fees. No referral kickbacks.
-              </p>
-            </Reveal>
-          </div>
         </div>
       </section>
     </>

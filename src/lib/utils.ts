@@ -23,6 +23,14 @@ export function formatAUM(aum: number): string {
   return `$${Math.round(aum).toLocaleString()}`;
 }
 
+/** Score color: green >= 80, dark green >= 60, amber >= 40, red < 40 */
+export function scoreColor(val: number): string {
+  if (val >= 80) return '#2DBD74';
+  if (val >= 60) return '#22995E';
+  if (val >= 40) return '#F59E0B';
+  return '#EF4444';
+}
+
 /** Generate firm slug */
 export function firmSlug(name: string): string {
   return name

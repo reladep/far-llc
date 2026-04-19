@@ -3,14 +3,20 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import { formatAUM, scoreColor } from '@/lib/utils';
+import { getClosestBreakpoint, formatDollar, formatCompact, projectGrowth } from '@/lib/fee-utils';
+import FirmLogo from '@/components/firms/FirmLogo';
+import FirmTableGate from '@/components/firms/table/FirmTableGate';
+import type { GateConfig } from '@/components/firms/table';
 
+/* ── Types ── */
 
 interface MatchAnswer {
   netWorth: string;
-  lifeTrigger: string;
+  lifeTrigger: string | string[];
+  lifeTriggerText?: string;
   location: string;
   priorities: string[];
-  feeSensitivity: string;
   firmSize: string;
   serviceDepth: string;
   conflictImportance: string;
@@ -28,479 +34,13 @@ interface MatchedFirm {
   advisorBandwidth: number;
   matchPercent: number;
   reasons: string[];
+  matchReason?: string;
   estimatedFee: string;
   visorScore?: number;
   logoKey?: string | null;
 }
 
-interface FirmBadge {
-  label: string;
-  color: string;
-}
-
-function computeBadges(firms: MatchedFirm[]): Map<number, FirmBadge[]> {
-  const map = new Map<number, FirmBadge[]>();
-  if (firms.length < 2) return map;
-
-  const dims: { key: keyof MatchedFirm; label: string }[] = [
-    { key: 'feeCompetitiveness', label: 'Lowest Fees' },
-    { key: 'clientGrowth', label: 'Top Growth' },
-    { key: 'advisorBandwidth', label: 'Best Availability' },
-  ];
-
-  for (const dim of dims) {
-    let best = -1;
-    let bestCrd = -1;
-    for (const f of firms) {
-      const val = f[dim.key] as number;
-      if (val > best) { best = val; bestCrd = f.crd; }
-    }
-    const avg = firms.reduce((s, f) => s + (f[dim.key] as number), 0) / firms.length;
-    if (best >= avg + 5 && bestCrd >= 0) {
-      const existing = map.get(bestCrd) || [];
-      existing.push({ label: dim.label, color: '#2DBD74' });
-      map.set(bestCrd, existing);
-    }
-  }
-
-  const scored = firms.filter((f) => f.visorScore != null);
-  if (scored.length >= 2) {
-    const best = scored.reduce((a, b) => ((a.visorScore ?? 0) > (b.visorScore ?? 0) ? a : b));
-    const avg = scored.reduce((s, f) => s + (f.visorScore ?? 0), 0) / scored.length;
-    if ((best.visorScore ?? 0) >= avg + 3) {
-      const existing = map.get(best.crd) || [];
-      existing.push({ label: 'Highest VVS', color: '#2DBD74' });
-      map.set(best.crd, existing);
-    }
-  }
-
-  return map;
-}
-
-function scoreColor(val: number): string {
-  if (val >= 80) return '#2DBD74';
-  if (val >= 60) return '#22995E';
-  if (val >= 40) return '#F59E0B';
-  return '#EF4444';
-}
-
-const CSS = `
-  :root {
-    --navy:#0A1C2A; --navy-2:#0F2538; --navy-3:#132D42;
-    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
-    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
-  }
-
-  .mr-page { min-height:100vh; background:var(--navy); color:#fff; }
-
-  /* ── Hero ── */
-  .mr-hero {
-    background:var(--navy); padding:64px 24px 52px;
-    text-align:center; position:relative; overflow:hidden;
-  }
-  .mr-hero::before {
-    content:''; position:absolute; inset:0; pointer-events:none;
-    background:
-      radial-gradient(circle at top, rgba(34,197,94,0.16), transparent 34%),
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: auto, 72px 72px, 72px 72px;
-  }
-  .mr-hero-inner { position:relative; z-index:2; }
-  .mr-eyebrow {
-    font-family:var(--mono); font-size:10px; font-weight:600;
-    letter-spacing:.18em; text-transform:uppercase;
-    color:var(--green-3); margin-bottom:14px;
-  }
-  .mr-title {
-    font-family:var(--serif); font-size:clamp(26px,4vw,40px);
-    font-weight:700; color:#fff; margin-bottom:6px; line-height:1.1;
-  }
-  .mr-hero-sub {
-    font-family:var(--sans); font-size:13px;
-    color:rgba(255,255,255,0.45); margin:0 0 18px;
-  }
-  .mr-chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .mr-chip {
-    font-family:var(--mono); font-size:10px;
-    color:rgba(255,255,255,0.55);
-    border:1px solid rgba(255,255,255,0.12); padding:4px 12px;
-    background:rgba(255,255,255,0.04);
-  }
-
-  /* ── Stats strip ── */
-  .mr-stats-strip {
-    display:flex; align-items:center; justify-content:center;
-    gap:28px; padding:28px 20px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-  }
-  .mr-stat-divider { width:1px; height:16px; background:rgba(255,255,255,0.10); flex-shrink:0; }
-  .mr-stat { text-align:center; }
-  .mr-stat-value {
-    font-family:var(--serif); font-size:18px; font-weight:700; color:#fff;
-  }
-  .mr-stat-value span { color:var(--green-3); }
-  .mr-stat-label {
-    font-family:var(--mono); font-size:9px; font-weight:600;
-    letter-spacing:.14em; text-transform:uppercase;
-    color:rgba(255,255,255,0.30); margin-top:3px;
-  }
-
-  /* ── Body ── */
-  .mr-body { max-width:820px; margin:0 auto; padding:36px 20px 80px; }
-
-  /* ── Firm card ── */
-  @keyframes mr-fade-in {
-    from { opacity:0; transform:translateY(12px); }
-    to { opacity:1; transform:translateY(0); }
-  }
-  @media(prefers-reduced-motion:reduce) {
-    .mr-card-wrap { animation:none !important; }
-  }
-
-  .mr-card-wrap {
-    margin-bottom:6px;
-    animation:mr-fade-in .5s ease-out both;
-    animation-delay:var(--delay, 0s);
-  }
-
-  .mr-card {
-    background:var(--navy-2); border:1px solid rgba(255,255,255,0.06);
-    display:grid; grid-template-columns:1fr auto;
-    transition:border-color .3s, background .3s;
-    text-decoration:none; position:relative; overflow:hidden;
-    cursor:pointer;
-  }
-  .mr-card:hover {
-    border-color:rgba(255,255,255,0.14);
-    background:rgba(26,122,74,0.06);
-  }
-  .mr-card::before {
-    content:''; position:absolute; top:0; bottom:0; left:0;
-    width:2px; background:var(--green-3);
-    transform:scaleY(0); transform-origin:center;
-    transition:transform .3s;
-  }
-  .mr-card:hover::before { transform:scaleY(1); }
-
-  .mr-card.expanded {
-    border-color:rgba(45,189,116,0.25);
-    background:rgba(26,122,74,0.04);
-  }
-  .mr-card.expanded::before { transform:scaleY(1); }
-
-  /* Firm header row (logo + name) */
-  .mr-firm-header {
-    display:flex; align-items:center; gap:12px; margin-bottom:6px;
-  }
-  .mr-logo-inline {
-    width:32px; height:32px; border-radius:6px;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08);
-    display:grid; place-items:center; overflow:hidden; flex-shrink:0;
-  }
-  .mr-logo-inline img {
-    width:100%; height:100%; object-fit:contain; padding:3px;
-  }
-  .mr-logo-initials {
-    font-family:var(--sans); font-size:10px; font-weight:700;
-    color:rgba(255,255,255,0.35); letter-spacing:.02em;
-  }
-
-  .mr-card-body {
-    padding:18px 20px; transition:transform .3s;
-  }
-  .mr-card:hover .mr-card-body { transform:translateX(4px); }
-  .mr-card.expanded .mr-card-body { transform:translateX(4px); }
-
-  .mr-firm-name {
-    font-family:var(--serif); font-size:16px; font-weight:600;
-    color:#fff; margin-bottom:3px;
-  }
-  .mr-firm-meta {
-    font-family:var(--mono); font-size:10px;
-    color:rgba(255,255,255,0.35); margin-bottom:10px;
-  }
-  .mr-badges { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
-  .mr-badge {
-    font-family:var(--mono); font-size:9px; font-weight:700;
-    letter-spacing:.08em; text-transform:uppercase;
-    padding:2px 7px; display:inline-flex; align-items:center; gap:4px;
-  }
-  .mr-badge-dot {
-    width:4px; height:4px; border-radius:50%; flex-shrink:0;
-  }
-  .mr-reasons { display:flex; flex-wrap:wrap; gap:6px; }
-  .mr-reason {
-    font-family:var(--mono); font-size:10px; font-weight:700;
-    letter-spacing:.1em; text-transform:uppercase;
-    color:var(--green-3); background:rgba(45,189,116,0.08);
-    border:1px solid rgba(45,189,116,0.15); padding:2px 8px;
-  }
-
-  .mr-match-col {
-    padding:18px 20px; display:flex; flex-direction:column;
-    align-items:flex-end; justify-content:center;
-    border-left:1px solid rgba(255,255,255,0.06); min-width:120px;
-  }
-  .mr-match-pct {
-    font-family:var(--serif); font-size:32px; font-weight:700;
-    color:var(--green-3); line-height:1; letter-spacing:-.02em;
-  }
-  .mr-match-label {
-    font-family:var(--mono); font-size:9px; color:rgba(255,255,255,0.25);
-    letter-spacing:.12em; text-transform:uppercase; margin-top:3px;
-  }
-  .mr-vvs {
-    font-family:var(--mono); font-size:10px; color:rgba(255,255,255,0.35); margin-top:10px;
-  }
-  .mr-vvs-bar {
-    width:100%; height:2px; background:rgba(255,255,255,0.08); margin-top:4px;
-  }
-  .mr-vvs-bar-fill { height:100%; transition:width .5s; }
-  .mr-fee {
-    font-family:var(--mono); font-size:11px; font-weight:500;
-    color:rgba(255,255,255,0.45); margin-top:6px;
-  }
-
-  /* ── Expand toggle hint ── */
-  .mr-expand-hint {
-    font-family:var(--mono); font-size:9px; color:rgba(255,255,255,0.20);
-    letter-spacing:.08em; text-transform:uppercase; margin-top:8px;
-    transition:color .2s;
-  }
-  .mr-card:hover .mr-expand-hint { color:rgba(255,255,255,0.35); }
-
-  /* ── Expanded detail panel ── */
-  .mr-detail {
-    background:var(--navy-2); border:1px solid rgba(45,189,116,0.25);
-    border-top:none; padding:0 20px 20px;
-    margin-top:-1px;
-    display:grid; grid-template-columns:1fr 1fr; gap:20px;
-    animation:mr-detail-in .25s ease-out;
-  }
-  @keyframes mr-detail-in {
-    from { opacity:0; transform:translateY(-8px); }
-    to { opacity:1; transform:translateY(0); }
-  }
-
-  .mr-detail-heading {
-    font-family:var(--mono); font-size:9px; font-weight:700;
-    letter-spacing:.14em; text-transform:uppercase;
-    color:rgba(255,255,255,0.25); margin:16px 0 12px; padding-bottom:6px;
-    border-bottom:1px solid rgba(255,255,255,0.06);
-  }
-
-  .mr-breakdown { display:flex; flex-direction:column; gap:10px; }
-  .mr-breakdown-row {
-    display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center;
-  }
-  .mr-breakdown-label {
-    font-family:var(--sans); font-size:11px; color:rgba(255,255,255,0.50);
-  }
-  .mr-breakdown-val {
-    font-family:var(--mono); font-size:11px; font-weight:700; min-width:28px; text-align:right;
-  }
-  .mr-breakdown-track {
-    grid-column:1 / -1; height:3px; background:rgba(255,255,255,0.06); margin-top:-4px;
-  }
-  .mr-breakdown-fill { height:100%; transition:width .4s ease-out; }
-
-  .mr-reasoning {
-    font-family:var(--sans); font-size:12px; line-height:1.7;
-    color:rgba(255,255,255,0.40); margin-top:4px;
-  }
-
-  .mr-detail-actions {
-    display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;
-  }
-  .mr-detail-cta {
-    display:inline-flex; align-items:center; gap:6px;
-    font-family:var(--sans); font-size:12px; font-weight:600;
-    color:var(--green-3); text-decoration:none;
-    padding:10px 20px;
-    border:1px solid rgba(45,189,116,0.25);
-    transition:all .15s;
-  }
-  .mr-detail-cta:hover {
-    background:var(--green); color:#fff; border-color:var(--green);
-  }
-
-  /* ── Save button (inline in card) ── */
-  .mr-save-btn {
-    display:inline-flex; align-items:center; gap:5px;
-    font-family:var(--sans); font-size:11px; font-weight:600;
-    letter-spacing:.04em; padding:6px 14px;
-    background:transparent; cursor:pointer;
-    transition:all .2s; border:none; outline:none;
-  }
-  .mr-save-btn.unsaved {
-    border:1px solid rgba(255,255,255,0.12);
-    color:rgba(255,255,255,0.5);
-  }
-  .mr-save-btn.unsaved:hover {
-    border-color:rgba(45,189,116,0.4); color:var(--green-3);
-  }
-  .mr-save-btn.saved {
-    border:1px solid rgba(45,189,116,0.3);
-    background:rgba(45,189,116,0.07); color:var(--green-3);
-  }
-  .mr-save-btn:disabled { opacity:0.6; cursor:default; }
-
-  /* ── Auth gate ── */
-  .mr-gate-wrap { position:relative; }
-  .mr-blurred { filter:blur(5px); pointer-events:none; user-select:none; }
-  .mr-gate {
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(180deg,
-      rgba(10,28,42,0) 0%,
-      rgba(10,28,42,0.6) 40%,
-      rgba(10,28,42,0.95) 100%);
-    padding:20px;
-  }
-  .mr-gate-card {
-    background:var(--navy-2); border:1px solid rgba(255,255,255,0.09);
-    border-top:2px solid var(--green);
-    padding:36px 32px; text-align:center;
-    max-width:440px; width:100%;
-    box-shadow:0 8px 48px rgba(0,0,0,0.5);
-  }
-  .mr-gate-eyebrow {
-    font-family:var(--mono); font-size:10px; font-weight:700;
-    letter-spacing:.18em; text-transform:uppercase;
-    color:var(--green-3); margin-bottom:14px;
-  }
-  .mr-gate-title {
-    font-family:var(--serif); font-size:24px; font-weight:700;
-    color:#fff; margin-bottom:10px; line-height:1.15;
-  }
-  .mr-gate-sub {
-    font-family:var(--sans); font-size:13px; color:rgba(255,255,255,0.35);
-    line-height:1.7; margin-bottom:24px;
-    border-top:1px solid rgba(255,255,255,0.06); padding-top:16px;
-  }
-  .mr-gate-btns { display:flex; gap:10px; }
-  .mr-gate-btn-primary {
-    flex:1; padding:13px; background:var(--green); color:#fff;
-    font-family:var(--sans); font-size:13px; font-weight:600;
-    text-decoration:none; text-align:center; display:block;
-    transition:background .15s;
-  }
-  .mr-gate-btn-primary:hover { background:var(--green-2); }
-  .mr-gate-btn-secondary {
-    flex:1; padding:13px; background:none;
-    border:1px solid rgba(255,255,255,0.10); color:rgba(255,255,255,0.40);
-    font-family:var(--sans); font-size:13px;
-    text-decoration:none; text-align:center; display:block;
-    transition:all .15s;
-  }
-  .mr-gate-btn-secondary:hover {
-    border-color:rgba(255,255,255,0.30); color:#fff;
-  }
-  .mr-gate-trust {
-    display:flex; align-items:center; justify-content:center;
-    gap:8px; margin-top:16px;
-    font-family:var(--sans); font-size:11px; color:rgba(255,255,255,0.20);
-  }
-  .mr-gate-trust-dot {
-    width:5px; height:5px; border-radius:50%;
-    background:var(--green-3); flex-shrink:0;
-  }
-
-  /* ── Loading ── */
-  .mr-loading { padding:80px 24px; text-align:center; }
-  .mr-spinner {
-    width:28px; height:28px; border:2px solid rgba(255,255,255,0.08);
-    border-top-color:var(--green-3); border-radius:50%;
-    animation:mr-spin .8s linear infinite; margin:0 auto;
-  }
-  @keyframes mr-spin { to { transform:rotate(360deg); } }
-  .mr-loading-label {
-    font-family:var(--sans); font-size:13px; color:rgba(255,255,255,0.35); margin-top:16px;
-  }
-
-  /* ── Empty state ── */
-  .mr-empty { padding:60px 24px; text-align:center; }
-  .mr-empty-title {
-    font-family:var(--serif); font-size:22px; font-weight:700;
-    color:#fff; margin-bottom:8px;
-  }
-  .mr-empty-sub { font-family:var(--sans); font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:24px; }
-
-  /* ── Actions ── */
-  .mr-actions {
-    display:flex; gap:12px; justify-content:center;
-    flex-wrap:wrap; padding-top:24px;
-  }
-  .mr-act-btn {
-    font-family:var(--sans); font-size:12px; padding:10px 24px;
-    border:1px solid rgba(255,255,255,0.10); color:rgba(255,255,255,0.45);
-    background:none; cursor:pointer; text-decoration:none;
-    display:inline-block; transition:all .15s;
-  }
-  .mr-act-btn:hover { border-color:rgba(255,255,255,0.30); color:#fff; }
-
-  /* ── Mobile ── */
-  @media(max-width:600px){
-    .mr-hero { padding:44px 16px 36px; }
-    .mr-body { padding:24px 16px 60px; }
-    .mr-card { grid-template-columns:1fr; }
-    .mr-card-body { padding:14px 16px; }
-    .mr-card:hover .mr-card-body { transform:none; }
-    .mr-card.expanded .mr-card-body { transform:none; }
-    .mr-match-col {
-      border-left:none; border-top:1px solid rgba(255,255,255,0.06);
-      flex-direction:row; align-items:center; gap:10px;
-      padding:10px 16px; min-width:0;
-    }
-    .mr-match-pct { font-size:22px; }
-    .mr-match-label { margin-top:0; }
-    .mr-detail { grid-template-columns:1fr; padding:0 16px 16px; }
-    .mr-gate-card { padding:24px 20px; }
-    .mr-gate-btns { flex-direction:column; }
-    .mr-actions { flex-direction:column; align-items:stretch; }
-    .mr-act-btn { text-align:center; }
-    .mr-stats-strip { gap:16px; padding:20px 16px; }
-    .mr-stat-value { font-size:15px; }
-  }
-`;
-
-const LABEL_MAP: Record<string, Record<string, string>> = {
-  netWorth: {
-    under_250k: 'Under $250K',
-    '250k_1m': '$250K–$1M',
-    '1m_5m': '$1M–$5M',
-    '5m_10m': '$5M–$10M',
-    '10m_25m': '$10M–$25M',
-    '25m_plus': '$25M+',
-  },
-  lifeTrigger: {
-    retirement: 'Retirement',
-    inheritance: 'Inheritance',
-    sale: 'Business sale',
-    career: 'Career transition',
-    planning: 'Estate planning',
-    first_time: 'First-time',
-    switching: 'Switching advisors',
-  },
-  location: {
-    ny: 'New York',
-    ca: 'California',
-    fl: 'Florida',
-    tx: 'Texas',
-    il: 'Illinois',
-    ma: 'Massachusetts',
-    other: 'Nationwide',
-  },
-};
-
-function formatAUM(value: number): string {
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B AUM`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M AUM`;
-  if (value >= 1000) return `$${Math.round(value / 1000).toLocaleString()}K AUM`;
-  return `$${value.toLocaleString()} AUM`;
-}
+/* ── Helpers ── */
 
 function buildReasoning(firm: MatchedFirm): string {
   const parts: string[] = [];
@@ -519,7 +59,658 @@ function buildReasoning(firm: MatchedFirm): string {
   return `This firm stands out for its ${joined}, making it a strong fit for your profile.`;
 }
 
-/* ── Inline save button ── */
+const LABEL_MAP: Record<string, Record<string, string>> = {
+  netWorth: {
+    under_250k: 'Under $250K', '250k_1m': '$250K–$1M', '1m_5m': '$1M–$5M',
+    '5m_10m': '$5M–$10M', '10m_25m': '$10M–$25M', '25m_plus': '$25M+',
+  },
+  lifeTrigger: {
+    retirement: 'Retirement', inheritance: 'Inheritance', sale: 'Business sale',
+    career: 'Career transition', planning: 'Estate planning', first_time: 'First-time',
+    switching: 'Switching advisors',
+  },
+  location: {
+    ny: 'New York', ca: 'California', fl: 'Florida', tx: 'Texas',
+    il: 'Illinois', ma: 'Massachusetts', other: 'Nationwide',
+  },
+};
+
+/* ── Profile Insights ── */
+
+interface ProfileInsight {
+  heading: string;
+  body: string;
+  category: 'portfolio' | 'fee' | 'life' | 'market' | 'location' | 'priority';
+}
+
+function parseNetWorthAmount(raw: string): number | null {
+  if (raw.startsWith('exact_')) return Number(raw.replace('exact_', '')) || null;
+  const map: Record<string, number> = {
+    under_250k: 150_000, '250k_1m': 500_000, '1m_5m': 2_500_000,
+    '5m_10m': 7_500_000, '10m_25m': 15_000_000, '25m_plus': 50_000_000,
+  };
+  return map[raw] ?? null;
+}
+
+function generateInsights(answers: MatchAnswer, firms: MatchedFirm[]): ProfileInsight[] {
+  const insights: ProfileInsight[] = [];
+  const nw = parseNetWorthAmount(answers.netWorth);
+  const formattedNW = nw ? formatCompact(nw) : null;
+
+  // ── 1. Portfolio Classification ──
+  if (nw) {
+    if (nw >= 25_000_000) {
+      insights.push({
+        heading: 'Ultra-High Net Worth',
+        body: `Portfolios above $25M place you in the top 0.1% of advisory clients. At this level, most firms assign a dedicated team and offer negotiable fee schedules — our data shows UHNW clients typically pay 30–45% less than published rates.`,
+        category: 'portfolio',
+      });
+    } else if (nw >= 5_000_000) {
+      const bp = getClosestBreakpoint(nw);
+      insights.push({
+        heading: 'High Net Worth',
+        body: `A portfolio of ${formattedNW} places you in the high-net-worth segment — a tier where firms offer their most comprehensive service models. Across our index, the median fee at your level is ${bp.median}%, though the top quartile charges ${bp.p25}% or less.`,
+        category: 'portfolio',
+      });
+    } else if (nw >= 250_000) {
+      const bp = getClosestBreakpoint(nw);
+      insights.push({
+        heading: 'Mass Affluent',
+        body: `With investable assets of ${formattedNW}, you fall into the mass affluent category — the fastest-growing client segment in wealth management. Fee structures vary widely at this level, from ${bp.p25}% to ${bp.p75}% across our database.`,
+        category: 'portfolio',
+      });
+    } else {
+      insights.push({
+        heading: 'Emerging Investor',
+        body: `Many traditional advisory firms set minimums above your current portfolio size, but a growing cohort of technology-forward RIAs now specializes in emerging investors. We've filtered your results to ${firms.length} firms that actively accept accounts at your level.`,
+        category: 'portfolio',
+      });
+    }
+  }
+
+  // ── 2. Fee Context ──
+  if (nw) {
+    const bp = getClosestBreakpoint(nw);
+    const dollarMedian = formatDollar(Math.round(nw * bp.median / 100));
+    const feeFirms = firms
+      .map(f => {
+        const match = f.estimatedFee?.match(/\$[\d,]+\/yr/);
+        return match ? parseInt(match[0].replace(/[$,\/yr]/g, ''), 10) : null;
+      })
+      .filter((v): v is number => v != null)
+      .sort((a, b) => a - b);
+
+    let feeRange = '';
+    if (feeFirms.length >= 2) {
+      feeRange = ` Among your matches, estimated fees range from ${formatDollar(feeFirms[0])}/yr to ${formatDollar(feeFirms[feeFirms.length - 1])}/yr.`;
+    }
+    insights.push({
+      heading: 'Your Fee Benchmark',
+      body: `For a portfolio of ${formattedNW}, the industry median advisory fee is ${bp.median}% annually (${dollarMedian}/yr). The most competitive quartile charges ${bp.p25}% or less.${feeRange}`,
+      category: 'fee',
+    });
+
+    // Fee savings sub-insight
+    if (nw >= 500_000 && feeFirms.length > 0) {
+      const bestRate = feeFirms[0] / nw;
+      const medianRate = bp.median / 100;
+      if (bestRate < medianRate) {
+        const atMedian = projectGrowth(nw, medianRate, 10);
+        const atBest = projectGrowth(nw, bestRate, 10);
+        const savings = atBest.value - atMedian.value;
+        if (savings > 1000) {
+          insights.push({
+            heading: '10-Year Fee Impact',
+            body: `The difference between a ${bp.median}% and ${(bestRate * 100).toFixed(2)}% annual fee on your portfolio compounds to approximately ${formatCompact(Math.round(savings))} over 10 years, assuming a 7% annual return.`,
+            category: 'fee',
+          });
+        }
+      }
+    }
+  }
+
+  // ── 3. Life Situation ──
+  const triggers = Array.isArray(answers.lifeTrigger) ? answers.lifeTrigger : [answers.lifeTrigger];
+  const lifeCopy: Record<string, { heading: string; body: string }> = {
+    retirement: {
+      heading: 'Retirement Transition',
+      body: 'Retirement shifts the mandate from accumulation to decumulation, and mistakes compound irreversibly. Your matches are weighted toward firms with strong financial planning capabilities and demonstrated client retention — both signals that existing clients trust the firm\'s distribution strategies.',
+    },
+    inheritance: {
+      heading: 'Sudden Wealth Event',
+      body: 'Receiving a large sum creates a compressed decision window where the wrong advisory relationship can be costly. We\'ve factored in fiduciary obligations and transparent fee structures — critical when onboarding new assets, since the first-year fee on inherited wealth is often the least negotiated.',
+    },
+    sale: {
+      heading: 'Liquidity Event',
+      body: 'Post-sale liquidity events require coordinated tax planning, asset allocation, and often estate restructuring — all within a narrow window. Your results prioritize firms offering comprehensive services and experience managing concentrated transitions from illiquid to liquid assets.',
+    },
+    career: {
+      heading: 'Career Transition',
+      body: 'Career transitions often create complex planning needs around equity compensation, deferred comp, and benefits optimization. We\'ve weighted your matches toward firms with planning depth and advisor bandwidth to handle multi-dimensional onboarding.',
+    },
+    planning: {
+      heading: 'Estate & Tax Strategy',
+      body: 'Estate and tax planning clients typically require the deepest service model a firm offers. Your results are tilted toward firms with comprehensive service capabilities — look for those offering tax-loss harvesting, trust administration, or multi-generational planning.',
+    },
+    first_time: {
+      heading: 'First Advisor Search',
+      body: 'As a first-time advisory client, the most important variable is fee transparency — the one factor you can evaluate objectively before the relationship begins. Visor surfaces fee structures directly from regulatory filings, so the numbers here aren\'t marketing claims.',
+    },
+    switching: {
+      heading: 'Advisor Switch',
+      body: 'Clients who switch advisors are typically the most informed buyers in the market. Your existing relationship gives you a baseline to evaluate against: compare fee competitiveness, Visor Index scores, and conflict-of-interest profiles across your matches.',
+    },
+  };
+  for (const t of triggers.slice(0, 2)) {
+    const copy = lifeCopy[t];
+    if (copy) insights.push({ ...copy, category: 'life' });
+  }
+
+  // ── 4. Market Position ──
+  const topMatch = firms[0]?.matchPercent ?? 0;
+  const avgMatch = firms.length > 0
+    ? Math.round(firms.reduce((s, f) => s + f.matchPercent, 0) / firms.length)
+    : 0;
+  if (firms.length >= 15) {
+    const tenthMatch = firms[Math.min(9, firms.length - 1)]?.matchPercent ?? 0;
+    insights.push({
+      heading: 'Competitive Market',
+      body: `We identified ${firms.length} firms that meet your criteria — a deep pool that gives you significant optionality. The spread between your top match (${topMatch}%) and your 10th (${tenthMatch}%) is ${topMatch - tenthMatch} points, meaning you have multiple strong options.`,
+      category: 'market',
+    });
+  } else if (firms.length >= 5) {
+    insights.push({
+      heading: 'Focused Match Pool',
+      body: `Your criteria produced ${firms.length} qualified matches — a focused but adequate pool. Your top match scores ${topMatch}%, which is ${topMatch - avgMatch} points above the group average of ${avgMatch}%.`,
+      category: 'market',
+    });
+  } else if (firms.length > 0) {
+    insights.push({
+      heading: 'Limited Matches',
+      body: `Only ${firms.length} firms met all your criteria. Consider whether relaxing your firm size or location preference would surface additional options. Even with limited matches, a ${topMatch}% top score indicates strong alignment.`,
+      category: 'market',
+    });
+  }
+
+  // ── 5. Location ──
+  if (answers.location === 'outside_us') {
+    insights.push({
+      heading: 'International Client',
+      body: 'International clients face a narrower field of US-based advisors, as cross-border compliance adds operational complexity. Your results are filtered exclusively to firms with demonstrated non-US client experience, based on their regulatory filings.',
+      category: 'location',
+    });
+  } else if (answers.location && answers.location !== 'other') {
+    const stateMatch = answers.location.match(/,\s*([A-Z]{2})$/);
+    const state = stateMatch?.[1];
+    if (state) {
+      const localCount = firms.filter(f => f.state === state).length;
+      insights.push({
+        heading: `${answers.location} Market`,
+        body: `${localCount} of your ${firms.length} matches are headquartered in ${state}${localCount > 0 ? ', giving you the option of in-person meetings' : ''}. Additional firms in your results operate in your state through branch registrations — look for the "Operates in Your State" tag.`,
+        category: 'location',
+      });
+    }
+  }
+
+  // ── 6. Priority Alignment ──
+  const prioCopy: Record<string, { heading: string; body: string }> = {
+    aum_growth: {
+      heading: 'Growth Track Record',
+      body: 'Firms scoring highest on growth have increased assets at rates exceeding industry medians over the trailing reporting period. This metric is sourced directly from SEC filings, not self-reported.',
+    },
+    client_retention: {
+      heading: 'Client Loyalty Signal',
+      body: 'Client retention is the closest thing to a satisfaction score in an unrated industry. Firms that consistently grow their client count while maintaining AUM are demonstrating something marketing can\'t fake.',
+    },
+    advisor_experience: {
+      heading: 'Seasoned Advisors',
+      body: 'Advisor experience correlates with firm viability — established teams are less likely to merge, close, or undergo disruptive transitions. Your results are weighted toward firms with longer operating histories and stable advisor rosters.',
+    },
+    personal_service: {
+      heading: 'Advisor Bandwidth',
+      body: 'Personal attention is a function of how many clients each advisor serves. Our bandwidth score measures this ratio directly from headcount and client data in SEC filings — firms tagged "Personal Attention" typically maintain under 80 clients per advisor.',
+    },
+    comprehensive: {
+      heading: 'Full-Service Model',
+      body: 'Your matches are scored on service breadth — financial planning, portfolio management, manager selection, and pension consulting capabilities — all verified from regulatory disclosures.',
+    },
+    fiduciary: {
+      heading: 'Fiduciary Standard',
+      body: 'Firms scoring highest on our conflict-free dimension have no proprietary product revenue, no broker-dealer affiliations, and no performance-based fee incentives that could bias recommendations.',
+    },
+    fee_only: {
+      heading: 'Fee-Only Model',
+      body: 'Fee-only firms earn revenue exclusively from client-paid fees — no commissions, no revenue sharing, no 12b-1 fees. Our conflict-free score identifies firms with the cleanest compensation structures, sourced from ADV filings.',
+    },
+  };
+  const priorities = answers.priorities || [];
+  for (const p of priorities.slice(0, 3)) {
+    const copy = prioCopy[p];
+    if (copy) insights.push({ ...copy, category: 'priority' });
+  }
+
+  return insights;
+}
+
+const INSIGHT_CSS = `
+  .pi-section {
+    max-width:960px; margin:0 auto; padding:32px 24px 0;
+  }
+  .pi-header {
+    display:flex; align-items:center; gap:10px; margin-bottom:20px;
+  }
+  .pi-eyebrow {
+    font-family:var(--font-mono); font-size:10px; font-weight:600;
+    letter-spacing:0.18em; text-transform:uppercase; color:#2DBD74;
+  }
+  .pi-rule { flex:1; height:1px; background:#CAD8D0; }
+  .pi-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  }
+  .pi-card {
+    padding:20px 22px; background:#fff; border:0.5px solid #CAD8D0;
+    border-radius:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+  }
+  .pi-card-heading {
+    font-family:var(--font-serif); font-size:15px; font-weight:700;
+    color:#0C1810; margin-bottom:6px; line-height:1.2;
+  }
+  .pi-card-body {
+    font-family:var(--font-sans); font-size:13px; color:#5A7568;
+    line-height:1.65;
+  }
+  .pi-card-tag {
+    display:inline-block; font-family:var(--font-mono); font-size:8px;
+    font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
+    color:#2DBD74; background:rgba(45,189,116,.06);
+    border:1px solid rgba(45,189,116,.12); padding:2px 6px; margin-bottom:10px;
+  }
+  .pi-card-featured {
+    grid-column:1 / -1;
+    background:linear-gradient(135deg, #fff 0%, #F6FBF8 100%);
+    border-left:2px solid #2DBD74;
+  }
+  .pi-expand {
+    display:flex; align-items:center; gap:6px; margin:16px auto 0;
+    font-family:var(--font-mono); font-size:10px; font-weight:600;
+    letter-spacing:0.1em; text-transform:uppercase; color:#5A7568;
+    background:none; border:none; cursor:pointer; padding:8px 16px;
+    transition:color .15s;
+  }
+  .pi-expand:hover { color:#0C1810; }
+  .pi-chevron {
+    display:inline-block; transform:rotate(90deg); transition:transform .2s;
+    font-size:14px; line-height:1;
+  }
+  .pi-chevron-up { transform:rotate(-90deg); }
+  @media(max-width:640px){
+    .pi-section { padding:24px 16px 0; }
+    .pi-grid { grid-template-columns:1fr; gap:14px; }
+    .pi-card { padding:16px 18px; }
+    .pi-card-featured { border-left:2px solid #2DBD74; }
+  }
+`;
+
+const CATEGORY_LABELS: Record<string, string> = {
+  portfolio: 'Portfolio',
+  fee: 'Fees',
+  life: 'Situation',
+  market: 'Market',
+  location: 'Location',
+  priority: 'Priority',
+};
+
+function ProfileInsightsPanel({ answers, firms }: { answers: MatchAnswer; firms: MatchedFirm[] }) {
+  const insights = useMemo(() => generateInsights(answers, firms), [answers, firms]);
+  const [expanded, setExpanded] = useState(false);
+  if (insights.length === 0) return null;
+
+  // Show top 3 always (portfolio + fee + market/life), rest on expand
+  const primary = insights.slice(0, 3);
+  const secondary = insights.slice(3);
+
+  return (
+    <div className="pi-section">
+      <style dangerouslySetInnerHTML={{ __html: INSIGHT_CSS }} />
+      <div className="pi-header">
+        <span className="pi-eyebrow">Your Profile</span>
+        <div className="pi-rule" />
+      </div>
+      <div className="pi-grid">
+        {primary.map((ins, i) => (
+          <div key={i} className={`pi-card${i === 0 ? ' pi-card-featured' : ''}`}>
+            <span className="pi-card-tag">{CATEGORY_LABELS[ins.category] || ins.category}</span>
+            <div className="pi-card-heading">{ins.heading}</div>
+            <div className="pi-card-body">{ins.body}</div>
+          </div>
+        ))}
+      </div>
+      {secondary.length > 0 && (
+        <>
+          {expanded && (
+            <div className="pi-grid" style={{ marginTop: 20 }}>
+              {secondary.map((ins, i) => (
+                <div key={i} className="pi-card">
+                  <span className="pi-card-tag">{CATEGORY_LABELS[ins.category] || ins.category}</span>
+                  <div className="pi-card-heading">{ins.heading}</div>
+                  <div className="pi-card-body">{ins.body}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            className="pi-expand"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? 'Show less' : `${secondary.length} more insights`}
+            <span className={`pi-chevron${expanded ? ' pi-chevron-up' : ''}`}>&#8250;</span>
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Match card CSS ── */
+
+const CARD_CSS = `
+  .mc-list { display:flex; flex-direction:column; gap:14px; }
+
+  .mc-card {
+    background:#fff; border:0.5px solid #CAD8D0; border-radius:10px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.03);
+    cursor:pointer; transition:box-shadow .2s ease, border-color .2s ease;
+    overflow:hidden; position:relative;
+  }
+  .mc-card:hover {
+    box-shadow:0 2px 8px rgba(0,0,0,.06), 0 12px 32px rgba(0,0,0,.05);
+    border-color:rgba(45,189,116,.25);
+  }
+  .mc-card-expanded { border-color:rgba(45,189,116,.3); }
+  .mc-card-expanded::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
+    background:#2DBD74; border-radius:10px 0 0 10px;
+  }
+
+  .mc-body { padding:20px 22px; }
+  .mc-top { display:flex; align-items:flex-start; gap:14px; }
+  .mc-info { flex:1; min-width:0; }
+  .mc-name {
+    font-family:var(--font-sans); font-size:15px; font-weight:600;
+    color:#0C1810; line-height:1.25; margin-bottom:2px;
+  }
+  .mc-loc {
+    font-family:var(--font-mono); font-size:10px; color:#5A7568;
+    letter-spacing:0.02em;
+  }
+  .mc-match {
+    text-align:right; flex-shrink:0; padding-top:2px;
+  }
+  .mc-match-pct {
+    font-family:var(--font-serif); font-size:26px; font-weight:700;
+    color:#2DBD74; line-height:1; letter-spacing:-0.02em;
+  }
+  .mc-match-label {
+    font-family:var(--font-mono); font-size:8px; font-weight:600;
+    letter-spacing:0.14em; text-transform:uppercase; color:#5A7568;
+    margin-top:2px;
+  }
+
+  .mc-reason {
+    font-family:var(--font-sans); font-size:13px; color:#5A7568;
+    line-height:1.6; margin-top:12px;
+  }
+
+  .mc-metrics {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:0;
+    margin-top:16px; border-top:1px solid #CAD8D0; padding-top:14px;
+  }
+  .mc-metric { text-align:center; position:relative; }
+  .mc-metric + .mc-metric::before {
+    content:''; position:absolute; left:0; top:2px; bottom:2px;
+    width:1px; background:#CAD8D0;
+  }
+  .mc-metric-value {
+    font-family:var(--font-sans); font-size:14px; font-weight:700;
+    color:#0C1810; line-height:1;
+  }
+  .mc-metric-label {
+    font-family:var(--font-mono); font-size:8px; font-weight:600;
+    letter-spacing:0.12em; text-transform:uppercase; color:#5A7568;
+    margin-top:4px;
+  }
+
+  .mc-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:14px; }
+  .mc-tag {
+    font-family:var(--font-mono); font-size:9px; font-weight:600;
+    letter-spacing:0.06em; text-transform:uppercase;
+    color:#2DBD74; background:rgba(45,189,116,.05);
+    border:1px solid rgba(45,189,116,.12); padding:3px 8px;
+  }
+
+  /* Expanded detail */
+  .mc-detail {
+    border-top:1px solid #CAD8D0; padding:20px 22px;
+    background:linear-gradient(180deg, #FAFCFB 0%, #fff 100%);
+    animation:mcDetailIn .2s ease-out;
+  }
+  @keyframes mcDetailIn {
+    from { opacity:0; transform:translateY(-4px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  .mc-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .mc-detail-section-title {
+    font-family:var(--font-mono); font-size:9px; font-weight:600;
+    letter-spacing:0.16em; text-transform:uppercase; color:#5A7568;
+    margin-bottom:10px;
+  }
+  .mc-detail-row {
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--font-sans); font-size:12px; padding:4px 0;
+  }
+  .mc-detail-label { color:#5A7568; }
+  .mc-detail-value { color:#0C1810; font-weight:600; }
+  .mc-bar-track { height:3px; background:#CAD8D0; border-radius:2px; overflow:hidden; margin-top:3px; }
+  .mc-bar-fill { height:100%; border-radius:2px; transition:width .5s ease-out; }
+  .mc-detail-actions {
+    display:flex; align-items:center; gap:10px;
+    border-top:1px solid #CAD8D0; padding-top:14px; margin-top:16px;
+  }
+  .mc-detail-reason {
+    font-family:var(--font-sans); font-size:12px; color:#5A7568;
+    line-height:1.7; margin-top:10px;
+  }
+
+  /* Stagger animation */
+  @keyframes mcCardIn {
+    from { opacity:0; transform:translateY(8px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  .mc-card { animation:mcCardIn .35s ease-out both; }
+  @media(prefers-reduced-motion:reduce){
+    .mc-card, .mc-detail { animation:none; }
+  }
+
+  /* Mobile */
+  @media(max-width:640px){
+    .mc-body { padding:16px; }
+    .mc-name { font-size:14px; }
+    .mc-match-pct { font-size:22px; }
+    .mc-metrics { grid-template-columns:repeat(2,1fr); gap:10px 0; padding-top:12px; }
+    .mc-metric + .mc-metric:nth-child(3)::before { display:none; }
+    .mc-detail { padding:16px; }
+    .mc-detail-grid { grid-template-columns:1fr; gap:16px; }
+    .mc-reason { font-size:12px; }
+  }
+`;
+
+const matchGateConfig: GateConfig = {
+  eyebrowText: 'Unlock All Matches',
+  title: 'See your top matches, ranked without conflicts.',
+  subtitle: 'You pay us, not the firms. That means every match is ranked by what\u2019s best for you. Get full results, fee breakdowns, and Visor Index scores.',
+  primaryCta: { label: 'Get Full Access \u2192', href: '/auth/signup' },
+  secondaryCta: { label: 'View Pricing', href: '/pricing' },
+  previewCount: 4,
+};
+
+/* ── Match card components ── */
+
+function MatchCard({
+  firm,
+  index,
+  isExpanded,
+  onToggle,
+  isAuthed,
+  isSaved,
+}: {
+  firm: MatchedFirm;
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isAuthed: boolean | null;
+  isSaved: boolean;
+}) {
+  const feeDisplay = firm.estimatedFee && firm.estimatedFee !== 'Contact firm' ? firm.estimatedFee : null;
+
+  return (
+    <div
+      className={`mc-card${isExpanded ? ' mc-card-expanded' : ''}`}
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className="mc-body" onClick={onToggle} role="button" tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
+      >
+        {/* Top: Logo + name + match % */}
+        <div className="mc-top">
+          <FirmLogo logoKey={firm.logoKey} firmName={firm.displayName || firm.name} size="sm" />
+          <div className="mc-info">
+            <div className="mc-name">{firm.displayName || firm.name}</div>
+            <div className="mc-loc">{firm.city}, {firm.state}</div>
+          </div>
+          <div className="mc-match">
+            <div className="mc-match-pct">{firm.matchPercent}%</div>
+            <div className="mc-match-label">Match</div>
+          </div>
+        </div>
+
+        {/* Match reason */}
+        {firm.matchReason && (
+          <div className="mc-reason">
+            {firm.matchReason.charAt(0).toUpperCase() + firm.matchReason.slice(1)}
+          </div>
+        )}
+
+        {/* Metrics strip */}
+        <div className="mc-metrics">
+          <div className="mc-metric">
+            <div className="mc-metric-value" style={{ color: firm.visorScore != null ? scoreColor(firm.visorScore) : '#CAD8D0' }}>
+              {firm.visorScore != null ? firm.visorScore : '\u2014'}
+            </div>
+            <div className="mc-metric-label">Visor Index</div>
+          </div>
+          <div className="mc-metric">
+            <div className="mc-metric-value">{formatAUM(firm.aum)}</div>
+            <div className="mc-metric-label">AUM</div>
+          </div>
+          <div className="mc-metric">
+            <div className="mc-metric-value">{feeDisplay || '\u2014'}</div>
+            <div className="mc-metric-label">Est. Fee</div>
+          </div>
+          <div className="mc-metric">
+            <div className="mc-metric-value">{firm.reasons.length > 0 ? firm.reasons.length : '\u2014'}</div>
+            <div className="mc-metric-label">Signals</div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {firm.reasons.length > 0 && (
+          <div className="mc-tags">
+            {firm.reasons.map((r, i) => (
+              <span key={i} className="mc-tag">{r}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Expanded detail */}
+      {isExpanded && (
+        <MatchCardDetail firm={firm} isAuthed={isAuthed} isSaved={isSaved} />
+      )}
+    </div>
+  );
+}
+
+function MatchCardDetail({
+  firm,
+  isAuthed,
+  isSaved,
+}: {
+  firm: MatchedFirm;
+  isAuthed: boolean | null;
+  isSaved: boolean;
+}) {
+  const breakdowns = [
+    { label: 'Fee Competitiveness', value: firm.feeCompetitiveness },
+    { label: 'Client Growth', value: firm.clientGrowth },
+    { label: 'Advisor Bandwidth', value: firm.advisorBandwidth },
+  ];
+
+  return (
+    <div className="mc-detail">
+      <div className="mc-detail-grid">
+        <div>
+          <div className="mc-detail-section-title">Firm Details</div>
+          <div className="mc-detail-row">
+            <span className="mc-detail-label">AUM</span>
+            <span className="mc-detail-value">{formatAUM(firm.aum)}</span>
+          </div>
+          <div className="mc-detail-row">
+            <span className="mc-detail-label">Estimated Fee</span>
+            <span className="mc-detail-value">{firm.estimatedFee || '\u2014'}</span>
+          </div>
+          <div className="mc-detail-row">
+            <span className="mc-detail-label">Location</span>
+            <span className="mc-detail-value">{firm.city}, {firm.state}</span>
+          </div>
+        </div>
+        <div>
+          <div className="mc-detail-section-title">Match Breakdown</div>
+          {breakdowns.map((b) => (
+            <div key={b.label} style={{ marginBottom: 8 }}>
+              <div className="mc-detail-row" style={{ padding: 0 }}>
+                <span className="mc-detail-label">{b.label}</span>
+                <span className="text-[11px] font-bold font-mono" style={{ color: scoreColor(b.value * 10) }}>
+                  {b.value}
+                </span>
+              </div>
+              <div className="mc-bar-track">
+                <div
+                  className="mc-bar-fill"
+                  style={{ width: `${Math.min(b.value * 10, 100)}%`, background: scoreColor(b.value * 10) }}
+                />
+              </div>
+            </div>
+          ))}
+          <div className="mc-detail-reason">{buildReasoning(firm)}</div>
+        </div>
+      </div>
+      <div className="mc-detail-actions">
+        <Link
+          href={`/firm/${firm.crd}`}
+          className="text-[11px] font-semibold text-[#0C1810] border border-[#CAD8D0] px-4 py-2 hover:border-[rgba(26,122,74,0.3)] hover:text-[#0C1810] transition-all font-sans"
+          onClick={(e) => e.stopPropagation()}
+        >
+          View Full Profile &rarr;
+        </Link>
+        <SaveButton crd={firm.crd} isSaved={isSaved} isAuthed={isAuthed} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Save button ── */
+
 function SaveButton({ crd, isSaved, isAuthed }: { crd: number; isSaved: boolean; isAuthed: boolean | null }) {
   const [saved, setSaved] = useState(isSaved);
   const [loading, setLoading] = useState(false);
@@ -528,10 +719,7 @@ function SaveButton({ crd, isSaved, isAuthed }: { crd: number; isSaved: boolean;
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthed) {
-      window.location.href = '/auth/signup';
-      return;
-    }
+    if (!isAuthed) { window.location.href = '/auth/signup'; return; }
     setLoading(true);
     try {
       if (saved) {
@@ -552,10 +740,13 @@ function SaveButton({ crd, isSaved, isAuthed }: { crd: number; isSaved: boolean;
 
   return (
     <button
-      className={`mr-save-btn ${saved ? 'saved' : 'unsaved'}`}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.04em] px-3.5 py-1.5 transition-all ${
+        saved
+          ? 'border border-[rgba(45,189,116,0.3)] bg-[rgba(45,189,116,0.07)] text-[#2DBD74]'
+          : 'border border-[#CAD8D0] text-[#5A7568] hover:border-[rgba(45,189,116,0.4)] hover:text-[#2DBD74]'
+      }`}
       onClick={handleToggle}
       disabled={loading}
-      title={saved ? 'Remove from saved' : 'Save this firm'}
     >
       <svg width="11" height="11" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.4" viewBox="0 0 11 11">
         <path d="M2 1.5h7a.5.5 0 0 1 .5.5v7.5l-4-2.5L1.5 9.5V2a.5.5 0 0 1 .5-.5Z" />
@@ -565,181 +756,82 @@ function SaveButton({ crd, isSaved, isAuthed }: { crd: number; isSaved: boolean;
   );
 }
 
-/* ── Firm card ── */
-interface FirmCardProps {
-  firm: MatchedFirm;
-  rank: number;
-  badges: FirmBadge[];
-  isExpanded: boolean;
-  onToggle: () => void;
-  isSaved: boolean;
-  isAuthed: boolean | null;
-}
+/* ── Hero CSS (page-specific, kept as CSS-in-JS) ── */
 
-function FirmCard({ firm, rank, badges, isExpanded, onToggle, isSaved, isAuthed }: FirmCardProps) {
-  const breakdowns = [
-    { label: 'Fee Competitiveness', value: firm.feeCompetitiveness },
-    { label: 'Client Growth', value: firm.clientGrowth },
-    { label: 'Advisor Bandwidth', value: firm.advisorBandwidth },
-  ];
+const HERO_CSS = `
+  .mr-hero {
+    background:#0A1C2A; padding:64px 24px 52px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .mr-hero::before {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(circle at top, rgba(34,197,94,0.16), transparent 34%),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
+  }
+  .mr-hero-inner { position:relative; z-index:2; }
+  @media(max-width:600px){ .mr-hero { padding:44px 16px 36px; } }
+`;
 
-  const firmName = firm.displayName || firm.name;
-  const initials = firmName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  return (
-    <div className="mr-card-wrap" style={{ '--delay': `${rank * 0.06}s` } as React.CSSProperties}>
-      <div
-        className={`mr-card${isExpanded ? ' expanded' : ''}`}
-        onClick={(e) => { e.preventDefault(); onToggle(); }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
-      >
-        <div className="mr-card-body">
-          <div className="mr-firm-header">
-            <div className="mr-logo-inline">
-              {firm.logoKey ? (
-                <img
-                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/firm-logos/${firm.logoKey}`}
-                  alt={`${firmName} logo`}
-                  onError={(e) => {
-                    const el = e.currentTarget;
-                    el.style.display = 'none';
-                    el.parentElement!.querySelector('.mr-logo-initials')?.removeAttribute('style');
-                  }}
-                />
-              ) : null}
-              <span className="mr-logo-initials" style={firm.logoKey ? { display: 'none' } : undefined}>
-                {initials}
-              </span>
-            </div>
-            <div className="mr-firm-name">{firmName}</div>
-          </div>
-          <div className="mr-firm-meta">
-            {firm.city}, {firm.state} &middot; {formatAUM(firm.aum)}
-            {firm.estimatedFee && firm.estimatedFee !== 'Contact firm' && (
-              <> &middot; Est. {firm.estimatedFee}</>
-            )}
-          </div>
-          {badges.length > 0 && (
-            <div className="mr-badges">
-              {badges.map((b, i) => (
-                <span
-                  key={i}
-                  className="mr-badge"
-                  style={{ color: b.color, background: `${b.color}12`, border: `1px solid ${b.color}30` }}
-                >
-                  <span className="mr-badge-dot" style={{ background: b.color }} />
-                  {b.label}
-                </span>
-              ))}
-            </div>
-          )}
-          {firm.reasons.length > 0 && (
-            <div className="mr-reasons">
-              {firm.reasons.slice(0, 4).map((r, i) => (
-                <span key={i} className="mr-reason">{r}</span>
-              ))}
-            </div>
-          )}
-          <div className="mr-expand-hint">
-            {isExpanded ? '▾ Collapse' : '▸ View breakdown'}
-          </div>
-        </div>
-
-        <div className="mr-match-col">
-          <div className="mr-match-pct">{firm.matchPercent}%</div>
-          <div className="mr-match-label">match</div>
-          {firm.visorScore != null && (
-            <div className="mr-vvs">
-              VVS {firm.visorScore}
-              <div className="mr-vvs-bar">
-                <div
-                  className="mr-vvs-bar-fill"
-                  style={{ width: `${firm.visorScore}%`, background: scoreColor(firm.visorScore) }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Expandable detail panel */}
-      {isExpanded && (
-        <div className="mr-detail">
-          <div>
-            <div className="mr-detail-heading">Score Breakdown</div>
-            <div className="mr-breakdown">
-              {breakdowns.map((b) => (
-                <div key={b.label}>
-                  <div className="mr-breakdown-row">
-                    <span className="mr-breakdown-label">{b.label}</span>
-                    <span className="mr-breakdown-val" style={{ color: scoreColor(b.value) }}>{b.value}</span>
-                  </div>
-                  <div className="mr-breakdown-track">
-                    <div className="mr-breakdown-fill" style={{ width: `${b.value}%`, background: scoreColor(b.value) }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="mr-detail-heading">Why This Firm</div>
-            <p className="mr-reasoning">{buildReasoning(firm)}</p>
-            <div className="mr-detail-actions">
-              <Link
-                href={`/firm/${firm.crd}`}
-                className="mr-detail-cta"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View Full Profile →
-              </Link>
-              <SaveButton crd={firm.crd} isSaved={isSaved} isAuthed={isAuthed} />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+/* ── Page component ── */
 
 export default function MatchResultsPage() {
   const [answers, setAnswers] = useState<MatchAnswer | null>(null);
   const [firms, setFirms] = useState<MatchedFirm[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
-  const [expandedCrd, setExpandedCrd] = useState<number | null>(null);
   const [savedCrds, setSavedCrds] = useState<Set<number>>(new Set());
 
-  const badgeMap = useMemo(() => computeBadges(firms), [firms]);
+  const [expandedCrd, setExpandedCrd] = useState<number | null>(null);
+  const [resultsSaved, setResultsSaved] = useState(false);
+  const [savingResults, setSavingResults] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('matchAnswers');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setAnswers(parsed);
-      fetchMatchedFirms(parsed);
-    } else {
-      window.location.href = '/match';
-    }
-
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    supabase.auth.getUser().then(({ data: { user } }) => {
+
+    async function init() {
+      const saved = sessionStorage.getItem('matchAnswers');
+      let matchAnswers: MatchAnswer | null = null;
+
+      if (saved) {
+        matchAnswers = JSON.parse(saved);
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_match_profiles')
+            .select('answers')
+            .eq('user_id', user.id)
+            .single();
+          if (profile?.answers) {
+            matchAnswers = profile.answers as MatchAnswer;
+            sessionStorage.setItem('matchAnswers', JSON.stringify(matchAnswers));
+          }
+        }
+      }
+
+      if (!matchAnswers) { window.location.href = '/match'; return; }
+
+      setAnswers(matchAnswers);
+      fetchMatchedFirms(matchAnswers);
+
+      const { data: { user } } = await supabase.auth.getUser();
       setIsAuthed(!!user);
       if (user) {
-        // Fetch saved firms for this user
-        supabase
+        const { data } = await supabase
           .from('user_favorites')
           .select('crd')
-          .eq('user_id', user.id)
-          .then(({ data }) => {
-            if (data) setSavedCrds(new Set(data.map((d: { crd: number }) => d.crd)));
-          });
+          .eq('user_id', user.id);
+        if (data) setSavedCrds(new Set(data.map((d: { crd: number }) => d.crd)));
       }
-    });
+    }
+
+    init();
   }, []);
 
   async function fetchMatchedFirms(matchAnswers: MatchAnswer) {
@@ -751,10 +843,9 @@ export default function MatchResultsPage() {
     try {
       const params = new URLSearchParams({
         netWorth: matchAnswers.netWorth,
-        lifeTrigger: matchAnswers.lifeTrigger,
+        lifeTrigger: Array.isArray(matchAnswers.lifeTrigger) ? matchAnswers.lifeTrigger.join(',') : matchAnswers.lifeTrigger,
         location: matchAnswers.location,
         priorities: matchAnswers.priorities.join(','),
-        feeSensitivity: matchAnswers.feeSensitivity,
         firmSize: matchAnswers.firmSize,
         serviceDepth: matchAnswers.serviceDepth,
         conflictImportance: matchAnswers.conflictImportance,
@@ -768,7 +859,6 @@ export default function MatchResultsPage() {
         firmList = getSampleFirms();
       }
 
-      // Fetch logos for all matched firms
       if (firmList.length > 0) {
         const crds = firmList.map((f) => f.crd);
         const { data: logoData } = await supabase
@@ -812,12 +902,23 @@ export default function MatchResultsPage() {
 
   const chips: string[] = [];
   if (answers) {
-    const nw = LABEL_MAP.netWorth[answers.netWorth];
-    const lt = LABEL_MAP.lifeTrigger[answers.lifeTrigger];
-    const loc = LABEL_MAP.location[answers.location];
+    // Net worth: handle exact amounts and bucket values
+    const nw = answers.netWorth.startsWith('exact_')
+      ? `$${Number(answers.netWorth.replace('exact_', '')).toLocaleString('en-US')}`
+      : LABEL_MAP.netWorth[answers.netWorth];
     if (nw) chips.push(nw);
-    if (lt) chips.push(lt);
-    if (loc) chips.push(loc);
+
+    // Life trigger: now an array
+    const triggers = Array.isArray(answers.lifeTrigger) ? answers.lifeTrigger : [answers.lifeTrigger];
+    for (const t of triggers.slice(0, 2)) {
+      const lt = LABEL_MAP.lifeTrigger[t];
+      if (lt) chips.push(lt);
+    }
+
+    // Location: now a free-text string like "Boston, MA" or "outside_us"
+    if (answers.location === 'outside_us') chips.push('Outside US');
+    else if (answers.location && !LABEL_MAP.location[answers.location]) chips.push(answers.location);
+    else if (LABEL_MAP.location[answers.location]) chips.push(LABEL_MAP.location[answers.location]);
   }
 
   const avgMatch = firms.length > 0
@@ -828,128 +929,171 @@ export default function MatchResultsPage() {
     ? Math.round(firmsWithScore.reduce((s, f) => s + (f.visorScore ?? 0), 0) / firmsWithScore.length)
     : 0;
 
-  function toggleCard(crd: number) {
-    setExpandedCrd((prev) => (prev === crd ? null : crd));
-  }
-
-  if (loading) {
-    return (
-      <div className="mr-page">
-        <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <div className="mr-loading">
-          <div className="mr-spinner" />
-          <p className="mr-loading-label">Finding your best matches…</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mr-page">
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+    <div className="min-h-screen bg-[#F6F8F7] text-[#0C1810]">
+      <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
 
+      {/* Hero */}
       <div className="mr-hero">
         <div className="mr-hero-inner">
-          <div className="mr-eyebrow">Advisor Match</div>
-          <h1 className="mr-title">Your Top Advisor Matches</h1>
-          <p className="mr-hero-sub">Ranked by how well each firm fits your profile</p>
-          {chips.length > 0 && (
-            <div className="mr-chips">
-              {chips.map((c, i) => (
-                <span key={i} className="mr-chip">{c}</span>
-              ))}
+          <div className="font-mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[#2DBD74] mb-3.5">
+            Advisor Match
+          </div>
+          <h1 className="font-serif text-[clamp(26px,4vw,40px)] font-bold text-white mb-1.5 leading-[1.1]">
+            Firms Tailored to You
+          </h1>
+          <p className="text-[13px] text-white/45 mb-4 font-sans">
+            We work for you, not the advisors. Every match is ranked by fit alone.
+          </p>
+          {firms.length > 0 && isAuthed && (
+            <div className="flex items-center justify-center gap-7 mt-6 px-5">
+              <div className="text-center">
+                <div className="font-serif text-[18px] font-bold text-white">
+                  {firms.length}<span className="text-[#2DBD74]">+</span>
+                </div>
+                <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                  Matches Found
+                </div>
+              </div>
+              <div className="w-px h-4 bg-white/15 shrink-0" />
+              <div className="text-center">
+                <div className="font-serif text-[18px] font-bold text-white">
+                  {avgMatch}<span className="text-[#2DBD74]">%</span>
+                </div>
+                <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                  Avg Match
+                </div>
+              </div>
+              {avgVisor > 0 && (
+                <>
+                  <div className="w-px h-4 bg-white/15 shrink-0" />
+                  <div className="text-center">
+                    <div className="font-serif text-[18px] font-bold text-white">
+                      {avgVisor}<span className="text-[#2DBD74]">/100</span>
+                    </div>
+                    <div className="font-mono text-[9px] font-semibold tracking-[0.14em] uppercase text-white/45 mt-0.5">
+                      Avg Visor Index
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {firms.length > 0 && (
-        <div className="mr-stats-strip">
-          <div className="mr-stat">
-            <div className="mr-stat-value">{firms.length}<span>+</span></div>
-            <div className="mr-stat-label">Matches Found</div>
-          </div>
-          <div className="mr-stat-divider" />
-          <div className="mr-stat">
-            <div className="mr-stat-value">{avgMatch}<span>%</span></div>
-            <div className="mr-stat-label">Avg Match</div>
-          </div>
-          {avgVisor > 0 && (
-            <>
-              <div className="mr-stat-divider" />
-              <div className="mr-stat">
-                <div className="mr-stat-value">{avgVisor}<span>/100</span></div>
-                <div className="mr-stat-label">Avg Visor Index</div>
-              </div>
-            </>
-          )}
-        </div>
+      {/* Profile Insights — authed only */}
+      {!loading && answers && firms.length > 0 && isAuthed && (
+        <ProfileInsightsPanel answers={answers} firms={firms} />
       )}
 
-      <div className="mr-body">
-        {firms.length === 0 ? (
-          <div className="mr-empty">
-            <p className="mr-empty-title">No matches found</p>
-            <p className="mr-empty-sub">Try adjusting your preferences for broader results.</p>
-            <Link href="/match" className="mr-act-btn">Retake Questionnaire</Link>
+      {/* Firm cards */}
+      <div className="max-w-[960px] mx-auto px-6 py-8 max-sm:px-4 max-sm:py-5">
+        <style dangerouslySetInnerHTML={{ __html: CARD_CSS }} />
+
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="h-7 w-7 border-2 border-[#CAD8D0] border-t-[#2DBD74] rounded-full animate-spin mx-auto" />
+            <p className="text-[13px] text-[#5A7568] mt-4 font-sans">Loading&hellip;</p>
           </div>
-        ) : (
-          <>
-            <FirmCard
-              firm={firms[0]}
-              rank={1}
-              badges={badgeMap.get(firms[0].crd) || []}
-              isExpanded={expandedCrd === firms[0].crd}
-              onToggle={() => toggleCard(firms[0].crd)}
-              isSaved={savedCrds.has(firms[0].crd)}
-              isAuthed={isAuthed}
-            />
-
-            {firms.length > 1 && (
-              <div className="mr-gate-wrap">
-                <div className={isAuthed === false ? 'mr-blurred' : undefined}>
-                  {firms.slice(1, 10).map((firm, i) => (
-                    <FirmCard
-                      key={firm.crd}
-                      firm={firm}
-                      rank={i + 2}
-                      badges={badgeMap.get(firm.crd) || []}
-                      isExpanded={expandedCrd === firm.crd}
-                      onToggle={() => toggleCard(firm.crd)}
-                      isSaved={savedCrds.has(firm.crd)}
-                      isAuthed={isAuthed}
-                    />
-                  ))}
-                </div>
-
-                {isAuthed === false && (
-                  <div className="mr-gate">
-                    <div className="mr-gate-card">
-                      <div className="mr-gate-eyebrow">Free account required</div>
-                      <p className="mr-gate-title">See all {Math.min(firms.length, 10)} matches</p>
-                      <p className="mr-gate-sub">
-                        Create a free Visor Index account to unlock your full ranked list,
-                        fee estimates, and Visor Index™ for each match.
-                      </p>
-                      <div className="mr-gate-btns">
-                        <Link href="/auth/signup" className="mr-gate-btn-primary">Get Started Free</Link>
-                        <Link href="/auth/login" className="mr-gate-btn-secondary">Sign In</Link>
-                      </div>
-                      <p className="mr-gate-trust">
-                        <span className="mr-gate-trust-dot" />
-                        Free forever &middot; No credit card required
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="mr-actions">
-              <Link href="/match" className="mr-act-btn">← Retake Questionnaire</Link>
-              <Link href="/search" className="mr-act-btn">Browse All Firms</Link>
+        ) : firms.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="font-serif text-[22px] font-bold text-[#0C1810] mb-2">No results found</p>
+            <p className="text-[13px] text-[#5A7568] font-sans">Try adjusting your search criteria.</p>
+          </div>
+        ) : isAuthed === false ? (
+          <FirmTableGate config={matchGateConfig}>
+            <div className="mc-list">
+              {firms.slice(0, matchGateConfig.previewCount ?? 4).map((firm, i) => {
+                // Redact sensitive data — only show placeholder shapes
+                const redacted: MatchedFirm = {
+                  ...firm,
+                  name: 'Advisory Firm',
+                  displayName: 'Advisory Firm',
+                  city: '',
+                  state: '',
+                  logoKey: null,
+                  matchPercent: 0,
+                  visorScore: undefined,
+                  estimatedFee: '',
+                  matchReason: '',
+                  reasons: [],
+                  aum: 0,
+                  feeCompetitiveness: 0,
+                  clientGrowth: 0,
+                  advisorBandwidth: 0,
+                };
+                return (
+                  <MatchCard
+                    key={firm.crd}
+                    firm={redacted}
+                    index={i}
+                    isExpanded={false}
+                    onToggle={() => {}}
+                    isAuthed={isAuthed}
+                    isSaved={false}
+                  />
+                );
+              })}
             </div>
-          </>
+          </FirmTableGate>
+        ) : (
+          <div className="mc-list">
+            {firms.map((firm, i) => (
+              <MatchCard
+                key={firm.crd}
+                firm={firm}
+                index={i}
+                isExpanded={expandedCrd === firm.crd}
+                onToggle={() => setExpandedCrd(expandedCrd === firm.crd ? null : firm.crd)}
+                isAuthed={isAuthed}
+                isSaved={savedCrds.has(firm.crd)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Bottom actions */}
+        {!loading && firms.length > 0 && (
+          <div className="flex gap-3 justify-center flex-wrap pt-6 max-sm:flex-col max-sm:items-stretch">
+            {isAuthed && (
+              <button
+                className={`text-[12px] font-sans font-semibold px-6 py-2.5 transition-all text-center ${
+                  resultsSaved
+                    ? 'bg-[rgba(45,189,116,0.08)] border border-[rgba(45,189,116,0.3)] text-[#2DBD74]'
+                    : 'bg-[#1A7A4A] text-white hover:bg-[#22995E]'
+                }`}
+                disabled={savingResults || resultsSaved}
+                onClick={async () => {
+                  setSavingResults(true);
+                  try {
+                    const res = await fetch('/api/user/match-results', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ firms }),
+                      credentials: 'include',
+                    });
+                    if (res.ok) setResultsSaved(true);
+                  } catch { /* silent */ }
+                  finally { setSavingResults(false); }
+                }}
+              >
+                {savingResults ? 'Saving\u2026' : resultsSaved ? '\u2713 Saved to Dashboard' : 'Save Results to Dashboard'}
+              </button>
+            )}
+            <Link
+              href="/match"
+              className="text-[12px] font-sans px-6 py-2.5 border border-[#CAD8D0] text-[#5A7568] hover:border-[#5A7568] hover:text-[#0C1810] transition-all text-center"
+            >
+              &larr; Retake Questionnaire
+            </Link>
+            <Link
+              href="/search"
+              className="text-[12px] font-sans px-6 py-2.5 border border-[#CAD8D0] text-[#5A7568] hover:border-[#5A7568] hover:text-[#0C1810] transition-all text-center"
+            >
+              Browse All Firms
+            </Link>
+          </div>
         )}
       </div>
     </div>

@@ -38,7 +38,7 @@ function sanitizeText(raw: string): string {
   }
   text = text.replace(/<[^>]*>/g, '').replace(/<[^>]*$/g, '');
   // Strip emoji characters
-  text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '');
+  text = text.replace(new RegExp('[\\u{1F600}-\\u{1F64F}\\u{1F300}-\\u{1F5FF}\\u{1F680}-\\u{1F6FF}\\u{1F1E0}-\\u{1F1FF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}\\u{1F900}-\\u{1F9FF}\\u{1FA00}-\\u{1FA6F}\\u{1FA70}-\\u{1FAFF}\\u{FE00}-\\u{FE0F}\\u{200D}\\u{20E3}\\u{E0020}-\\u{E007F}]', 'gu'), '');
   text = text.replace(/\s{2,}/g, ' ').trim();
   return text;
 }
@@ -86,22 +86,28 @@ interface AlertGroup {
 }
 
 function groupAlerts(alerts: FirmAlert[]): AlertGroup[] {
-  const groups: AlertGroup[] = [];
-  let i = 0;
-  while (i < alerts.length) {
-    let j = i + 1;
-    while (j < alerts.length && alerts[j].alert_type === alerts[i].alert_type && alerts[j].title === alerts[i].title) {
-      j++;
+  // Group all alerts with the same type + normalized title (not just consecutive)
+  const buckets = new Map<string, FirmAlert[]>();
+  const order: string[] = [];
+  for (const alert of alerts) {
+    const key = `${alert.alert_type}:${alert.title.toLowerCase().trim()}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+      order.push(key);
     }
-    const count = j - i;
-    if (count >= 3) {
-      groups.push({ type: 'collapsed', alerts: alerts.slice(i, j) });
+    buckets.get(key)!.push(alert);
+  }
+
+  const groups: AlertGroup[] = [];
+  for (const key of order) {
+    const bucket = buckets.get(key)!;
+    if (bucket.length >= 3) {
+      groups.push({ type: 'collapsed', alerts: bucket });
     } else {
-      for (let k = i; k < j; k++) {
-        groups.push({ type: 'single', alerts: [alerts[k]] });
+      for (const alert of bucket) {
+        groups.push({ type: 'single', alerts: [alert] });
       }
     }
-    i = j;
   }
   return groups;
 }
@@ -250,11 +256,21 @@ export default function FirmAlerts({ crd }: { crd: number }) {
     : [];
 
   const showNews = tab === 'all' || tab === 'news';
-  const newsItems = showNews ? news : [];
+  // Client-side dedup safety net for news
+  const dedupedNews = (() => {
+    const seen = new Set<string>();
+    return news.filter(a => {
+      const key = a.title.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  })();
+  const newsItems = showNews ? dedupedNews : [];
   const alertsToShow = tab === 'news' ? [] : filteredAlerts;
   const alertGroups = groupAlerts(alertsToShow);
 
-  const totalCount = alerts.length + news.length;
+  const totalCount = alerts.length + dedupedNews.length;
 
   return (
     <div>
@@ -266,7 +282,7 @@ export default function FirmAlerts({ crd }: { crd: number }) {
             const counts: Record<string, number> = {
               all: totalCount,
               filings: alerts.filter(a => ['disclosure', 'fee_change', 'aum_change'].includes(a.alert_type)).length,
-              news: news.length,
+              news: dedupedNews.length,
               ownership: alerts.filter(a => ['employee_change', 'client_count_change'].includes(a.alert_type)).length,
             };
             const labels: Record<string, string> = {

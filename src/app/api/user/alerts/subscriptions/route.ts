@@ -24,6 +24,13 @@ export async function GET() {
   return NextResponse.json({ subscriptions: data });
 }
 
+const TIER_LIMITS: Record<string, number> = {
+  trial: 0,
+  consumer: 25,
+  enterprise: 100,
+};
+const DEFAULT_LIMIT = 0;
+
 // POST /api/user/alerts/subscriptions — subscribe to alerts for a firm
 export async function POST(request: NextRequest) {
   const supabase = createSupabaseServerClient();
@@ -38,6 +45,43 @@ export async function POST(request: NextRequest) {
 
   if (!crd) {
     return NextResponse.json({ error: 'CRD is required' }, { status: 400 });
+  }
+
+  // Check subscription limit (skip if this is an update to an existing sub)
+  const { count: existingCount } = await supabaseAdmin
+    .from('alert_subscriptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+
+  const { data: profile } = await supabaseAdmin
+    .from('user_profiles')
+    .select('plan_tier')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const tier = (profile?.plan_tier as string) || 'none';
+  const limit = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || DEFAULT_LIMIT;
+
+  if (limit === 0) {
+    return NextResponse.json(
+      { error: 'Alert subscriptions require a paid plan. Upgrade to Consumer for 25 firm alerts.' },
+      { status: 403 },
+    );
+  }
+
+  // Allow upsert if user already has this CRD subscribed (updating preferences)
+  const { data: existingSub } = await supabaseAdmin
+    .from('alert_subscriptions')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('crd', crd)
+    .maybeSingle();
+
+  if (!existingSub && (existingCount ?? 0) >= limit) {
+    return NextResponse.json(
+      { error: `Subscription limit reached (${limit} firms). Upgrade your plan for more.` },
+      { status: 403 },
+    );
   }
 
   const { data, error } = await supabaseAdmin

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Input } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 
@@ -53,7 +53,7 @@ const PAGE_CSS = `
     --navy: #0A1C2A; --ink: #0C1810; --ink-2: #2E4438; --ink-3: #5A7568;
     --rule: #CAD8D0; --white: #F6F8F7; --card-bg: #fff;
     --serif: 'Cormorant Garamond', serif;
-    --sans: 'DM Sans', sans-serif;
+    --sans: 'Inter', sans-serif;
     --mono: 'DM Mono', monospace;
     min-height: 100vh; background: var(--white);
   }
@@ -190,8 +190,10 @@ const PAGE_CSS = `
   }
 `;
 
-export default function OnboardingPage() {
+function OnboardingPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showWelcome = searchParams.get('welcome') === '1';
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -246,7 +248,6 @@ export default function OnboardingPage() {
       services_wanted: form.services_wanted.length > 0 ? form.services_wanted : null,
       financial_context: form.financial_context || null,
       onboarding_completed: true,
-      subscription_status: 'active',
     }, { onConflict: 'user_id' });
 
     if (dbError) {
@@ -385,9 +386,13 @@ export default function OnboardingPage() {
 
       {/* Navy header */}
       <div className="ob-header">
-        <div className="ob-header-kicker">Getting Started</div>
-        <div className="ob-header-title">Set up your profile</div>
-        <div className="ob-header-sub">Takes about 2 minutes · All fields optional</div>
+        <div className="ob-header-kicker">{showWelcome ? 'Welcome Aboard' : 'Getting Started'}</div>
+        <div className="ob-header-title">{showWelcome ? 'One last step' : 'Set up your profile'}</div>
+        <div className="ob-header-sub">
+          {showWelcome
+            ? 'Your plan is active. Takes about 2 minutes · All fields optional'
+            : 'Takes about 2 minutes · All fields optional'}
+        </div>
       </div>
 
       {/* Card */}
@@ -431,5 +436,13 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={null}>
+      <OnboardingPageInner />
+    </Suspense>
   );
 }

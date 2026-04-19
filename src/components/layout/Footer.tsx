@@ -28,8 +28,8 @@ export function Footer() {
                   { label: 'Find Advisors', href: '/search' },
                   { label: 'Rankings', href: '/directory' },
                   { label: 'Compare Tool', href: '/compare' },
-                  { label: 'Matching', href: '/search' },
-                  { label: 'Customized Analysis', href: '/deep-dive' },
+                  { label: 'Matching', href: '/match' },
+                  { label: 'Deep Dive Analysis', href: '/deep-dive' },
                 ].map((link) => (
                   <li key={link.label}>
                     <Link href={link.href} className="text-[12px] text-white/35 transition hover:text-white lg:text-[13px]">

@@ -26,6 +26,22 @@ export interface AlertSub {
   alertTypes: string[];
 }
 
+export interface RecentAlert {
+  id: string;
+  crd: number;
+  firmName: string;
+  alertType: string;
+  severity: string;
+  title: string;
+  summary: string;
+  detectedAt: string;
+}
+
+export interface WatchedFirm {
+  crd: number;
+  name: string;
+}
+
 export default async function AlertsPage() {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -34,31 +50,82 @@ export default async function AlertsPage() {
     redirect('/auth/login');
   }
 
-  // Fetch alert subscriptions
-  const { data: subs } = await supabaseAdmin
-    .from('alert_subscriptions')
-    .select('id, crd, alert_types, notify_email, notify_in_app, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  // Fetch subscriptions, digest prefs, and recent alerts in parallel
+  const [
+    { data: subs },
+    { data: prefs },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('alert_subscriptions')
+      .select('id, crd, alert_types, notify_email, notify_in_app, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('user_alert_preferences')
+      .select('digest_frequency')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
+  const digestFrequency = prefs?.digest_frequency || 'weekly';
   const crds = (subs || []).map((s: any) => s.crd);
 
-  // Join firm names + meta
-  const [{ data: firmData }, { data: nameData }] = crds.length > 0
-    ? await Promise.all([
-        supabaseAdmin
-          .from('firmdata_current')
-          .select('crd, main_office_city, main_office_state, aum')
-          .in('crd', crds),
-        supabaseAdmin
-          .from('firm_names')
-          .select('crd, display_name')
-          .in('crd', crds),
-      ])
-    : [{ data: [] as any[] }, { data: [] as any[] }];
+  // Join firm names + meta + recent alerts
+  let firmData: any[] = [];
+  let nameData: any[] = [];
+  let recentAlerts: RecentAlert[] = [];
 
-  const nameMap = new Map((nameData || []).map((n: any) => [n.crd, n.display_name as string]));
-  const firmMap = new Map((firmData || []).map((f: any) => [f.crd, f]));
+  if (crds.length > 0) {
+    const [
+      { data: firms },
+      { data: names },
+      { data: alerts },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('firmdata_current')
+        .select('crd, main_office_city, main_office_state, aum')
+        .in('crd', crds),
+      supabaseAdmin
+        .from('firm_names')
+        .select('crd, display_name')
+        .in('crd', crds),
+      supabaseAdmin
+        .from('firm_alerts')
+        .select('id, crd, alert_type, severity, title, summary, detected_at')
+        .in('crd', crds)
+        .order('detected_at', { ascending: false })
+        .limit(200), // fetch extra for dedup headroom (duplicates can be heavy)
+    ]);
+
+    firmData = firms || [];
+    nameData = names || [];
+
+    const nameMap = new Map((nameData).map((n: any) => [n.crd, n.display_name as string]));
+
+    // Dedup by crd + alert_type + normalized title
+    const seen = new Set<string>();
+    recentAlerts = (alerts || [])
+      .filter((a: any) => {
+        const key = `${a.crd}:${a.alert_type}:${a.title.toLowerCase().trim()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 20)
+      .map((a: any) => ({
+        id: a.id,
+        crd: a.crd,
+        firmName: nameMap.get(a.crd) || `CRD #${a.crd}`,
+        alertType: a.alert_type,
+        severity: a.severity,
+        title: a.title,
+        summary: a.summary || '',
+        detectedAt: a.detected_at,
+      }));
+  }
+
+  const nameMap = new Map((nameData).map((n: any) => [n.crd, n.display_name as string]));
+  const firmMap = new Map((firmData).map((f: any) => [f.crd, f]));
 
   const alertSubs: AlertSub[] = (subs || []).map((s: any) => {
     const firm = firmMap.get(s.crd);
@@ -80,5 +147,11 @@ export default async function AlertsPage() {
     };
   });
 
-  return <AlertsPanel subs={alertSubs} />;
+  return (
+    <AlertsPanel
+      subs={alertSubs}
+      digestFrequency={digestFrequency}
+      recentAlerts={recentAlerts}
+    />
+  );
 }

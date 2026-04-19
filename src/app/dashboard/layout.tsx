@@ -15,8 +15,8 @@ export default async function DashboardLayout({
     redirect('/auth/login');
   }
 
-  // Sidebar badge counts (parallel)
-  const [{ count: savedCount }, { count: alertCount }] = await Promise.all([
+  // Sidebar badge counts + plan tier (parallel)
+  const [{ count: savedCount }, { count: alertCount }, { count: matchCount }, { data: profile }] = await Promise.all([
     supabaseAdmin
       .from('user_favorites')
       .select('*', { count: 'exact', head: true })
@@ -25,13 +25,34 @@ export default async function DashboardLayout({
       .from('alert_subscriptions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id),
+    supabaseAdmin
+      .from('user_match_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id),
+    supabaseAdmin
+      .from('user_profiles')
+      .select('plan_tier')
+      .eq('user_id', user.id)
+      .single(),
   ]);
+
+  const planTier = profile?.plan_tier || 'none';
+
+  const PLAN_LABELS: Record<string, string> = {
+    none: 'No Plan',
+    trial: 'Trial Access',
+    consumer: 'Consumer',
+    enterprise: 'Enterprise',
+  };
+  const planLabel = PLAN_LABELS[planTier] || 'Free';
 
   return (
     <DashboardShell
       userEmail={user.email ?? ''}
       savedCount={savedCount ?? 0}
       alertCount={alertCount ?? 0}
+      matchCount={matchCount ?? 0}
+      planLabel={planLabel}
     >
       {children}
     </DashboardShell>

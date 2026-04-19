@@ -1,3 +1,9 @@
+/**
+ * @deprecated — DO NOT USE for branded CTAs.
+ * This component uses stale Tailwind tokens (wrong green, rounded corners)
+ * that conflict with DESIGN.md. Use scoped CSS with hex values instead.
+ * See DESIGN.md for the correct button pattern.
+ */
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 

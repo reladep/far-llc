@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { AlertSub } from './page';
+import { useToast } from '@/components/ui/Toast';
+import type { AlertSub, RecentAlert } from './page';
+import '@/components/dashboard/dashboard.css';
 
 interface AlertsPanelProps {
   subs: AlertSub[];
+  digestFrequency: string;
+  recentAlerts: RecentAlert[];
 }
 
 const ALERT_TYPE_LABELS: Record<string, string> = {
@@ -16,20 +20,77 @@ const ALERT_TYPE_LABELS: Record<string, string> = {
   news: 'News',
   client_count_change: 'Clients',
   employee_change: 'Staff',
+  score_change: 'Score',
+  asset_allocation_change: 'Allocation',
+};
+
+const SEVERITY_COLORS: Record<string, string> = {
+  high: '#EF4444',
+  medium: '#F59E0B',
+  low: '#2DBD74',
 };
 
 const CSS = `
-  .ap-wrap {
-    --navy:#0A1C2A; --navy-2:#0F2538;
-    --green:#1A7A4A; --green-2:#22995E; --green-3:#2DBD74; --green-pale:#E6F4ED;
-    --white:#F6F8F7; --ink:#0C1810; --ink-2:#2E4438; --ink-3:#5A7568; --rule:#CAD8D0;
-    --red:#DC2626;
-    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+  /* ── Digest preferences ── */
+  .ap-digest { background:#fff; border:1px solid var(--rule); padding:20px; margin-bottom:24px; }
+  .ap-digest-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .ap-digest-label {
+    font-family:var(--mono); font-size:10px; font-weight:700;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
   }
-  .ap-title { font-family:var(--serif); font-size:26px; font-weight:700; color:var(--ink); letter-spacing:-.02em; margin-bottom:4px; }
-  .ap-sub { font-size:13px; color:var(--ink-3); margin-bottom:24px; }
-  .ap-divider { height:1px; background:var(--rule); margin-bottom:24px; }
+  .ap-freq-group { display:inline-flex; gap:0; border:1px solid var(--rule); }
+  .ap-freq-btn {
+    font-size:11px; font-weight:600; letter-spacing:.04em;
+    font-family:var(--sans); padding:7px 14px; cursor:pointer;
+    background:#fff; border:none; border-right:1px solid var(--rule);
+    color:var(--ink-3); transition:all .12s; white-space:nowrap;
+  }
+  .ap-freq-btn:last-child { border-right:none; }
+  .ap-freq-btn:hover:not(.on) { background:var(--white); color:var(--ink); }
+  .ap-freq-btn.on { background:var(--navy); color:#fff; }
+  .ap-digest-note {
+    font-size:12px; color:var(--ink-3); font-family:var(--sans); margin-top:8px;
+  }
 
+  /* ── Recent events feed ── */
+  .ap-feed { margin-bottom:24px; }
+  .ap-feed-list { border:1px solid var(--rule); display:flex; flex-direction:column; }
+  .ap-event {
+    background:#fff; padding:14px 18px;
+    border-bottom:1px solid var(--rule); transition:background .1s;
+  }
+  .ap-event:last-child { border-bottom:none; }
+  .ap-event:hover { background:#f7faf8; }
+  .ap-event-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .ap-event-dot {
+    width:6px; height:6px; border-radius:50%; flex-shrink:0;
+  }
+  .ap-event-type {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .ap-event-time {
+    font-family:var(--mono); font-size:10px; color:var(--rule); margin-left:auto;
+  }
+  .ap-event-title { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:2px; }
+  .ap-event-firm {
+    font-size:11px; color:var(--ink-3); text-decoration:none; transition:color .12s;
+  }
+  .ap-event-firm:hover { color:var(--green); }
+  .ap-event-summary { font-size:12px; color:var(--ink-3); margin-top:4px; }
+
+  /* ── Load more ── */
+  .ap-load-more {
+    display:block; width:100%; padding:10px;
+    font-size:11px; font-family:var(--sans); font-weight:600;
+    letter-spacing:.04em; text-transform:uppercase;
+    background:#fff; border:1px solid var(--rule); border-top:none;
+    color:var(--ink-3); cursor:pointer; transition:all .12s;
+  }
+  .ap-load-more:hover { background:var(--white); color:var(--ink); }
+  .ap-load-more:disabled { opacity:.5; cursor:default; }
+
+  /* ── Subscriptions list ── */
   .alerts-list { border:1px solid var(--rule); display:flex; flex-direction:column; }
   .alert-row {
     background:#fff;
@@ -69,7 +130,7 @@ const CSS = `
     font-size:11px; background:none; border:none; color:var(--rule);
     cursor:pointer; font-family:var(--sans); transition:color .12s; padding:0 4px;
   }
-  .alert-remove:hover { color:var(--red); }
+  .alert-remove:hover { color:#DC2626; }
   .alert-remove:disabled { opacity:.4; cursor:default; }
 
   /* add row */
@@ -82,16 +143,45 @@ const CSS = `
   }
   .ap-add-btn:hover { border-color:var(--green); color:var(--green); }
 
-  /* empty */
-  .ap-empty { padding:48px 24px; text-align:center; background:#fff; border:1px solid var(--rule); }
-  .ap-empty-title { font-family:var(--serif); font-size:18px; font-weight:700; color:var(--ink); margin-bottom:6px; }
-  .ap-empty-sub { font-size:13px; color:var(--ink-3); }
+  /* mobile */
+  @media(max-width:640px){
+    .alert-row { grid-template-columns:1fr; gap:10px; }
+    .notify-group { justify-self:start; }
+    .notify-btn { padding:10px 16px; font-size:12px; }
+    .alert-remove { justify-self:start; padding:6px 10px; font-size:14px; }
+    .ap-freq-group { flex-wrap:wrap; }
+    .ap-freq-btn { padding:10px 16px; }
+    .ap-load-more { padding:14px; font-size:13px; }
+  }
 `;
 
-export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+const DIGEST_OPTIONS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'none', label: 'Off' },
+];
+
+export default function AlertsPanel({ subs: initialSubs, digestFrequency: initialFreq, recentAlerts }: AlertsPanelProps) {
   const [subs, setSubs] = useState(initialSubs);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [frequency, setFrequency] = useState(initialFreq);
+  const alerts = recentAlerts;
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleRemove = async (id: string, crd: number) => {
     setRemovingId(id);
@@ -102,17 +192,29 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
       });
       if (res.ok) {
         setSubs(prev => prev.filter(s => s.id !== id));
+        toast('Alert removed', {
+          undo: async () => {
+            await fetch('/api/user/alerts/subscriptions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ crd }),
+              credentials: 'include',
+            });
+            router.refresh();
+          },
+        });
         router.refresh();
+      } else {
+        toast('Failed to remove alert', { type: 'error' });
       }
     } catch {
-      // silently fail
+      toast('Network error', { type: 'error' });
     } finally {
       setRemovingId(null);
     }
   };
 
   const handleToggle = async (id: string, crd: number, field: 'notifyEmail' | 'notifyInApp', current: boolean) => {
-    // Optimistic update
     setSubs(prev => prev.map(s => s.id === id ? { ...s, [field]: !current } : s));
     try {
       await fetch('/api/user/alerts/subscriptions', {
@@ -125,23 +227,109 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
         }),
       });
     } catch {
-      // revert on failure
       setSubs(prev => prev.map(s => s.id === id ? { ...s, [field]: current } : s));
     }
   };
 
+  const handleFrequencyChange = async (newFreq: string) => {
+    const oldFreq = frequency;
+    setFrequency(newFreq);
+    try {
+      const res = await fetch('/api/user/alerts/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ digest_frequency: newFreq }),
+      });
+      if (res.ok) toast('Digest preference updated');
+      else { setFrequency(oldFreq); toast('Failed to update preference', { type: 'error' }); }
+    } catch {
+      setFrequency(oldFreq);
+      toast('Network error', { type: 'error' });
+    }
+  };
+
+  const DIGEST_NOTE: Record<string, string> = {
+    daily: 'You\u2019ll receive a summary email every morning.',
+    weekly: 'You\u2019ll receive a summary email every Monday.',
+    monthly: 'You\u2019ll receive a summary email on the 1st of each month.',
+    none: 'Email digests are paused. You\u2019ll still see alerts in your dashboard.',
+  };
+
   return (
-    <div className="ap-wrap">
+    <div>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      <div className="ap-title">Alerts</div>
-      <div className="ap-sub">Monitor firms for filing changes. Toggle notification preferences per firm.</div>
-      <div className="ap-divider" />
+      <div className="db-panel-eyebrow">Monitoring</div>
+      <div className="db-panel-title">Alerts</div>
+      <div className="db-panel-sub">Monitor firms for changes. Get notified via email digest or in-app.</div>
+      <div className="db-panel-divider" />
+
+      {/* Digest frequency */}
+      <div className="ap-digest">
+        <div className="ap-digest-header">
+          <span className="ap-digest-label">Email Digest</span>
+        </div>
+        <div className="ap-freq-group">
+          {DIGEST_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              className={`ap-freq-btn${frequency === opt.value ? ' on' : ''}`}
+              onClick={() => handleFrequencyChange(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="ap-digest-note">{DIGEST_NOTE[frequency]}</div>
+      </div>
+
+      {/* Recent events preview */}
+      {alerts.length > 0 && (
+        <div className="ap-feed">
+          <div className="db-toolbar">
+            <span className="db-section-label">Recent Activity</span>
+          </div>
+          <div className="ap-feed-list">
+            {alerts.slice(0, 5).map(alert => (
+              <div key={alert.id} className="ap-event">
+                <div className="ap-event-header">
+                  <span
+                    className="ap-event-dot"
+                    style={{ background: SEVERITY_COLORS[alert.severity] || '#CAD8D0' }}
+                  />
+                  <span className="ap-event-type">
+                    {ALERT_TYPE_LABELS[alert.alertType] || alert.alertType}
+                  </span>
+                  <span className="ap-event-time">{timeAgo(alert.detectedAt)}</span>
+                </div>
+                <div className="ap-event-title">{alert.title}</div>
+                <Link href={`/firm/${alert.crd}`} className="ap-event-firm">
+                  {alert.firmName}
+                </Link>
+                {alert.summary && (
+                  <div className="ap-event-summary">{alert.summary}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <Link href="/dashboard/alerts/history" className="db-view-all">
+            View All Alerts →
+          </Link>
+        </div>
+      )}
+
+      {/* Subscriptions */}
+      <div className="db-toolbar" style={{ marginTop: alerts.length > 0 ? 24 : 0 }}>
+        <span className="db-section-label">Watched Firms</span>
+        {subs.length > 0 && <span className="db-section-count">{subs.length} / 25</span>}
+      </div>
 
       {subs.length === 0 ? (
-        <div className="ap-empty">
-          <div className="ap-empty-title">No alerts set</div>
-          <div className="ap-empty-sub">Add firms from your saved list to start monitoring them.</div>
+        <div className="db-empty">
+          <div className="db-empty-title">No firms watched</div>
+          <div className="db-empty-sub">Add firms from your saved list to start monitoring them for changes.</div>
+          <Link href="/dashboard/saved-firms" className="db-empty-link">Browse Saved Firms</Link>
         </div>
       ) : (
         <div className="alerts-list">
@@ -161,7 +349,6 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
                 )}
               </div>
 
-              {/* Email / In-app toggle */}
               <div className="notify-group">
                 <button
                   className={`notify-btn${sub.notifyEmail ? ' on' : ''}`}
@@ -184,6 +371,7 @@ export default function AlertsPanel({ subs: initialSubs }: AlertsPanelProps) {
                 disabled={removingId === sub.id}
                 onClick={() => handleRemove(sub.id, sub.crd)}
                 title="Remove alert"
+                aria-label={`Remove alert for ${sub.name}`}
               >
                 ✕
               </button>
