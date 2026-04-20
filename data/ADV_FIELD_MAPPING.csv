@@ -1,0 +1,66 @@
+XML Field,ADV Question #,Exact ADV Question Text,Supabase Column
+FirmCrdNb,FirmCrdNb,CRD Number (internal identifier),firmdata_current.crd
+SECNb,SECNb,SEC File Number,firmdata_current.sec_number
+BusNm,Item 1.A,Primary Business Name,firmdata_current.primary_business_name
+LegalNm,Item 1.B,Legal Name,firmdata_current.legal_name
+Strt1,Item 1.F,Street Address 1,firmdata_current.main_office_address
+Strt2,Item 1.F,Street Address 2,
+City,Item 1.F,City,firmdata_current.main_office_city
+State,Item 1.F,State,firmdata_current.main_office_state
+PostlCd,Item 1.F,ZIP Code,
+Cntry,Item 1.F,Country,
+PhNb,Item 1.F,Phone Number,
+FaxNb,Item 1.F,Fax Number,
+WebAddr,Item 1.F,Website Address (ADV - often wrong/social links),NOT USED - see note
+Rgstn/@St,Item 2.A,SEC Registration Status,firmdata_current.sec_current_status
+Rgstn/@Dt,Item 2.A,Registration Date,
+NoticeFiled/States/@RgltrCd,Item 2.B,State Notice Filed,firmdata_current.state_* (50 columns)
+Filing/@Dt,-,Latest ADV Filing Date,firmdata_current.latest_adv_filing
+Q5B1,Item 5.B.(1),Individuals (other than high net worth),firmdata_current.client_individuals_number
+Q5B2,Item 5.B.(2),High Net Worth Individuals,firmdata_current.client_hnw_number
+Q5B3,Item 5.B.(3),Banks,firmdata_current.client_banks_number
+Q5B4,Item 5.B.(4),Investment Companies,firmdata_current.client_investment_cos_number
+Q5B5,Item 5.B.(5),Pooled Investment Vehicles,firmdata_current.client_pooled_vehicles_number
+Q5B6,Item 5.B.(6),Other,firmdata_current.client_other_number
+Q5DA1,Item 5.D.1(a),Discretionary AUM,firmdata_current.aum_discretionary
+Q5DA2,Item 5.D.1(a),Discretionary - Number of accounts,
+Q5DA3,Item 5.D.1(c),Non-Discretionary AUM,firmdata_current.aum_non_discretionary
+Q5DB1,Item 5.D.1(b),Non-Discretionary - Number of accounts,
+Q5DB3,Item 5.D.1(d),Non-Discretionary AUM (total),
+TtlEmp,Item 5.A,Total Employees,firmdata_current.employee_total
+Q5E1,Item 5.E.1,Financial planning,firmdata_current.services_financial_planning
+Q5E2,Item 5.E.2,Portfolio management for individuals,firmdata_current.services_port_management_individuals
+Q5E3,Item 5.E.3,Pension consulting,firmdata_current.services_pension_consulting
+Q5E4,Item 5.E.4,Selection of other advisers,firmdata_current.services_mgr_selection
+Q5K1,Item 5.K.1,Criminal disclosure (felony),firmdata_current.disclosure_firm_felony_conviction
+Q5K2,Item 5.K.2,Regulatory disclosure,firmdata_current.disclosure_firm_current_regulatory_proceedings
+Q5K3,Item 5.K.3,Civil disclosure,firmdata_current.disclosure_firm_court_ruling_violation
+Q5K4,Item 5.K.4,Arbitration disclosure,
+OrgFormNm,Item 3.A,Legal Structure,firmdata_current.legal_structure
+Q3B,Item 3.B,Fiscal Year End,
+StateCD,Item 3.C,State of Organization,
+CntryNm,Item 3.C,Country of Organization,
+Q11A1,Item 11.A.1,Felony conviction,firmdata_current.disclosure_firm_felony_conviction
+Q11A2,Item 11.A.2,Felony charge,firmdata_current.disclosure_firm_felony_charge
+Q11B1,Item 11.B.1,Misdemeanor conviction,firmdata_current.disclosure_firm_misdemenor_conviction
+Q11B2,Item 11.B.2,Misdemeanor charge,firmdata_current.disclosure_firm_misdemenor_charge
+Q11C1,Item 11.C.1,Federal/SEC violations,firmdata_current.disclosure_firm_federal_violations
+Q11C2,Item 11.C.2,Federal/SEC revocation,firmdata_current.disclosure_firm_federal_revoke
+Q11C3,Item 11.C.3,Federal/SEC suspension,firmdata_current.disclosure_firm_federal_suspension_restrictions
+Q11C4,Item 11.C.4,Federal/SEC false statement,firmdata_current.disclosure_firm_federal_false_statement
+Q11C5,Item 11.C.5,Federal/SEC investment order,firmdata_current.disclosure_firm_federal_investment_order_10_years
+Q11D1,Item 11.D.1,SRO violations,firmdata_current.disclosure_firm_self_regulatory_violation
+Q11D2,Item 11.D.2,SRO discipline,firmdata_current.disclosure_firm_self_regulatory_discipline
+Q11D3,Item 11.D.3,SRO suspension,firmdata_current.disclosure_firm_self_regulatory_suspension_restrictions
+Q11D4,Item 11.D.4,SRO false statement,firmdata_current.disclosure_firm_self_regulatory_false_statement
+Q11E1,Item 11.E.1,SEC/CFTC violations,firmdata_current.disclosure_firm_sec_cftc_violations
+Q11E2,Item 11.E.2,SEC/CFTC monetary penalty,firmdata_current.disclosure_firm_sec_cftc_monetary_penalty
+Q11E3,Item 11.E.3,SEC/CFTC suspension,firmdata_current.disclosure_firm_sec_cftc_suspension_restrictions
+Q11E4,Item 11.E.4,SEC/CFTC false statement,firmdata_current.disclosure_firm_sec_cftc_false_statement
+Q11F,Item 11.F,Other regulatory proceedings,
+Q11G,Item 11.G,Other legal proceedings,
+Q11H1A,Item 11.H.1(a),Court ruling - violation,firmdata_current.disclosure_firm_court_ruling_violation
+Q11H1B,Item 11.H.1(b),Court ruling - investment related,firmdata_current.disclosure_firm_court_ruling_investment
+Q11H1C,Item 11.H.1(c),Court ruling - ongoing litigation,firmdata_current.disclosure_firm_court_ruling_ongoing_litigation
+Q11H2,Item 11.H.2,Court ruling - dismissal,firmdata_current.disclosure_firm_court_ruling_dismissal
+Q7B,Item 7.B,Private fund advisor,firmdata_current.private_fund_advisor
