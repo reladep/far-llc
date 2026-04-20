@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-19T15:48:01.839Z",
+  "entries": {
+    "memory:memory/2026-03-01.md:1:37": {
+      "key": "memory:memory/2026-03-01.md:1:37",
+      "path": "memory/2026-03-01.md",
+      "startLine": 1,
+      "endLine": 37,
+      "source": "memory",
+      "snippet": "# March 1, 2026 — Daily Log ## Summary Quiet day — Sunday. Cron jobs ran in background, one user question. ## User Activity - **Question:** Asked about frontend framework for Visor Index - **Answer:** Confirmed it's Next.js (React framework) — same stack as FAR app ## Cron Jobs Ran | Job | Status | Notes | |-----|--------|-------| | Daily GitHub Push | ✅ | Pushed to main (commit 7ebf838) | | Daily GitHub Push (far/) | ✅ | Rebased and pushed | | ADV Diff Checker | ⚠️ | 554 false positives (55% of firms showing \"fee schedule changed\") — still needs threshold tuning | | Monthly Cold Email Review | ✅ | 2 reached out, 6 on deck. List needs refresh. | | Daily Self Review | ✅ | Sunday morning",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4461259067058563,
+      "maxScore": 0.4461259067058563,
+      "firstRecalledAt": "2026-04-19T15:47:59.884Z",
+      "lastRecalledAt": "2026-04-19T15:47:59.884Z",
+      "queryHashes": [
+        "ab4b1eee740a"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "next.js",
+        "march",
+        "log",
+        "summary",
+        "quiet",
+        "day",
+        "sunday",
+        "cron"
+      ]
+    },
+    "memory:memory/2026-02-27.md:46:57": {
+      "key": "memory:memory/2026-02-27.md:46:57",
+      "path": "memory/2026-02-27.md",
+      "startLine": 46,
+      "endLine": 57,
+      "source": "memory",
+      "snippet": "- Provided detailed scoring methodology feedback to Alex - RIA M&A cron job still needs resolution ## Open Questions - RIA M&A: remove cron job or create worker? - ADV Diff threshold tuning — still outstanding - Firm scores methodology revision — Alex asked for proposed fix, not yet delivered - Fuzzy matching fix — still not implemented ## Emotional Tone Productive day with good user interactions. Multiple substantive conversations about product direction (UI components, scoring methodology, content strategy). No blockers, but several outstanding technical debts from MEMORY.md remain unresolved.",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.44221735596656797,
+      "maxScore": 0.44221735596656797,
+      "firstRecalledAt": "2026-04-19T15:47:59.884Z",
+      "lastRecalledAt": "2026-04-19T15:47:59.884Z",
+      "queryHashes": [
+        "ab4b1eee740a"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "memory.md",
+        "provided",
+        "detailed",
+        "scoring",
+        "methodology",
+        "feedback",
+        "alex",
+        "ria"
+      ]
+    },
+    "memory:memory/2026-02-23.md:1:41": {
+      "key": "memory:memory/2026-02-23.md:1:41",
+      "path": "memory/2026-02-23.md",
+      "startLine": 1,
+      "endLine": 41,
+      "source": "memory",
+      "snippet": "# Daily Log — February 23, 2026 ## Summary Quiet day. System workers ran on schedule; one question answered in Telegram. --- ## What Was Worked On ### FAR System (Cron Workers) - **RIA M&A Poller**: 0 new alerts (scanned 100 filings vs 1,945 firms) - **ADV Diff Checker**: 1,126 alerts generated — same false positive problem as before (58% of firms flagged for \"fee schedule changed\" — unrealistic) - **SEC Enforcement**: 68 new alerts (with false positives from generic trust CRD 158369 matching unrelated articles) - **Industry News**: 55 new firm alerts (Blue Owl, Constellation Wealth, Janney, Raymond James, etc.) ### Telegram Group (g-maxwell-hq) - **Q**: Is the FAR Value Score wired up",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.9186181545257568,
+      "maxScore": 0.48395625352859495,
+      "firstRecalledAt": "2026-04-19T15:47:59.884Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ab4b1eee740a",
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "g-maxwell-hq",
+        "log",
+        "february",
+        "summary",
+        "quiet",
+        "day",
+        "system",
+        "workers"
+      ]
+    },
+    "memory:memory/2026-02-28.md:1:33": {
+      "key": "memory:memory/2026-02-28.md:1:33",
+      "path": "memory/2026-02-28.md",
+      "startLine": 1,
+      "endLine": 33,
+      "source": "memory",
+      "snippet": "# 2026-02-28 — Saturday ## Summary Quiet Saturday. Standard cron jobs ran. One main session interaction. ## Work Done ### Cron Jobs - **ADV Diff Checker**: Ran, produced 554 new alerts — all fee schedule changes. Known false positive issue (~55% of firms showing changes is unrealistic). Threshold tuning still pending. - **Daily GitHub Push (far/)**: No changes to commit, working tree clean - **Daily GitHub Push (workspace)**: Successfully pushed daily checkpoint - **RIA M&A Poller**: Cron job removed — worker file `workers/ria-ma.js` doesn't exist. Resolved issue. ### Main Session (Webchat) - Added star rating UI to search results - Code pushed to GitHub ### Daily Self Review - Delivere",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4329542100429535,
+      "maxScore": 0.4329542100429535,
+      "firstRecalledAt": "2026-04-19T15:47:59.884Z",
+      "lastRecalledAt": "2026-04-19T15:47:59.884Z",
+      "queryHashes": [
+        "ab4b1eee740a"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "workers/ria-ma.js",
+        "saturday",
+        "summary",
+        "quiet",
+        "standard",
+        "cron",
+        "jobs",
+        "ran"
+      ]
+    },
+    "memory:memory/2026-02-21.md:21:42": {
+      "key": "memory:memory/2026-02-21.md:21:42",
+      "path": "memory/2026-02-21.md",
+      "startLine": 21,
+      "endLine": 42,
+      "source": "memory",
+      "snippet": "- **Daily Self Review**: Ran successfully at 7 AM, reported pending tasks. ### Telegram (Maxwell HQ) - Discussed coupon code posting on third-party sites - flagged quality concerns, proposed Reddit + reputable coupon sites instead - Logo strategy reminder sent (from earlier cron) ## Key Decisions - Keep Supabase migrations as dashboard-paste (not CLI) for now - Workers will run on Mac mini initially, move to Vercel cron post-deploy ## Open Questions - Should matching logic be tightened? (pending Alex approval) - News scraper timeout issue still pending (~32 min runtime, gets killed at 30) ## Action Items - [ ] Tighten fuzzy matching thresholds for alert workers - [ ] Push git to producti",
+      "recallCount": 2,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.9206320732831954,
+      "maxScore": 0.48787769675254816,
+      "firstRecalledAt": "2026-04-19T15:47:59.884Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ab4b1eee740a",
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "third-party",
+        "dashboard-paste",
+        "post-deploy",
+        "self",
+        "review",
+        "ran",
+        "successfully",
+        "reported"
+      ]
+    },
+    "memory:memory/2026-02-13.md:1:12": {
+      "key": "memory:memory/2026-02-13.md:1:12",
+      "path": "memory/2026-02-13.md",
+      "startLine": 1,
+      "endLine": 12,
+      "source": "memory",
+      "snippet": "# 2026-02-13 ## Maxwell HQ Setup - Alex created a Telegram group (\"Maxwell HQ\") as primary comms channel with subtopics - Instructed to respond to every message, not just mentions - Codex installed manually — marked done on kanban ## Alex Data Dump - Major background shared — updated USER.md with full profile - Key takeaway: Alex is at a career crossroads. Wants asymmetric upside + freedom. Current focus is getting unstuck. - Discussed systems to help him achieve goals",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5187970042228699,
+      "maxScore": 0.5187970042228699,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "user.md",
+        "maxwell",
+        "setup",
+        "alex",
+        "created",
+        "telegram",
+        "group",
+        "primary"
+      ]
+    },
+    "memory:memory/2026-02-11.md:1:19": {
+      "key": "memory:memory/2026-02-11.md:1:19",
+      "path": "memory/2026-02-11.md",
+      "startLine": 1,
+      "endLine": 19,
+      "source": "memory",
+      "snippet": "# 2026-02-11 - Alex introduced themselves and confirmed they want to call the assistant Maxwell. - Maxwell role definition: AI assistant to help simplify Alex’s life, grow a business, make money, build a community, stay connected with loved ones, and maximize outcomes. - Emoji: none for now. - Alex preference: away from screens 10PM–7AM (America/New_York). ## OpenClaw setup - Brave web_search initially failed with invalid token; later fixed and web_search succeeded. - Telegram DM working (Ping/Pong). User accidentally pasted bot token; instructed to rotate via BotFather; afterwards confirmed working. - Brave Search API on Free plan has strict rate limit (seen 429; ~1 req/sec) and 2000 quot",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4960273742675781,
+      "maxScore": 0.4960273742675781,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "america/new-york",
+        "web-search",
+        "ping/pong",
+        "req/sec",
+        "alex",
+        "introduced",
+        "themselves",
+        "confirmed"
+      ]
+    },
+    "memory:memory/2026-03-23.md:1:26": {
+      "key": "memory:memory/2026-03-23.md:1:26",
+      "path": "memory/2026-03-23.md",
+      "startLine": 1,
+      "endLine": 26,
+      "source": "memory",
+      "snippet": "# March 23, 2026 (Monday) ## Summary Quiet day. No direct user sessions with Maxwell. Alex made a minor commit (daily checkpoint). Standard cron jobs continued running. ## Activity - Daily checkpoint commit by Alex at 23:59 - Standard cron workers running (EDGAR RSS, ADV Diff, News Scraper) - No Maxwell sessions ## Key Decisions - None ## Action Items - None ## Open Questions - News scraper debugging status — still unresolved from earlier - How does news-quick.js compare to existing news-scraper.js? ## Emotional Tone - N/A — no direct interaction ## Notes - Monday — typical workday - No direct conversations with Maxwell for past 4 days (Fri-Mon)",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4846651524305343,
+      "maxScore": 0.4846651524305343,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "news-quick.js",
+        "news-scraper.js",
+        "n/a",
+        "fri-mon",
+        "march",
+        "monday",
+        "summary",
+        "quiet"
+      ]
+    },
+    "memory:memory/2026-03-24.md:1:29": {
+      "key": "memory:memory/2026-03-24.md:1:29",
+      "path": "memory/2026-03-24.md",
+      "startLine": 1,
+      "endLine": 29,
+      "source": "memory",
+      "snippet": "# March 24, 2026 (Tuesday) ## Summary Active day — multiple sessions with Maxwell throughout the day. Multiple substantial conversation sessions recorded (largest session ~534KB). Afternoon and evening had heavy activity. ## Activity - Multiple active sessions throughout the day - Largest session: ~534KB (evening, ~2:38 AM Mar 25) - Other notable sessions: 94KB (midnight), 30KB (8pm), 24KB (7pm), 65KB (6pm), 22KB (5pm) - Standard cron workers continued (EDGAR RSS, ADV Diff, News Scraper) ## Key Decisions - (Session details not visible to memory writer due to access restrictions) ## Action Items - (Unknown — session content not accessible) ## Open Questions - What was the major work topi",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.47353251278400416,
+      "maxScore": 0.47353251278400416,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "march",
+        "tuesday",
+        "summary",
+        "active",
+        "day",
+        "multiple",
+        "maxwell",
+        "throughout"
+      ]
+    },
+    "memory:memory/2026-03-02.md:1:40": {
+      "key": "memory:memory/2026-03-02.md:1:40",
+      "path": "memory/2026-03-02.md",
+      "startLine": 1,
+      "endLine": 40,
+      "source": "memory",
+      "snippet": "# March 2, 2026 — Daily Log ## Summary Quiet Monday. System ran smoothly,cron jobs executed, one brief interaction with Alex. ## Activity ### Morning - **Daily Self Review** ran at 3 AM - Identified pending items: scoring methodology, ADV Diff false positives, fuzzy matching, blog writing, cold email refresh - Suggested drafting scoring methodology v2 as proposal doc - Suggested focusing on \"Your Advisor Has a Criminal Record\" blog post (lowest lift, highest impact) ### Midday - **Alex greeted** via webchat (\"Hey Maxwell\") — responded with \"Hey Alex! What's up?\" — no follow-up ### Evening - **Daily GitHub Push (workspace)**: Committed 3 files (37 insertions), pushed to `codex-fron",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4723877519369125,
+      "maxScore": 0.4723877519369125,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "follow-up",
+        "codex-fron",
+        "march",
+        "log",
+        "summary",
+        "quiet",
+        "monday",
+        "system"
+      ]
+    },
+    "memory:memory/2026-02-27.md:1:30": {
+      "key": "memory:memory/2026-02-27.md:1:30",
+      "path": "memory/2026-02-27.md",
+      "startLine": 1,
+      "endLine": 30,
+      "source": "memory",
+      "snippet": "# Memory: Friday, February 27th, 2026 ## What Happened ### Morning (8am) - **Daily Self Review** — provided task summary for Friday: - Removed broken cron jobs (Industry News, SEC Enforcement) from yesterday - ADV Diff still generating ~554 false positives per run - \"5 Core Tenants\" research still pending (Alex said he'd look into it) - RIA M&A cron job still broken (worker missing) - Daily GitHub push successful ### Midday (12pm) - **Weekly Blog Reminder** — sent to Alex. He responded: - No writing progress this week (focus was on Visor Index dev) - Shared 3 new blog ideas → added to `research/Alex-blog-ideas.md`: 1. The $100T Transparency Gap (wealth transfer + Visor I",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4695724755525589,
+      "maxScore": 0.4695724755525589,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "research/alex-blog-ideas.md",
+        "friday",
+        "february",
+        "27th",
+        "what",
+        "happened",
+        "morning",
+        "8am"
+      ]
+    },
+    "memory:memory/2026-04-10.md:1:18": {
+      "key": "memory:memory/2026-04-10.md:1:18",
+      "path": "memory/2026-04-10.md",
+      "startLine": 1,
+      "endLine": 18,
+      "source": "memory",
+      "snippet": "# 2026-04-10 — Friday ## Summary Quiet day overall. No direct user sessions. The daily checkpoint was run. ## Activity - Submodule update: `far/` updated to latest (ca796fc) - Memory file for 2026-04-09 created/updated ## Notes - No user chat sessions in the last 24 hours - System ran normally (cron heartbeat, etc.) ## Emotional Tone Quiet, low-activity day. --- *Created by Maxwell's daily memory review*",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4684862732887268,
+      "maxScore": 0.4684862732887268,
+      "firstRecalledAt": "2026-04-19T15:48:01.839Z",
+      "lastRecalledAt": "2026-04-19T15:48:01.839Z",
+      "queryHashes": [
+        "ae4eb1d39ac3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "created/updated",
+        "low-activity",
+        "friday",
+        "summary",
+        "quiet",
+        "day",
+        "overall",
+        "direct"
+      ]
+    }
+  }
+}
