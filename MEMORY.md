@@ -50,6 +50,7 @@ _Last updated: 2026-03-29_
 - **Fee calculator widget live on all firm profiles**
 
 ## Active Issues (April 2026)
+- **Design Consistency Audit (4/19):** Comprehensive DESIGN_AUDIT.md created — 22 pages analyzed at 3 breakpoints, 7/10 overall health score. Identified ~30 files with design drift (colors, padding, border-radius). Proposed 7-phase improvement plan (~17 hours). Priority: Phase 1 color cleanup (2h) then Phase 2 hero standardization (4h).
 - **Alert History page added (4/5):** New `/dashboard/alerts/history` route with full AlertHistoryPanel component (+387 lines) — users can now view complete alert history
 - **Toast notifications added (4/5):** New reusable Toast component for user feedback
 
