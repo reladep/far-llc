@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-04-19T15:48:01.839Z",
+  "updatedAt": "2026-04-25T17:24:45.778Z",
   "entries": {
     "memory:memory/2026-03-01.md:1:37": {
       "key": "memory:memory/2026-03-01.md:1:37",
@@ -374,6 +374,285 @@
         "day",
         "overall",
         "direct"
+      ]
+    },
+    "memory:memory/2026-03-27.md:1:27": {
+      "key": "memory:memory/2026-03-27.md:1:27",
+      "path": "memory/2026-03-27.md",
+      "startLine": 1,
+      "endLine": 27,
+      "source": "memory",
+      "snippet": "# March 27, 2026 (Friday) ## Summary Active development day with multiple user sessions. Numerous session files created throughout the day (30+ sessions), indicating significant work. Cron jobs ran on schedule. ## Activity - Multiple active sessions throughout the day (visible session files from morning through late night) - Standard cron jobs running (ADV diff, news scraper, EDGAR RSS) - No direct user interaction captured in this memory review (session content not accessible) ## Technical Notes - Session history visibility restricted - cannot access individual session details from cron context - Previous day's notes (March 26) showed: - ADV Diff generated 554 fee change alerts (spike",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.516370901465416,
+      "maxScore": 0.516370901465416,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "march",
+        "friday",
+        "summary",
+        "active",
+        "development",
+        "day",
+        "multiple",
+        "user"
+      ]
+    },
+    "memory:memory/2026-04-06.md:1:36": {
+      "key": "memory:memory/2026-04-06.md:1:36",
+      "path": "memory/2026-04-06.md",
+      "startLine": 1,
+      "endLine": 36,
+      "source": "memory",
+      "snippet": "# 2026-04-06 — Monday ## Summary Continued FAR development — refinements to alerts history and match results pages. ## Activity ### FAR Development - **Daily checkpoint commit**: 5 files changed, +368/-162 lines - **Key work areas:** - `AlertHistoryPanel.tsx`: Major refactor/expansion (+426 lines rewritten) - `AlertsPanel.tsx`: Minor adjustments - `page.tsx` (dashboard): Layout tweaks - `match/results/page.tsx`: Reworked match results page (~73 lines changed) ### Cron Jobs - All scheduled jobs ran normally ### Sessions - No direct conversations with Alex today — work was done independently ## Emotional Tone 🟡 Steady — quiet day, incremental progress on existing features ## Op",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5053785145282745,
+      "maxScore": 0.5053785145282745,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "alerthistorypanel.tsx",
+        "refactor/expansion",
+        "alertspanel.tsx",
+        "page.tsx",
+        "match/results/page.tsx",
+        "monday",
+        "summary",
+        "continued"
+      ]
+    },
+    "memory:memory/2026-03-20.md:1:34": {
+      "key": "memory:memory/2026-03-20.md:1:34",
+      "path": "memory/2026-03-20.md",
+      "startLine": 1,
+      "endLine": 34,
+      "source": "memory",
+      "snippet": "# March 20, 2026 ## Summary Active development day on Visor Index / FAR project with 33 OpenClaw sessions throughout the day. Multiple sessions from early morning through late night. Daily checkpoint committed at 23:59. No direct user sessions with Maxwell (bot) on this date - all activity appears to have been local development, cron jobs, or browser automation. ## Activity - 33 OpenClaw sessions logged throughout March 20th - Activity spanning from ~3 AM through midnight - Daily checkpoint commit at 23:59:13 (\"Daily checkpoint 2026-03-20\") - Only 1 file changed in commit: 1 deletion in workers/news-scraper.js - No direct bot interactions - sessions appear to have been: - Local developme",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5048800051212311,
+      "maxScore": 0.5048800051212311,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "workers/news-scraper.js",
+        "march",
+        "summary",
+        "active",
+        "development",
+        "day",
+        "visor",
+        "index"
+      ]
+    },
+    "memory:memory/2026-02-25.md:1:35": {
+      "key": "memory:memory/2026-02-25.md:1:35",
+      "path": "memory/2026-02-25.md",
+      "startLine": 1,
+      "endLine": 35,
+      "source": "memory",
+      "snippet": "# 2026-02-25 — Wednesday ## Summary System on autopilot with workers running. Main session focused on building the firm matching feature. ## What Was Worked On ### Main Session — Firm Matching Feature - Built `/match` — 8-step questionnaire (net worth, life trigger, location, priorities, fee sensitivity, firm size, service depth, conflict importance) - Built `/match/results` — ranked top 10 firms with match %, reason badges, Visor Score, estimated fees - Added \"Find a Match\" nav link to header - Live at localhost:3001/match ### Workers Running (cron jobs) - **SEC Enforcement Poller**: 70 new alerts, but same false positive issue — CRD 158369 (generic \"Series Portfolios Trust\") matching 3",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5046642124652863,
+      "maxScore": 0.5046642124652863,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "8-step",
+        "match/results",
+        "3001/match",
+        "wednesday",
+        "summary",
+        "system",
+        "autopilot",
+        "workers"
+      ]
+    },
+    "memory:memory/2026-03-28.md:1:30": {
+      "key": "memory:memory/2026-03-28.md:1:30",
+      "path": "memory/2026-03-28.md",
+      "startLine": 1,
+      "endLine": 30,
+      "source": "memory",
+      "snippet": "# March 28, 2026 (Saturday) ## Summary Standard weekend day with scheduled cron jobs running and some FAR project development activity. Multiple active sessions throughout the day (visible in session files). ## Activity - **Cron jobs ran on schedule:** - Daily Memory Review (3 AM) — this job - News Scraper (hourly) — running successfully - ADV Diff Checker (6hr) — last run status OK - Daily GitHub Push (11:59 PM) — committed successfully - **Development activity:** Significant Next.js build activity (many .next artifacts modified), suggesting active FAR development - **Git commit:** Daily checkpoint pushed ## Context from Previous Day (March 27) - ADV Diff generated 554 fee change",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5039521425962448,
+      "maxScore": 0.5039521425962448,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "next.js",
+        "march",
+        "saturday",
+        "summary",
+        "standard",
+        "weekend",
+        "day",
+        "scheduled"
+      ]
+    },
+    "memory:memory/2026-02-17.md:1:33": {
+      "key": "memory:memory/2026-02-17.md:1:33",
+      "path": "memory/2026-02-17.md",
+      "startLine": 1,
+      "endLine": 33,
+      "source": "memory",
+      "snippet": "# 2026-02-17 — FAR Product Session ## Summary Extended working session on FAR. Major fee calculator overhaul, homepage updates, auth fixes, and product discussion on alerts. ## What We Worked On ### 1. Fee Calculator Overhaul (GPT sub-agent) - Moved from sidebar to main content area (prominent placement) - Capped input at $1B - Fixed overflow issues for large numbers - Added industry average comparison with visual benchmarking (p25/median/p75 range) - Added portfolio growth projections net of fees (5/10/20yr at 7%) - Added \"10bp lower\" savings scenario (no CTA yet) - Changed display to show annual fee + quarterly cost only (removed monthly/daily) - Handles flat fees and single-tier firms",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.5034471243619919,
+      "maxScore": 0.5034471243619919,
+      "firstRecalledAt": "2026-04-25T17:17:13.517Z",
+      "lastRecalledAt": "2026-04-25T17:17:13.517Z",
+      "queryHashes": [
+        "80f0c9933298"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "gpt",
+        "sub-agent",
+        "p25/median/p75",
+        "5/10/20yr",
+        "monthly/daily",
+        "single-tier",
+        "far",
+        "product"
+      ]
+    },
+    "memory:memory/2026-03-26.md:1:29": {
+      "key": "memory:memory/2026-03-26.md:1:29",
+      "path": "memory/2026-03-26.md",
+      "startLine": 1,
+      "endLine": 29,
+      "source": "memory",
+      "snippet": "# March 26, 2026 (Thursday) ## Summary Cron jobs ran throughout the day. No direct user sessions. Major ADV Diff run with 554 fee change alerts. News scraper continued having SIGTERM issues. ## Activity - **ADV Diff Checker** (12:02 PM): Major run — 1,000 firms diffed, **554 new fee schedule change alerts**. No AUM or employee changes detected. This is a huge spike in fee changes — may warrant investigation into whether these are real changes or false positives in the diff logic. - **News Scraper** (8:30 AM, ~12:30 PM): Still having SIGTERM issues. Process gets killed around the 50-firm mark, same problem as March 25. One alert generated (FIRST TRUST ADVISORS LP) before termination. - Mult",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.47749791145324705,
+      "maxScore": 0.47749791145324705,
+      "firstRecalledAt": "2026-04-25T17:24:43.605Z",
+      "lastRecalledAt": "2026-04-25T17:24:43.605Z",
+      "queryHashes": [
+        "6144bdbffc5c"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "50-firm",
+        "march",
+        "thursday",
+        "summary",
+        "cron",
+        "jobs",
+        "ran",
+        "throughout"
+      ]
+    },
+    "memory:memory/2026-02-20.md:52:70": {
+      "key": "memory:memory/2026-02-20.md:52:70",
+      "path": "memory/2026-02-20.md",
+      "startLine": 52,
+      "endLine": 70,
+      "source": "memory",
+      "snippet": "- **Remaining ~945 firms** need news scraping (second run started but killed) ## In Progress / Next Steps - Complete news scraping for all 1,945 firms - Refine EDGAR RSS EFTS URL - Push to production (`git push`) - Fix type error in `src/app/compare/page.tsx` (line 279) - Verify FirmAlerts renders on live firm pages ## DB Stats - 1,945 firms in `firmdata_current` - 2,776 news articles - 1,505 alerts - 1,000 firm snapshots ## Column Mapping Note - `firmdata_current`: `accounts_total`, `employee_total`, `aum_discretionary`, `aum_non_discretionary` - `firm_snapshots`: `total_accounts`, `total_employees`, `discretionary_aum`, `non_discretionary_aum`",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.4730220705270767,
+      "maxScore": 0.4730220705270767,
+      "firstRecalledAt": "2026-04-25T17:24:43.605Z",
+      "lastRecalledAt": "2026-04-25T17:24:43.605Z",
+      "queryHashes": [
+        "6144bdbffc5c"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "src/app/compare/page.tsx",
+        "firmdata-current",
+        "accounts-total",
+        "employee-total",
+        "aum-discretionary",
+        "aum-non-discretionary",
+        "firm-snapshots",
+        "total-accounts"
+      ]
+    },
+    "memory:memory/2026-02-11.md:18:22": {
+      "key": "memory:memory/2026-02-11.md:18:22",
+      "path": "memory/2026-02-11.md",
+      "startLine": 18,
+      "endLine": 22,
+      "source": "memory",
+      "snippet": "- FAR competitor research started in `research/FAR-competitor-research.md`; buckets: consumer matching, industry data platforms, rankings, regulatory inputs, lead-gen marketplaces. - Identified comps/sources logged so far: ISS MarketPro, FINTRX, SmartAsset (consumer match + AMP), AdvisorFinder, AdvizorPro; Dakota queued. - Scheduled FAR research progress check-ins: Wed 5:15 PM ET (done) and Thu 5:00 PM ET. - Added todo: read new Mauboussin paper on Bayes & Base Rates (link TBD).",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 0.46456493437290186,
+      "maxScore": 0.46456493437290186,
+      "firstRecalledAt": "2026-04-25T17:24:45.778Z",
+      "lastRecalledAt": "2026-04-25T17:24:45.778Z",
+      "queryHashes": [
+        "bc7a19c8f88a"
+      ],
+      "recallDays": [
+        "2026-04-25"
+      ],
+      "conceptTags": [
+        "lead-gen",
+        "comps/sources",
+        "check-ins",
+        "far",
+        "competitor",
+        "research",
+        "started",
+        "research.md"
       ]
     }
   }
