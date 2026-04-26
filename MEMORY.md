@@ -51,6 +51,10 @@ _Last updated: 2026-03-29_
 
 ## Active Issues (April 2026)
 - **Design Consistency Audit (4/19):** Comprehensive DESIGN_AUDIT.md created — 22 pages analyzed at 3 breakpoints, 7/10 overall health score. Identified ~30 files with design drift (colors, padding, border-radius). Proposed 7-phase improvement plan (~17 hours). Priority: Phase 1 color cleanup (2h) then Phase 2 hero standardization (4h).
+- **SEC Data Strategy (4/25):** Confirmed dual approach for ongoing wealth management firm monitoring:
+  - CSV (FOIA): Monthly downloads for benchmarks (fee curves, AUM distributions, disclosure rates)
+  - XML (EDGAR): Weekly pulls for change detection → alerts
+- **Classification fields:** Wealth Management = Q5B1 (Individuals) + Q5B2 (HNW) > 0; Broker-Dealer = Q6B1; Pure RIA = Q6B1 = N
 - **Alert History page added (4/5):** New `/dashboard/alerts/history` route with full AlertHistoryPanel component (+387 lines) — users can now view complete alert history
 - **Toast notifications added (4/5):** New reusable Toast component for user feedback
 
